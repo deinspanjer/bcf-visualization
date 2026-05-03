@@ -1,0 +1,3499 @@
+{
+  "_source": "data/raw/threadmark_index/threadmarks_p*.mht",
+  "_count": 194,
+  "_note": "words_approx is derived from the forum-rounded display ('5k', '8.2k'), not exact counts.",
+  "chapters": [
+    {
+      "chapter_num": "1",
+      "sort_key": [
+        1,
+        0
+      ],
+      "title": "Introduction",
+      "full_title": "1 Introduction",
+      "post_id": 16406074,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16406074",
+      "publish_ts": 1595207232,
+      "publish_iso": "2020-07-19T21:07:12-0400",
+      "words_text": "5k",
+      "words_approx": 5000,
+      "likes": 887,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "2",
+      "sort_key": [
+        2,
+        0
+      ],
+      "title": "Preparation",
+      "full_title": "2 Preparation",
+      "post_id": 16406104,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16406104",
+      "publish_ts": 1595207399,
+      "publish_iso": "2020-07-19T21:09:59-0400",
+      "words_text": "8.2k",
+      "words_approx": 8200,
+      "likes": 798,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "3",
+      "sort_key": [
+        3,
+        0
+      ],
+      "title": "First Fight",
+      "full_title": "3 First Fight",
+      "post_id": 16406140,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16406140",
+      "publish_ts": 1595207538,
+      "publish_iso": "2020-07-19T21:12:18-0400",
+      "words_text": "6.4k",
+      "words_approx": 6400,
+      "likes": 808,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "3.1",
+      "sort_key": [
+        3,
+        1
+      ],
+      "title": "Interlude: Brian",
+      "full_title": "3.1 Interlude: Brian",
+      "post_id": 16411744,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16411744",
+      "publish_ts": 1595244973,
+      "publish_iso": "2020-07-20T07:36:13-0400",
+      "words_text": "3.4k",
+      "words_approx": 3400,
+      "likes": 744,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "4",
+      "sort_key": [
+        4,
+        0
+      ],
+      "title": "Recovery",
+      "full_title": "4 Recovery",
+      "post_id": 16417090,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16417090",
+      "publish_ts": 1595275542,
+      "publish_iso": "2020-07-20T16:05:42-0400",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 761,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "5",
+      "sort_key": [
+        5,
+        0
+      ],
+      "title": "Negotiation",
+      "full_title": "5 Negotiation",
+      "post_id": 16427059,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16427059",
+      "publish_ts": 1595330613,
+      "publish_iso": "2020-07-21T07:23:33-0400",
+      "words_text": "5.6k",
+      "words_approx": 5600,
+      "likes": 763,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "6",
+      "sort_key": [
+        6,
+        0
+      ],
+      "title": "Commission",
+      "full_title": "6 Commission",
+      "post_id": 16432594,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/#post-16432594",
+      "publish_ts": 1595361286,
+      "publish_iso": "2020-07-21T15:54:46-0400",
+      "words_text": "9.5k",
+      "words_approx": 9500,
+      "likes": 748,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "6.1",
+      "sort_key": [
+        6,
+        1
+      ],
+      "title": "Interlude: Taylor",
+      "full_title": "6.1 Interlude: Taylor",
+      "post_id": 16443400,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2#post-16443400",
+      "publish_ts": 1595416640,
+      "publish_iso": "2020-07-22T07:17:20-0400",
+      "words_text": "3.8k",
+      "words_approx": 3800,
+      "likes": 803,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "7",
+      "sort_key": [
+        7,
+        0
+      ],
+      "title": "Accessory",
+      "full_title": "7 Accessory",
+      "post_id": 16449388,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2#post-16449388",
+      "publish_ts": 1595449416,
+      "publish_iso": "2020-07-22T16:23:36-0400",
+      "words_text": "7.6k",
+      "words_approx": 7600,
+      "likes": 813,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "8",
+      "sort_key": [
+        8,
+        0
+      ],
+      "title": "Aftermath",
+      "full_title": "8 Aftermath",
+      "post_id": 16459462,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2#post-16459462",
+      "publish_ts": 1595505185,
+      "publish_iso": "2020-07-23T07:53:05-0400",
+      "words_text": "9.8k",
+      "words_approx": 9800,
+      "likes": 787,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "8.1",
+      "sort_key": [
+        8,
+        1
+      ],
+      "title": "Interlude: Amy",
+      "full_title": "8.1 Interlude: Amy",
+      "post_id": 16465066,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2#post-16465066",
+      "publish_ts": 1595534737,
+      "publish_iso": "2020-07-23T16:05:37-0400",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 908,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "9",
+      "sort_key": [
+        9,
+        0
+      ],
+      "title": "Acquisitions",
+      "full_title": "9 Acquisitions",
+      "post_id": 16475260,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2#post-16475260",
+      "publish_ts": 1595589490,
+      "publish_iso": "2020-07-24T07:18:10-0400",
+      "words_text": "9.6k",
+      "words_approx": 9600,
+      "likes": 767,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "10",
+      "sort_key": [
+        10,
+        0
+      ],
+      "title": "Overhaul",
+      "full_title": "10 Overhaul",
+      "post_id": 16480891,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-3#post-16480891",
+      "publish_ts": 1595621181,
+      "publish_iso": "2020-07-24T16:06:21-0400",
+      "words_text": "9.1k",
+      "words_approx": 9100,
+      "likes": 758,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "11",
+      "sort_key": [
+        11,
+        0
+      ],
+      "title": "Power Trip",
+      "full_title": "11 Power Trip",
+      "post_id": 16492318,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-3#post-16492318",
+      "publish_ts": 1595686576,
+      "publish_iso": "2020-07-25T10:16:16-0400",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 730,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "12",
+      "sort_key": [
+        12,
+        0
+      ],
+      "title": "Conference",
+      "full_title": "12 Conference",
+      "post_id": 16497757,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-3#post-16497757",
+      "publish_ts": 1595713970,
+      "publish_iso": "2020-07-25T17:52:50-0400",
+      "words_text": "8.9k",
+      "words_approx": 8900,
+      "likes": 750,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "12.1",
+      "sort_key": [
+        12,
+        1
+      ],
+      "title": "Interlude: Thomas",
+      "full_title": "12.1 Interlude: Thomas",
+      "post_id": 16505746,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-3#post-16505746",
+      "publish_ts": 1595771922,
+      "publish_iso": "2020-07-26T09:58:42-0400",
+      "words_text": "6k",
+      "words_approx": 6000,
+      "likes": 755,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "13",
+      "sort_key": [
+        13,
+        0
+      ],
+      "title": "Exposure",
+      "full_title": "13 Exposure",
+      "post_id": 16511230,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-3#post-16511230",
+      "publish_ts": 1595802089,
+      "publish_iso": "2020-07-26T18:21:29-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 715,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "14",
+      "sort_key": [
+        14,
+        0
+      ],
+      "title": "Debut",
+      "full_title": "14 Debut",
+      "post_id": 16521604,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-4#post-16521604",
+      "publish_ts": 1595849530,
+      "publish_iso": "2020-07-27T07:32:10-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 726,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "15",
+      "sort_key": [
+        15,
+        0
+      ],
+      "title": "Recuperation",
+      "full_title": "15 Recuperation",
+      "post_id": 16527421,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-4#post-16527421",
+      "publish_ts": 1595881117,
+      "publish_iso": "2020-07-27T16:18:37-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 723,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "16",
+      "sort_key": [
+        16,
+        0
+      ],
+      "title": "Therapy",
+      "full_title": "16 Therapy",
+      "post_id": 16538140,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-4#post-16538140",
+      "publish_ts": 1595935252,
+      "publish_iso": "2020-07-28T07:20:52-0400",
+      "words_text": "8.7k",
+      "words_approx": 8700,
+      "likes": 767,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "16.1",
+      "sort_key": [
+        16,
+        1
+      ],
+      "title": "Interlude Weld",
+      "full_title": "16.1 Interlude Weld",
+      "post_id": 16543489,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-4#post-16543489",
+      "publish_ts": 1595967309,
+      "publish_iso": "2020-07-28T16:15:09-0400",
+      "words_text": "9.5k",
+      "words_approx": 9500,
+      "likes": 758,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "17",
+      "sort_key": [
+        17,
+        0
+      ],
+      "title": "Confrontation",
+      "full_title": "17 Confrontation",
+      "post_id": 16554838,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-5#post-16554838",
+      "publish_ts": 1596022984,
+      "publish_iso": "2020-07-29T07:43:04-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 750,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "18",
+      "sort_key": [
+        18,
+        0
+      ],
+      "title": "Regroup",
+      "full_title": "18 Regroup",
+      "post_id": 16562410,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-5#post-16562410",
+      "publish_ts": 1596055945,
+      "publish_iso": "2020-07-29T16:52:25-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 716,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "19",
+      "sort_key": [
+        19,
+        0
+      ],
+      "title": "Restoration",
+      "full_title": "19 Restoration",
+      "post_id": 16572862,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-6#post-16572862",
+      "publish_ts": 1596118547,
+      "publish_iso": "2020-07-30T10:15:47-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 740,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "20",
+      "sort_key": [
+        20,
+        0
+      ],
+      "title": "Offensive",
+      "full_title": "20 Offensive",
+      "post_id": 16578010,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-7#post-16578010",
+      "publish_ts": 1596142064,
+      "publish_iso": "2020-07-30T16:47:44-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 709,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p1.mht"
+    },
+    {
+      "chapter_num": "21",
+      "sort_key": [
+        21,
+        0
+      ],
+      "title": "Closing Moves",
+      "full_title": "21 Closing Moves",
+      "post_id": 16588687,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-8#post-16588687",
+      "publish_ts": 1596206374,
+      "publish_iso": "2020-07-31T10:39:34-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 727,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "21.1",
+      "sort_key": [
+        21,
+        1
+      ],
+      "title": "Interlude: Dennis",
+      "full_title": "21.1 Interlude: Dennis",
+      "post_id": 16674391,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-10#post-16674391",
+      "publish_ts": 1596686005,
+      "publish_iso": "2020-08-05T23:53:25-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 855,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "22",
+      "sort_key": [
+        22,
+        0
+      ],
+      "title": "Homeward",
+      "full_title": "22 Homeward",
+      "post_id": 16771057,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-15#post-16771057",
+      "publish_ts": 1597290075,
+      "publish_iso": "2020-08-12T23:41:15-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 828,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "23",
+      "sort_key": [
+        23,
+        0
+      ],
+      "title": "Renovation - Addendum Taylor",
+      "full_title": "23 Renovation - Addendum Taylor",
+      "post_id": 16870401,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-19#post-16870401",
+      "publish_ts": 1597893534,
+      "publish_iso": "2020-08-19T23:18:54-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 808,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "24",
+      "sort_key": [
+        24,
+        0
+      ],
+      "title": "Tech Work - Addendum Alec",
+      "full_title": "24 Tech Work - Addendum Alec",
+      "post_id": 16967766,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-30#post-16967766",
+      "publish_ts": 1598498214,
+      "publish_iso": "2020-08-26T23:16:54-0400",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 803,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "25",
+      "sort_key": [
+        25,
+        0
+      ],
+      "title": "Search and Rescue - Addendum PHO",
+      "full_title": "25 Search and Rescue - Addendum PHO",
+      "post_id": 17064306,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-42#post-17064306",
+      "publish_ts": 1599107483,
+      "publish_iso": "2020-09-03T00:31:23-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 851,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "26",
+      "sort_key": [
+        26,
+        0
+      ],
+      "title": "Correspondence - Addendum Rory",
+      "full_title": "26 Correspondence - Addendum Rory",
+      "post_id": 17155814,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-53#post-17155814",
+      "publish_ts": 1599711544,
+      "publish_iso": "2020-09-10T00:19:04-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 867,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "27",
+      "sort_key": [
+        27,
+        0
+      ],
+      "title": "Intrusion - Addendum Hannah",
+      "full_title": "27 Intrusion - Addendum Hannah",
+      "post_id": 17251925,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-69#post-17251925",
+      "publish_ts": 1600318044,
+      "publish_iso": "2020-09-17T00:47:24-0400",
+      "words_text": "22k",
+      "words_approx": 22000,
+      "likes": 872,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "28",
+      "sort_key": [
+        28,
+        0
+      ],
+      "title": "Preamble - Addendum Sophia",
+      "full_title": "28 Preamble - Addendum Sophia",
+      "post_id": 17352992,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-80#post-17352992",
+      "publish_ts": 1600921248,
+      "publish_iso": "2020-09-24T00:20:48-0400",
+      "words_text": "20k",
+      "words_approx": 20000,
+      "likes": 859,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "29",
+      "sort_key": [
+        29,
+        0
+      ],
+      "title": "Presentation - Addendum Emily",
+      "full_title": "29 Presentation - Addendum Emily",
+      "post_id": 17445653,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-97#post-17445653",
+      "publish_ts": 1601525411,
+      "publish_iso": "2020-10-01T00:10:11-0400",
+      "words_text": "23k",
+      "words_approx": 23000,
+      "likes": 815,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "30",
+      "sort_key": [
+        30,
+        0
+      ],
+      "title": "Crescendo - Addendum Missy",
+      "full_title": "30 Crescendo - Addendum Missy",
+      "post_id": 17638921,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-126#post-17638921",
+      "publish_ts": 1602716082,
+      "publish_iso": "2020-10-14T18:54:42-0400",
+      "words_text": "34k",
+      "words_approx": 34000,
+      "likes": 900,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "31",
+      "sort_key": [
+        31,
+        0
+      ],
+      "title": "Consensus - Preamble PHO - Addendum Accord",
+      "full_title": "31 Consensus - Preamble PHO - Addendum Accord",
+      "post_id": 17727505,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-145#post-17727505",
+      "publish_ts": 1603338541,
+      "publish_iso": "2020-10-21T23:49:01-0400",
+      "words_text": "25k",
+      "words_approx": 25000,
+      "likes": 960,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "32",
+      "sort_key": [
+        32,
+        0
+      ],
+      "title": "Family Fugue - Preamble Taylor - Addendum Mike",
+      "full_title": "32 Family Fugue - Preamble Taylor - Addendum Mike",
+      "post_id": 17813203,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-160#post-17813203",
+      "publish_ts": 1603945229,
+      "publish_iso": "2020-10-29T00:20:29-0400",
+      "words_text": "22k",
+      "words_approx": 22000,
+      "likes": 942,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "33",
+      "sort_key": [
+        33,
+        0
+      ],
+      "title": "Morning Training - Preamble James - Addendum Youth Guard",
+      "full_title": "33 Morning Training - Preamble James - Addendum Youth Guard",
+      "post_id": 17987589,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-177#post-17987589",
+      "publish_ts": 1605159301,
+      "publish_iso": "2020-11-12T00:35:01-0500",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 898,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "34",
+      "sort_key": [
+        34,
+        0
+      ],
+      "title": "Little Talks - Addendum Ethan",
+      "full_title": "34 Little Talks - Addendum Ethan",
+      "post_id": 18068214,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-189#post-18068214",
+      "publish_ts": 1605761924,
+      "publish_iso": "2020-11-18T23:58:44-0500",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 895,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "35",
+      "sort_key": [
+        35,
+        0
+      ],
+      "title": "Closing Words - Addendum Chris",
+      "full_title": "35 Closing Words - Addendum Chris",
+      "post_id": 18154829,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-199#post-18154829",
+      "publish_ts": 1606368764,
+      "publish_iso": "2020-11-26T00:32:44-0500",
+      "words_text": "20k",
+      "words_approx": 20000,
+      "likes": 902,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "35.1",
+      "sort_key": [
+        35,
+        1
+      ],
+      "title": "Interlude Dragon - Addendum Margaret",
+      "full_title": "35.1 Interlude Dragon - Addendum Margaret",
+      "post_id": 18233328,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-210#post-18233328",
+      "publish_ts": 1606972307,
+      "publish_iso": "2020-12-03T00:11:47-0500",
+      "words_text": "18k",
+      "words_approx": 18000,
+      "likes": 1001,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "36",
+      "sort_key": [
+        36,
+        0
+      ],
+      "title": "Debrief - Addendum The Bay Bulletin",
+      "full_title": "36 Debrief - Addendum The Bay Bulletin",
+      "post_id": 18319062,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-227#post-18319062",
+      "publish_ts": 1607578328,
+      "publish_iso": "2020-12-10T00:32:08-0500",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 891,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "37",
+      "sort_key": [
+        37,
+        0
+      ],
+      "title": "Small Tasks - Addendum Meeting Report",
+      "full_title": "37 Small Tasks - Addendum Meeting Report",
+      "post_id": 18406623,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-243#post-18406623",
+      "publish_ts": 1608186175,
+      "publish_iso": "2020-12-17T01:22:55-0500",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 878,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "38",
+      "sort_key": [
+        38,
+        0
+      ],
+      "title": "Build Up - Preamble Leet - Addendum Rey",
+      "full_title": "38 Build Up - Preamble Leet - Addendum Rey",
+      "post_id": 18579515,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-267#post-18579515",
+      "publish_ts": 1609394062,
+      "publish_iso": "2020-12-31T00:54:22-0500",
+      "words_text": "31k",
+      "words_approx": 31000,
+      "likes": 844,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "39",
+      "sort_key": [
+        39,
+        0
+      ],
+      "title": "Set Up - Addendum Kenta",
+      "full_title": "39 Set Up - Addendum Kenta",
+      "post_id": 18668051,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-287#post-18668051",
+      "publish_ts": 1609993133,
+      "publish_iso": "2021-01-06T23:18:53-0500",
+      "words_text": "28k",
+      "words_approx": 28000,
+      "likes": 837,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "40",
+      "sort_key": [
+        40,
+        0
+      ],
+      "title": "Knock Down - Preamble Gully - Addendum Emergency Alert",
+      "full_title": "40 Knock Down - Preamble Gully - Addendum Emergency Alert",
+      "post_id": 18775100,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-306#post-18775100",
+      "publish_ts": 1610600181,
+      "publish_iso": "2021-01-13T23:56:21-0500",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 912,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "41",
+      "sort_key": [
+        41,
+        0
+      ],
+      "title": "Drag Out - Preamble Chen",
+      "full_title": "41 Drag Out - Preamble Chen",
+      "post_id": 18973380,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-357#post-18973380",
+      "publish_ts": 1611811198,
+      "publish_iso": "2021-01-28T00:19:58-0500",
+      "words_text": "43k",
+      "words_approx": 43000,
+      "likes": 983,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "41.1",
+      "sort_key": [
+        41,
+        1
+      ],
+      "title": "Interlude Victoria",
+      "full_title": "41.1 Interlude Victoria",
+      "post_id": 19169700,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-420#post-19169700",
+      "publish_ts": 1613021559,
+      "publish_iso": "2021-02-11T00:32:39-0500",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 1074,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "41.2",
+      "sort_key": [
+        41,
+        2
+      ],
+      "title": "Interlude Vicky",
+      "full_title": "41.2 Interlude Vicky",
+      "post_id": 19251915,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-438#post-19251915",
+      "publish_ts": 1613624458,
+      "publish_iso": "2021-02-18T00:00:58-0500",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 1036,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p2.mht"
+    },
+    {
+      "chapter_num": "41.3",
+      "sort_key": [
+        41,
+        3
+      ],
+      "title": "Interlude Glory Girl",
+      "full_title": "41.3 Interlude Glory Girl",
+      "post_id": 19425962,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-469#post-19425962",
+      "publish_ts": 1614834272,
+      "publish_iso": "2021-03-04T00:04:32-0500",
+      "words_text": "19k",
+      "words_approx": 19000,
+      "likes": 1065,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "42",
+      "sort_key": [
+        42,
+        0
+      ],
+      "title": "Incapacitated - Preamble Jeanne",
+      "full_title": "42 Incapacitated - Preamble Jeanne",
+      "post_id": 19793693,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-515#post-19793693",
+      "publish_ts": 1617249239,
+      "publish_iso": "2021-03-31T23:53:59-0400",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 955,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "42.1",
+      "sort_key": [
+        42,
+        1
+      ],
+      "title": "Interlude Neil - Preamble Tammi - Addendum Marissa",
+      "full_title": "42.1 Interlude Neil - Preamble Tammi - Addendum Marissa",
+      "post_id": 19868390,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-523#post-19868390",
+      "publish_ts": 1618456729,
+      "publish_iso": "2021-04-14T23:18:49-0400",
+      "words_text": "27k",
+      "words_approx": 27000,
+      "likes": 902,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "43",
+      "sort_key": [
+        43,
+        0
+      ],
+      "title": "Ripples Aisha - Preamble Gully - Addendum Joe",
+      "full_title": "43 Ripples Aisha - Preamble Gully - Addendum Joe",
+      "post_id": 19923204,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-540#post-19923204",
+      "publish_ts": 1619672233,
+      "publish_iso": "2021-04-29T00:57:13-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 904,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "43.1",
+      "sort_key": [
+        43,
+        1
+      ],
+      "title": "Interlude Fleet",
+      "full_title": "43.1 Interlude Fleet",
+      "post_id": 19979382,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-552#post-19979382",
+      "publish_ts": 1620274435,
+      "publish_iso": "2021-05-06T00:13:55-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 885,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "44",
+      "sort_key": [
+        44,
+        0
+      ],
+      "title": "Awakening",
+      "full_title": "44 Awakening",
+      "post_id": 20056569,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-569#post-20056569",
+      "publish_ts": 1620877863,
+      "publish_iso": "2021-05-12T23:51:03-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 849,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "45",
+      "sort_key": [
+        45,
+        0
+      ],
+      "title": "Realization - Preamble Taylor",
+      "full_title": "45 Realization - Preamble Taylor",
+      "post_id": 20204732,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-587#post-20204732",
+      "publish_ts": 1622089300,
+      "publish_iso": "2021-05-27T00:21:40-0400",
+      "words_text": "23k",
+      "words_approx": 23000,
+      "likes": 886,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "45.1",
+      "sort_key": [
+        45,
+        1
+      ],
+      "title": "Interlude Uppercrust",
+      "full_title": "45.1 Interlude Uppercrust",
+      "post_id": 20274995,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-602#post-20274995",
+      "publish_ts": 1622695103,
+      "publish_iso": "2021-06-03T00:38:23-0400",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 968,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "46",
+      "sort_key": [
+        46,
+        0
+      ],
+      "title": "Review",
+      "full_title": "46 Review",
+      "post_id": 20427747,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-621#post-20427747",
+      "publish_ts": 1623901374,
+      "publish_iso": "2021-06-16T23:42:54-0400",
+      "words_text": "26k",
+      "words_approx": 26000,
+      "likes": 801,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "46.1",
+      "sort_key": [
+        46,
+        1
+      ],
+      "title": "Interlude Weld",
+      "full_title": "46.1 Interlude Weld",
+      "post_id": 20508310,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-638#post-20508310",
+      "publish_ts": 1624508789,
+      "publish_iso": "2021-06-24T00:26:29-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 932,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "46.2",
+      "sort_key": [
+        46,
+        2
+      ],
+      "title": "Interlude Brian - Colin",
+      "full_title": "46.2 Interlude Brian - Colin",
+      "post_id": 20657191,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-663#post-20657191",
+      "publish_ts": 1625715045,
+      "publish_iso": "2021-07-07T23:30:45-0400",
+      "words_text": "23k",
+      "words_approx": 23000,
+      "likes": 970,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "47",
+      "sort_key": [
+        47,
+        0
+      ],
+      "title": "Downtime",
+      "full_title": "47 Downtime",
+      "post_id": 20804425,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-690#post-20804425",
+      "publish_ts": 1626926674,
+      "publish_iso": "2021-07-22T00:04:34-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 829,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "48",
+      "sort_key": [
+        48,
+        0
+      ],
+      "title": "Uptime",
+      "full_title": "48 Uptime",
+      "post_id": 20877418,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-701#post-20877418",
+      "publish_ts": 1627531015,
+      "publish_iso": "2021-07-28T23:56:55-0400",
+      "words_text": "19k",
+      "words_approx": 19000,
+      "likes": 793,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "49",
+      "sort_key": [
+        49,
+        0
+      ],
+      "title": "Game Time",
+      "full_title": "49 Game Time",
+      "post_id": 20952178,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-712#post-20952178",
+      "publish_ts": 1628135729,
+      "publish_iso": "2021-08-04T23:55:29-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 706,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "50",
+      "sort_key": [
+        50,
+        0
+      ],
+      "title": "Meantime",
+      "full_title": "50 Meantime",
+      "post_id": 21030315,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-722#post-21030315",
+      "publish_ts": 1628739082,
+      "publish_iso": "2021-08-11T23:31:22-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 796,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "51",
+      "sort_key": [
+        51,
+        0
+      ],
+      "title": "Lunchtime",
+      "full_title": "51 Lunchtime",
+      "post_id": 21116171,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-735#post-21116171",
+      "publish_ts": 1629344408,
+      "publish_iso": "2021-08-18T23:40:08-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 819,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "52",
+      "sort_key": [
+        52,
+        0
+      ],
+      "title": "Showtime",
+      "full_title": "52 Showtime",
+      "post_id": 21196980,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-748#post-21196980",
+      "publish_ts": 1629948144,
+      "publish_iso": "2021-08-25T23:22:24-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 839,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "53",
+      "sort_key": [
+        53,
+        0
+      ],
+      "title": "Hard Time",
+      "full_title": "53 Hard Time",
+      "post_id": 21274051,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-764#post-21274051",
+      "publish_ts": 1630556898,
+      "publish_iso": "2021-09-02T00:28:18-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 703,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "54",
+      "sort_key": [
+        54,
+        0
+      ],
+      "title": "Overtime",
+      "full_title": "54 Overtime",
+      "post_id": 21343516,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-778#post-21343516",
+      "publish_ts": 1631160745,
+      "publish_iso": "2021-09-09T00:12:25-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 777,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "55",
+      "sort_key": [
+        55,
+        0
+      ],
+      "title": "Processing Time",
+      "full_title": "55 Processing Time",
+      "post_id": 21488867,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-798#post-21488867",
+      "publish_ts": 1632368237,
+      "publish_iso": "2021-09-22T23:37:17-0400",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 848,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "55.1",
+      "sort_key": [
+        55,
+        1
+      ],
+      "title": "Interlude Fleet Preamble Roy Addendum Margaret",
+      "full_title": "55.1 Interlude Fleet Preamble Roy Addendum Margaret",
+      "post_id": 21637051,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-819#post-21637051",
+      "publish_ts": 1633580583,
+      "publish_iso": "2021-10-07T00:23:03-0400",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 739,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "56",
+      "sort_key": [
+        56,
+        0
+      ],
+      "title": "Arrival Time",
+      "full_title": "56 Arrival Time",
+      "post_id": 21706999,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-828#post-21706999",
+      "publish_ts": 1634184747,
+      "publish_iso": "2021-10-14T00:12:27-0400",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 753,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "57",
+      "sort_key": [
+        57,
+        0
+      ],
+      "title": "Crunch Time",
+      "full_title": "57 Crunch Time",
+      "post_id": 21836173,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-849#post-21836173",
+      "publish_ts": 1635394307,
+      "publish_iso": "2021-10-28T00:11:47-0400",
+      "words_text": "30k",
+      "words_approx": 30000,
+      "likes": 823,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "57.1",
+      "sort_key": [
+        57,
+        1
+      ],
+      "title": "Interlude Scrub - Leet - Rey",
+      "full_title": "57.1 Interlude Scrub - Leet - Rey",
+      "post_id": 21916255,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-863#post-21916255",
+      "publish_ts": 1636000135,
+      "publish_iso": "2021-11-04T00:28:55-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 792,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "58",
+      "sort_key": [
+        58,
+        0
+      ],
+      "title": "Go Time - Preamble Survey",
+      "full_title": "58 Go Time - Preamble Survey",
+      "post_id": 22055641,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-880#post-22055641",
+      "publish_ts": 1637214476,
+      "publish_iso": "2021-11-18T00:47:56-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 772,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p3.mht"
+    },
+    {
+      "chapter_num": "58.1",
+      "sort_key": [
+        58,
+        1
+      ],
+      "title": "Interlude Gregor Addendum Alec",
+      "full_title": "58.1 Interlude Gregor Addendum Alec",
+      "post_id": 22132938,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-894#post-22132938",
+      "publish_ts": 1637819261,
+      "publish_iso": "2021-11-25T00:47:41-0500",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 1080,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "58.2",
+      "sort_key": [
+        58,
+        2
+      ],
+      "title": "Interlude Lisa Addendum Joe",
+      "full_title": "58.2 Interlude Lisa Addendum Joe",
+      "post_id": 22212342,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-912#post-22212342",
+      "publish_ts": 1638424377,
+      "publish_iso": "2021-12-02T00:52:57-0500",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 852,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "59",
+      "sort_key": [
+        59,
+        0
+      ],
+      "title": "Summit Openings Addendum Uppercrust",
+      "full_title": "59 Summit Openings Addendum Uppercrust",
+      "post_id": 22295148,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-936#post-22295148",
+      "publish_ts": 1639028143,
+      "publish_iso": "2021-12-09T00:35:43-0500",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 973,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "60",
+      "sort_key": [
+        60,
+        0
+      ],
+      "title": "Summit Discussions",
+      "full_title": "60 Summit Discussions",
+      "post_id": 22457908,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-968#post-22457908",
+      "publish_ts": 1640242045,
+      "publish_iso": "2021-12-23T01:47:25-0500",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 890,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "61",
+      "sort_key": [
+        61,
+        0
+      ],
+      "title": "Summit Confrontations",
+      "full_title": "61 Summit Confrontations",
+      "post_id": 22622035,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-987#post-22622035",
+      "publish_ts": 1641445200,
+      "publish_iso": "2022-01-06T00:00:00-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 899,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "62",
+      "sort_key": [
+        62,
+        0
+      ],
+      "title": "Summit Consensus",
+      "full_title": "62 Summit Consensus",
+      "post_id": 22716286,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1002#post-22716286",
+      "publish_ts": 1642048474,
+      "publish_iso": "2022-01-12T23:34:34-0500",
+      "words_text": "9.3k",
+      "words_approx": 9300,
+      "likes": 862,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "63",
+      "sort_key": [
+        63,
+        0
+      ],
+      "title": "Summit Conclusion",
+      "full_title": "63 Summit Conclusion",
+      "post_id": 22792670,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1015#post-22792670",
+      "publish_ts": 1642654054,
+      "publish_iso": "2022-01-19T23:47:34-0500",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 860,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "63.1",
+      "sort_key": [
+        63,
+        1
+      ],
+      "title": "Interlude Lauren",
+      "full_title": "63.1 Interlude Lauren",
+      "post_id": 22877234,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1030#post-22877234",
+      "publish_ts": 1643260037,
+      "publish_iso": "2022-01-27T00:07:17-0500",
+      "words_text": "6.6k",
+      "words_approx": 6600,
+      "likes": 896,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "64",
+      "sort_key": [
+        64,
+        0
+      ],
+      "title": "Summit Review - Preamble Dragon Addendum James",
+      "full_title": "64 Summit Review - Preamble Dragon Addendum James",
+      "post_id": 22961191,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1044#post-22961191",
+      "publish_ts": 1643892090,
+      "publish_iso": "2022-02-03T07:41:30-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 929,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "65",
+      "sort_key": [
+        65,
+        0
+      ],
+      "title": "Summit Aftermath",
+      "full_title": "65 Summit Aftermath",
+      "post_id": 23040955,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1056#post-23040955",
+      "publish_ts": 1644469364,
+      "publish_iso": "2022-02-10T00:02:44-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 728,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "65.1",
+      "sort_key": [
+        65,
+        1
+      ],
+      "title": "Interlude Taylor",
+      "full_title": "65.1 Interlude Taylor",
+      "post_id": 23124752,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1067#post-23124752",
+      "publish_ts": 1645073069,
+      "publish_iso": "2022-02-16T23:44:29-0500",
+      "words_text": "6k",
+      "words_approx": 6000,
+      "likes": 841,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "65.2",
+      "sort_key": [
+        65,
+        2
+      ],
+      "title": "Interlude Ben",
+      "full_title": "65.2 Interlude Ben",
+      "post_id": 23195928,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1078#post-23195928",
+      "publish_ts": 1645678619,
+      "publish_iso": "2022-02-23T23:56:59-0500",
+      "words_text": "7.6k",
+      "words_approx": 7600,
+      "likes": 905,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "65.3",
+      "sort_key": [
+        65,
+        3
+      ],
+      "title": "Interlude Chubster",
+      "full_title": "65.3 Interlude Chubster",
+      "post_id": 23263530,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1086#post-23263530",
+      "publish_ts": 1646287288,
+      "publish_iso": "2022-03-03T01:01:28-0500",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 995,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "65.4",
+      "sort_key": [
+        65,
+        4
+      ],
+      "title": "Interlude Cothran",
+      "full_title": "65.4 Interlude Cothran",
+      "post_id": 23334588,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1102#post-23334588",
+      "publish_ts": 1646890400,
+      "publish_iso": "2022-03-10T00:33:20-0500",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 976,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "66",
+      "sort_key": [
+        66,
+        0
+      ],
+      "title": "Review and Preparation",
+      "full_title": "66 Review and Preparation",
+      "post_id": 23397487,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1119#post-23397487",
+      "publish_ts": 1647491558,
+      "publish_iso": "2022-03-17T00:32:38-0400",
+      "words_text": "9.3k",
+      "words_approx": 9300,
+      "likes": 779,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "67",
+      "sort_key": [
+        67,
+        0
+      ],
+      "title": "Development Plans",
+      "full_title": "67 Development Plans",
+      "post_id": 23463689,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1138#post-23463689",
+      "publish_ts": 1648095715,
+      "publish_iso": "2022-03-24T00:21:55-0400",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 723,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "68",
+      "sort_key": [
+        68,
+        0
+      ],
+      "title": "Personal Training",
+      "full_title": "68 Personal Training",
+      "post_id": 23529610,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1150#post-23529610",
+      "publish_ts": 1648699212,
+      "publish_iso": "2022-03-31T00:00:12-0400",
+      "words_text": "9.4k",
+      "words_approx": 9400,
+      "likes": 730,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "68.1",
+      "sort_key": [
+        68,
+        1
+      ],
+      "title": "Interlude Missy",
+      "full_title": "68.1 Interlude Missy",
+      "post_id": 23605120,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1160#post-23605120",
+      "publish_ts": 1649306530,
+      "publish_iso": "2022-04-07T00:42:10-0400",
+      "words_text": "6.2k",
+      "words_approx": 6200,
+      "likes": 813,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "68.2",
+      "sort_key": [
+        68,
+        2
+      ],
+      "title": "Interlude Alec",
+      "full_title": "68.2 Interlude Alec",
+      "post_id": 23680225,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1175#post-23680225",
+      "publish_ts": 1649906881,
+      "publish_iso": "2022-04-13T23:28:01-0400",
+      "words_text": "5.4k",
+      "words_approx": 5400,
+      "likes": 988,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "68.3",
+      "sort_key": [
+        68,
+        3
+      ],
+      "title": "Interlude Sabah",
+      "full_title": "68.3 Interlude Sabah",
+      "post_id": 23752986,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1182#post-23752986",
+      "publish_ts": 1650515258,
+      "publish_iso": "2022-04-21T00:27:38-0400",
+      "words_text": "8.8k",
+      "words_approx": 8800,
+      "likes": 845,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "69",
+      "sort_key": [
+        69,
+        0
+      ],
+      "title": "Magic Instruction",
+      "full_title": "69 Magic Instruction",
+      "post_id": 23822298,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1200#post-23822298",
+      "publish_ts": 1651118817,
+      "publish_iso": "2022-04-28T00:06:57-0400",
+      "words_text": "9.9k",
+      "words_approx": 9900,
+      "likes": 729,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "70",
+      "sort_key": [
+        70,
+        0
+      ],
+      "title": "Media Presence",
+      "full_title": "70 Media Presence",
+      "post_id": 23890872,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1208#post-23890872",
+      "publish_ts": 1651723558,
+      "publish_iso": "2022-05-05T00:05:58-0400",
+      "words_text": "7.3k",
+      "words_approx": 7300,
+      "likes": 807,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "71",
+      "sort_key": [
+        71,
+        0
+      ],
+      "title": "Good Faith - Preamble PHO",
+      "full_title": "71 Good Faith - Preamble PHO",
+      "post_id": 23957025,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1219#post-23957025",
+      "publish_ts": 1652328031,
+      "publish_iso": "2022-05-12T00:00:31-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 797,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "72",
+      "sort_key": [
+        72,
+        0
+      ],
+      "title": "Cakewalk",
+      "full_title": "72 Cakewalk",
+      "post_id": 24028776,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1232#post-24028776",
+      "publish_ts": 1652936875,
+      "publish_iso": "2022-05-19T01:07:55-0400",
+      "words_text": "6.9k",
+      "words_approx": 6900,
+      "likes": 740,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "73",
+      "sort_key": [
+        73,
+        0
+      ],
+      "title": "Head Trip",
+      "full_title": "73 Head Trip",
+      "post_id": 24102027,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1240#post-24102027",
+      "publish_ts": 1653538191,
+      "publish_iso": "2022-05-26T00:09:51-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 683,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p4.mht"
+    },
+    {
+      "chapter_num": "74",
+      "sort_key": [
+        74,
+        0
+      ],
+      "title": "Hard Talk",
+      "full_title": "74 Hard Talk",
+      "post_id": 24178117,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1248#post-24178117",
+      "publish_ts": 1654143109,
+      "publish_iso": "2022-06-02T00:11:49-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 774,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "74.1",
+      "sort_key": [
+        74,
+        1
+      ],
+      "title": "Interlude Mike",
+      "full_title": "74.1 Interlude Mike",
+      "post_id": 24323064,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1259#post-24323064",
+      "publish_ts": 1655352825,
+      "publish_iso": "2022-06-16T00:13:45-0400",
+      "words_text": "4.6k",
+      "words_approx": 4600,
+      "likes": 832,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "74.2",
+      "sort_key": [
+        74,
+        2
+      ],
+      "title": "Interlude Lisa",
+      "full_title": "74.2 Interlude Lisa",
+      "post_id": 24399431,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1266#post-24399431",
+      "publish_ts": 1655956937,
+      "publish_iso": "2022-06-23T00:02:17-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 891,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "75",
+      "sort_key": [
+        75,
+        0
+      ],
+      "title": "Wind Down",
+      "full_title": "75 Wind Down",
+      "post_id": 24560067,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1279#post-24560067",
+      "publish_ts": 1657164879,
+      "publish_iso": "2022-07-06T23:34:39-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 770,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "76",
+      "sort_key": [
+        76,
+        0
+      ],
+      "title": "Wrap Up",
+      "full_title": "76 Wrap Up",
+      "post_id": 24639528,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1290#post-24639528",
+      "publish_ts": 1657773674,
+      "publish_iso": "2022-07-14T00:41:14-0400",
+      "words_text": "7.6k",
+      "words_approx": 7600,
+      "likes": 753,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "76.1",
+      "sort_key": [
+        76,
+        1
+      ],
+      "title": "Interlude Emma",
+      "full_title": "76.1 Interlude Emma",
+      "post_id": 24716057,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1295#post-24716057",
+      "publish_ts": 1658371325,
+      "publish_iso": "2022-07-20T22:42:05-0400",
+      "words_text": "4.4k",
+      "words_approx": 4400,
+      "likes": 708,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "76.2",
+      "sort_key": [
+        76,
+        2
+      ],
+      "title": "Interlude Victor",
+      "full_title": "76.2 Interlude Victor",
+      "post_id": 24799385,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1304#post-24799385",
+      "publish_ts": 1658984342,
+      "publish_iso": "2022-07-28T00:59:02-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 828,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "77",
+      "sort_key": [
+        77,
+        0
+      ],
+      "title": "Determination - Preamble Mimi",
+      "full_title": "77 Determination - Preamble Mimi",
+      "post_id": 24879035,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1321#post-24879035",
+      "publish_ts": 1659584558,
+      "publish_iso": "2022-08-03T23:42:38-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 722,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "78",
+      "sort_key": [
+        78,
+        0
+      ],
+      "title": "Consolidation",
+      "full_title": "78 Consolidation",
+      "post_id": 24953294,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1336#post-24953294",
+      "publish_ts": 1660188724,
+      "publish_iso": "2022-08-10T23:32:04-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 654,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "79",
+      "sort_key": [
+        79,
+        0
+      ],
+      "title": "Preliminary Work",
+      "full_title": "79 Preliminary Work",
+      "post_id": 25031959,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1344#post-25031959",
+      "publish_ts": 1660798256,
+      "publish_iso": "2022-08-18T00:50:56-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 599,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "80",
+      "sort_key": [
+        80,
+        0
+      ],
+      "title": "Analysis and Reflections",
+      "full_title": "80 Analysis and Reflections",
+      "post_id": 25104723,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1351#post-25104723",
+      "publish_ts": 1661401939,
+      "publish_iso": "2022-08-25T00:32:19-0400",
+      "words_text": "8.7k",
+      "words_approx": 8700,
+      "likes": 664,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "81",
+      "sort_key": [
+        81,
+        0
+      ],
+      "title": "Augmentations",
+      "full_title": "81 Augmentations",
+      "post_id": 25178391,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1357#post-25178391",
+      "publish_ts": 1662003689,
+      "publish_iso": "2022-08-31T23:41:29-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 624,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "82",
+      "sort_key": [
+        82,
+        0
+      ],
+      "title": "Bargaining - Addendum Uppercrust",
+      "full_title": "82 Bargaining - Addendum Uppercrust",
+      "post_id": 25325450,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1369#post-25325450",
+      "publish_ts": 1663214093,
+      "publish_iso": "2022-09-14T23:54:53-0400",
+      "words_text": "24k",
+      "words_approx": 24000,
+      "likes": 851,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "82.1",
+      "sort_key": [
+        82,
+        1
+      ],
+      "title": "Interlude Uppercrust",
+      "full_title": "82.1 Interlude Uppercrust",
+      "post_id": 25395441,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1381#post-25395441",
+      "publish_ts": 1663821117,
+      "publish_iso": "2022-09-22T00:31:57-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 817,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "83",
+      "sort_key": [
+        83,
+        0
+      ],
+      "title": "Check In",
+      "full_title": "83 Check In",
+      "post_id": 25477869,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1391#post-25477869",
+      "publish_ts": 1664426602,
+      "publish_iso": "2022-09-29T00:43:22-0400",
+      "words_text": "6.2k",
+      "words_approx": 6200,
+      "likes": 683,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "83.1",
+      "sort_key": [
+        83,
+        1
+      ],
+      "title": "Interlude Alec - Addendum Joe",
+      "full_title": "83.1 Interlude Alec - Addendum Joe",
+      "post_id": 25549230,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1398#post-25549230",
+      "publish_ts": 1665030162,
+      "publish_iso": "2022-10-06T00:22:42-0400",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 773,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "84",
+      "sort_key": [
+        84,
+        0
+      ],
+      "title": "Pick Up",
+      "full_title": "84 Pick Up",
+      "post_id": 25690393,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1412#post-25690393",
+      "publish_ts": 1666238361,
+      "publish_iso": "2022-10-19T23:59:21-0400",
+      "words_text": "6.6k",
+      "words_approx": 6600,
+      "likes": 753,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "85",
+      "sort_key": [
+        85,
+        0
+      ],
+      "title": "Drop Off",
+      "full_title": "85 Drop Off",
+      "post_id": 25827217,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1422#post-25827217",
+      "publish_ts": 1667449097,
+      "publish_iso": "2022-11-03T00:18:17-0400",
+      "words_text": "9.5k",
+      "words_approx": 9500,
+      "likes": 684,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "85.1",
+      "sort_key": [
+        85,
+        1
+      ],
+      "title": "Interlude Taylor",
+      "full_title": "85.1 Interlude Taylor",
+      "post_id": 25972690,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1429#post-25972690",
+      "publish_ts": 1668661583,
+      "publish_iso": "2022-11-17T00:06:23-0500",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 806,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "86",
+      "sort_key": [
+        86,
+        0
+      ],
+      "title": "Pack Up",
+      "full_title": "86 Pack Up",
+      "post_id": 26038605,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1437#post-26038605",
+      "publish_ts": 1669267357,
+      "publish_iso": "2022-11-24T00:22:37-0500",
+      "words_text": "5.5k",
+      "words_approx": 5500,
+      "likes": 682,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "87",
+      "sort_key": [
+        87,
+        0
+      ],
+      "title": "Close Out",
+      "full_title": "87 Close Out",
+      "post_id": 26108127,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1443#post-26108127",
+      "publish_ts": 1669871054,
+      "publish_iso": "2022-12-01T00:04:14-0500",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 689,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "87.1",
+      "sort_key": [
+        87,
+        1
+      ],
+      "title": "Interlude Rory",
+      "full_title": "87.1 Interlude Rory",
+      "post_id": 26180979,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1449#post-26180979",
+      "publish_ts": 1670476345,
+      "publish_iso": "2022-12-08T00:12:25-0500",
+      "words_text": "5.4k",
+      "words_approx": 5400,
+      "likes": 817,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "88",
+      "sort_key": [
+        88,
+        0
+      ],
+      "title": "Perspectives",
+      "full_title": "88 Perspectives",
+      "post_id": 26325272,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1456#post-26325272",
+      "publish_ts": 1671685873,
+      "publish_iso": "2022-12-22T00:11:13-0500",
+      "words_text": "24k",
+      "words_approx": 24000,
+      "likes": 728,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "88.1",
+      "sort_key": [
+        88,
+        1
+      ],
+      "title": "Interlude Brian",
+      "full_title": "88.1 Interlude Brian",
+      "post_id": 26474042,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1466#post-26474042",
+      "publish_ts": 1672893160,
+      "publish_iso": "2023-01-04T23:32:40-0500",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 864,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "89",
+      "sort_key": [
+        89,
+        0
+      ],
+      "title": "Divine Mechanics",
+      "full_title": "89 Divine Mechanics",
+      "post_id": 26554991,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1473#post-26554991",
+      "publish_ts": 1673498559,
+      "publish_iso": "2023-01-11T23:42:39-0500",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 751,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p5.mht"
+    },
+    {
+      "chapter_num": "89.1",
+      "sort_key": [
+        89,
+        1
+      ],
+      "title": "Interlude Neil",
+      "full_title": "89.1 Interlude Neil",
+      "post_id": 26635409,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1487#post-26635409",
+      "publish_ts": 1674102765,
+      "publish_iso": "2023-01-18T23:32:45-0500",
+      "words_text": "5.3k",
+      "words_approx": 5300,
+      "likes": 784,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "90",
+      "sort_key": [
+        90,
+        0
+      ],
+      "title": "Outreach - Addendum Taylor",
+      "full_title": "90 Outreach - Addendum Taylor",
+      "post_id": 26778950,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1493#post-26778950",
+      "publish_ts": 1675316351,
+      "publish_iso": "2023-02-02T00:39:11-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 732,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "91",
+      "sort_key": [
+        91,
+        0
+      ],
+      "title": "Callout",
+      "full_title": "91 Callout",
+      "post_id": 26846267,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1501#post-26846267",
+      "publish_ts": 1675918290,
+      "publish_iso": "2023-02-08T23:51:30-0500",
+      "words_text": "6.1k",
+      "words_approx": 6100,
+      "likes": 745,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "92",
+      "sort_key": [
+        92,
+        0
+      ],
+      "title": "Opened Discourse",
+      "full_title": "92 Opened Discourse",
+      "post_id": 26995128,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1509#post-26995128",
+      "publish_ts": 1677130195,
+      "publish_iso": "2023-02-23T00:29:55-0500",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 656,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "93",
+      "sort_key": [
+        93,
+        0
+      ],
+      "title": "Loom and Thread",
+      "full_title": "93 Loom and Thread",
+      "post_id": 27072453,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1515#post-27072453",
+      "publish_ts": 1677734274,
+      "publish_iso": "2023-03-02T00:17:54-0500",
+      "words_text": "8.4k",
+      "words_approx": 8400,
+      "likes": 612,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "94",
+      "sort_key": [
+        94,
+        0
+      ],
+      "title": "Weaving",
+      "full_title": "94 Weaving",
+      "post_id": 27219039,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1521#post-27219039",
+      "publish_ts": 1678941939,
+      "publish_iso": "2023-03-16T00:45:39-0400",
+      "words_text": "6.9k",
+      "words_approx": 6900,
+      "likes": 762,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "94.1",
+      "sort_key": [
+        94,
+        1
+      ],
+      "title": "Interlude Aisha",
+      "full_title": "94.1 Interlude Aisha",
+      "post_id": 27367548,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1527#post-27367548",
+      "publish_ts": 1680151350,
+      "publish_iso": "2023-03-30T00:42:30-0400",
+      "words_text": "7.1k",
+      "words_approx": 7100,
+      "likes": 702,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95",
+      "sort_key": [
+        95,
+        0
+      ],
+      "title": "Instant Replay",
+      "full_title": "95 Instant Replay",
+      "post_id": 27448743,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1532#post-27448743",
+      "publish_ts": 1680755163,
+      "publish_iso": "2023-04-06T00:26:03-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 649,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95.1,",
+      "sort_key": [
+        95,
+        1
+      ],
+      "title": "Interlude Crystal - Preamble Mike",
+      "full_title": "95.1, Interlude Crystal - Preamble Mike",
+      "post_id": 27596331,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1540#post-27596331",
+      "publish_ts": 1681964080,
+      "publish_iso": "2023-04-20T00:14:40-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 831,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95.2",
+      "sort_key": [
+        95,
+        2
+      ],
+      "title": "Interlude Amy",
+      "full_title": "95.2 Interlude Amy",
+      "post_id": 27677181,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1546#post-27677181",
+      "publish_ts": 1682569333,
+      "publish_iso": "2023-04-27T00:22:13-0400",
+      "words_text": "7.8k",
+      "words_approx": 7800,
+      "likes": 848,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95.3",
+      "sort_key": [
+        95,
+        3
+      ],
+      "title": "Interlude Amy - Addendum Mags",
+      "full_title": "95.3 Interlude Amy - Addendum Mags",
+      "post_id": 27823629,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1555#post-27823629",
+      "publish_ts": 1683780319,
+      "publish_iso": "2023-05-11T00:45:19-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 794,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95.4",
+      "sort_key": [
+        95,
+        4
+      ],
+      "title": "Interlude Colin",
+      "full_title": "95.4 Interlude Colin",
+      "post_id": 27969164,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1564#post-27969164",
+      "publish_ts": 1684987304,
+      "publish_iso": "2023-05-25T00:01:44-0400",
+      "words_text": "19k",
+      "words_approx": 19000,
+      "likes": 877,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95.5",
+      "sort_key": [
+        95,
+        5
+      ],
+      "title": "Interlude Gregor - Shawn",
+      "full_title": "95.5 Interlude Gregor - Shawn",
+      "post_id": 28117913,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1577#post-28117913",
+      "publish_ts": 1686198098,
+      "publish_iso": "2023-06-08T00:21:38-0400",
+      "words_text": "20k",
+      "words_approx": 20000,
+      "likes": 845,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "95.6",
+      "sort_key": [
+        95,
+        6
+      ],
+      "title": "Interlude Rey",
+      "full_title": "95.6 Interlude Rey",
+      "post_id": 28274697,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1590#post-28274697",
+      "publish_ts": 1687408851,
+      "publish_iso": "2023-06-22T00:40:51-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 761,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "96",
+      "sort_key": [
+        96,
+        0
+      ],
+      "title": "Breakthrough",
+      "full_title": "96 Breakthrough",
+      "post_id": 28429842,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1598#post-28429842",
+      "publish_ts": 1688616280,
+      "publish_iso": "2023-07-06T00:04:40-0400",
+      "words_text": "26k",
+      "words_approx": 26000,
+      "likes": 718,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "96.1",
+      "sort_key": [
+        96,
+        1
+      ],
+      "title": "Interlude Uppercrust - Addendum Joe",
+      "full_title": "96.1 Interlude Uppercrust - Addendum Joe",
+      "post_id": 28585576,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1611#post-28585576",
+      "publish_ts": 1689828131,
+      "publish_iso": "2023-07-20T00:42:11-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 710,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "97",
+      "sort_key": [
+        97,
+        0
+      ],
+      "title": "Confrontations – Preamble Carol",
+      "full_title": "97 Confrontations – Preamble Carol",
+      "post_id": 28753690,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1624#post-28753690",
+      "publish_ts": 1691125367,
+      "publish_iso": "2023-08-04T01:02:47-0400",
+      "words_text": "23k",
+      "words_approx": 23000,
+      "likes": 804,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "98",
+      "sort_key": [
+        98,
+        0
+      ],
+      "title": "Finite Resolutions",
+      "full_title": "98 Finite Resolutions",
+      "post_id": 28878462,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1640#post-28878462",
+      "publish_ts": 1692247173,
+      "publish_iso": "2023-08-17T00:39:33-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 799,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "98.1",
+      "sort_key": [
+        98,
+        1
+      ],
+      "title": "Interlude Taylor - Preamble Emma - Addendum Danny",
+      "full_title": "98.1 Interlude Taylor - Preamble Emma - Addendum Danny",
+      "post_id": 29009233,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1656#post-29009233",
+      "publish_ts": 1693542460,
+      "publish_iso": "2023-09-01T00:27:40-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 915,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "99",
+      "sort_key": [
+        99,
+        0
+      ],
+      "title": "Main Event - Preamble Hemorrhagia",
+      "full_title": "99 Main Event - Preamble Hemorrhagia",
+      "post_id": 29130757,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1671#post-29130757",
+      "publish_ts": 1694751752,
+      "publish_iso": "2023-09-15T00:22:32-0400",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 790,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "99.1",
+      "sort_key": [
+        99,
+        1
+      ],
+      "title": "Interlude Tetra",
+      "full_title": "99.1 Interlude Tetra",
+      "post_id": 29256943,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1689#post-29256943",
+      "publish_ts": 1695875648,
+      "publish_iso": "2023-09-28T00:34:08-0400",
+      "words_text": "7.7k",
+      "words_approx": 7700,
+      "likes": 677,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "99.2",
+      "sort_key": [
+        99,
+        2
+      ],
+      "title": "Interlude Gully",
+      "full_title": "99.2 Interlude Gully",
+      "post_id": 29407634,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1700#post-29407634",
+      "publish_ts": 1697172579,
+      "publish_iso": "2023-10-13T00:49:39-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 887,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "99.3",
+      "sort_key": [
+        99,
+        3
+      ],
+      "title": "Interlude Tammi - Addendum Joe",
+      "full_title": "99.3 Interlude Tammi - Addendum Joe",
+      "post_id": 29614445,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1713#post-29614445",
+      "publish_ts": 1698900587,
+      "publish_iso": "2023-11-02T00:49:47-0400",
+      "words_text": "20k",
+      "words_approx": 20000,
+      "likes": 830,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "100",
+      "sort_key": [
+        100,
+        0
+      ],
+      "title": "Revelations",
+      "full_title": "100 Revelations",
+      "post_id": 29766044,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1725#post-29766044",
+      "publish_ts": 1700199780,
+      "publish_iso": "2023-11-17T00:43:00-0500",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 793,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "100.1",
+      "sort_key": [
+        100,
+        1
+      ],
+      "title": "Interlude Sabah",
+      "full_title": "100.1 Interlude Sabah",
+      "post_id": 30283018,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1744#post-30283018",
+      "publish_ts": 1704347668,
+      "publish_iso": "2024-01-04T00:54:28-0500",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 818,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p6.mht"
+    },
+    {
+      "chapter_num": "101",
+      "sort_key": [
+        101,
+        0
+      ],
+      "title": "Catharsis",
+      "full_title": "101 Catharsis",
+      "post_id": 30443074,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1772#post-30443074",
+      "publish_ts": 1705643369,
+      "publish_iso": "2024-01-19T00:49:29-0500",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 696,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "102",
+      "sort_key": [
+        102,
+        0
+      ],
+      "title": "Progress",
+      "full_title": "102 Progress",
+      "post_id": 30648466,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1791#post-30648466",
+      "publish_ts": 1707369991,
+      "publish_iso": "2024-02-08T00:26:31-0500",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 614,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "103",
+      "sort_key": [
+        103,
+        0
+      ],
+      "title": "Calls and Connections - Addendum Accord",
+      "full_title": "103 Calls and Connections - Addendum Accord",
+      "post_id": 30802886,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1799#post-30802886",
+      "publish_ts": 1708663686,
+      "publish_iso": "2024-02-22T23:48:06-0500",
+      "words_text": "22k",
+      "words_approx": 22000,
+      "likes": 781,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "104",
+      "sort_key": [
+        104,
+        0
+      ],
+      "title": "Loose Ends",
+      "full_title": "104 Loose Ends",
+      "post_id": 30939206,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1810#post-30939206",
+      "publish_ts": 1709874920,
+      "publish_iso": "2024-03-08T00:15:20-0500",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 695,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "104.1",
+      "sort_key": [
+        104,
+        1
+      ],
+      "title": "Interlude Hannah - Addendum Joe",
+      "full_title": "104.1 Interlude Hannah - Addendum Joe",
+      "post_id": 31116031,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1817#post-31116031",
+      "publish_ts": 1711601890,
+      "publish_iso": "2024-03-28T00:58:10-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 808,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "104.2",
+      "sort_key": [
+        104,
+        2
+      ],
+      "title": "Interlude Rachel - Addendum Joe",
+      "full_title": "104.2 Interlude Rachel - Addendum Joe",
+      "post_id": 31260643,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1824#post-31260643",
+      "publish_ts": 1712894340,
+      "publish_iso": "2024-04-11T23:59:00-0400",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 819,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "105",
+      "sort_key": [
+        105,
+        0
+      ],
+      "title": "Morning Review",
+      "full_title": "105 Morning Review",
+      "post_id": 31384984,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1831#post-31384984",
+      "publish_ts": 1714020715,
+      "publish_iso": "2024-04-25T00:51:55-0400",
+      "words_text": "9.9k",
+      "words_approx": 9900,
+      "likes": 745,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "106",
+      "sort_key": [
+        106,
+        0
+      ],
+      "title": "Unveiled Plans",
+      "full_title": "106 Unveiled Plans",
+      "post_id": 31529313,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1841#post-31529313",
+      "publish_ts": 1715229808,
+      "publish_iso": "2024-05-09T00:43:28-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 721,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "107",
+      "sort_key": [
+        107,
+        0
+      ],
+      "title": "Coffee Time",
+      "full_title": "107 Coffee Time",
+      "post_id": 31733703,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1852#post-31733703",
+      "publish_ts": 1717044068,
+      "publish_iso": "2024-05-30T00:41:08-0400",
+      "words_text": "19k",
+      "words_approx": 19000,
+      "likes": 786,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "108",
+      "sort_key": [
+        108,
+        0
+      ],
+      "title": "Raised Colors",
+      "full_title": "108 Raised Colors",
+      "post_id": 31878594,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1860#post-31878594",
+      "publish_ts": 1718337784,
+      "publish_iso": "2024-06-14T00:03:04-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 720,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "108.1",
+      "sort_key": [
+        108,
+        1
+      ],
+      "title": "Interlude Armstrong",
+      "full_title": "108.1 Interlude Armstrong",
+      "post_id": 32068440,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1868#post-32068440",
+      "publish_ts": 1720153450,
+      "publish_iso": "2024-07-05T00:24:10-0400",
+      "words_text": "6.3k",
+      "words_approx": 6300,
+      "likes": 902,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "108.2",
+      "sort_key": [
+        108,
+        2
+      ],
+      "title": "Interlude Armstrong",
+      "full_title": "108.2 Interlude Armstrong",
+      "post_id": 32264322,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1878#post-32264322",
+      "publish_ts": 1721882208,
+      "publish_iso": "2024-07-25T00:36:48-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 783,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "108.3",
+      "sort_key": [
+        108,
+        3
+      ],
+      "title": "Interlude Armstrong",
+      "full_title": "108.3 Interlude Armstrong",
+      "post_id": 32460451,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1887#post-32460451",
+      "publish_ts": 1723781156,
+      "publish_iso": "2024-08-16T00:05:56-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 911,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "109",
+      "sort_key": [
+        109,
+        0
+      ],
+      "title": "Points of Contact - Addendum Lily",
+      "full_title": "109 Points of Contact - Addendum Lily",
+      "post_id": 32575723,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1894#post-32575723",
+      "publish_ts": 1724905483,
+      "publish_iso": "2024-08-29T00:24:43-0400",
+      "words_text": "17k",
+      "words_approx": 17000,
+      "likes": 802,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "109.1",
+      "sort_key": [
+        109,
+        1
+      ],
+      "title": "Interlude Lily",
+      "full_title": "109.1 Interlude Lily",
+      "post_id": 32721913,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1908#post-32721913",
+      "publish_ts": 1726204241,
+      "publish_iso": "2024-09-13T01:10:41-0400",
+      "words_text": "18k",
+      "words_approx": 18000,
+      "likes": 932,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "110",
+      "sort_key": [
+        110,
+        0
+      ],
+      "title": "Tangential Concerns",
+      "full_title": "110 Tangential Concerns",
+      "post_id": 32858261,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1922#post-32858261",
+      "publish_ts": 1727411403,
+      "publish_iso": "2024-09-27T00:30:03-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 690,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "110.1",
+      "sort_key": [
+        110,
+        1
+      ],
+      "title": "Interlude Gully",
+      "full_title": "110.1 Interlude Gully",
+      "post_id": 32984150,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1931#post-32984150",
+      "publish_ts": 1728536179,
+      "publish_iso": "2024-10-10T00:56:19-0400",
+      "words_text": "19k",
+      "words_approx": 19000,
+      "likes": 1002,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "110.2",
+      "sort_key": [
+        110,
+        2
+      ],
+      "title": "Interlude Gully",
+      "full_title": "110.2 Interlude Gully",
+      "post_id": 33139256,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1946#post-33139256",
+      "publish_ts": 1729744107,
+      "publish_iso": "2024-10-24T00:28:27-0400",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 899,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "110.3",
+      "sort_key": [
+        110,
+        3
+      ],
+      "title": "Interlude Everett - Addendum Joe",
+      "full_title": "110.3 Interlude Everett - Addendum Joe",
+      "post_id": 33287714,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1957#post-33287714",
+      "publish_ts": 1731042823,
+      "publish_iso": "2024-11-08T00:13:43-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 731,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "111",
+      "sort_key": [
+        111,
+        0
+      ],
+      "title": "Encounter",
+      "full_title": "111 Encounter",
+      "post_id": 33477422,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1971#post-33477422",
+      "publish_ts": 1732858038,
+      "publish_iso": "2024-11-29T00:27:18-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 799,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "111.1",
+      "sort_key": [
+        111,
+        1
+      ],
+      "title": "Interlude Brian",
+      "full_title": "111.1 Interlude Brian",
+      "post_id": 33700007,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1979#post-33700007",
+      "publish_ts": 1734674761,
+      "publish_iso": "2024-12-20T01:06:01-0500",
+      "words_text": "9.9k",
+      "words_approx": 9900,
+      "likes": 921,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "111.2",
+      "sort_key": [
+        111,
+        2
+      ],
+      "title": "Interlude Grue",
+      "full_title": "111.2 Interlude Grue",
+      "post_id": 33934568,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-1990#post-33934568",
+      "publish_ts": 1736488339,
+      "publish_iso": "2025-01-10T00:52:19-0500",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 887,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "111.3",
+      "sort_key": [
+        111,
+        3
+      ],
+      "title": "Interlude Brian",
+      "full_title": "111.3 Interlude Brian",
+      "post_id": 34175768,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2000#post-34175768",
+      "publish_ts": 1738212139,
+      "publish_iso": "2025-01-29T23:42:19-0500",
+      "words_text": "9.7k",
+      "words_approx": 9700,
+      "likes": 862,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "112",
+      "sort_key": [
+        112,
+        0
+      ],
+      "title": "Dispatch",
+      "full_title": "112 Dispatch",
+      "post_id": 34388987,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2004#post-34388987",
+      "publish_ts": 1740027337,
+      "publish_iso": "2025-02-19T23:55:37-0500",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 696,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "113",
+      "sort_key": [
+        113,
+        0
+      ],
+      "title": "Disrupted Discourse",
+      "full_title": "113 Disrupted Discourse",
+      "post_id": 34590869,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2010#post-34590869",
+      "publish_ts": 1741926398,
+      "publish_iso": "2025-03-14T00:26:38-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 704,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p7.mht"
+    },
+    {
+      "chapter_num": "113.1",
+      "sort_key": [
+        113,
+        1
+      ],
+      "title": "Interlude Taylor",
+      "full_title": "113.1 Interlude Taylor",
+      "post_id": 34709084,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2016#post-34709084",
+      "publish_ts": 1743049098,
+      "publish_iso": "2025-03-27T00:18:18-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 925,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "113.2",
+      "sort_key": [
+        113,
+        2
+      ],
+      "title": "Interlude Alan",
+      "full_title": "113.2 Interlude Alan",
+      "post_id": 34900448,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2028#post-34900448",
+      "publish_ts": 1744952923,
+      "publish_iso": "2025-04-18T01:08:43-0400",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 859,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "113.3",
+      "sort_key": [
+        113,
+        3
+      ],
+      "title": "Interlude Armstrong",
+      "full_title": "113.3 Interlude Armstrong",
+      "post_id": 35085056,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2041#post-35085056",
+      "publish_ts": 1746766740,
+      "publish_iso": "2025-05-09T00:59:00-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 841,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "114",
+      "sort_key": [
+        114,
+        0
+      ],
+      "title": "Manic Recovery",
+      "full_title": "114 Manic Recovery",
+      "post_id": 35256683,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2047#post-35256683",
+      "publish_ts": 1748580327,
+      "publish_iso": "2025-05-30T00:45:27-0400",
+      "words_text": "15k",
+      "words_approx": 15000,
+      "likes": 635,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "115",
+      "sort_key": [
+        115,
+        0
+      ],
+      "title": "Recontextualize",
+      "full_title": "115 Recontextualize",
+      "post_id": 35438180,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2052#post-35438180",
+      "publish_ts": 1750395014,
+      "publish_iso": "2025-06-20T00:50:14-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 644,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "116",
+      "sort_key": [
+        116,
+        0
+      ],
+      "title": "Spirited",
+      "full_title": "116 Spirited",
+      "post_id": 35626178,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2062#post-35626178",
+      "publish_ts": 1752122722,
+      "publish_iso": "2025-07-10T00:45:22-0400",
+      "words_text": "16k",
+      "words_approx": 16000,
+      "likes": 738,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "116.1",
+      "sort_key": [
+        116,
+        1
+      ],
+      "title": "Interlude Amy",
+      "full_title": "116.1 Interlude Amy",
+      "post_id": 35826722,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2070#post-35826722",
+      "publish_ts": 1754024445,
+      "publish_iso": "2025-08-01T01:00:45-0400",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 856,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "116.2",
+      "sort_key": [
+        116,
+        2
+      ],
+      "title": "Interlude Panacea - Preamble Vicky",
+      "full_title": "116.2 Interlude Panacea - Preamble Vicky",
+      "post_id": 36090454,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2080#post-36090454",
+      "publish_ts": 1756442053,
+      "publish_iso": "2025-08-29T00:34:13-0400",
+      "words_text": "48k",
+      "words_approx": 48000,
+      "likes": 783,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "116.3",
+      "sort_key": [
+        116,
+        3
+      ],
+      "title": "Interlude Crystal - Addendum Joe",
+      "full_title": "116.3 Interlude Crystal - Addendum Joe",
+      "post_id": 36340525,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2096#post-36340525",
+      "publish_ts": 1758777693,
+      "publish_iso": "2025-09-25T01:21:33-0400",
+      "words_text": "21k",
+      "words_approx": 21000,
+      "likes": 582,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "117",
+      "sort_key": [
+        117,
+        0
+      ],
+      "title": "Talking Shop",
+      "full_title": "117 Talking Shop",
+      "post_id": 36617173,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2104#post-36617173",
+      "publish_ts": 1761194354,
+      "publish_iso": "2025-10-23T00:39:14-0400",
+      "words_text": "12k",
+      "words_approx": 12000,
+      "likes": 615,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "118",
+      "sort_key": [
+        118,
+        0
+      ],
+      "title": "Roles and Reflection",
+      "full_title": "118 Roles and Reflection",
+      "post_id": 36895319,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2110#post-36895319",
+      "publish_ts": 1763702618,
+      "publish_iso": "2025-11-21T00:23:38-0500",
+      "words_text": "14k",
+      "words_approx": 14000,
+      "likes": 480,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "119",
+      "sort_key": [
+        119,
+        0
+      ],
+      "title": "Astrological Engineering",
+      "full_title": "119 Astrological Engineering",
+      "post_id": 37017656,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2113#post-37017656",
+      "publish_ts": 1764910762,
+      "publish_iso": "2025-12-04T23:59:22-0500",
+      "words_text": "7.8k",
+      "words_approx": 7800,
+      "likes": 540,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "119.1",
+      "sort_key": [
+        119,
+        1
+      ],
+      "title": "Interlude Chen",
+      "full_title": "119.1 Interlude Chen",
+      "post_id": 37131131,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2117#post-37131131",
+      "publish_ts": 1766122760,
+      "publish_iso": "2025-12-19T00:39:20-0500",
+      "words_text": "10k",
+      "words_approx": 10000,
+      "likes": 682,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "119.2",
+      "sort_key": [
+        119,
+        2
+      ],
+      "title": "Interlude Dennis",
+      "full_title": "119.2 Interlude Dennis",
+      "post_id": 37357127,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2123#post-37357127",
+      "publish_ts": 1768541777,
+      "publish_iso": "2026-01-16T00:36:17-0500",
+      "words_text": "25k",
+      "words_approx": 25000,
+      "likes": 768,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "119.3",
+      "sort_key": [
+        119,
+        3
+      ],
+      "title": "Interlude Gregor",
+      "full_title": "119.3 Interlude Gregor",
+      "post_id": 37474091,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2130#post-37474091",
+      "publish_ts": 1769751692,
+      "publish_iso": "2026-01-30T00:41:32-0500",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 668,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "119.4",
+      "sort_key": [
+        119,
+        4
+      ],
+      "title": "Interlude Elle",
+      "full_title": "119.4 Interlude Elle",
+      "post_id": 37629101,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2135#post-37629101",
+      "publish_ts": 1771476222,
+      "publish_iso": "2026-02-18T23:43:42-0500",
+      "words_text": "13k",
+      "words_approx": 13000,
+      "likes": 642,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "119.5",
+      "sort_key": [
+        119,
+        5
+      ],
+      "title": "Interlude Labyrinth",
+      "full_title": "119.5 Interlude Labyrinth",
+      "post_id": 37739514,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2138#post-37739514",
+      "publish_ts": 1772776244,
+      "publish_iso": "2026-03-06T00:50:44-0500",
+      "words_text": "26k",
+      "words_approx": 26000,
+      "likes": 566,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "120",
+      "sort_key": [
+        120,
+        0
+      ],
+      "title": "Realms - Addendum Keith",
+      "full_title": "120 Realms - Addendum Keith",
+      "post_id": 37888914,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2144#post-37888914",
+      "publish_ts": 1774584722,
+      "publish_iso": "2026-03-27T00:12:02-0400",
+      "words_text": "11k",
+      "words_approx": 11000,
+      "likes": 528,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    },
+    {
+      "chapter_num": "120.1",
+      "sort_key": [
+        120,
+        1
+      ],
+      "title": "Interlude Kurt - Preamble Legend",
+      "full_title": "120.1 Interlude Kurt - Preamble Legend",
+      "post_id": 38037807,
+      "post_url": "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/page-2148#post-38037807",
+      "publish_ts": 1776315614,
+      "publish_iso": "2026-04-16T01:00:14-0400",
+      "words_text": "28k",
+      "words_approx": 28000,
+      "likes": 704,
+      "author": "LordRoustabout",
+      "source_file": "threadmarks_p8.mht"
+    }
+  ]
+}
