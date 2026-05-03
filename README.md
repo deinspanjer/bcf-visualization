@@ -21,13 +21,12 @@ This is an exploratory project; the plan is iterative and not yet locked down.
 
 ### Chapter 97 "Confrontations" rule changes
 
-Author's note in the chapter introduced two modifications, intended to
-slow the perk acquisition rate. The note isn't in either EPUB; the
-canonical text was relayed via the project Discord.
+Author's note in the chapter introduced modifications intended to slow
+the perk acquisition rate. The note isn't in either EPUB; the canonical
+text was relayed via the project Discord.
 
 **Change 1 — slower base rate.** 100 CP now requires **3000 words**
-(was 2000), and rolls happen **every 200 CP** = every 6000 words (was
-every 4000).
+(was 2000).
 
 **Change 2 — recovery shadow on 600/800 perks.** After a 600- or
 800-point perk is acquired, *no CP is banked at all* until words equal
@@ -44,12 +43,41 @@ the new base rate.
 The author noted further modifications might follow as more
 constellations clear; this is the only documented one so far.
 
+### Roll cadence (open question)
+
+The chapter 97 author note also describes the *prior* roll cadence as
+"rolls every 200 points," in tension with chapter 1's "roll attempted
+every 100 CP" and the curator's xlsx rules box ("Every 100 Points
+gained, LordRoustabout will stop writing and roll dice"). Empirical
+analysis of `rolls.json` settles this for the curator-covered range:
+
+> Across 487 consecutive numbered-roll pairs in chapters 1–75, **472
+> (97%) differ by exactly 100 CP**. The 15 outliers are sheet typos or
+> cluster-purchase artifacts. The 100 CP cadence is stable across
+> every roll-number sub-range (1–100, 100–200, …, 400–503).
+
+Chapters 76–96 are not covered by `rolls.json`, so any silent shift
+between the curator's last data point and the ch97 announcement would
+fall in that gap. Two interpretations:
+
+1. **Trust the data:** the cadence stayed at 100 CP/roll through
+   chapter 96, and the ch97 change moved it to 200 CP/roll along with
+   the words-per-CP rate. The author's wording in the ch97 note is a
+   simplification.
+2. **Trust the author note:** the cadence shifted to 200 CP/roll
+   somewhere in chapters 76–96 and the ch97 change is words-per-CP
+   only. We can't verify this from current data.
+
+Phase 2 modeling defaults to interpretation 1 (direct evidence), with
+the caveat that the regime in chapters 76–96 is empirically unknown.
+
 **Coverage in our data:** 17 600+ acquisitions occur before chapter 97
 (no shadow); 11 are in or after chapter 97 (shadow active). The old
 roll-by-roll xlsx stops at chapter 75, so all per-roll data we have
 predates both changes. The Reference xlsx logs acquisitions through
-chapter 119 but doesn't expose CP banking, so the shadow's effect can't
-be measured against the rule directly without parsing chapter prose.
+chapter 119 but doesn't expose CP banking, so the shadow's effect
+can't be measured against the rule directly without parsing chapter
+prose.
 
 ## Repo layout
 
@@ -113,3 +141,28 @@ Phase 2 consumers should be aware of these.
 
 Phase 1 complete (raw assets, structured derivations, schemas, spot-check).
 Next: static charts as a sanity gate before going interactive.
+
+## Future work
+
+Captured here so they aren't lost between phases:
+
+- **Deterministic word-count → roll matching.** Walk the EPUB chapter
+  prose, accumulate exact running word counts, and at each predicted
+  threshold (100 CP under the original rule, 200 CP after ch97, with
+  shadow blocks subtracted) read the surrounding text for narrative
+  references to a roll occurring. Would let us:
+  - verify or falsify the ch1–96 cadence ambiguity (whether rolls
+    silently shifted from 100 to 200 CP/roll somewhere in 76–96)
+  - cross-validate the Reference xlsx's chapter-97-onward acquisitions
+    against the actual prose
+  - locate the precise word offset of every roll, useful for
+    visualization (a true word-level timeline rather than chapter-level)
+  - extract roll-by-roll banked CP for chapters 76+ where the curator
+    stopped maintaining
+- **Reconciliation pass on the 31 catalog gaps and 56 cosmetic name
+  variants** before any Phase 2 chart that joins rolls.json against
+  perks_catalog.json.
+- **Parsers for the remaining Reference xlsx sheets** (Possible Perks
+  + probabilities, Future Capstone Perks, Soundtrack/Felyne perks,
+  Excluded Media) when their data becomes relevant to a specific
+  visualization.
