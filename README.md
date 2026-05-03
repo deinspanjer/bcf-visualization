@@ -164,19 +164,54 @@ python3 scripts/spot_check.py        # cross-source consistency check
 python3 scripts/make_charts.py       # static charts -> figures/
 ```
 
-## Phase 2: static charts
+## Phase 2: static charts and throughput analytics
 
 `scripts/make_charts.py` reads only `data/derived/*.json` and writes
-five PNGs to `figures/`. They serve as a sanity gate over the parsed
-data and surface findings worth keeping in mind:
+PNGs to `figures/`. Charts lean on Tufte's principles: minimal grids,
+range-frame axes, direct labelling rather than legends, gray for
+context, saturated color only where the chart's argument lives.
+Stacked area is avoided in favor of small multiples.
 
 | File | What it shows |
 |---|---|
-| `figures/publish_pace.png` | Cumulative word count vs real-world publish date. ~1,300 words/day average across 5+ years; visible acceleration through 2024–2026. |
-| `figures/rolls_per_chapter.png` | Hits vs misses per chapter for chapters 1–75 (curator coverage). Hit rate ~38% (191/496); the chapter 41 outlier is the Felyne Comrade introduction with many free-bonus perks. |
+| `figures/publish_pace.png` | Cumulative word count vs real-world publish date, with the three mechanic regimes shaded. Year-end totals labelled directly on the curve; ch91 and ch97 rule changes labelled at top. ~1,300 words/day average across 5+ years. |
+| `figures/throughput_by_year.png` | Small multiples (one panel per calendar year, same axes). Each panel's slope is the year's writing pace; thin gray lines show all other years for context. Pace declined steadily 2020 → 2025, with a partial uptick in 2026. |
+| `figures/throughput_by_regime.png` | Cleveland-style dot plot comparing four throughput metrics across the three mechanic regimes. Headline: words spent per perk acquired tripled from regime 1/2 (~4,200) to regime 3 (~13,300). Words/day and chapters/month both declined ~50% from regime 1 to regime 3. |
+| `figures/rolls_per_chapter.png` | Hits vs misses per chapter for chapters 1–75 (curator coverage). Hit rate ~38% (191/496); chapter 41 outlier is the Felyne Comrade introduction with many free-bonus perks. |
 | `figures/acquisitions_per_chapter.png` | Paid vs free perks per chapter for the full story. The chapter 97 mechanic-change line shows a visible flattening of bar heights afterward. |
-| `figures/constellation_growth.png` | Stacked area of cumulative perks per constellation through chapter 75. Toolkits, Knowledge, and Quality dominate; Capstone activates around chapter 64. |
-| `figures/time_dilation.png` | Real-world publish date by chapter (top) alongside the 14 actively-narrated in-story days (bottom, April 8 → April 25, 2011). 2096 real-world days of writing cover 17 narrated in-story days — a ~123:1 dilation ratio. Backstory references in the data are excluded from the chart; see the In-world timeline section above for the full event list. |
+| `figures/constellation_growth.png` | Small multiples (one panel per constellation, same axes). Each panel shows that constellation's cumulative-acquisition growth across chapters 1–75; the largest constellation (Toolkits) is overlaid in light gray as context. Capstone barely moves until ~ch 64; Personal Reality jumps abruptly near ch 75. |
+| `figures/time_dilation.png` | In-world day progression vs real-world days (left) and cumulative words (right), sharing a y-axis. The L-shape is the dilation: the first 11 in-world days unfold in <130 real-world days; the curve flattens dramatically after that as each remaining in-world day takes hundreds more days of writing. Chapter mapping is approximate. |
+
+### Word-count throughput by year
+
+| Year | Chapters | Words | Span (days) | Words / active day | Median words / chapter |
+|------|---------|------:|------------:|-------------------:|----------------------:|
+| 2020 | 45 | 614,100 | 165 | 3,722 | 13,000 |
+| 2021 | 34 | 589,000 | 351 | 1,678 | 17,000 |
+| 2022 | 44 | 453,200 | 351 | 1,291 | 10,000 |
+| 2023 | 26 | 353,300 | 317 | 1,115 | 13,000 |
+| 2024 | 22 | 314,100 | 352 |   892 | 14,000 |
+| 2025 | 17 | 268,500 | 344 |   781 | 16,000 |
+| 2026 |  6 | 116,000 |  91 | 1,275 | 19,000 |
+
+2020 was the peak (lockdown-era launch). Pace declined steadily through
+2025 (≈5× slowdown from 3,722 → 781 words/day), with 2026 showing a
+modest recovery so far on partial data.
+
+### Word-count throughput by mechanic regime
+
+| Regime | Chapters | Words | Span (days) | Words / day | Acquisitions | Words / acquisition |
+|--------|---------:|------:|------------:|------------:|-------------:|--------------------:|
+| 1 (ch 1–91, original) | 128 | 1,702,700 | 935 | 1,821 | 402 | 4,236 |
+| 2 (ch 92–96, ch91 cadence) | 13 | 167,200 | 148 | 1,130 | 39 | 4,287 |
+| 3 (ch 97+, rate + shadow) | 53 | 838,300 | 987 |   849 | 63 | **13,306** |
+
+The headline finding: the ch97 rule changes more than tripled the
+words-per-acquisition (4,236 → 13,306), which is exactly the slowing
+effect the author's note said the changes were intended to produce.
+The author's writing pace also dropped (1,821 → 849 words/day), so
+both the rules and the natural pace contributed to the overall
+slowdown of perk acquisitions in regime 3.
 
 ## Spot-check
 
