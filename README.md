@@ -11,31 +11,45 @@ This is an exploratory project; the plan is iterative and not yet locked down.
 - Mechanics writeup (reddit): https://www.reddit.com/r/JumpChain/comments/h14tjk/the_weight_of_the_quill_variant_mechanic/
 - Celestial Forge source list (pastebin): https://pastebin.com/35AJD9Lj
 
-## Mechanics (per chapter 1)
+## Mechanics
+
+### Original rule (per chapter 1)
 
 - 2000 words written = 100 CP earned
-- Roll triggered every 100 CP earned
-- Power purchased on roll if affordable, otherwise CP banked
+- Roll attempted every 100 CP earned
+- Perk purchased on roll if banked CP ≥ rolled perk's cost, else miss + CP banked
 
-### Perk shadow (introduced in chapter 97 "Confrontations")
+### Chapter 97 "Confrontations" rule changes
 
-A modification to the base mechanic, introduced when the first 600-point
-perk after a long gap was acquired. Source: author commentary on the
-Discord server (the announcement is not in either EPUB).
+Author's note in the chapter introduced two modifications, intended to
+slow the perk acquisition rate. The note isn't in either EPUB; the
+canonical text was relayed via the project Discord.
 
-- Applies only to **600-** and **800-point** perks
-- After acquiring such a perk, no new CP is earned for the next
-  *half-the-perk's-cost* worth of "shadow" CP
-- A 600-point perk produces a 9k-word shadow (3000 words per 100 CP
-  shadow); an 800-point perk produces a 12k-word shadow
-- Pre-chapter-97 600+ acquisitions are not retroactively shadowed
+**Change 1 — slower base rate.** 100 CP now requires **3000 words**
+(was 2000), and rolls happen **every 200 CP** = every 6000 words (was
+every 4000).
 
-In our data: 17 600+ acquisitions occur before chapter 97 (no shadow);
-11 occur in or after chapter 97 (shadow active). The curator's
-roll-by-roll xlsx stops at chapter 75, so all roll data we have
-predates the shadow mechanic. The Reference xlsx covers acquisitions
-through chapter 119 but doesn't break down per-roll CP, so the shadow's
-exact effect can't be measured directly without parsing chapter prose.
+**Change 2 — recovery shadow on 600/800 perks.** After a 600- or
+800-point perk is acquired, *no CP is banked at all* until words equal
+to *half-the-perk's-cost worth of CP at the new rate* have been
+written:
+
+- 600-point perk → 300 CP shadow → 9000 words of zero earning
+- 800-point perk → 400 CP shadow → 12000 words of zero earning
+
+Words written during the shadow advance the story but don't count
+toward the next roll. After the shadow ends, accumulation resumes at
+the new base rate.
+
+The author noted further modifications might follow as more
+constellations clear; this is the only documented one so far.
+
+**Coverage in our data:** 17 600+ acquisitions occur before chapter 97
+(no shadow); 11 are in or after chapter 97 (shadow active). The old
+roll-by-roll xlsx stops at chapter 75, so all per-roll data we have
+predates both changes. The Reference xlsx logs acquisitions through
+chapter 119 but doesn't expose CP banking, so the shadow's effect can't
+be measured against the rule directly without parsing chapter prose.
 
 ## Repo layout
 
