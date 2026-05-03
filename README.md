@@ -87,6 +87,46 @@ directly measurable from our derived data without parsing the EPUB
 prose. 17 600+ acquisitions occur before chapter 97 (no shadow); 11
 are in or after chapter 97 (shadow active).
 
+## In-world timeline
+
+Reference list. The story actively narrates April 8–25, 2011 (17 days,
+14 dated events). Earlier dates are backstory — referenced in dialogue
+and exposition but not narrated time. Both lists come from the
+Reference xlsx "Timeline of Events" sheet, with attribution: pre-story
+entries provided by the author, in-story entries compiled by Whamodyne.
+
+### Backstory references (not narrated)
+
+- **2007-06-01** — Joe graduates from high school
+- **2007-09-01** — Joe begins studying engineering at Brockton University
+- **2008-11-01** — Joe's faculty advisor dies and is replaced by an associate professor; the combined effect of the death and bad advice causes his academics and personal life to suffer
+- **January–March, 2009** — Joe's relationship with Sabah deteriorates, including a public blow up, six-week absence, and her ultimate apology and return
+- **2009-04-01** — Sabah's father dies, causing her to trigger; she transfers from Engineering to Fashion and begins operating as Parian
+- **June, 2009 – August 2010** — Joe attempts treatment for his depression with little progress; multiple medications are tried before a stable combination is found, though it badly affects his sleep
+- **2010-09-01** — Joe begins seeing Dr. Campbell and making progress on strategies for his depression; moves into the city and starts working part-time
+- **2011-02-01** — Joe's mother learns about potential changes to his medication after speaking with his psychiatrist and begins heavily advocating for the idea
+- **2011-03-04** — Joe has the final therapy session with Dr. Campbell that will be covered by his Q1 insurance, with the next session booked for April 16
+- **Mid-March, 2011** — Joe is convinced to change to a new antidepressant
+- **2011-04-01** — Joe begins the new medication and attends a family dinner with his parents and one of his sisters; he triggers, leaves the house, and walks home
+- **April 2–7, 2011** — Joe cuts off contact with his family and begins planning and training to begin work as a cape
+
+### Narrated in-story days (April 8–25, 2011)
+
+- **2011-04-08 (Fri)** — Story begins
+- **2011-04-10 (Sun)** — Joe goes out as a cape for the first time, encounters Oni Lee then the Undersiders (Joe's first fight)
+- **2011-04-14 (Thu)** — Joe delivers the knives to the Undersiders in the morning; bank robbery at noon; Joe heals Amy in the afternoon; PRT learns of Joe for the first time
+- **2011-04-15 (Fri)** — Joe gets Garment Gloves on his morning run; passes motorcycle DMV test; gets a motorcycle that afternoon
+- **2011-04-16 (Sat)** — Dr Campbell appointment; ABB starts the bombing spree; Joe fights Bakuda, Uber and Leet rescuing the Undersiders (second fight, first public appearance)
+- **2011-04-17 (Sun)** — Joe rescues Weld from the bottom of Brockton Bay; chats with Director Armstrong; Aisha follows him home into his workshop
+- **2011-04-18 (Mon)** — Garment Gloves at Protectorate gym; Joe rescues Aisha from ABB financial center, fights Uber and Leet, repairs/upgrades other tinkers' work mid-combat (third fight); acquires a volcano; first named object (Ren)
+- **2011-04-19 (Tue)** — Acquires Veritech VF-2SS Valkyrie II; meets Taylor in the library; fights and defeats Dragon; first 600-point perk (Master Craftsman)
+- **2011-04-20 (Wed)** — Talks with Undersiders about debt; gives them omnitool watches; Garment Gloves visits the bank; Joe researches Natural Alchemy
+- **2011-04-21 (Thu)** — Joe and Garment make new boots and combat uniforms; mantic energy circuit through the volcano base
+- **2011-04-22 (Fri)** — Workshop crew talks over Joe's powers and known fictional universes
+- **2011-04-23 (Sat)** — Joe, Tetra and Garment surf the volcano at dawn; Workshop Crew preparation
+- **2011-04-24 (Sun)** — Joe attends the Summit at Somers Rock, takes the Celestial Forge public; states he wants peace and no civilian or recovery work
+- **2011-04-25 (Mon)** — Joe introduces Aisha to the Laboratorium; gets Titan robots with AI; story currently extends through this day
+
 ## Repo layout
 
 ```
@@ -136,7 +176,7 @@ data and surface findings worth keeping in mind:
 | `figures/rolls_per_chapter.png` | Hits vs misses per chapter for chapters 1–75 (curator coverage). Hit rate ~38% (191/496); the chapter 41 outlier is the Felyne Comrade introduction with many free-bonus perks. |
 | `figures/acquisitions_per_chapter.png` | Paid vs free perks per chapter for the full story. The chapter 97 mechanic-change line shows a visible flattening of bar heights afterward. |
 | `figures/constellation_growth.png` | Stacked area of cumulative perks per constellation through chapter 75. Toolkits, Knowledge, and Quality dominate; Capstone activates around chapter 64. |
-| `figures/time_dilation.png` | Real-world publish date by chapter (top) alongside in-world dated events (bottom). 2096 real-world days of writing cover ~17 actively-narrated in-story days (April 8 → April 25, 2011) — a ~123:1 dilation ratio. The 12 earlier purple dots are backstory references reaching back to 2007 but aren't narrated time. |
+| `figures/time_dilation.png` | Real-world publish date by chapter (top) alongside the 14 actively-narrated in-story days (bottom, April 8 → April 25, 2011). 2096 real-world days of writing cover 17 narrated in-story days — a ~123:1 dilation ratio. Backstory references in the data are excluded from the chart; see the In-world timeline section above for the full event list. |
 
 ## Spot-check
 

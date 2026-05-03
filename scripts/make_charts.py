@@ -268,13 +268,31 @@ def chart_constellation_growth() -> None:
 # ---------- chart 5: real-world vs in-world time ----------------------------
 
 
+STORY_START_ISO = "2011-04-08"
+
+
 def chart_time_dilation() -> None:
-    """Real-world publish dates per chapter alongside in-world timeline."""
+    """Real-world publish pace alongside the narrated in-story days.
+
+    Top panel: real-world publish date by chapter (where the writing
+    pace lives). Bottom panel: only the actively-narrated in-story
+    days (April 8–25, 2011). Backstory references in the timeline
+    data are deliberately excluded - they're context, not narrated
+    time, and putting them on the same axis crushes the in-story
+    cluster against one edge.
+    """
     chapters = _load("chapters")["chapters"]
     chapters.sort(key=_chapter_sort_key_chapter)
     timeline = _load("timeline")["entries"]
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(13, 7), sharex=False)
+    in_story = [
+        e for e in timeline
+        if e["in_world_date_iso"] and e["in_world_date_iso"] >= STORY_START_ISO
+    ]
+    in_story.sort(key=lambda e: e["in_world_date_iso"])
+    is_dates = [dt.date.fromisoformat(e["in_world_date_iso"]) for e in in_story]
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(13, 8), sharex=False)
 
     # Top: real-world publish date per chapter
     pub = [dt.datetime.fromtimestamp(c["publish_ts"]) for c in chapters]
@@ -290,55 +308,29 @@ def chart_time_dilation() -> None:
                         rotation=45, ha="right", fontsize=8)
     ax1.grid(True, alpha=0.3)
 
-    # Bottom: in-world timeline. Split events into "backstory references"
-    # (mentioned but not actively narrated) and "actively-narrated days"
-    # (the protagonist's experienced time). The split is by date - the
-    # "Story Begins" entry on 2011-04-08 is the boundary, regardless of
-    # which curator contributed each entry.
-    iso_entries = [e for e in timeline if e["in_world_date_iso"]]
-    iso_entries.sort(key=lambda e: e["in_world_date_iso"])
-    STORY_START_ISO = "2011-04-08"
-    backstory = [e for e in iso_entries if e["in_world_date_iso"] < STORY_START_ISO]
-    in_story = [e for e in iso_entries if e["in_world_date_iso"] >= STORY_START_ISO]
-    bs_dates = [dt.date.fromisoformat(e["in_world_date_iso"]) for e in backstory]
-    is_dates = [dt.date.fromisoformat(e["in_world_date_iso"]) for e in in_story]
-
-    ax2.scatter(bs_dates, [0.5] * len(bs_dates), s=40, c="tab:purple",
-                alpha=0.7, label=f"backstory references ({len(bs_dates)})")
-    ax2.scatter(is_dates, [0.5] * len(is_dates), s=40, c="tab:green",
-                alpha=0.85, label=f"actively-narrated days ({len(is_dates)})")
-
-    # Story-start divider line
-    if is_dates:
-        story_start = dt.date.fromisoformat(STORY_START_ISO)
-        ax2.axvline(story_start, color="tab:red", linestyle="--", alpha=0.5, linewidth=1)
-        ax2.annotate(
-            f"Story begins\n{STORY_START_ISO}",
-            xy=(story_start, 0.5),
-            xytext=(0, 50),
-            textcoords="offset points",
-            ha="center", va="bottom",
-            fontsize=8, color="tab:red",
-            arrowprops=dict(arrowstyle="-", color="tab:red", linewidth=0.6, alpha=0.5),
-        )
-
-    ax2.set_title("In-world timeline events")
+    # Bottom: the 17-day in-story window. Dots only; per-event labels
+    # would overlap on a daily axis with 14 events. Detail belongs in
+    # a markdown list in the README, not on the chart.
+    ax2.scatter(is_dates, [0.5] * len(is_dates), s=80, c="tab:green",
+                alpha=0.85, zorder=3, edgecolor="darkgreen", linewidth=0.5)
+    ax2.set_title(
+        f"Actively-narrated in-story days "
+        f"({len(in_story)} dated events across 17 days, April 8–25 2011)"
+    )
     ax2.set_xlabel("In-world date")
-    ax2.set_ylim(0, 1.5)
+    ax2.set_ylim(0, 1.0)
     ax2.set_yticks([])
-    ax2.xaxis.set_major_locator(mdates.YearLocator())
-    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax2.set_xlim(dt.date(2011, 4, 7), dt.date(2011, 4, 26))
+    ax2.xaxis.set_major_locator(mdates.DayLocator())
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
     ax2.grid(True, axis="x", alpha=0.3)
-    ax2.legend(loc="upper left", fontsize=9)
 
     rw_span_days = (pub[-1] - pub[0]).days
     in_story_span = (is_dates[-1] - is_dates[0]).days if len(is_dates) >= 2 else 0
     fig.suptitle(
         f"Time dilation: {rw_span_days} real-world days of writing cover "
-        f"~{in_story_span} actively-narrated in-story days "
-        f"(ratio ~{rw_span_days // max(in_story_span, 1)}:1). Backstory references "
-        f"reach back to 2007 but aren't narrated time.",
-        fontsize=11, y=1.0,
+        f"{in_story_span} narrated in-story days (ratio ~{rw_span_days // max(in_story_span, 1)}:1)",
+        fontsize=12, y=1.0,
     )
     fig.tight_layout()
     _save(fig, FIGURES / "time_dilation.png")
