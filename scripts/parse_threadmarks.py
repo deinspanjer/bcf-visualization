@@ -10,10 +10,11 @@ numeric `words_approx` field reflects that rounding, not exact counts.
 from __future__ import annotations
 
 import email
-import json
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+from _common import write_validated_json
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = ROOT / "data" / "raw" / "threadmark_index"
@@ -78,16 +79,18 @@ def _parse_chapter(match: re.Match[str], source_file: str) -> Chapter:
 
     full_title = link.group("title").strip()
     prefix = _PREFIX_RE.match(full_title)
-    chapter_num = full_title.split(" ", 1)[0]
     sort_key: tuple[int, int]
+    chapter_num: str
     title: str
     if prefix:
         major = int(prefix.group("num"))
         minor = int(prefix.group("sub")) if prefix.group("sub") else 0
         sort_key = (major, minor)
+        chapter_num = f"{major}.{minor}" if minor else str(major)
         title = prefix.group("title").strip()
     else:
         sort_key = (0, 0)
+        chapter_num = "0"
         title = full_title
 
     return Chapter(
@@ -125,8 +128,7 @@ def main() -> None:
         "_note": "words_approx is derived from the forum-rounded display ('5k', '8.2k'), not exact counts.",
         "chapters": [asdict(c) for c in chapters],
     }
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    write_validated_json(OUT_PATH, payload, "chapters")
     print(f"wrote {OUT_PATH.relative_to(ROOT)}: {len(chapters)} chapters")
 
     first, last = chapters[0], chapters[-1]

@@ -18,12 +18,13 @@ the story has continued past that, so this dataset covers chapters
 from __future__ import annotations
 
 import email
-import json
 import re
 from dataclasses import asdict, dataclass
 from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
+
+from _common import write_validated_json
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "info_posts" / "sv_page_0233.mht"
@@ -176,8 +177,7 @@ def main() -> None:
         "_note": "Through chapter 93 per author. Year inherited from first dated entry.",
         "entries": [asdict(e) for e in entries],
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    write_validated_json(OUT, payload, "timeline")
     print(f"wrote {OUT.relative_to(ROOT)}: {len(entries)} dated days")
     if entries:
         print(f"  range: {entries[0].in_world_date} ({entries[0].day_of_week})"

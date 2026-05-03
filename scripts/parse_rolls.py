@@ -14,13 +14,13 @@ known constellation perks regardless of chapter.
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
 
 from openpyxl import load_workbook
+
+from _common import write_validated_json
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Rolls_List.xlsx"
@@ -239,16 +239,11 @@ def parse_perks_catalog(wb) -> list[CatalogPerk]:
 # ---------- main ------------------------------------------------------------
 
 
-def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
-
-
 def main() -> None:
     wb = load_workbook(SRC, data_only=True)
 
     rolls = parse_rolls(wb)
-    _write_json(
+    write_validated_json(
         OUT_ROLLS,
         {
             "_source": "data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx#List of Rolls & Perk Order",
@@ -257,16 +252,18 @@ def main() -> None:
             "_kinds": "roll | miss | trigger | annotation",
             "rolls": [asdict(r) for r in rolls],
         },
+        "rolls",
     )
 
     perks = parse_perks_catalog(wb)
-    _write_json(
+    write_validated_json(
         OUT_PERKS,
         {
             "_source": "data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx#Complete List of Perks",
             "_count": len(perks),
             "perks": [asdict(p) for p in perks],
         },
+        "perks_catalog",
     )
 
     # Summary

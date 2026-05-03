@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/timeline.schema.json",
+  "title": "In-world Timeline",
+  "description": "Reader-curated mapping of in-world dates to events from the Whamodyne SV post.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_author", "_count",
+    "_first_in_world_date", "_last_in_world_date",
+    "_post_trailer_date", "_note", "entries"
+  ],
+  "properties": {
+    "_source":              { "type": "string" },
+    "_author":              { "type": "string" },
+    "_count":               { "type": "integer", "minimum": 0 },
+    "_first_in_world_date": { "type": ["string", "null"], "format": "date" },
+    "_last_in_world_date":  { "type": ["string", "null"], "format": "date" },
+    "_post_trailer_date":   { "type": ["string", "null"], "format": "date" },
+    "_note":                { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "in_world_date", "day_of_week", "events"],
+      "properties": {
+        "sequence":      { "type": "integer", "minimum": 1 },
+        "in_world_date": { "type": "string", "format": "date" },
+        "day_of_week": {
+          "enum": ["Monday", "Tuesday", "Wednesday", "Thursday",
+                   "Friday", "Saturday", "Sunday"]
+        },
+        "events": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
