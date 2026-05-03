@@ -17,6 +17,26 @@ This is an exploratory project; the plan is iterative and not yet locked down.
 - Roll triggered every 100 CP earned
 - Power purchased on roll if affordable, otherwise CP banked
 
+### Perk shadow (introduced in chapter 97 "Confrontations")
+
+A modification to the base mechanic, introduced when the first 600-point
+perk after a long gap was acquired. Source: author commentary on the
+Discord server (the announcement is not in either EPUB).
+
+- Applies only to **600-** and **800-point** perks
+- After acquiring such a perk, no new CP is earned for the next
+  *half-the-perk's-cost* worth of "shadow" CP
+- A 600-point perk produces a 9k-word shadow (3000 words per 100 CP
+  shadow); an 800-point perk produces a 12k-word shadow
+- Pre-chapter-97 600+ acquisitions are not retroactively shadowed
+
+In our data: 17 600+ acquisitions occur before chapter 97 (no shadow);
+11 occur in or after chapter 97 (shadow active). The curator's
+roll-by-roll xlsx stops at chapter 75, so all roll data we have
+predates the shadow mechanic. The Reference xlsx covers acquisitions
+through chapter 119 but doesn't break down per-roll CP, so the shadow's
+exact effect can't be measured directly without parsing chapter prose.
+
 ## Repo layout
 
 ```
