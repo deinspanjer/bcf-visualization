@@ -113,7 +113,22 @@ python3 scripts/parse_threadmarks.py
 python3 scripts/parse_rolls.py
 python3 scripts/parse_reference.py   # obtained_perks + timeline
 python3 scripts/spot_check.py        # cross-source consistency check
+python3 scripts/make_charts.py       # static charts -> figures/
 ```
+
+## Phase 2: static charts
+
+`scripts/make_charts.py` reads only `data/derived/*.json` and writes
+five PNGs to `figures/`. They serve as a sanity gate over the parsed
+data and surface findings worth keeping in mind:
+
+| File | What it shows |
+|---|---|
+| `figures/publish_pace.png` | Cumulative word count vs real-world publish date. ~1,300 words/day average across 5+ years; visible acceleration through 2024–2026. |
+| `figures/rolls_per_chapter.png` | Hits vs misses per chapter for chapters 1–75 (curator coverage). Hit rate ~38% (191/496); the chapter 41 outlier is the Felyne Comrade introduction with many free-bonus perks. |
+| `figures/acquisitions_per_chapter.png` | Paid vs free perks per chapter for the full story. The chapter 97 mechanic-change line shows a visible flattening of bar heights afterward. |
+| `figures/constellation_growth.png` | Stacked area of cumulative perks per constellation through chapter 75. Toolkits, Knowledge, and Quality dominate; Capstone activates around chapter 64. |
+| `figures/time_dilation.png` | Real-world publish date by chapter (top) alongside in-world dated events (bottom). 2096 real-world days of writing cover 1424 in-world days; 13 of the 26 dated events are within a 17-day window in April 2011. |
 
 ## Spot-check
 
@@ -140,7 +155,8 @@ Phase 2 consumers should be aware of these.
 ## Status
 
 Phase 1 complete (raw assets, structured derivations, schemas, spot-check).
-Next: static charts as a sanity gate before going interactive.
+Phase 2 complete (five static charts as a sanity gate; see above).
+Next: interactive scrubber timeline (Phase 3).
 
 ## Future work
 
