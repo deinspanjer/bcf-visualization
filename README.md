@@ -237,11 +237,46 @@ Current state: hard checks pass. Soft findings (curator data quality):
 
 Phase 2 consumers should be aware of these.
 
+## Phase 3: interactive scrubber
+
+`web/` contains a static, dependency-free single-page site that lets
+you drag a scrubber across the full publish history and see the
+cumulative state through that chapter: word count, paid + free perks,
+roll attempts and misses (where available), perks-by-constellation
+breakdown, the perks acquired in the current chapter, and a list of
+the most recent acquisitions.
+
+The scrubber is regime-tinted — three muted background bands mark
+the ch1–91, ch92–96, and ch97+ regimes, with `ch 91` and `ch 97`
+labels on the track. Scrubbing works by mouse drag, click-anywhere
+on the track, touch drag, or keyboard (arrow keys, PageUp/Down,
+Home/End).
+
+To run locally:
+
+```sh
+python3 -m http.server 8000
+# open http://localhost:8000/web/index.html
+```
+
+The page reads only the JSON files in `data/derived/`. No build step,
+no dependencies, no framework — everything is plain HTML + CSS +
+vanilla JavaScript so it can be served from GitHub Pages or any
+static host.
+
+**Known limitation:** for chapters 76+, the by-constellation panel
+relies on a perk-name lookup against `perks_catalog.json`. The 31
+catalog gaps and 56 cosmetic naming variants from the spot-check
+mean some acquisitions don't get classified to a constellation.
+Reconciling the catalog is one of the Future Work items.
+
 ## Status
 
 Phase 1 complete (raw assets, structured derivations, schemas, spot-check).
-Phase 2 complete (five static charts as a sanity gate; see above).
-Next: interactive scrubber timeline (Phase 3).
+Phase 2 complete (Tufte-style static charts and throughput analytics).
+Phase 3 complete (interactive scrubber timeline).
+Next: refinement based on review, GitHub Pages deployment, or any of
+the Future Work items below.
 
 ## Future work
 

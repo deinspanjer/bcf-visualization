@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brockton's Celestial Forge — Scrubber</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Brockton's Celestial Forge</h1>
+    <p class="subtitle">Scrub through 194 chapters of word-count-driven gacha. Drag the scrubber to time-travel.</p>
+  </header>
+
+  <section id="scrubber-section" aria-label="Scrubber">
+    <div id="scrubber-track">
+      <div id="scrubber-fill"></div>
+      <div class="regime-marker" data-chapter="91">
+        <span class="regime-label">ch 91</span>
+      </div>
+      <div class="regime-marker" data-chapter="97">
+        <span class="regime-label">ch 97</span>
+      </div>
+      <div id="scrubber-knob" tabindex="0" role="slider"
+           aria-label="Chapter scrubber"
+           aria-valuemin="1" aria-valuemax="194" aria-valuenow="1"></div>
+    </div>
+    <div id="scrubber-readout">
+      <span id="readout-chapter">ch 1</span>
+      <span class="dot">·</span>
+      <span id="readout-title">Introduction</span>
+      <span class="dot">·</span>
+      <span id="readout-date">2020-07-19</span>
+    </div>
+  </section>
+
+  <section id="panels">
+    <article class="panel" id="panel-cumulative">
+      <h2>Cumulative through this chapter</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-num" id="stat-chapters">0</div><div class="stat-label">chapters</div></div>
+        <div class="stat"><div class="stat-num" id="stat-words">0</div><div class="stat-label">words</div></div>
+        <div class="stat"><div class="stat-num" id="stat-perks-paid">0</div><div class="stat-label">paid perks</div></div>
+        <div class="stat"><div class="stat-num" id="stat-perks-free">0</div><div class="stat-label">free bonuses</div></div>
+        <div class="stat"><div class="stat-num" id="stat-rolls-attempts">0</div><div class="stat-label">roll attempts</div></div>
+        <div class="stat"><div class="stat-num" id="stat-rolls-misses">0</div><div class="stat-label">misses</div></div>
+      </div>
+      <div class="meta" id="cumulative-note"></div>
+    </article>
+
+    <article class="panel" id="panel-this-chapter">
+      <h2>This chapter</h2>
+      <div class="meta" id="this-chapter-meta"></div>
+      <ul id="this-chapter-perks" class="perk-list"></ul>
+    </article>
+
+    <article class="panel wide" id="panel-constellations">
+      <h2>Acquired by constellation</h2>
+      <div id="constellation-bars"></div>
+    </article>
+
+    <article class="panel wide" id="panel-recent">
+      <h2>Most recent acquisitions</h2>
+      <ol id="recent-perks" class="perk-list"></ol>
+    </article>
+  </section>
+
+  <footer>
+    <p>Data: <a href="../data/derived/">data/derived/</a> ·
+       Source: <a href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/">SV thread</a> ·
+       <a href="../README.md">project README</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
