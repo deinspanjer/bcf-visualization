@@ -1,0 +1,2348 @@
+{
+  "_source": "data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx#Comment Analysis",
+  "_count": 174,
+  "_ao3_last_checked": "12/5/23",
+  "_sv_last_checked": "2/23/25",
+  "comments": [
+    {
+      "chapter_num": "1",
+      "ao3": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 4,
+        "chapter_word_count": 804,
+        "total_word_count_so_far": 804
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 0,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 0
+      }
+    },
+    {
+      "chapter_num": "2",
+      "ao3": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 6,
+        "chapter_word_count": 58,
+        "total_word_count_so_far": 862
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 0,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 0
+      }
+    },
+    {
+      "chapter_num": "3",
+      "ao3": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 8,
+        "chapter_word_count": 158,
+        "total_word_count_so_far": 1020
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 0,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 0
+      }
+    },
+    {
+      "chapter_num": "3.1",
+      "ao3": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 10,
+        "chapter_word_count": 141,
+        "total_word_count_so_far": 1161
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 0,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 0
+      }
+    },
+    {
+      "chapter_num": "4",
+      "ao3": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 14,
+        "chapter_word_count": 774,
+        "total_word_count_so_far": 1935
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 1,
+        "chapter_word_count": 48,
+        "total_word_count_so_far": 48
+      }
+    },
+    {
+      "chapter_num": "5",
+      "ao3": {
+        "chapter_comments": 8,
+        "total_comments_so_far": 22,
+        "chapter_word_count": 1568,
+        "total_word_count_so_far": 3503
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 1,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 48
+      }
+    },
+    {
+      "chapter_num": "6",
+      "ao3": {
+        "chapter_comments": 6,
+        "total_comments_so_far": 28,
+        "chapter_word_count": 1115,
+        "total_word_count_so_far": 4618
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 3,
+        "chapter_word_count": 228,
+        "total_word_count_so_far": 276
+      }
+    },
+    {
+      "chapter_num": "6.1",
+      "ao3": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 31,
+        "chapter_word_count": 377,
+        "total_word_count_so_far": 4995
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 3,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 276
+      }
+    },
+    {
+      "chapter_num": "7",
+      "ao3": {
+        "chapter_comments": 8,
+        "total_comments_so_far": 39,
+        "chapter_word_count": 763,
+        "total_word_count_so_far": 5758
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 4,
+        "chapter_word_count": 172,
+        "total_word_count_so_far": 448
+      }
+    },
+    {
+      "chapter_num": "8",
+      "ao3": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 42,
+        "chapter_word_count": 886,
+        "total_word_count_so_far": 6644
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 4,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 448
+      }
+    },
+    {
+      "chapter_num": "8.1",
+      "ao3": {
+        "chapter_comments": 7,
+        "total_comments_so_far": 49,
+        "chapter_word_count": 761,
+        "total_word_count_so_far": 7405
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 5,
+        "chapter_word_count": 379,
+        "total_word_count_so_far": 827
+      }
+    },
+    {
+      "chapter_num": "9",
+      "ao3": {
+        "chapter_comments": 7,
+        "total_comments_so_far": 56,
+        "chapter_word_count": 895,
+        "total_word_count_so_far": 8300
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 5,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 827
+      }
+    },
+    {
+      "chapter_num": "10",
+      "ao3": {
+        "chapter_comments": 6,
+        "total_comments_so_far": 62,
+        "chapter_word_count": 717,
+        "total_word_count_so_far": 9017
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 5,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 827
+      }
+    },
+    {
+      "chapter_num": "11",
+      "ao3": {
+        "chapter_comments": 5,
+        "total_comments_so_far": 67,
+        "chapter_word_count": 484,
+        "total_word_count_so_far": 9501
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 6,
+        "chapter_word_count": 1120,
+        "total_word_count_so_far": 1947
+      }
+    },
+    {
+      "chapter_num": "12",
+      "ao3": {
+        "chapter_comments": 11,
+        "total_comments_so_far": 78,
+        "chapter_word_count": 1827,
+        "total_word_count_so_far": 11328
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 6,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 1947
+      }
+    },
+    {
+      "chapter_num": "12.1",
+      "ao3": {
+        "chapter_comments": 12,
+        "total_comments_so_far": 90,
+        "chapter_word_count": 1299,
+        "total_word_count_so_far": 12627
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 6,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 1947
+      }
+    },
+    {
+      "chapter_num": "13",
+      "ao3": {
+        "chapter_comments": 5,
+        "total_comments_so_far": 95,
+        "chapter_word_count": 1621,
+        "total_word_count_so_far": 14248
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 7,
+        "chapter_word_count": 21,
+        "total_word_count_so_far": 1968
+      }
+    },
+    {
+      "chapter_num": "14",
+      "ao3": {
+        "chapter_comments": 8,
+        "total_comments_so_far": 103,
+        "chapter_word_count": 662,
+        "total_word_count_so_far": 14910
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 7,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 1968
+      }
+    },
+    {
+      "chapter_num": "15",
+      "ao3": {
+        "chapter_comments": 10,
+        "total_comments_so_far": 113,
+        "chapter_word_count": 1970,
+        "total_word_count_so_far": 16880
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 8,
+        "chapter_word_count": 102,
+        "total_word_count_so_far": 2070
+      }
+    },
+    {
+      "chapter_num": "16",
+      "ao3": {
+        "chapter_comments": 6,
+        "total_comments_so_far": 119,
+        "chapter_word_count": 903,
+        "total_word_count_so_far": 17783
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 8,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 2070
+      }
+    },
+    {
+      "chapter_num": "16.1",
+      "ao3": {
+        "chapter_comments": 13,
+        "total_comments_so_far": 132,
+        "chapter_word_count": 3257,
+        "total_word_count_so_far": 21040
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 9,
+        "chapter_word_count": 124,
+        "total_word_count_so_far": 2194
+      }
+    },
+    {
+      "chapter_num": "17",
+      "ao3": {
+        "chapter_comments": 17,
+        "total_comments_so_far": 151,
+        "chapter_word_count": 3663,
+        "total_word_count_so_far": 25045
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 10,
+        "chapter_word_count": 114,
+        "total_word_count_so_far": 2308
+      }
+    },
+    {
+      "chapter_num": "18",
+      "ao3": {
+        "chapter_comments": 25,
+        "total_comments_so_far": 176,
+        "chapter_word_count": 4226,
+        "total_word_count_so_far": 29271
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 11,
+        "chapter_word_count": 148,
+        "total_word_count_so_far": 2456
+      }
+    },
+    {
+      "chapter_num": "19",
+      "ao3": {
+        "chapter_comments": 16,
+        "total_comments_so_far": 192,
+        "chapter_word_count": 3237,
+        "total_word_count_so_far": 32508
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 11,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 2456
+      }
+    },
+    {
+      "chapter_num": "20",
+      "ao3": {
+        "chapter_comments": 24,
+        "total_comments_so_far": 216,
+        "chapter_word_count": 2752,
+        "total_word_count_so_far": 35260
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 11,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 2456
+      }
+    },
+    {
+      "chapter_num": "21",
+      "ao3": {
+        "chapter_comments": 16,
+        "total_comments_so_far": 232,
+        "chapter_word_count": 3799,
+        "total_word_count_so_far": 39059
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 13,
+        "chapter_word_count": 1953,
+        "total_word_count_so_far": 4409
+      }
+    },
+    {
+      "chapter_num": "21.1",
+      "ao3": {
+        "chapter_comments": 16,
+        "total_comments_so_far": 248,
+        "chapter_word_count": 2476,
+        "total_word_count_so_far": 41535
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 16,
+        "chapter_word_count": 1877,
+        "total_word_count_so_far": 6286
+      }
+    },
+    {
+      "chapter_num": "22",
+      "ao3": {
+        "chapter_comments": 21,
+        "total_comments_so_far": 269,
+        "chapter_word_count": 4283,
+        "total_word_count_so_far": 45818
+      },
+      "sv": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 21,
+        "chapter_word_count": 2391,
+        "total_word_count_so_far": 8992
+      }
+    },
+    {
+      "chapter_num": "23",
+      "ao3": {
+        "chapter_comments": 17,
+        "total_comments_so_far": 286,
+        "chapter_word_count": 3654,
+        "total_word_count_so_far": 49472
+      },
+      "sv": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 25,
+        "chapter_word_count": 2567,
+        "total_word_count_so_far": 11559
+      }
+    },
+    {
+      "chapter_num": "24",
+      "ao3": {
+        "chapter_comments": 16,
+        "total_comments_so_far": 302,
+        "chapter_word_count": 2976,
+        "total_word_count_so_far": 52448
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 28,
+        "chapter_word_count": 3175,
+        "total_word_count_so_far": 14734
+      }
+    },
+    {
+      "chapter_num": "25",
+      "ao3": {
+        "chapter_comments": 22,
+        "total_comments_so_far": 324,
+        "chapter_word_count": 3356,
+        "total_word_count_so_far": 55804
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 31,
+        "chapter_word_count": 1801,
+        "total_word_count_so_far": 16535
+      }
+    },
+    {
+      "chapter_num": "26",
+      "ao3": {
+        "chapter_comments": 20,
+        "total_comments_so_far": 344,
+        "chapter_word_count": 3281,
+        "total_word_count_so_far": 59085
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 33,
+        "chapter_word_count": 93,
+        "total_word_count_so_far": 16628
+      }
+    },
+    {
+      "chapter_num": "27",
+      "ao3": {
+        "chapter_comments": 29,
+        "total_comments_so_far": 373,
+        "chapter_word_count": 5670,
+        "total_word_count_so_far": 64755
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 36,
+        "chapter_word_count": 1255,
+        "total_word_count_so_far": 17883
+      }
+    },
+    {
+      "chapter_num": "28",
+      "ao3": {
+        "chapter_comments": 29,
+        "total_comments_so_far": 402,
+        "chapter_word_count": 5363,
+        "total_word_count_so_far": 70118
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 37,
+        "chapter_word_count": 1343,
+        "total_word_count_so_far": 19226
+      }
+    },
+    {
+      "chapter_num": "29",
+      "ao3": {
+        "chapter_comments": 23,
+        "total_comments_so_far": 425,
+        "chapter_word_count": 2967,
+        "total_word_count_so_far": 73085
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 40,
+        "chapter_word_count": 616,
+        "total_word_count_so_far": 19842
+      }
+    },
+    {
+      "chapter_num": "30",
+      "ao3": {
+        "chapter_comments": 35,
+        "total_comments_so_far": 460,
+        "chapter_word_count": 3386,
+        "total_word_count_so_far": 76471
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 41,
+        "chapter_word_count": 12,
+        "total_word_count_so_far": 19854
+      }
+    },
+    {
+      "chapter_num": "31",
+      "ao3": {
+        "chapter_comments": 37,
+        "total_comments_so_far": 497,
+        "chapter_word_count": 5641,
+        "total_word_count_so_far": 82112
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 44,
+        "chapter_word_count": 1322,
+        "total_word_count_so_far": 21176
+      }
+    },
+    {
+      "chapter_num": "32",
+      "ao3": {
+        "chapter_comments": 29,
+        "total_comments_so_far": 526,
+        "chapter_word_count": 3874,
+        "total_word_count_so_far": 85986
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 44,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 21176
+      }
+    },
+    {
+      "chapter_num": "33",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 553,
+        "chapter_word_count": 5031,
+        "total_word_count_so_far": 91017
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 46,
+        "chapter_word_count": 1819,
+        "total_word_count_so_far": 22995
+      }
+    },
+    {
+      "chapter_num": "34",
+      "ao3": {
+        "chapter_comments": 25,
+        "total_comments_so_far": 578,
+        "chapter_word_count": 4072,
+        "total_word_count_so_far": 95089
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 48,
+        "chapter_word_count": 1056,
+        "total_word_count_so_far": 24051
+      }
+    },
+    {
+      "chapter_num": "35",
+      "ao3": {
+        "chapter_comments": 30,
+        "total_comments_so_far": 608,
+        "chapter_word_count": 5296,
+        "total_word_count_so_far": 100385
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 49,
+        "chapter_word_count": 44,
+        "total_word_count_so_far": 24095
+      }
+    },
+    {
+      "chapter_num": "35.1",
+      "ao3": {
+        "chapter_comments": 41,
+        "total_comments_so_far": 649,
+        "chapter_word_count": 6754,
+        "total_word_count_so_far": 107139
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 50,
+        "chapter_word_count": 85,
+        "total_word_count_so_far": 24180
+      }
+    },
+    {
+      "chapter_num": "36",
+      "ao3": {
+        "chapter_comments": 39,
+        "total_comments_so_far": 688,
+        "chapter_word_count": 6014,
+        "total_word_count_so_far": 113153
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 51,
+        "chapter_word_count": 90,
+        "total_word_count_so_far": 24270
+      }
+    },
+    {
+      "chapter_num": "37",
+      "ao3": {
+        "chapter_comments": 32,
+        "total_comments_so_far": 720,
+        "chapter_word_count": 5215,
+        "total_word_count_so_far": 118368
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 53,
+        "chapter_word_count": 187,
+        "total_word_count_so_far": 24457
+      }
+    },
+    {
+      "chapter_num": "38",
+      "ao3": {
+        "chapter_comments": 39,
+        "total_comments_so_far": 759,
+        "chapter_word_count": 8990,
+        "total_word_count_so_far": 127358
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 54,
+        "chapter_word_count": 992,
+        "total_word_count_so_far": 25449
+      }
+    },
+    {
+      "chapter_num": "39",
+      "ao3": {
+        "chapter_comments": 32,
+        "total_comments_so_far": 791,
+        "chapter_word_count": 5843,
+        "total_word_count_so_far": 133201
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 55,
+        "chapter_word_count": 979,
+        "total_word_count_so_far": 26428
+      }
+    },
+    {
+      "chapter_num": "40",
+      "ao3": {
+        "chapter_comments": 32,
+        "total_comments_so_far": 823,
+        "chapter_word_count": 6546,
+        "total_word_count_so_far": 139747
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 57,
+        "chapter_word_count": 1086,
+        "total_word_count_so_far": 27514
+      }
+    },
+    {
+      "chapter_num": "41",
+      "ao3": {
+        "chapter_comments": 76,
+        "total_comments_so_far": 899,
+        "chapter_word_count": 13385,
+        "total_word_count_so_far": 153132
+      },
+      "sv": {
+        "chapter_comments": 5,
+        "total_comments_so_far": 62,
+        "chapter_word_count": 5333,
+        "total_word_count_so_far": 32847
+      }
+    },
+    {
+      "chapter_num": "41.1",
+      "ao3": {
+        "chapter_comments": 33,
+        "total_comments_so_far": 932,
+        "chapter_word_count": 6790,
+        "total_word_count_so_far": 159922
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 64,
+        "chapter_word_count": 467,
+        "total_word_count_so_far": 33314
+      }
+    },
+    {
+      "chapter_num": "41.2",
+      "ao3": {
+        "chapter_comments": 32,
+        "total_comments_so_far": 964,
+        "chapter_word_count": 4778,
+        "total_word_count_so_far": 164700
+      },
+      "sv": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 68,
+        "chapter_word_count": 4320,
+        "total_word_count_so_far": 37634
+      }
+    },
+    {
+      "chapter_num": "41.3",
+      "ao3": {
+        "chapter_comments": 30,
+        "total_comments_so_far": 994,
+        "chapter_word_count": 7279,
+        "total_word_count_so_far": 171979
+      },
+      "sv": {
+        "chapter_comments": 6,
+        "total_comments_so_far": 74,
+        "chapter_word_count": 3755,
+        "total_word_count_so_far": 41389
+      }
+    },
+    {
+      "chapter_num": "42",
+      "ao3": {
+        "chapter_comments": 36,
+        "total_comments_so_far": 1030,
+        "chapter_word_count": 5544,
+        "total_word_count_so_far": 177523
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 75,
+        "chapter_word_count": 1010,
+        "total_word_count_so_far": 42399
+      }
+    },
+    {
+      "chapter_num": "42.1",
+      "ao3": {
+        "chapter_comments": 36,
+        "total_comments_so_far": 1066,
+        "chapter_word_count": 6719,
+        "total_word_count_so_far": 184242
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 77,
+        "chapter_word_count": 1423,
+        "total_word_count_so_far": 43822
+      }
+    },
+    {
+      "chapter_num": "43",
+      "ao3": {
+        "chapter_comments": 37,
+        "total_comments_so_far": 1103,
+        "chapter_word_count": 10179,
+        "total_word_count_so_far": 194421
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 78,
+        "chapter_word_count": 1571,
+        "total_word_count_so_far": 45393
+      }
+    },
+    {
+      "chapter_num": "43.1",
+      "ao3": {
+        "chapter_comments": 31,
+        "total_comments_so_far": 1134,
+        "chapter_word_count": 6968,
+        "total_word_count_so_far": 201389
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 79,
+        "chapter_word_count": 730,
+        "total_word_count_so_far": 46123
+      }
+    },
+    {
+      "chapter_num": "44",
+      "ao3": {
+        "chapter_comments": 26,
+        "total_comments_so_far": 1160,
+        "chapter_word_count": 4377,
+        "total_word_count_so_far": 205766
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 81,
+        "chapter_word_count": 2190,
+        "total_word_count_so_far": 48313
+      }
+    },
+    {
+      "chapter_num": "45",
+      "ao3": {
+        "chapter_comments": 34,
+        "total_comments_so_far": 1194,
+        "chapter_word_count": 9557,
+        "total_word_count_so_far": 215323
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 84,
+        "chapter_word_count": 4445,
+        "total_word_count_so_far": 52758
+      }
+    },
+    {
+      "chapter_num": "45.1",
+      "ao3": {
+        "chapter_comments": 24,
+        "total_comments_so_far": 1218,
+        "chapter_word_count": 5972,
+        "total_word_count_so_far": 221295
+      },
+      "sv": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 88,
+        "chapter_word_count": 5555,
+        "total_word_count_so_far": 58313
+      }
+    },
+    {
+      "chapter_num": "46",
+      "ao3": {
+        "chapter_comments": 26,
+        "total_comments_so_far": 1244,
+        "chapter_word_count": 9801,
+        "total_word_count_so_far": 231096
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 90,
+        "chapter_word_count": 1423,
+        "total_word_count_so_far": 59736
+      }
+    },
+    {
+      "chapter_num": "46.1",
+      "ao3": {
+        "chapter_comments": 28,
+        "total_comments_so_far": 1272,
+        "chapter_word_count": 8409,
+        "total_word_count_so_far": 239505
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 93,
+        "chapter_word_count": 12138,
+        "total_word_count_so_far": 71874
+      }
+    },
+    {
+      "chapter_num": "46.2",
+      "ao3": {
+        "chapter_comments": 21,
+        "total_comments_so_far": 1293,
+        "chapter_word_count": 6645,
+        "total_word_count_so_far": 246150
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 95,
+        "chapter_word_count": 2488,
+        "total_word_count_so_far": 74362
+      }
+    },
+    {
+      "chapter_num": "47",
+      "ao3": {
+        "chapter_comments": 16,
+        "total_comments_so_far": 1309,
+        "chapter_word_count": 6900,
+        "total_word_count_so_far": 253050
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 95,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 74362
+      }
+    },
+    {
+      "chapter_num": "48",
+      "ao3": {
+        "chapter_comments": 22,
+        "total_comments_so_far": 1331,
+        "chapter_word_count": 6243,
+        "total_word_count_so_far": 259293
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 97,
+        "chapter_word_count": 3911,
+        "total_word_count_so_far": 78273
+      }
+    },
+    {
+      "chapter_num": "49",
+      "ao3": {
+        "chapter_comments": 17,
+        "total_comments_so_far": 1348,
+        "chapter_word_count": 5101,
+        "total_word_count_so_far": 264394
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 97,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 78273
+      }
+    },
+    {
+      "chapter_num": "50",
+      "ao3": {
+        "chapter_comments": 19,
+        "total_comments_so_far": 1367,
+        "chapter_word_count": 5924,
+        "total_word_count_so_far": 270318
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 98,
+        "chapter_word_count": 6054,
+        "total_word_count_so_far": 84327
+      }
+    },
+    {
+      "chapter_num": "51",
+      "ao3": {
+        "chapter_comments": 15,
+        "total_comments_so_far": 1382,
+        "chapter_word_count": 4430,
+        "total_word_count_so_far": 274748
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 98,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 84327
+      }
+    },
+    {
+      "chapter_num": "52",
+      "ao3": {
+        "chapter_comments": 23,
+        "total_comments_so_far": 1405,
+        "chapter_word_count": 7533,
+        "total_word_count_so_far": 282281
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 99,
+        "chapter_word_count": 1714,
+        "total_word_count_so_far": 86041
+      }
+    },
+    {
+      "chapter_num": "53",
+      "ao3": {
+        "chapter_comments": 19,
+        "total_comments_so_far": 1424,
+        "chapter_word_count": 5049,
+        "total_word_count_so_far": 287330
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 100,
+        "chapter_word_count": 2373,
+        "total_word_count_so_far": 88414
+      }
+    },
+    {
+      "chapter_num": "54",
+      "ao3": {
+        "chapter_comments": 32,
+        "total_comments_so_far": 1456,
+        "chapter_word_count": 7298,
+        "total_word_count_so_far": 294628
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 103,
+        "chapter_word_count": 4723,
+        "total_word_count_so_far": 93137
+      }
+    },
+    {
+      "chapter_num": "55",
+      "ao3": {
+        "chapter_comments": 26,
+        "total_comments_so_far": 1482,
+        "chapter_word_count": 11125,
+        "total_word_count_so_far": 305753
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 105,
+        "chapter_word_count": 3107,
+        "total_word_count_so_far": 96244
+      }
+    },
+    {
+      "chapter_num": "55.1",
+      "ao3": {
+        "chapter_comments": 11,
+        "total_comments_so_far": 1493,
+        "chapter_word_count": 5033,
+        "total_word_count_so_far": 310786
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 106,
+        "chapter_word_count": 2268,
+        "total_word_count_so_far": 98512
+      }
+    },
+    {
+      "chapter_num": "56",
+      "ao3": {
+        "chapter_comments": 14,
+        "total_comments_so_far": 1507,
+        "chapter_word_count": 5619,
+        "total_word_count_so_far": 316405
+      },
+      "sv": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 109,
+        "chapter_word_count": 5233,
+        "total_word_count_so_far": 103745
+      }
+    },
+    {
+      "chapter_num": "57",
+      "ao3": {
+        "chapter_comments": 22,
+        "total_comments_so_far": 1529,
+        "chapter_word_count": 9021,
+        "total_word_count_so_far": 325426
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 110,
+        "chapter_word_count": 4747,
+        "total_word_count_so_far": 108492
+      }
+    },
+    {
+      "chapter_num": "57.1",
+      "ao3": {
+        "chapter_comments": 28,
+        "total_comments_so_far": 1557,
+        "chapter_word_count": 6950,
+        "total_word_count_so_far": 332376
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 112,
+        "chapter_word_count": 289,
+        "total_word_count_so_far": 108781
+      }
+    },
+    {
+      "chapter_num": "58",
+      "ao3": {
+        "chapter_comments": 3,
+        "total_comments_so_far": 1560,
+        "chapter_word_count": 772,
+        "total_word_count_so_far": 333148
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 113,
+        "chapter_word_count": 2457,
+        "total_word_count_so_far": 111238
+      }
+    },
+    {
+      "chapter_num": "58.1",
+      "ao3": {
+        "chapter_comments": 31,
+        "total_comments_so_far": 1591,
+        "chapter_word_count": 6015,
+        "total_word_count_so_far": 339163
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 113,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 111238
+      }
+    },
+    {
+      "chapter_num": "58.2",
+      "ao3": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 1592,
+        "chapter_word_count": 856,
+        "total_word_count_so_far": 340019
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 114,
+        "chapter_word_count": 5137,
+        "total_word_count_so_far": 116375
+      }
+    },
+    {
+      "chapter_num": "59",
+      "ao3": {
+        "chapter_comments": 21,
+        "total_comments_so_far": 1613,
+        "chapter_word_count": 5792,
+        "total_word_count_so_far": 345811
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 116,
+        "chapter_word_count": 3741,
+        "total_word_count_so_far": 120116
+      }
+    },
+    {
+      "chapter_num": "60",
+      "ao3": {
+        "chapter_comments": 31,
+        "total_comments_so_far": 1644,
+        "chapter_word_count": 3573,
+        "total_word_count_so_far": 349384
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 118,
+        "chapter_word_count": 230,
+        "total_word_count_so_far": 120346
+      }
+    },
+    {
+      "chapter_num": "61",
+      "ao3": {
+        "chapter_comments": 26,
+        "total_comments_so_far": 1670,
+        "chapter_word_count": 4667,
+        "total_word_count_so_far": 354051
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 119,
+        "chapter_word_count": 4442,
+        "total_word_count_so_far": 124788
+      }
+    },
+    {
+      "chapter_num": "62",
+      "ao3": {
+        "chapter_comments": 23,
+        "total_comments_so_far": 1693,
+        "chapter_word_count": 3757,
+        "total_word_count_so_far": 357808
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 120,
+        "chapter_word_count": 4661,
+        "total_word_count_so_far": 129449
+      }
+    },
+    {
+      "chapter_num": "63",
+      "ao3": {
+        "chapter_comments": 33,
+        "total_comments_so_far": 1726,
+        "chapter_word_count": 5165,
+        "total_word_count_so_far": 362973
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 120,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 129449
+      }
+    },
+    {
+      "chapter_num": "63.1",
+      "ao3": {
+        "chapter_comments": 24,
+        "total_comments_so_far": 1750,
+        "chapter_word_count": 4589,
+        "total_word_count_so_far": 367562
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 121,
+        "chapter_word_count": 5514,
+        "total_word_count_so_far": 134963
+      }
+    },
+    {
+      "chapter_num": "64",
+      "ao3": {
+        "chapter_comments": 23,
+        "total_comments_so_far": 1773,
+        "chapter_word_count": 6013,
+        "total_word_count_so_far": 373575
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 121,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 134963
+      }
+    },
+    {
+      "chapter_num": "65",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 1800,
+        "chapter_word_count": 5621,
+        "total_word_count_so_far": 379196
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 122,
+        "chapter_word_count": 3156,
+        "total_word_count_so_far": 138119
+      }
+    },
+    {
+      "chapter_num": "65.1",
+      "ao3": {
+        "chapter_comments": 24,
+        "total_comments_so_far": 1824,
+        "chapter_word_count": 3905,
+        "total_word_count_so_far": 383101
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 122,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 138119
+      }
+    },
+    {
+      "chapter_num": "65.2",
+      "ao3": {
+        "chapter_comments": 25,
+        "total_comments_so_far": 1849,
+        "chapter_word_count": 4528,
+        "total_word_count_so_far": 387629
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 122,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 138119
+      }
+    },
+    {
+      "chapter_num": "65.3",
+      "ao3": {
+        "chapter_comments": 33,
+        "total_comments_so_far": 1882,
+        "chapter_word_count": 5273,
+        "total_word_count_so_far": 392902
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 123,
+        "chapter_word_count": 1111,
+        "total_word_count_so_far": 139230
+      }
+    },
+    {
+      "chapter_num": "65.4",
+      "ao3": {
+        "chapter_comments": 33,
+        "total_comments_so_far": 1915,
+        "chapter_word_count": 5854,
+        "total_word_count_so_far": 398756
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 124,
+        "chapter_word_count": 2238,
+        "total_word_count_so_far": 141468
+      }
+    },
+    {
+      "chapter_num": "66",
+      "ao3": {
+        "chapter_comments": 28,
+        "total_comments_so_far": 1943,
+        "chapter_word_count": 5410,
+        "total_word_count_so_far": 404166
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 125,
+        "chapter_word_count": 3997,
+        "total_word_count_so_far": 145465
+      }
+    },
+    {
+      "chapter_num": "67",
+      "ao3": {
+        "chapter_comments": 9,
+        "total_comments_so_far": 1952,
+        "chapter_word_count": 1725,
+        "total_word_count_so_far": 405891
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 125,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145465
+      }
+    },
+    {
+      "chapter_num": "68",
+      "ao3": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 1952,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 405891
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 125,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145465
+      }
+    },
+    {
+      "chapter_num": "68.1",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 1979,
+        "chapter_word_count": 5301,
+        "total_word_count_so_far": 411192
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 125,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145465
+      }
+    },
+    {
+      "chapter_num": "68.2",
+      "ao3": {
+        "chapter_comments": 30,
+        "total_comments_so_far": 2009,
+        "chapter_word_count": 3483,
+        "total_word_count_so_far": 414675
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 125,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145465
+      }
+    },
+    {
+      "chapter_num": "68.3",
+      "ao3": {
+        "chapter_comments": 35,
+        "total_comments_so_far": 2044,
+        "chapter_word_count": 7444,
+        "total_word_count_so_far": 422119
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 126,
+        "chapter_word_count": 244,
+        "total_word_count_so_far": 145709
+      }
+    },
+    {
+      "chapter_num": "69",
+      "ao3": {
+        "chapter_comments": 20,
+        "total_comments_so_far": 2064,
+        "chapter_word_count": 4650,
+        "total_word_count_so_far": 426769
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 126,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145709
+      }
+    },
+    {
+      "chapter_num": "70",
+      "ao3": {
+        "chapter_comments": 22,
+        "total_comments_so_far": 2086,
+        "chapter_word_count": 4084,
+        "total_word_count_so_far": 430853
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 126,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145709
+      }
+    },
+    {
+      "chapter_num": "71",
+      "ao3": {
+        "chapter_comments": 34,
+        "total_comments_so_far": 2120,
+        "chapter_word_count": 5533,
+        "total_word_count_so_far": 436386
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 126,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 145709
+      }
+    },
+    {
+      "chapter_num": "72",
+      "ao3": {
+        "chapter_comments": 23,
+        "total_comments_so_far": 2143,
+        "chapter_word_count": 4132,
+        "total_word_count_so_far": 440518
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 127,
+        "chapter_word_count": 190,
+        "total_word_count_so_far": 145899
+      }
+    },
+    {
+      "chapter_num": "73",
+      "ao3": {
+        "chapter_comments": 29,
+        "total_comments_so_far": 2172,
+        "chapter_word_count": 4897,
+        "total_word_count_so_far": 445415
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 128,
+        "chapter_word_count": 83,
+        "total_word_count_so_far": 145982
+      }
+    },
+    {
+      "chapter_num": "74",
+      "ao3": {
+        "chapter_comments": 21,
+        "total_comments_so_far": 2193,
+        "chapter_word_count": 4258,
+        "total_word_count_so_far": 449673
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 130,
+        "chapter_word_count": 347,
+        "total_word_count_so_far": 146329
+      }
+    },
+    {
+      "chapter_num": "74.1",
+      "ao3": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 2193,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 449673
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 130,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146329
+      }
+    },
+    {
+      "chapter_num": "74.2",
+      "ao3": {
+        "chapter_comments": 22,
+        "total_comments_so_far": 2215,
+        "chapter_word_count": 4734,
+        "total_word_count_so_far": 454407
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 132,
+        "chapter_word_count": 225,
+        "total_word_count_so_far": 146554
+      }
+    },
+    {
+      "chapter_num": "75",
+      "ao3": {
+        "chapter_comments": 30,
+        "total_comments_so_far": 2245,
+        "chapter_word_count": 6844,
+        "total_word_count_so_far": 461251
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 132,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146554
+      }
+    },
+    {
+      "chapter_num": "76",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 2272,
+        "chapter_word_count": 6260,
+        "total_word_count_so_far": 467511
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 132,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146554
+      }
+    },
+    {
+      "chapter_num": "76.1",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 2299,
+        "chapter_word_count": 11445,
+        "total_word_count_so_far": 478956
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 133,
+        "chapter_word_count": 94,
+        "total_word_count_so_far": 146648
+      }
+    },
+    {
+      "chapter_num": "76.2",
+      "ao3": {
+        "chapter_comments": 44,
+        "total_comments_so_far": 2343,
+        "chapter_word_count": 11537,
+        "total_word_count_so_far": 490493
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 133,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146648
+      }
+    },
+    {
+      "chapter_num": "77",
+      "ao3": {
+        "chapter_comments": 21,
+        "total_comments_so_far": 2364,
+        "chapter_word_count": 6836,
+        "total_word_count_so_far": 497329
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 133,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146648
+      }
+    },
+    {
+      "chapter_num": "78",
+      "ao3": {
+        "chapter_comments": 13,
+        "total_comments_so_far": 2377,
+        "chapter_word_count": 6119,
+        "total_word_count_so_far": 503448
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 133,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146648
+      }
+    },
+    {
+      "chapter_num": "79",
+      "ao3": {
+        "chapter_comments": 19,
+        "total_comments_so_far": 2396,
+        "chapter_word_count": 4087,
+        "total_word_count_so_far": 507535
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 133,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 146648
+      }
+    },
+    {
+      "chapter_num": "80",
+      "ao3": {
+        "chapter_comments": 29,
+        "total_comments_so_far": 2425,
+        "chapter_word_count": 5601,
+        "total_word_count_so_far": 513136
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 134,
+        "chapter_word_count": 365,
+        "total_word_count_so_far": 147013
+      }
+    },
+    {
+      "chapter_num": "81",
+      "ao3": {
+        "chapter_comments": 26,
+        "total_comments_so_far": 2451,
+        "chapter_word_count": 7720,
+        "total_word_count_so_far": 520856
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 135,
+        "chapter_word_count": 100,
+        "total_word_count_so_far": 147113
+      }
+    },
+    {
+      "chapter_num": "82",
+      "ao3": {
+        "chapter_comments": 15,
+        "total_comments_so_far": 2466,
+        "chapter_word_count": 5599,
+        "total_word_count_so_far": 526455
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 135,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 147113
+      }
+    },
+    {
+      "chapter_num": "82.1",
+      "ao3": {
+        "chapter_comments": 30,
+        "total_comments_so_far": 2496,
+        "chapter_word_count": 8664,
+        "total_word_count_so_far": 535119
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 136,
+        "chapter_word_count": 236,
+        "total_word_count_so_far": 147349
+      }
+    },
+    {
+      "chapter_num": "83",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 2523,
+        "chapter_word_count": 5210,
+        "total_word_count_so_far": 540329
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 137,
+        "chapter_word_count": 1211,
+        "total_word_count_so_far": 148560
+      }
+    },
+    {
+      "chapter_num": "83.1",
+      "ao3": {
+        "chapter_comments": 35,
+        "total_comments_so_far": 2558,
+        "chapter_word_count": 8912,
+        "total_word_count_so_far": 549241
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 139,
+        "chapter_word_count": 347,
+        "total_word_count_so_far": 148907
+      }
+    },
+    {
+      "chapter_num": "84",
+      "ao3": {
+        "chapter_comments": 28,
+        "total_comments_so_far": 2586,
+        "chapter_word_count": 6030,
+        "total_word_count_so_far": 555271
+      },
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 141,
+        "chapter_word_count": 1263,
+        "total_word_count_so_far": 150170
+      }
+    },
+    {
+      "chapter_num": "85",
+      "ao3": {
+        "chapter_comments": 28,
+        "total_comments_so_far": 2614,
+        "chapter_word_count": 5768,
+        "total_word_count_so_far": 561039
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 142,
+        "chapter_word_count": 66,
+        "total_word_count_so_far": 150236
+      }
+    },
+    {
+      "chapter_num": "85.1",
+      "ao3": {
+        "chapter_comments": 25,
+        "total_comments_so_far": 2639,
+        "chapter_word_count": 5152,
+        "total_word_count_so_far": 566191
+      },
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 142,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 150236
+      }
+    },
+    {
+      "chapter_num": "86",
+      "ao3": {
+        "chapter_comments": 27,
+        "total_comments_so_far": 2666,
+        "chapter_word_count": 9986,
+        "total_word_count_so_far": 576177
+      },
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 143,
+        "chapter_word_count": 138,
+        "total_word_count_so_far": 150374
+      }
+    },
+    {
+      "chapter_num": "87",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 143,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 150374
+      }
+    },
+    {
+      "chapter_num": "87.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 145,
+        "chapter_word_count": 362,
+        "total_word_count_so_far": 150736
+      }
+    },
+    {
+      "chapter_num": "88",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 147,
+        "chapter_word_count": 179,
+        "total_word_count_so_far": 150915
+      }
+    },
+    {
+      "chapter_num": "88.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 147,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 150915
+      }
+    },
+    {
+      "chapter_num": "89",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 147,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 150915
+      }
+    },
+    {
+      "chapter_num": "89.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 148,
+        "chapter_word_count": 68,
+        "total_word_count_so_far": 150983
+      }
+    },
+    {
+      "chapter_num": "90",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 148,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 150983
+      }
+    },
+    {
+      "chapter_num": "91",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 149,
+        "chapter_word_count": 80,
+        "total_word_count_so_far": 151063
+      }
+    },
+    {
+      "chapter_num": "92",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 149,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 151063
+      }
+    },
+    {
+      "chapter_num": "93",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 151,
+        "chapter_word_count": 331,
+        "total_word_count_so_far": 151394
+      }
+    },
+    {
+      "chapter_num": "94",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 152,
+        "chapter_word_count": 96,
+        "total_word_count_so_far": 151490
+      }
+    },
+    {
+      "chapter_num": "94.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 152,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 151490
+      }
+    },
+    {
+      "chapter_num": "95",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 153,
+        "chapter_word_count": 71,
+        "total_word_count_so_far": 151561
+      }
+    },
+    {
+      "chapter_num": "95.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 153,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 151561
+      }
+    },
+    {
+      "chapter_num": "95.2",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 153,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 151561
+      }
+    },
+    {
+      "chapter_num": "95.3",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 154,
+        "chapter_word_count": 509,
+        "total_word_count_so_far": 152070
+      }
+    },
+    {
+      "chapter_num": "95.4",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 154,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 152070
+      }
+    },
+    {
+      "chapter_num": "95.5",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 155,
+        "chapter_word_count": 157,
+        "total_word_count_so_far": 152227
+      }
+    },
+    {
+      "chapter_num": "95.6",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 155,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 152227
+      }
+    },
+    {
+      "chapter_num": "96",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 155,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 152227
+      }
+    },
+    {
+      "chapter_num": "96.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 156,
+        "chapter_word_count": 98,
+        "total_word_count_so_far": 152325
+      }
+    },
+    {
+      "chapter_num": "97",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 156,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 152325
+      }
+    },
+    {
+      "chapter_num": "98",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 157,
+        "chapter_word_count": 69,
+        "total_word_count_so_far": 152394
+      }
+    },
+    {
+      "chapter_num": "98.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 158,
+        "chapter_word_count": 71,
+        "total_word_count_so_far": 152465
+      }
+    },
+    {
+      "chapter_num": "99",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 158,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 152465
+      }
+    },
+    {
+      "chapter_num": "99.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 159,
+        "chapter_word_count": 56,
+        "total_word_count_so_far": 152521
+      }
+    },
+    {
+      "chapter_num": "99.2",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 160,
+        "chapter_word_count": 159,
+        "total_word_count_so_far": 152680
+      }
+    },
+    {
+      "chapter_num": "99.3",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 161,
+        "chapter_word_count": 94,
+        "total_word_count_so_far": 152774
+      }
+    },
+    {
+      "chapter_num": "100",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 4,
+        "total_comments_so_far": 165,
+        "chapter_word_count": 1020,
+        "total_word_count_so_far": 153794
+      }
+    },
+    {
+      "chapter_num": "100.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 166,
+        "chapter_word_count": 88,
+        "total_word_count_so_far": 153882
+      }
+    },
+    {
+      "chapter_num": "101",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 168,
+        "chapter_word_count": 1860,
+        "total_word_count_so_far": 155742
+      }
+    },
+    {
+      "chapter_num": "102",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 169,
+        "chapter_word_count": 68,
+        "total_word_count_so_far": 155810
+      }
+    },
+    {
+      "chapter_num": "103",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 170,
+        "chapter_word_count": 38,
+        "total_word_count_so_far": 155848
+      }
+    },
+    {
+      "chapter_num": "104",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 172,
+        "chapter_word_count": 139,
+        "total_word_count_so_far": 155987
+      }
+    },
+    {
+      "chapter_num": "104.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 173,
+        "chapter_word_count": 56,
+        "total_word_count_so_far": 156043
+      }
+    },
+    {
+      "chapter_num": "104.2",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 173,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 156043
+      }
+    },
+    {
+      "chapter_num": "105",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 173,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 156043
+      }
+    },
+    {
+      "chapter_num": "106",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 174,
+        "chapter_word_count": 42,
+        "total_word_count_so_far": 156085
+      }
+    },
+    {
+      "chapter_num": "107",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 175,
+        "chapter_word_count": 62,
+        "total_word_count_so_far": 156147
+      }
+    },
+    {
+      "chapter_num": "108",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 177,
+        "chapter_word_count": 137,
+        "total_word_count_so_far": 156284
+      }
+    },
+    {
+      "chapter_num": "108.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 179,
+        "chapter_word_count": 119,
+        "total_word_count_so_far": 156403
+      }
+    },
+    {
+      "chapter_num": "108.2",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 181,
+        "chapter_word_count": 129,
+        "total_word_count_so_far": 156532
+      }
+    },
+    {
+      "chapter_num": "108.3",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 181,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 156532
+      }
+    },
+    {
+      "chapter_num": "109",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 182,
+        "chapter_word_count": 44,
+        "total_word_count_so_far": 156576
+      }
+    },
+    {
+      "chapter_num": "109.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 183,
+        "chapter_word_count": 60,
+        "total_word_count_so_far": 156636
+      }
+    },
+    {
+      "chapter_num": "110",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 183,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 156636
+      }
+    },
+    {
+      "chapter_num": "110.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 183,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 156636
+      }
+    },
+    {
+      "chapter_num": "110.2",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 184,
+        "chapter_word_count": 73,
+        "total_word_count_so_far": 156709
+      }
+    },
+    {
+      "chapter_num": "110.3",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 186,
+        "chapter_word_count": 68,
+        "total_word_count_so_far": 156777
+      }
+    },
+    {
+      "chapter_num": "111",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 188,
+        "chapter_word_count": 168,
+        "total_word_count_so_far": 156945
+      }
+    },
+    {
+      "chapter_num": "111.1",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 2,
+        "total_comments_so_far": 190,
+        "chapter_word_count": 153,
+        "total_word_count_so_far": 157098
+      }
+    },
+    {
+      "chapter_num": "111.2",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 191,
+        "chapter_word_count": 76,
+        "total_word_count_so_far": 157174
+      }
+    },
+    {
+      "chapter_num": "111.3",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 1,
+        "total_comments_so_far": 192,
+        "chapter_word_count": 96,
+        "total_word_count_so_far": 157270
+      }
+    },
+    {
+      "chapter_num": "112",
+      "ao3": null,
+      "sv": {
+        "chapter_comments": 0,
+        "total_comments_so_far": 192,
+        "chapter_word_count": 0,
+        "total_word_count_so_far": 157270
+      }
+    }
+  ]
+}
