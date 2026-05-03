@@ -516,7 +516,6 @@ def chart_throughput_by_regime() -> None:
         ax = axes[ax_i]
         values = [by_regime[r][key] for r in (1, 2, 3)]
         x_positions = [0, 1, 2]
-        # Thin connecting line (slope) between points
         ax.plot(x_positions, values, color="0.7", linewidth=0.8, zorder=1)
         for i, (xv, v) in enumerate(zip(x_positions, values)):
             ax.scatter(xv, v, s=70, color=regime_colors[i], zorder=3,
@@ -530,7 +529,6 @@ def chart_throughput_by_regime() -> None:
         ax.spines["bottom"].set_visible(False)
         ax.tick_params(axis="x", length=0)
         ax.tick_params(axis="y", labelleft=False, length=0)
-        # Pad above and below for label room
         lo = min(values) * 0.7
         hi = max(values) * 1.4
         ax.set_ylim(lo, hi)
@@ -541,7 +539,6 @@ def chart_throughput_by_regime() -> None:
         "dot per regime, slope between shows direction of change",
         fontsize=11, y=1.02, color="0.1",
     )
-    # Footnote: define regimes in case the reader skipped earlier context
     fig.text(
         0.5, -0.01,
         "Regime 1: 100 CP/2000 words, roll every 100 CP.   "
@@ -551,6 +548,224 @@ def chart_throughput_by_regime() -> None:
     )
     fig.tight_layout()
     _save(fig, FIGURES / "throughput_by_regime.png")
+
+
+# ---------- chart 8: words per perk acquired (high resolution) --------------
+
+
+def _regime_markers(chapters: list[dict]) -> list[tuple[dt.datetime, str, str]]:
+    """Return (date, label, ha) for each regime change to draw on time-axes."""
+    markers = []
+    for chap_num, label, ha in [
+        (str(MECHANIC_CHANGE_R1), "ch 91", "right"),
+        (str(MECHANIC_CHANGE_R2), "ch 97", "left"),
+    ]:
+        c = next((c for c in chapters if c["chapter_num"] == chap_num), None)
+        if c:
+            markers.append((dt.datetime.fromtimestamp(c["publish_ts"]), label, ha))
+    return markers
+
+
+def chart_words_per_perk() -> None:
+    """Words spent between consecutive paid acquisitions, per acquisition.
+
+    For chapters with multiple acquisitions, the chapter's word count
+    is distributed evenly across them so each has a positional offset
+    in cumulative-words. Scatter shows raw per-acquisition deltas
+    (noisy by nature); a rolling median over a 21-acquisition window
+    shows the trend. Regime change markers anchor the regime shifts.
+    """
+    chapters = _load("chapters")["chapters"]
+    obtained = _load("obtained_perks")["perks"]
+    chap_ordered = sorted(chapters, key=lambda c: c["publish_ts"])
+    chap_pub = {c["chapter_num"]: dt.datetime.fromtimestamp(c["publish_ts"])
+                for c in chap_ordered}
+
+    # Cumulative words at start of each chapter
+    chapter_word_start: dict[str, int] = {}
+    running = 0
+    for c in chap_ordered:
+        chapter_word_start[c["chapter_num"]] = running
+        running += c["words_approx"]
+
+    chap_words = {c["chapter_num"]: c["words_approx"] for c in chapters}
+
+    # Group paid acquisitions by chapter, preserving order
+    acqs_by_chap: dict[str, list[dict]] = defaultdict(list)
+    for p in obtained:
+        if p["free"]:
+            continue
+        if p["chapter_num"] not in chapter_word_start:
+            continue
+        acqs_by_chap[p["chapter_num"]].append(p)
+
+    # Sort chapters in publish order, then assign each acquisition a
+    # cumulative-word position (chapter_start + slot * words_per_slot).
+    points: list[dict] = []
+    for c in chap_ordered:
+        cn = c["chapter_num"]
+        chap_acqs = acqs_by_chap.get(cn, [])
+        if not chap_acqs:
+            continue
+        slot = chap_words[cn] / len(chap_acqs)
+        for i, _ in enumerate(chap_acqs):
+            position = chapter_word_start[cn] + (i + 0.5) * slot
+            points.append({
+                "chapter_num": cn,
+                "publish_dt": chap_pub[cn],
+                "cumulative_words_at_acq": position,
+            })
+
+    # Words since previous paid acquisition
+    prev = 0
+    for p in points:
+        p["delta"] = p["cumulative_words_at_acq"] - prev
+        prev = p["cumulative_words_at_acq"]
+
+    if not points:
+        return
+
+    fig, ax = plt.subplots(figsize=(13, 5))
+
+    xs = [p["publish_dt"] for p in points]
+    ys = [p["delta"] for p in points]
+
+    # Scatter (light, the underlying noise)
+    ax.scatter(xs, ys, s=14, color="0.7", alpha=0.8, zorder=2)
+
+    # Rolling median (the signal)
+    window = 21
+    half = window // 2
+    smoothed = []
+    smoothed_x = []
+    for i in range(len(points)):
+        lo = max(0, i - half)
+        hi = min(len(points), i + half + 1)
+        smoothed.append(statistics.median(ys[lo:hi]))
+        smoothed_x.append(xs[i])
+    ax.plot(smoothed_x, smoothed, color="tab:blue", linewidth=1.8, zorder=3)
+
+    # Regime markers
+    y_top = max(ys) * 1.04
+    for d, label, ha in _regime_markers(chapters):
+        ax.axvline(d, color="0.4", linewidth=0.6, zorder=1)
+        x_off = -4 if ha == "right" else 4
+        ax.annotate(
+            label,
+            xy=(d, y_top),
+            xytext=(x_off, -2),
+            textcoords="offset points",
+            fontsize=9, color="0.2",
+            ha=ha, va="top",
+        )
+
+    # Direct label on the rolling median at the right edge
+    ax.annotate(
+        f"  rolling median\n  (window=21)",
+        xy=(smoothed_x[-1], smoothed[-1]),
+        xytext=(8, 0),
+        textcoords="offset points",
+        fontsize=9, color="tab:blue", va="center",
+    )
+
+    _strip_chartjunk(ax)
+    ax.set_title(
+        "Words written between paid acquisitions  ·  per-acquisition scatter, rolling-median trend",
+        fontsize=11, color="0.1", loc="left", pad=10,
+    )
+    ax.set_ylabel("words since previous paid acquisition", fontsize=9, color="0.3")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{int(v/1000):,}k"))
+    ax.xaxis.set_major_locator(mdates.YearLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.set_ylim(0, max(ys) * 1.08)
+    ax.set_xlim(min(xs) - dt.timedelta(days=20),
+                max(xs) + dt.timedelta(days=200))
+    ax.spines["bottom"].set_bounds(mdates.date2num(min(xs)), mdates.date2num(max(xs)))
+    ax.spines["left"].set_bounds(0, max(ys))
+    _save(fig, FIGURES / "words_per_perk.png")
+
+
+# ---------- chart 9: monthly throughput dashboard ---------------------------
+
+
+def chart_monthly_throughput() -> None:
+    """Three-panel monthly bar chart: chapters/month, words/month, median chapter size.
+
+    Bars at monthly resolution, regime change markers as thin vertical
+    lines on each panel. Bar color shifts by regime.
+    """
+    chapters = _load("chapters")["chapters"]
+    chap_ordered = sorted(chapters, key=lambda c: c["publish_ts"])
+
+    by_month: dict[str, list[dict]] = defaultdict(list)
+    for c in chap_ordered:
+        d = dt.datetime.fromtimestamp(c["publish_ts"]).date()
+        key = f"{d.year:04d}-{d.month:02d}"
+        by_month[key].append(c)
+
+    months = sorted(by_month)
+    month_dates = [dt.date(int(m.split("-")[0]), int(m.split("-")[1]), 15) for m in months]
+
+    chap_counts = [len(by_month[m]) for m in months]
+    word_sums = [sum(c["words_approx"] for c in by_month[m]) for m in months]
+    median_lengths = [statistics.median(c["words_approx"] for c in by_month[m]) for m in months]
+
+    # Color each bar by regime (use first chapter in the month to pick)
+    regime_colors_bg = ["#3b6ea5", "#a3733b", "#a33b6e"]
+    bar_colors = []
+    for m in months:
+        first_chap = sorted(by_month[m], key=lambda c: c["publish_ts"])[0]
+        bar_colors.append(regime_colors_bg[_regime(first_chap["chapter_num"]) - 1])
+
+    fig, axes = plt.subplots(3, 1, figsize=(13, 8.5), sharex=True)
+    panels = [
+        (axes[0], chap_counts, "Chapters published per month",
+         lambda v, _: f"{int(v)}"),
+        (axes[1], word_sums,   "Words published per month",
+         lambda v, _: f"{int(v/1000):,}k"),
+        (axes[2], median_lengths, "Median chapter word count per month",
+         lambda v, _: f"{int(v/1000)}k"),
+    ]
+
+    markers = _regime_markers(chap_ordered)
+
+    for ax, ys, title, fmt in panels:
+        ax.bar(month_dates, ys, width=24, color=bar_colors,
+               edgecolor="white", linewidth=0.4, zorder=2)
+        # Regime markers
+        y_top = max(ys) * 1.05
+        for d, label, ha in markers:
+            ax.axvline(d.date(), color="0.3", linewidth=0.7, zorder=1)
+        ax.set_ylabel(title, fontsize=9.5, color="0.2")
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(fmt))
+        _strip_chartjunk(ax)
+        ax.set_ylim(0, max(ys) * 1.12)
+        ax.spines["bottom"].set_bounds(
+            mdates.date2num(min(month_dates)),
+            mdates.date2num(max(month_dates)),
+        )
+        ax.spines["left"].set_bounds(0, max(ys))
+
+    # Only the top panel gets regime change labels
+    y_top = max(chap_counts) * 1.10
+    for d, label, ha in markers:
+        x_off = -4 if ha == "right" else 4
+        axes[0].annotate(label, xy=(d.date(), y_top),
+                         xytext=(x_off, -2), textcoords="offset points",
+                         fontsize=9, color="0.2", ha=ha, va="top")
+
+    axes[-1].xaxis.set_major_locator(mdates.YearLocator())
+    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    axes[-1].set_xlim(min(month_dates) - dt.timedelta(days=20),
+                      max(month_dates) + dt.timedelta(days=20))
+
+    fig.suptitle(
+        "Monthly throughput  ·  bar color encodes regime  ·  "
+        "blue = regime 1, brown = regime 2, magenta = regime 3",
+        fontsize=11, y=0.995, color="0.1",
+    )
+    fig.tight_layout()
+    _save(fig, FIGURES / "monthly_throughput.png")
 
 
 # ---------- chart 5: real-world vs in-world time ----------------------------
@@ -708,6 +923,8 @@ def main() -> None:
     chart_time_dilation()
     chart_throughput_by_year()
     chart_throughput_by_regime()
+    chart_words_per_perk()
+    chart_monthly_throughput()
     print("done.")
 
 
