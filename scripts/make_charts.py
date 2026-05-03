@@ -290,60 +290,54 @@ def chart_time_dilation() -> None:
                         rotation=45, ha="right", fontsize=8)
     ax1.grid(True, alpha=0.3)
 
-    # Bottom: in-world timeline events on a date axis. Don't label every
-    # event - the April 2011 cluster has 13 events in 17 days and would
-    # be unreadable. Label only the milestones.
+    # Bottom: in-world timeline. Split events into "backstory references"
+    # (mentioned but not actively narrated) and "actively-narrated days"
+    # (the protagonist's experienced time). The split is by date - the
+    # "Story Begins" entry on 2011-04-08 is the boundary, regardless of
+    # which curator contributed each entry.
     iso_entries = [e for e in timeline if e["in_world_date_iso"]]
     iso_entries.sort(key=lambda e: e["in_world_date_iso"])
-    iw_dates = [dt.date.fromisoformat(e["in_world_date_iso"]) for e in iso_entries]
-    colors = ["tab:purple" if e["attribution"] == "author" else "tab:green" for e in iso_entries]
-    sizes = [40 for _ in iso_entries]
-    ax2.scatter(iw_dates, [0.5] * len(iso_entries), s=sizes, c=colors, alpha=0.85, zorder=3)
+    STORY_START_ISO = "2011-04-08"
+    backstory = [e for e in iso_entries if e["in_world_date_iso"] < STORY_START_ISO]
+    in_story = [e for e in iso_entries if e["in_world_date_iso"] >= STORY_START_ISO]
+    bs_dates = [dt.date.fromisoformat(e["in_world_date_iso"]) for e in backstory]
+    is_dates = [dt.date.fromisoformat(e["in_world_date_iso"]) for e in in_story]
 
-    # Pick a few annotation points: first author entry, first Whamodyne
-    # entry, and the start-of-story entry.
-    milestones = [
-        (iso_entries[0], "First dated event"),
-    ]
-    for e in iso_entries:
-        if e["events"].lower().startswith("story begins"):
-            milestones.append((e, "Story begins"))
-            break
-    milestones.append((iso_entries[-1], "Last logged event"))
-    # Stagger annotation y-offsets so the April 2011 cluster of milestones
-    # doesn't pile up - 17 in-world days is one pixel on a 4-year axis.
-    used_dates: set[str] = set()
-    offsets = [(40, "center"), (90, "left"), (40, "right")]
-    for (e, label), (y_off, ha) in zip(milestones, offsets):
-        if e["in_world_date_iso"] in used_dates:
-            continue
-        used_dates.add(e["in_world_date_iso"])
-        d = dt.date.fromisoformat(e["in_world_date_iso"])
-        x_off = {"center": 0, "left": -8, "right": 8}[ha]
+    ax2.scatter(bs_dates, [0.5] * len(bs_dates), s=40, c="tab:purple",
+                alpha=0.7, label=f"backstory references ({len(bs_dates)})")
+    ax2.scatter(is_dates, [0.5] * len(is_dates), s=40, c="tab:green",
+                alpha=0.85, label=f"actively-narrated days ({len(is_dates)})")
+
+    # Story-start divider line
+    if is_dates:
+        story_start = dt.date.fromisoformat(STORY_START_ISO)
+        ax2.axvline(story_start, color="tab:red", linestyle="--", alpha=0.5, linewidth=1)
         ax2.annotate(
-            f"{label}\n{e['in_world_date_text']}",
-            xy=(d, 0.5),
-            xytext=(x_off, y_off),
+            f"Story begins\n{STORY_START_ISO}",
+            xy=(story_start, 0.5),
+            xytext=(0, 50),
             textcoords="offset points",
-            ha=ha, va="bottom",
-            fontsize=8, color="dimgray",
-            arrowprops=dict(arrowstyle="-", color="lightgray", linewidth=0.6),
+            ha="center", va="bottom",
+            fontsize=8, color="tab:red",
+            arrowprops=dict(arrowstyle="-", color="tab:red", linewidth=0.6, alpha=0.5),
         )
 
-    ax2.set_title("In-world timeline events (purple = author-provided pre-story, green = Whamodyne in-story)")
+    ax2.set_title("In-world timeline events")
     ax2.set_xlabel("In-world date")
     ax2.set_ylim(0, 1.5)
     ax2.set_yticks([])
     ax2.xaxis.set_major_locator(mdates.YearLocator())
     ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax2.grid(True, axis="x", alpha=0.3)
+    ax2.legend(loc="upper left", fontsize=9)
 
-    iw_span_days = (iw_dates[-1] - iw_dates[0]).days
     rw_span_days = (pub[-1] - pub[0]).days
+    in_story_span = (is_dates[-1] - is_dates[0]).days if len(is_dates) >= 2 else 0
     fig.suptitle(
         f"Time dilation: {rw_span_days} real-world days of writing cover "
-        f"{iw_span_days} in-world days across {len(iso_entries)} dated events "
-        f"(13 of which are within a 17-day window in April 2011)",
+        f"~{in_story_span} actively-narrated in-story days "
+        f"(ratio ~{rw_span_days // max(in_story_span, 1)}:1). Backstory references "
+        f"reach back to 2007 but aren't narrated time.",
         fontsize=11, y=1.0,
     )
     fig.tight_layout()

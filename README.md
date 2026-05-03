@@ -43,33 +43,30 @@ the new base rate.
 The author noted further modifications might follow as more
 constellations clear; this is the only documented one so far.
 
-### Roll cadence (open question)
+### Roll cadence shift (resolved)
 
-The chapter 97 author note also describes the *prior* roll cadence as
-"rolls every 200 points," in tension with chapter 1's "roll attempted
-every 100 CP" and the curator's xlsx rules box ("Every 100 Points
-gained, LordRoustabout will stop writing and roll dice"). Empirical
-analysis of `rolls.json` settles this for the curator-covered range:
+Empirical analysis of `rolls.json` shows the cadence was 100 CP/roll
+through the curator-covered range:
 
 > Across 487 consecutive numbered-roll pairs in chapters 1–75, **472
 > (97%) differ by exactly 100 CP**. The 15 outliers are sheet typos or
 > cluster-purchase artifacts. The 100 CP cadence is stable across
 > every roll-number sub-range (1–100, 100–200, …, 400–503).
 
-Chapters 76–96 are not covered by `rolls.json`, so any silent shift
-between the curator's last data point and the ch97 announcement would
-fall in that gap. Two interpretations:
+User confirmation from the project Discord: the cadence silently
+shifted from 100 to 200 CP/roll **right after the last 100-point perk
+was acquired** (some chapter between 76 and 96, where we have no
+roll-by-roll data). The chapter 97 note then describes 200 CP/roll as
+the existing rule because by that point it had already been the rule
+for some time.
 
-1. **Trust the data:** the cadence stayed at 100 CP/roll through
-   chapter 96, and the ch97 change moved it to 200 CP/roll along with
-   the words-per-CP rate. The author's wording in the ch97 note is a
-   simplification.
-2. **Trust the author note:** the cadence shifted to 200 CP/roll
-   somewhere in chapters 76–96 and the ch97 change is words-per-CP
-   only. We can't verify this from current data.
-
-Phase 2 modeling defaults to interpretation 1 (direct evidence), with
-the caveat that the regime in chapters 76–96 is empirically unknown.
+Empirically, the data doesn't show a clean cliff for 100-CP perk
+acquisitions — they continue (sparsely) all the way through chapter
+114. So the trigger likely refers to a specific 100-CP purchase
+defined by some criterion not visible in our data (e.g., a particular
+constellation or jump). Pinpointing the exact transition chapter
+remains a Future Work item; the deterministic word-count → roll
+matching project would resolve it.
 
 **Coverage in our data:** 17 600+ acquisitions occur before chapter 97
 (no shadow); 11 are in or after chapter 97 (shadow active). The old
@@ -128,7 +125,7 @@ data and surface findings worth keeping in mind:
 | `figures/rolls_per_chapter.png` | Hits vs misses per chapter for chapters 1–75 (curator coverage). Hit rate ~38% (191/496); the chapter 41 outlier is the Felyne Comrade introduction with many free-bonus perks. |
 | `figures/acquisitions_per_chapter.png` | Paid vs free perks per chapter for the full story. The chapter 97 mechanic-change line shows a visible flattening of bar heights afterward. |
 | `figures/constellation_growth.png` | Stacked area of cumulative perks per constellation through chapter 75. Toolkits, Knowledge, and Quality dominate; Capstone activates around chapter 64. |
-| `figures/time_dilation.png` | Real-world publish date by chapter (top) alongside in-world dated events (bottom). 2096 real-world days of writing cover 1424 in-world days; 13 of the 26 dated events are within a 17-day window in April 2011. |
+| `figures/time_dilation.png` | Real-world publish date by chapter (top) alongside in-world dated events (bottom). 2096 real-world days of writing cover ~17 actively-narrated in-story days (April 8 → April 25, 2011) — a ~123:1 dilation ratio. The 12 earlier purple dots are backstory references reaching back to 2007 but aren't narrated time. |
 
 ## Spot-check
 
