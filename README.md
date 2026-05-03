@@ -72,9 +72,10 @@ malformed data.
 | File                              | From                        | Coverage |
 |-----------------------------------|-----------------------------|----------|
 | `data/derived/chapters.json`      | 8 SV threadmark MHTs        | 194 chapters, 2020-07 → 2026-04 |
-| `data/derived/rolls.json`         | curator xlsx, "List of Rolls & Perk Order" | 503 rolls, chapters 1–75 |
-| `data/derived/perks_catalog.json` | curator xlsx, "Complete List of Perks"     | 651 perks across 14 constellations |
-| `data/derived/timeline.json`      | Whamodyne post (sv_page_0233.mht)          | 15 in-world days through ch 93 |
+| `data/derived/rolls.json`         | first curator xlsx, "List of Rolls & Perk Order" | 503 rolls (with banked CP, misses), chapters 1–75 |
+| `data/derived/perks_catalog.json` | first curator xlsx, "Complete List of Perks"     | 651 perks across 14 constellations |
+| `data/derived/obtained_perks.json`| Reference xlsx, "Obtained Perks"                 | 504 acquisitions across 127 chapters (full-story, EPUB seq 1–192) |
+| `data/derived/timeline.json`      | Reference xlsx, "Timeline of Events"             | 26 dated entries June 2007 → April 25 2011 (author + Whamodyne attribution) |
 
 ## Running the parsers
 
@@ -82,7 +83,7 @@ malformed data.
 pip install -r requirements.txt
 python3 scripts/parse_threadmarks.py
 python3 scripts/parse_rolls.py
-python3 scripts/parse_timeline.py
+python3 scripts/parse_reference.py   # obtained_perks + timeline
 python3 scripts/spot_check.py        # cross-source consistency check
 ```
 
@@ -95,10 +96,18 @@ quality issues internal to the curator's xlsx (catalog gaps, cosmetic
 naming variants, roll-pace deviations from "100 CP / 2000 words") are
 surfaced as informational warnings.
 
-Current state: hard checks pass; the secondary source has 31 perks
-acquired in rolls without a catalog entry, 1 roll-vs-catalog cost
-disagreement, and 56 cosmetic name variants. Phase 2 consumers should
-be aware of these.
+Current state: hard checks pass. Soft findings (curator data quality):
+- 31 perks acquired in rolls without a catalog entry
+- 1 roll-vs-catalog cost disagreement (Technosorcery: rolls=400, old
+  catalog=300; Reference xlsx confirms 400)
+- 56 cosmetic name variants between rolls and catalog
+- 7 chapters disagree on paid-perk count between rolls.json and
+  obtained_perks for the chapter 1–75 overlap range (98% total
+  agreement: 225 vs 229 paid acquisitions)
+- 18 of 82 chapters deviate >30% from the original "100 CP / 2000
+  words" rule (uncorrected for the chapter-97 mechanic change)
+
+Phase 2 consumers should be aware of these.
 
 ## Status
 

@@ -2,21 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bcf-visualization/derived/timeline.schema.json",
   "title": "In-world Timeline",
-  "description": "Reader-curated mapping of in-world dates to events from the Whamodyne SV post.",
+  "description": "Author-provided pre-story dates merged with Whamodyne's reader-curated in-story timeline.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "_source", "_author", "_count",
+    "_source", "_attribution", "_count",
     "_first_in_world_date", "_last_in_world_date",
-    "_post_trailer_date", "_note", "entries"
+    "_note", "entries"
   ],
   "properties": {
     "_source":              { "type": "string" },
-    "_author":              { "type": "string" },
+    "_attribution":         { "type": "string" },
     "_count":               { "type": "integer", "minimum": 0 },
     "_first_in_world_date": { "type": ["string", "null"], "format": "date" },
     "_last_in_world_date":  { "type": ["string", "null"], "format": "date" },
-    "_post_trailer_date":   { "type": ["string", "null"], "format": "date" },
     "_note":                { "type": "string" },
     "entries": {
       "type": "array",
@@ -27,15 +26,13 @@
     "entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sequence", "in_world_date", "day_of_week", "events"],
+      "required": ["sequence", "in_world_date_iso", "in_world_date_text", "events", "attribution"],
       "properties": {
-        "sequence":      { "type": "integer", "minimum": 1 },
-        "in_world_date": { "type": "string", "format": "date" },
-        "day_of_week": {
-          "enum": ["Monday", "Tuesday", "Wednesday", "Thursday",
-                   "Friday", "Saturday", "Sunday"]
-        },
-        "events": { "type": "string", "minLength": 1 }
+        "sequence":           { "type": "integer", "minimum": 1 },
+        "in_world_date_iso":  { "type": ["string", "null"], "format": "date" },
+        "in_world_date_text": { "type": "string" },
+        "events":             { "type": "string", "minLength": 1 },
+        "attribution":        { "enum": ["author", "Whamodyne"] }
       }
     }
   }

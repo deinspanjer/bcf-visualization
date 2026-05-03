@@ -1,31 +1,30 @@
 """Cross-source spot checks for the derived datasets.
 
-Verifies that secondary-source data (the curator's xlsx) is consistent
-with primary sources (the EPUB story text and the SV threadmark MHTs).
+Verifies that secondary-source data (the two curator xlsx files) is
+consistent with primary sources (the EPUB story text and the SV
+threadmark MHTs), and that the two curator sources agree with each
+other on the chapter range they share.
 
 Checks:
-  1. Chapter alignment - every chapter the curator lists also exists
-     in the threadmark-derived chapters.json (and vice versa, for the
-     range the curator covers).
+  1. Chapter alignment - every chapter the curators list also exists
+     in the threadmark-derived chapters.json.
   2. Word counts - EPUB exact word count vs threadmark rounded
      "5k"/"8.2k" display, expecting agreement to within rounding.
-  3. Roll-pace math - the foundational mechanic is "100 CP per 2000
+  3. Roll-pace math - the original mechanic was "100 CP per 2000
      words". For chapters with rolls, sum of rolls in that chapter
-     should track words / 20.
+     should track words / 20. (Only checks chapters before the
+     ch97 mechanic change.)
   4. Perks consistency - every perk acquired in rolls.json must exist
-     in perks_catalog.json. We distinguish cosmetic mismatches (case,
-     ASCII vs Unicode punctuation, source aliases) from genuine gaps.
+     in perks_catalog.json. Cosmetic mismatches (case, ASCII vs
+     Unicode punctuation, source aliases) are distinguished from
+     genuine gaps.
+  5. Curator agreement - rolls.json (sonicyoash, chapters 1-75) vs
+     obtained_perks.json (Reference, full story). Both list every
+     paid acquisition for chapters 1-75; counts should match.
 
-Hard failures (exit non-zero): primary-vs-primary disagreement -
-chapter references that don't exist in the threadmarks, or threadmark
-word counts that diverge from the EPUB. These would indicate a parser
-bug or a corrupt source.
-
-Soft warnings (informational, exit 0): findings within the secondary
-source - roll-pace deviations from "100 CP / 2000 words", catalog gaps,
-cost disagreements between rolls and catalog, cosmetic naming
-variants. These reflect curator data-entry inconsistency, not anything
-wrong with our pipeline.
+Hard failures (exit non-zero): primary-vs-primary disagreement.
+Soft warnings (exit 0): findings within or between secondary sources
+(curator data-entry quality).
 """
 
 from __future__ import annotations
@@ -301,10 +300,84 @@ def check_perks_in_catalog(rolls: dict, catalog: dict) -> list[str]:
     return hard, soft  # type: ignore[return-value]
 
 
+def check_obtained_perks_alignment(chapters: dict, obtained: dict) -> tuple[list[str], list[str]]:
+    """Reference xlsx 'Obtained Perks' chapter_nums must exist in chapters.json,
+    and EPUB sequence values must be in range."""
+    hard: list[str] = []
+    soft: list[str] = []
+    threadmark_nums = {c["chapter_num"] for c in chapters["chapters"]}
+    n_chaps = len(chapters["chapters"])
+    bad_chap = sorted({p["chapter_num"] for p in obtained["perks"]} - threadmark_nums)
+    bad_seq = [p for p in obtained["perks"] if not (1 <= p["epub_sequence"] <= n_chaps)]
+    print(f"\ncheck 5 - obtained_perks alignment:")
+    print(f"  total acquisitions:    {len(obtained['perks'])}")
+    print(f"  unique chapters:       {len({p['chapter_num'] for p in obtained['perks']})}")
+    print(f"  bad chapter_num:       {len(bad_chap)} {bad_chap[:5]}")
+    print(f"  EPUB seq out of range: {len(bad_seq)}")
+    if bad_chap:
+        hard.append(f"  obtained_perks references {len(bad_chap)} chapter_num(s) not in threadmarks")
+    if bad_seq:
+        hard.append(f"  obtained_perks has {len(bad_seq)} EPUB sequence values out of [1, {n_chaps}]")
+    return hard, soft
+
+
+def check_curator_agreement(rolls: dict, obtained: dict) -> tuple[list[str], list[str]]:
+    """For chapters 1-75 (overlap range), compare per-chapter paid
+    acquisition counts between the two curator sources."""
+    hard: list[str] = []
+    soft: list[str] = []
+
+    rolls_acq: dict[str, int] = defaultdict(int)
+    for r in rolls["rolls"]:
+        if r["kind"] not in ("trigger", "roll"):
+            continue
+        for p in r["perks"]:
+            if not p["free"]:
+                rolls_acq[r["chapter_num"]] += 1
+
+    obt_acq: dict[str, int] = defaultdict(int)
+    for p in obtained["perks"]:
+        # Only compare paid perks in chapters 1-75 (the curator overlap range)
+        try:
+            major = int(p["chapter_num"].split(".")[0])
+        except (ValueError, IndexError):
+            continue
+        if major > 75:
+            continue
+        if not p["free"]:
+            obt_acq[p["chapter_num"]] += 1
+
+    chapters_compared = set(rolls_acq) | set(obt_acq)
+    disagree: list[tuple[str, int, int]] = []
+    for ch in sorted(chapters_compared, key=lambda c: tuple(int(x) for x in c.split("."))):
+        r = rolls_acq.get(ch, 0)
+        o = obt_acq.get(ch, 0)
+        if r != o:
+            disagree.append((ch, r, o))
+
+    print(f"\ncheck 6 - curator agreement (rolls.json vs obtained_perks for ch 1-75):")
+    print(f"  chapters in rolls.json:        {len(rolls_acq)}")
+    print(f"  chapters in obtained_perks:    {len(obt_acq)}")
+    print(f"  chapters with disagreement:    {len(disagree)}")
+    for ch, r, o in disagree[:10]:
+        print(f"    ch{ch}: rolls.json={r} paid acquisitions, obtained_perks={o}")
+    total_rolls = sum(rolls_acq.values())
+    total_obt = sum(obt_acq.values())
+    print(f"  total paid (rolls.json):       {total_rolls}")
+    print(f"  total paid (obtained_perks):   {total_obt}")
+    if disagree:
+        soft.append(
+            f"  {len(disagree)} chapters disagree on paid-perk count between "
+            "rolls.json and obtained_perks (curator interpretation differences)"
+        )
+    return hard, soft
+
+
 def main() -> int:
     chapters = _load("chapters")
     rolls = _load("rolls")
     catalog = _load("perks_catalog")
+    obtained = _load("obtained_perks")
 
     hard: list[str] = []
     soft: list[str] = []
@@ -315,6 +388,12 @@ def main() -> int:
     perk_hard, perk_soft = check_perks_in_catalog(rolls, catalog)
     hard.extend(perk_hard)
     soft.extend(perk_soft)
+    op_hard, op_soft = check_obtained_perks_alignment(chapters, obtained)
+    hard.extend(op_hard)
+    soft.extend(op_soft)
+    ag_hard, ag_soft = check_curator_agreement(rolls, obtained)
+    hard.extend(ag_hard)
+    soft.extend(ag_soft)
 
     print()
     if soft:
