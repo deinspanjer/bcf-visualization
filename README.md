@@ -19,14 +19,36 @@ This is an exploratory project; the plan is iterative and not yet locked down.
 - Roll attempted every 100 CP earned
 - Perk purchased on roll if banked CP ≥ rolled perk's cost, else miss + CP banked
 
+### Chapter 91 "The Toolkit" rule change
+
+Author's note in the chapter:
+
+> With the perk from this chapter, all non-repeatable 100 point perks
+> in the tables have been obtained. As there are no longer any unique
+> powers that can be gained for 100 points, I will be changing the
+> methodology and rolling for powers every 200 points, meaning rolls
+> will occur every 4,000 words. The rate of point gain will remain the
+> same, but the lower number of rolls will mean fewer rolls will occur
+> where there is no chance of any power being obtained.
+
+So the ch91 change moved the cadence from 100 CP/roll to **200 CP/roll**.
+Words-per-CP stayed at 2000. Effective: rolls every 4000 words instead
+of every 2000.
+
+The trigger perk was **"The Toolkit" (Sabaton)** at chapter 91, the
+last non-repeatable 100-point perk in the catalog. Personal Reality
+100-CP perks are repeatable (Workshop, etc.) and cluster bonuses (Star
+Trek "Skills:", Percy Jackson "Minor Blessing X") aren't unique
+acquisitions, so both continued to appear after ch91 without
+contradicting the rule.
+
 ### Chapter 97 "Confrontations" rule changes
 
-Author's note in the chapter introduced modifications intended to slow
-the perk acquisition rate. The note isn't in either EPUB; the canonical
-text was relayed via the project Discord.
+Second author's note, six chapters later, layered on more changes:
 
 **Change 1 — slower base rate.** 100 CP now requires **3000 words**
-(was 2000).
+(was 2000). Combined with the ch91 cadence, rolls now happen every
+6000 words.
 
 **Change 2 — recovery shadow on 600/800 perks.** After a 600- or
 800-point perk is acquired, *no CP is banked at all* until words equal
@@ -40,41 +62,30 @@ Words written during the shadow advance the story but don't count
 toward the next roll. After the shadow ends, accumulation resumes at
 the new base rate.
 
+The ch97 note's "rolls happen every 4000 words" reference to the prior
+state confirms that the ch91 cadence change had been in effect since
+chapter 91 (matching the empirical roll log evidence for ch 1–75 of
+100 CP/roll, with the post-ch91 cadence change happening in the gap
+between the curator's last data point and ch97).
+
 The author noted further modifications might follow as more
-constellations clear; this is the only documented one so far.
+constellations clear; ch91 and ch97 are the only documented ones so far.
 
-### Roll cadence shift (resolved)
+### Mechanic regimes summary
 
-Empirical analysis of `rolls.json` shows the cadence was 100 CP/roll
-through the curator-covered range:
+| Chapters | Words / 100 CP | CP / roll | Words / roll | Notes |
+|---|---|---|---|---|
+| 1 – 91   | 2000 | 100 | 2000 | original |
+| 92 – 96  | 2000 | 200 | 4000 | ch91 change applied |
+| 97 –     | 3000 | 200 | 6000 | ch97 changes applied + shadow on 600/800 |
 
-> Across 487 consecutive numbered-roll pairs in chapters 1–75, **472
-> (97%) differ by exactly 100 CP**. The 15 outliers are sheet typos or
-> cluster-purchase artifacts. The 100 CP cadence is stable across
-> every roll-number sub-range (1–100, 100–200, …, 400–503).
-
-User confirmation from the project Discord: the cadence silently
-shifted from 100 to 200 CP/roll **right after the last 100-point perk
-was acquired** (some chapter between 76 and 96, where we have no
-roll-by-roll data). The chapter 97 note then describes 200 CP/roll as
-the existing rule because by that point it had already been the rule
-for some time.
-
-Empirically, the data doesn't show a clean cliff for 100-CP perk
-acquisitions — they continue (sparsely) all the way through chapter
-114. So the trigger likely refers to a specific 100-CP purchase
-defined by some criterion not visible in our data (e.g., a particular
-constellation or jump). Pinpointing the exact transition chapter
-remains a Future Work item; the deterministic word-count → roll
-matching project would resolve it.
-
-**Coverage in our data:** 17 600+ acquisitions occur before chapter 97
-(no shadow); 11 are in or after chapter 97 (shadow active). The old
-roll-by-roll xlsx stops at chapter 75, so all per-roll data we have
-predates both changes. The Reference xlsx logs acquisitions through
-chapter 119 but doesn't expose CP banking, so the shadow's effect
-can't be measured against the rule directly without parsing chapter
-prose.
+**Coverage in our data:** the curator's roll log (`rolls.json`) covers
+chapters 1–75 entirely under the original regime. `obtained_perks.json`
+covers the full story but logs only successful acquisitions, not roll
+attempts or banked CP — so the ch92–96 and ch97+ regimes aren't
+directly measurable from our derived data without parsing the EPUB
+prose. 17 600+ acquisitions occur before chapter 97 (no shadow); 11
+are in or after chapter 97 (shadow active).
 
 ## Repo layout
 
