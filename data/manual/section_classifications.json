@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
   "_count": 432,
-  "_mc_sections": 144,
-  "_non_mc_sections": 288,
+  "_mc_sections": 128,
+  "_non_mc_sections": 304,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script.",
   "classifications": {
     "1@0": {
@@ -58,8 +58,8 @@
       "chapter_num": "3.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline interlude 'Brian'"
     },
     "4@0": {
       "chapter_num": "4",
@@ -107,8 +107,8 @@
       "chapter_num": "6.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline interlude 'Taylor'"
     },
     "7@0": {
       "chapter_num": "7",
@@ -142,8 +142,8 @@
       "chapter_num": "8.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline interlude 'Amy'"
     },
     "9@0": {
       "chapter_num": "9",
@@ -205,8 +205,8 @@
       "chapter_num": "12.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Thomas')"
     },
     "13@0": {
       "chapter_num": "13",
@@ -262,7 +262,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Weld')"
+      "reason": "implicit with non-MC markers: meeting_report"
     },
     "17@0": {
       "chapter_num": "17",
@@ -338,8 +338,8 @@
       "chapter_num": "21.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline interlude 'Dennis'"
     },
     "22@0": {
       "chapter_num": "22",
@@ -513,8 +513,8 @@
       "chapter_num": "31",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with non-MC markers: pho"
     },
     "31@1": {
       "chapter_num": "31",
@@ -542,7 +542,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (47w)"
     },
     "32@1": {
       "chapter_num": "32",
@@ -576,8 +576,8 @@
       "chapter_num": "33",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'James'"
     },
     "33@1": {
       "chapter_num": "33",
@@ -647,7 +647,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Dragon')"
+      "reason": "implicit with inline interlude 'Dragon'"
     },
     "35.1@1": {
       "chapter_num": "35.1",
@@ -709,8 +709,8 @@
       "chapter_num": "38",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Leet'"
     },
     "38@1": {
       "chapter_num": "38",
@@ -758,8 +758,8 @@
       "chapter_num": "40",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Gully'"
     },
     "40@1": {
       "chapter_num": "40",
@@ -786,8 +786,8 @@
       "chapter_num": "41",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Chen'"
     },
     "41@1": {
       "chapter_num": "41",
@@ -808,7 +808,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (102w)"
     },
     "41.1@1": {
       "chapter_num": "41.1",
@@ -822,7 +822,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + non-fp-dominant (5/26)"
     },
     "41.3@0": {
       "chapter_num": "41.3",
@@ -835,8 +835,8 @@
       "chapter_num": "42",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Jeanne'"
     },
     "42@1": {
       "chapter_num": "42",
@@ -857,7 +857,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (78w)"
     },
     "42.1@1": {
       "chapter_num": "42.1",
@@ -884,8 +884,8 @@
       "chapter_num": "43",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Gully'"
     },
     "43@1": {
       "chapter_num": "43",
@@ -913,7 +913,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (62w)"
     },
     "43.1@1": {
       "chapter_num": "43.1",
@@ -947,8 +947,8 @@
       "chapter_num": "45",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Taylor'"
     },
     "45@1": {
       "chapter_num": "45",
@@ -969,7 +969,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (48w)"
     },
     "45.1@1": {
       "chapter_num": "45.1",
@@ -997,7 +997,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Weld')"
+      "reason": "implicit with inline interlude 'Weld'"
     },
     "46.1@1": {
       "chapter_num": "46.1",
@@ -1011,7 +1011,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Brian')"
+      "reason": "implicit with inline interlude 'Brian'"
     },
     "46.2@1": {
       "chapter_num": "46.2",
@@ -1025,7 +1025,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (271w)"
     },
     "47@1": {
       "chapter_num": "47",
@@ -1158,7 +1158,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Fleet')"
+      "reason": "implicit with inline preamble 'Roy'"
     },
     "55.1@1": {
       "chapter_num": "55.1",
@@ -1186,7 +1186,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (147w)"
     },
     "56@1": {
       "chapter_num": "56",
@@ -1228,7 +1228,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (213w)"
     },
     "57.1@1": {
       "chapter_num": "57.1",
@@ -1256,7 +1256,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (78w)"
     },
     "58@1": {
       "chapter_num": "58",
@@ -1298,7 +1298,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Gregor')"
+      "reason": "implicit with inline interlude 'Gregor'"
     },
     "58.1@1": {
       "chapter_num": "58.1",
@@ -1312,7 +1312,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (83w)"
     },
     "58.2@1": {
       "chapter_num": "58.2",
@@ -1361,7 +1361,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (90w)"
     },
     "60@1": {
       "chapter_num": "60",
@@ -1396,7 +1396,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (152w)"
     },
     "62@1": {
       "chapter_num": "62",
@@ -1431,7 +1431,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (96w)"
     },
     "63.1@1": {
       "chapter_num": "63.1",
@@ -1473,7 +1473,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (42w)"
     },
     "65@1": {
       "chapter_num": "65",
@@ -1487,7 +1487,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (62w)"
     },
     "65.1@1": {
       "chapter_num": "65.1",
@@ -1515,7 +1515,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (58w)"
     },
     "65.3@1": {
       "chapter_num": "65.3",
@@ -1529,7 +1529,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (44w)"
     },
     "65.4@1": {
       "chapter_num": "65.4",
@@ -1543,7 +1543,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (48w)"
     },
     "66@1": {
       "chapter_num": "66",
@@ -1592,7 +1592,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (47w)"
     },
     "68.1@1": {
       "chapter_num": "68.1",
@@ -1606,7 +1606,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (55w)"
     },
     "68.2@1": {
       "chapter_num": "68.2",
@@ -1620,7 +1620,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Sabah')"
+      "reason": "implicit with inline interlude 'Sabah'"
     },
     "69@0": {
       "chapter_num": "69",
@@ -1732,7 +1732,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (47w)"
     },
     "74.1@1": {
       "chapter_num": "74.1",
@@ -1746,7 +1746,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Lisa')"
+      "reason": "implicit with inline interlude 'Lisa'"
     },
     "75@0": {
       "chapter_num": "75",
@@ -1774,7 +1774,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (41w)"
     },
     "76.1@1": {
       "chapter_num": "76.1",
@@ -1788,14 +1788,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Victor')"
+      "reason": "implicit with inline interlude 'Victor'"
     },
     "77@0": {
       "chapter_num": "77",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Mimi'"
     },
     "77@1": {
       "chapter_num": "77",
@@ -1865,7 +1865,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (53w)"
     },
     "81@1": {
       "chapter_num": "81",
@@ -1907,7 +1907,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Uppercrust')"
+      "reason": "implicit with inline interlude 'Uppercrust'"
     },
     "82.1@1": {
       "chapter_num": "82.1",
@@ -1920,8 +1920,8 @@
       "chapter_num": "83",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "counts_for_cp": true,
+      "reason": "implicit + AN prefix + fp-dominant (19/4)"
     },
     "83@1": {
       "chapter_num": "83",
@@ -1955,8 +1955,8 @@
       "chapter_num": "84",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "counts_for_cp": true,
+      "reason": "implicit + AN prefix + fp-dominant (28/0)"
     },
     "84@1": {
       "chapter_num": "84",
@@ -1984,14 +1984,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Taylor')"
+      "reason": "implicit with inline interlude 'Taylor'"
     },
     "86@0": {
       "chapter_num": "86",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (87w)"
     },
     "86@1": {
       "chapter_num": "86",
@@ -2026,7 +2026,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (49w)"
     },
     "87.1@1": {
       "chapter_num": "87.1",
@@ -2054,7 +2054,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (40w)"
     },
     "88.1@1": {
       "chapter_num": "88.1",
@@ -2082,7 +2082,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (42w)"
     },
     "89.1@1": {
       "chapter_num": "89.1",
@@ -2117,7 +2117,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (25w)"
     },
     "91@1": {
       "chapter_num": "91",
@@ -2138,7 +2138,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (51w)"
     },
     "92@1": {
       "chapter_num": "92",
@@ -2159,7 +2159,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (55w)"
     },
     "93@1": {
       "chapter_num": "93",
@@ -2180,7 +2180,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (75w)"
     },
     "94@1": {
       "chapter_num": "94",
@@ -2194,7 +2194,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Aisha')"
+      "reason": "implicit with inline interlude 'Aisha'"
     },
     "95@0": {
       "chapter_num": "95",
@@ -2214,8 +2214,8 @@
       "chapter_num": "95.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Mike'"
     },
     "95.1@1": {
       "chapter_num": "95.1",
@@ -2229,7 +2229,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (251w)"
     },
     "95.2@1": {
       "chapter_num": "95.2",
@@ -2243,7 +2243,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Amy')"
+      "reason": "implicit with inline interlude 'Amy'"
     },
     "95.3@1": {
       "chapter_num": "95.3",
@@ -2257,14 +2257,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Colin')"
+      "reason": "implicit with inline interlude 'Colin'"
     },
     "95.5@0": {
       "chapter_num": "95.5",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Gregor')"
+      "reason": "implicit with inline interlude 'Gregor'"
     },
     "95.5@1": {
       "chapter_num": "95.5",
@@ -2285,7 +2285,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Rey')"
+      "reason": "implicit with inline interlude 'Rey'"
     },
     "95.6@1": {
       "chapter_num": "95.6",
@@ -2313,7 +2313,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Uppercrust')"
+      "reason": "implicit with inline interlude 'Uppercrust'"
     },
     "96.1@1": {
       "chapter_num": "96.1",
@@ -2333,8 +2333,8 @@
       "chapter_num": "97",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Carol'"
     },
     "97@1": {
       "chapter_num": "97",
@@ -2369,7 +2369,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Taylor')"
+      "reason": "implicit with inline preamble 'Emma'"
     },
     "98.1@1": {
       "chapter_num": "98.1",
@@ -2389,8 +2389,8 @@
       "chapter_num": "99",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "implicit large MC story"
+      "counts_for_cp": false,
+      "reason": "implicit with inline preamble 'Hemorrhagia'"
     },
     "99@1": {
       "chapter_num": "99",
@@ -2411,7 +2411,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (51w)"
     },
     "99.1@1": {
       "chapter_num": "99.1",
@@ -2432,14 +2432,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Gully')"
+      "reason": "implicit with inline interlude 'Gully'"
     },
     "99.3@0": {
       "chapter_num": "99.3",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (46w)"
     },
     "99.3@1": {
       "chapter_num": "99.3",
@@ -2474,7 +2474,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (221w)"
     },
     "100.1@1": {
       "chapter_num": "100.1",
@@ -2551,7 +2551,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Hannah')"
+      "reason": "implicit with inline interlude 'Hannah'"
     },
     "104.1@1": {
       "chapter_num": "104.1",
@@ -2565,7 +2565,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Rachel')"
+      "reason": "implicit with inline interlude 'Rachel'"
     },
     "104.2@1": {
       "chapter_num": "104.2",
@@ -2579,7 +2579,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (212w)"
     },
     "105@1": {
       "chapter_num": "105",
@@ -2635,14 +2635,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit with non-MC markers: meeting_report"
     },
     "108.2@0": {
       "chapter_num": "108.2",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Armstrong')"
+      "reason": "implicit with non-MC markers: meeting_report"
     },
     "108.2@1": {
       "chapter_num": "108.2",
@@ -2656,7 +2656,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Armstrong')"
+      "reason": "implicit with inline interlude 'Armstrong'"
     },
     "109@0": {
       "chapter_num": "109",
@@ -2684,7 +2684,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Lily')"
+      "reason": "implicit with inline interlude 'Lily'"
     },
     "110@0": {
       "chapter_num": "110",
@@ -2705,21 +2705,21 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Gully')"
+      "reason": "implicit with inline interlude 'Gully'"
     },
     "110.2@0": {
       "chapter_num": "110.2",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Gully')"
+      "reason": "implicit with inline interlude 'Gully'"
     },
     "110.3@0": {
       "chapter_num": "110.3",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Everett')"
+      "reason": "implicit with inline interlude 'Everett'"
     },
     "110.3@1": {
       "chapter_num": "110.3",
@@ -2747,7 +2747,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (206w)"
     },
     "111.1@1": {
       "chapter_num": "111.1",
@@ -2761,14 +2761,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Grue')"
+      "reason": "implicit with inline interlude 'Grue'"
     },
     "111.3@0": {
       "chapter_num": "111.3",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (99w)"
     },
     "111.3@1": {
       "chapter_num": "111.3",
@@ -2810,21 +2810,21 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Taylor')"
+      "reason": "implicit with inline interlude 'Taylor'"
     },
     "113.2@0": {
       "chapter_num": "113.2",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Alan')"
+      "reason": "implicit with inline interlude 'Alan'"
     },
     "113.3@0": {
       "chapter_num": "113.3",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Armstrong')"
+      "reason": "implicit with non-MC markers: meeting_report"
     },
     "114@0": {
       "chapter_num": "114",
@@ -2866,14 +2866,14 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Amy')"
+      "reason": "implicit with inline interlude 'Amy'"
     },
     "116.2@0": {
       "chapter_num": "116.2",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (65w)"
     },
     "116.2@1": {
       "chapter_num": "116.2",
@@ -2901,7 +2901,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Crystal')"
+      "reason": "implicit with inline interlude 'Crystal'"
     },
     "116.3@1": {
       "chapter_num": "116.3",
@@ -2943,7 +2943,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (118w)"
     },
     "119@1": {
       "chapter_num": "119",
@@ -2957,42 +2957,42 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Chen')"
+      "reason": "implicit with inline interlude 'Chen'"
     },
     "119.2@0": {
       "chapter_num": "119.2",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Dennis')"
+      "reason": "implicit with inline interlude 'Dennis'"
     },
     "119.3@0": {
       "chapter_num": "119.3",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Gregor')"
+      "reason": "implicit with inline interlude 'Gregor'"
     },
     "119.4@0": {
       "chapter_num": "119.4",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit with author's-note marker"
+      "reason": "implicit + AN + tiny (54w)"
     },
     "119.4@1": {
       "chapter_num": "119.4",
       "section_index": 1,
       "header": "Celestial Forge 119.4 Interlude Elle",
-      "counts_for_cp": true,
-      "reason": "Celestial Forge chapter-heading marker"
+      "counts_for_cp": false,
+      "reason": "Celestial Forge title names interlude 'Elle'"
     },
     "119.5@0": {
       "chapter_num": "119.5",
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Labyrinth')"
+      "reason": "implicit with inline interlude 'Labyrinth'"
     },
     "119.5@1": {
       "chapter_num": "119.5",
@@ -3020,7 +3020,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "entire interlude chapter ('Kurt')"
+      "reason": "implicit with inline preamble 'Legend'"
     },
     "120.1@1": {
       "chapter_num": "120.1",
