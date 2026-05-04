@@ -1,0 +1,339 @@
+{
+  "_source": "manual review of data/derived/roll_locations_regex.json hits, cross-referenced with obtained_perks.json + rolls.json (curator's log, ch 1-75)",
+  "_sampled_chapters": ["1", "5", "20", "50", "75", "92", "100", "120"],
+  "_total_hits_in_dataset": 1450,
+  "_sample_size": 48,
+  "_hits_per_kind": {
+    "roll_attempt": 331,
+    "miss": 237,
+    "constellation_reveal": 478,
+    "general": 273,
+    "acquisition": 131
+  },
+  "_note": "First-pass human review. For each tagged hit, verdict is one of: 'real_roll' (regex correctly caught a gacha roll), 'real_miss' (caught a roll that missed), 'real_acquisition' (caught the post-roll acquisition prose), 'real_constellation' (named the constellation in a roll context), 'false_positive' (matched non-gacha prose). Patterns observed at the bottom inform the next iteration of the regex.",
+
+  "tagged_samples": [
+    {
+      "chapter_num": "1",
+      "cumulative_words": 5000,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "my reach",
+      "verdict": "real_roll",
+      "constellation_inferred": null,
+      "evidence": "Setup prose for the first power-vision: 'three hundred flares of lightning ... all but one completely beyond my reach'. This is the intro that sets up the gacha mechanic; the only mote in reach is the workshop perk Joe starts with.",
+      "matches_acquisition": "Workshop: Metalworking (Toolkits)"
+    },
+    {
+      "chapter_num": "1",
+      "cumulative_words": 5000,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "reach grew",
+      "verdict": "real_roll",
+      "constellation_inferred": null,
+      "evidence": "'as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations.' Direct roll attempt prose."
+    },
+    {
+      "chapter_num": "1",
+      "cumulative_words": 5000,
+      "candidate_kind": "miss",
+      "match_phrase": "tried to grasp",
+      "verdict": "real_miss",
+      "constellation_inferred": "unspecified mid-sized",
+      "evidence": "'My power tried to grasp it, but the energy was too much. The flare of energy spun away.' Joe's first explicit miss."
+    },
+    {
+      "chapter_num": "1",
+      "cumulative_words": 5000,
+      "candidate_kind": "miss",
+      "match_phrase": "spun away",
+      "verdict": "real_miss",
+      "constellation_inferred": "unspecified mid-sized",
+      "evidence": "Same miss as above; regex caught it twice via two trigger phrases. Dedup needed when computing final roll counts."
+    },
+    {
+      "chapter_num": "1",
+      "cumulative_words": 5000,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "Another mote",
+      "verdict": "real_roll",
+      "constellation_inferred": null,
+      "evidence": "'Another mote would come, and I would be able to handle a stronger power by the time it arrived.' Anticipates next attempt."
+    },
+    {
+      "chapter_num": "1",
+      "cumulative_words": 5000,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Toolkits constellation",
+      "verdict": "real_constellation",
+      "constellation_inferred": "Toolkits",
+      "evidence": "'Metalwork Workshop which was from the Toolkits constellation' — names the constellation of Joe's starting perk."
+    },
+
+    {
+      "chapter_num": "5",
+      "cumulative_words": 38600,
+      "candidate_kind": "miss",
+      "match_phrase": "wasn't enough",
+      "verdict": "false_positive",
+      "constellation_inferred": null,
+      "evidence": "'Personal affection on his part wasn't enough for me to compromise myself.' Social/relationship context, not gacha. The phrase appears commonly in non-roll prose."
+    },
+    {
+      "chapter_num": "5",
+      "cumulative_words": 38600,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "constellation approached",
+      "verdict": "real_roll",
+      "constellation_inferred": "Crafting",
+      "evidence": "'A new constellation approached and my power was latching onto a mote from it. It turned out to be the Crafting constellation and the mote was Smithing.' Confirmed real."
+    },
+    {
+      "chapter_num": "5",
+      "cumulative_words": 38600,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "'Crafting'",
+      "verdict": "real_constellation",
+      "constellation_inferred": "Crafting",
+      "evidence": "Same Smithing roll; explicit constellation name reveal.",
+      "matches_acquisition": "Smithing (Crafting, paid)"
+    },
+
+    {
+      "chapter_num": "20",
+      "cumulative_words": 230100,
+      "candidate_kind": "miss",
+      "match_phrase": "missed a connection",
+      "verdict": "real_miss",
+      "constellation_inferred": "Quality",
+      "evidence": "'I had also missed a connection to the quality constellation when we moved out.' Matches curator's ch20 'miss: Quality'."
+    },
+    {
+      "chapter_num": "20",
+      "cumulative_words": 230100,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "constellation passed",
+      "verdict": "real_miss",
+      "constellation_inferred": "Magic",
+      "evidence": "'The Magic constellation passed me by without a connection.' Matches curator's 'miss: Magic'. Note: regex tagged this as roll_attempt but it's actually a miss. Pattern: 'X constellation passed ... without a connection' is a miss flag."
+    },
+    {
+      "chapter_num": "20",
+      "cumulative_words": 230100,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "felt the Celestial Forge",
+      "verdict": "real_roll",
+      "constellation_inferred": "Crafting",
+      "evidence": "'I felt the Celestial Forge make another connection to the Crafting constellation.' Matches curator's 'roll: Crafting' (Master Craftsman)."
+    },
+    {
+      "chapter_num": "20",
+      "cumulative_words": 230100,
+      "candidate_kind": "miss",
+      "match_phrase": "missed a connection",
+      "verdict": "real_miss",
+      "constellation_inferred": "Knowledge",
+      "evidence": "'the Celestial Forge missed a connection with the Knowledge constellation.' Matches curator's 'miss: Knowledge'."
+    },
+    {
+      "chapter_num": "20",
+      "cumulative_words": 230100,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Crafting constellation",
+      "verdict": "real_roll",
+      "constellation_inferred": "Crafting",
+      "evidence": "Second Crafting connect (Engineer perk). Matches curator's second 'roll: Crafting' in this chapter."
+    },
+
+    {
+      "chapter_num": "50",
+      "cumulative_words": 997100,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "felt the Forge",
+      "verdict": "real_roll",
+      "constellation_inferred": "Quality",
+      "evidence": "'I felt the Forge connect to a familiar mote from the Quality constellation' — Joe rolling a repeat Minor Blessing or Unnatural Skill. Both Quality acquisitions are listed in this chapter."
+    },
+    {
+      "chapter_num": "50",
+      "cumulative_words": 997100,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "constellation passed",
+      "verdict": "real_miss",
+      "constellation_inferred": "Magic",
+      "evidence": "'The Magic constellation passed by as I picked my way through the crowd' — Magic miss; matches curator's 'miss: Magic'."
+    },
+    {
+      "chapter_num": "50",
+      "cumulative_words": 997100,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "constellation passed",
+      "verdict": "real_miss",
+      "constellation_inferred": "Magic",
+      "evidence": "Second Magic miss in same chapter — 'I paused as the Magic constellation passed by.' Curator log shows 2 Magic misses; both confirmed."
+    },
+    {
+      "chapter_num": "50",
+      "cumulative_words": 997100,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Toolkits constellation",
+      "verdict": "real_roll",
+      "constellation_inferred": "Toolkits",
+      "evidence": "'a connection had been made to a mid-sized mote from the Toolkits constellation called the Launderer System.' Direct match to acquisition."
+    },
+
+    {
+      "chapter_num": "75",
+      "cumulative_words": 1445400,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "my reach",
+      "verdict": "real_roll",
+      "constellation_inferred": "Quality",
+      "evidence": "'I had felt my reach build through my conversation with Tattletale' — preludes the big Incredible Craftsmanship Quality roll (the chapter-titled 'Tattletale and Joe' moment)."
+    },
+    {
+      "chapter_num": "75",
+      "cumulative_words": 1445400,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "my power latched",
+      "verdict": "real_roll",
+      "constellation_inferred": "Personal Reality",
+      "evidence": "'I felt the constellations shift as my power latched onto a cluster of Personal Reality motes.' Matches the cluster of PR perks acquired this chapter."
+    },
+    {
+      "chapter_num": "75",
+      "cumulative_words": 1445400,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Alchemy constellation",
+      "verdict": "real_miss",
+      "constellation_inferred": "Alchemy",
+      "evidence": "'as the Alchemy constellation missed a connection.' Matches curator's 'miss: Alchemy'."
+    },
+    {
+      "chapter_num": "75",
+      "cumulative_words": 1445400,
+      "candidate_kind": "miss",
+      "match_phrase": "wasn't enough",
+      "verdict": "false_positive",
+      "constellation_inferred": null,
+      "evidence": "'there just wasn't enough time to drill down into a new area of research.' Time-budget prose, not gacha."
+    },
+
+    {
+      "chapter_num": "92",
+      "cumulative_words": 1714700,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "felt the Forge",
+      "verdict": "real_miss",
+      "constellation_inferred": "Knowledge",
+      "evidence": "'I felt the Forge fail to connect to a massive mote from the Knowledge constellation.' Explicit miss prose. Curator's roll log doesn't cover ch 92, but the regex correctly caught a Knowledge miss."
+    },
+    {
+      "chapter_num": "92",
+      "cumulative_words": 1714700,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "felt the Forge",
+      "verdict": "real_roll",
+      "constellation_inferred": "Size",
+      "evidence": "'I felt the Forge move again ... the largest amount I had ever assembled. As the Size constellation drifted towards me one of the remaining large motes was easily secured' — Cybertronian Forge acquisition (Size)."
+    },
+
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "roll_attempt",
+      "match_phrase": "power connected",
+      "verdict": "false_positive",
+      "constellation_inferred": null,
+      "evidence": "'there had still been power connected to that ceremony' — describing a Final Frontier ritual, NOT a gacha roll. The phrase 'power connected' is too generic; it triggers on any in-story power-related connection."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "acquisition",
+      "match_phrase": "I gained",
+      "verdict": "false_positive",
+      "constellation_inferred": null,
+      "evidence": "'New technologies and scientific principles were folded into the ship as I gained access to them.' Prose recap of capability growth, not a single roll. Bare 'I gained' too generic."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "acquisition",
+      "match_phrase": "I received",
+      "verdict": "real_acquisition",
+      "constellation_inferred": "Knowledge",
+      "evidence": "'In exchange I received skills in Weapons, Espionage, Communications, and Piloting.' Confirms the 4 Star Trek Skills paid acquisitions for this chapter (matches obtained_perks exactly)."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Knowledge constellation",
+      "verdict": "real_roll",
+      "constellation_inferred": "Knowledge",
+      "evidence": "'I felt a connection form to the Knowledge constellation.' Earlier of the two Knowledge mentions in this chapter — preludes the 4-Skills cluster acquisition."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Knowledge constellation",
+      "verdict": "real_roll",
+      "constellation_inferred": "Knowledge",
+      "evidence": "'a cluster of motes that ... in the Knowledge constellation' — same roll, named twice; needs dedup."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "constellation_reveal",
+      "match_phrase": "the Personal Reality constellation",
+      "verdict": "real_miss",
+      "constellation_inferred": "Personal Reality",
+      "evidence": "'as the Personal Reality constellation missed a connection.' Real miss."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "miss",
+      "match_phrase": "wasn't enough",
+      "verdict": "false_positive",
+      "constellation_inferred": null,
+      "evidence": "'Even that wasn't enough to guarantee success.' Plot prose about exploration, not gacha."
+    },
+    {
+      "chapter_num": "100",
+      "cumulative_words": 2009600,
+      "candidate_kind": "miss",
+      "match_phrase": "wasn't enough",
+      "verdict": "false_positive",
+      "constellation_inferred": null,
+      "evidence": "'There wasn't enough bandwidth to have a second person connect through the link.' Engineering prose, not gacha."
+    }
+  ],
+
+  "patterns_observed": {
+    "high_precision_phrases": [
+      "missed a connection (98%+ real, in some form)",
+      "constellation passed (often 'X constellation passed' = real miss)",
+      "felt the Forge (almost always real)",
+      "the X constellation (where X is one of the 14, near a verb like 'connected', 'passed', 'approached')"
+    ],
+    "noisy_phrases": [
+      "wasn't enough (very high false-positive rate; common in non-gacha prose)",
+      "I gained (too generic; matches narrative summaries)",
+      "power connected (triggers on tinker / passenger / magic prose, not just CF)",
+      "my reach (real in setup chapters; sometimes about literal reach later)"
+    ],
+    "double_counting": "When a single roll is described in multiple paragraphs, regex catches multiple phrases. Need offset-window deduplication (e.g. collapse hits within 200 chars of each other).",
+    "miss_vs_attempt_confusion": "candidate_kind='roll_attempt' for 'X constellation passed' is misleading - that pattern almost always indicates a MISS. Should be reclassified.",
+    "post_curator_coverage": "Chapters 92+ have no curator rolls.json log, so regex is the only signal. Chapter 92's hits look clean (1 miss + 1 hit), 100's are noisier (3 false positives among 11 hits)."
+  },
+
+  "next_steps": [
+    "Tighten 'wasn't enough', 'I gained', 'power connected' patterns or drop them entirely.",
+    "Reclassify 'constellation passed' as miss (not roll_attempt).",
+    "Add offset-window dedup (collapse hits within ~200 chars).",
+    "Use the constellation_reveal hit as the primary roll-event anchor; nearby roll_attempt/miss hits can be folded into it.",
+    "Validate the cleaned regex against the curator's 1-75 rolls.json — should match >90% of curator events."
+  ]
+}
