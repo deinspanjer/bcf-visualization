@@ -155,6 +155,7 @@ malformed data.
 | `data/derived/predicted_rolls.json` | regime simulation over chapters.json + obtained_perks.json + chapter_sections.json | predicted roll positions (word offset + chapter), with per-chapter comparison vs actual for the curator-covered range |
 | `data/derived/chapter_sections.json` | walked EPUB chapter HTML, scanned each section's first ~3000 chars | per-section POV classification, CP-earning word count, classification confidence, ~432 sections across 194 chapters |
 | `data/derived/extracted_perks.json` | parsed "Jumpchain abilities this chapter:" footer of each EPUB chapter | 481 author-canonical perk listings (name, source, cost, description) keyed by chapter |
+| `data/derived/perk_directory.json` | Reference xlsx, "Unabridged List" (Status != Excluded), enriched from perks_catalog.json + obtained_perks.json | 407 perks (one row per perk; multi-perk rows expanded), 252 matched to obtained acquisitions (~62%); spot-check surfaces obtained acquisitions not represented in the directory (mostly free bonus perks the Unabridged List doesn't enumerate) |
 | `data/manual/section_classifications.json` | rule-based + manual classification of each section's CP-earning status | 432 sections classified (144 MC, 288 non-MC); the rule set is in `scripts/build_section_classifications.py` |
 | `data/manual/perk_constellation_overrides.json` | hand-curated constellation classification for the 54 perks the catalog couldn't classify | each entry has a one-line reason; pushes obtained_perks classification coverage from 89% to 100% |
 
@@ -167,6 +168,7 @@ python3 scripts/parse_rolls.py
 python3 scripts/parse_reference.py             # obtained_perks + timeline
 python3 scripts/extract_chapter_sections.py    # chapter_sections + extracted_perks  (needs EPUB)
 python3 scripts/build_section_classifications.py  # manual section classifications -> data/manual
+python3 scripts/build_perk_directory.py        # Unabridged List + cost/acquired joins -> perk_directory
 python3 scripts/predict_rolls.py               # regime simulation -> predicted_rolls
 python3 scripts/spot_check.py                  # cross-source consistency check
 python3 scripts/make_charts.py                 # static charts -> figures/
