@@ -31,3 +31,6 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+
+# Subagent worktree scratch
+.claude/
