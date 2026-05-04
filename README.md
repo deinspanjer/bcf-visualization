@@ -155,6 +155,7 @@ malformed data.
 | `data/derived/predicted_rolls.json` | regime simulation over chapters.json + obtained_perks.json + chapter_sections.json | predicted roll positions (word offset + chapter), with per-chapter comparison vs actual for the curator-covered range |
 | `data/derived/chapter_sections.json` | walked EPUB chapter HTML, scanned each section's first ~3000 chars | per-section POV classification, CP-earning word count, classification confidence, ~432 sections across 194 chapters |
 | `data/derived/extracted_perks.json` | parsed "Jumpchain abilities this chapter:" footer of each EPUB chapter | 481 author-canonical perk listings (name, source, cost, description) keyed by chapter |
+| `data/manual/section_classifications.json` | rule-based + manual classification of each section's CP-earning status | 432 sections classified (144 MC, 288 non-MC); the rule set is in `scripts/build_section_classifications.py` |
 
 ## Running the parsers
 
@@ -164,6 +165,7 @@ python3 scripts/parse_threadmarks.py
 python3 scripts/parse_rolls.py
 python3 scripts/parse_reference.py             # obtained_perks + timeline
 python3 scripts/extract_chapter_sections.py    # chapter_sections + extracted_perks  (needs EPUB)
+python3 scripts/build_section_classifications.py  # manual section classifications -> data/manual
 python3 scripts/predict_rolls.py               # regime simulation -> predicted_rolls
 python3 scripts/spot_check.py                  # cross-source consistency check
 python3 scripts/make_charts.py                 # static charts -> figures/
@@ -342,17 +344,15 @@ high=362, medium=55, low=15. Of the 432 sections, 81% of total words
 
 Cross-validating against the actual roll log for chapters 1–75:
 
-- **Predicted: 515 roll attempts. Actual: 496. Delta: +19 (+3.8%).**
+- **Predicted: 509 roll attempts. Actual: 496. Delta: +13 (+2.6%).**
 
-Down from +10% before the content scan, and +18% before any section
-filter. Remaining variance is per-chapter idiosyncrasies (e.g.,
-ch 45 over by 5, ch 58.2 under by 5) — probably a mix of:
-
-- in-story headers like *"EMERGENCY NEWS ALERT"* or *"\*\*\*"* scene
-  breaks that don't match any classifier and default to MC
-- the curator counting interlude chapters that the rule says shouldn't
-  count (ch 43.1, 46.1)
-- bookkeeping quirks in the rolls log already documented in spot-check
+Down from +18% (header-only) → +10% (header markers + section walk)
+→ +3.8% (rule-based content scan) → +2.6% with the per-section
+manual classifications in `data/manual/section_classifications.json`.
+Remaining variance is bookkeeping: the curator's `rolls.json` tags
+some rolls to entire-interlude chapters (43.1, 46.1, 55.1, 58.2, 74.2)
+that per the author's rule shouldn't earn CP — likely the author
+batches rolls into the next chapter's window during writing.
 
 For chapters 76+ where no actual roll log exists, the simulation
 predicts roll positions; future work could validate by reading the

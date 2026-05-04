@@ -1,0 +1,3033 @@
+{
+  "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
+  "_count": 432,
+  "_mc_sections": 144,
+  "_non_mc_sections": 288,
+  "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script.",
+  "classifications": {
+    "1@0": {
+      "chapter_num": "1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit but tiny (253w) — scaffolding/AN"
+    },
+    "1@1": {
+      "chapter_num": "1",
+      "section_index": 1,
+      "header": "1 Introduction",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "1@2": {
+      "chapter_num": "1",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "2@0": {
+      "chapter_num": "2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "2@1": {
+      "chapter_num": "2",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "3@0": {
+      "chapter_num": "3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "3@1": {
+      "chapter_num": "3",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "3.1@0": {
+      "chapter_num": "3.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "4@0": {
+      "chapter_num": "4",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "4@1": {
+      "chapter_num": "4",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "5@0": {
+      "chapter_num": "5",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "5@1": {
+      "chapter_num": "5",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "6@0": {
+      "chapter_num": "6",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "6@1": {
+      "chapter_num": "6",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "6.1@0": {
+      "chapter_num": "6.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "7@0": {
+      "chapter_num": "7",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "7@1": {
+      "chapter_num": "7",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "8@0": {
+      "chapter_num": "8",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "8@1": {
+      "chapter_num": "8",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "8.1@0": {
+      "chapter_num": "8.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "9@0": {
+      "chapter_num": "9",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "9@1": {
+      "chapter_num": "9",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "10@0": {
+      "chapter_num": "10",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "10@1": {
+      "chapter_num": "10",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "11@0": {
+      "chapter_num": "11",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "11@1": {
+      "chapter_num": "11",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "12@0": {
+      "chapter_num": "12",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "12@1": {
+      "chapter_num": "12",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "12.1@0": {
+      "chapter_num": "12.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "13@0": {
+      "chapter_num": "13",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "13@1": {
+      "chapter_num": "13",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "14@0": {
+      "chapter_num": "14",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "14@1": {
+      "chapter_num": "14",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "15@0": {
+      "chapter_num": "15",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "16@0": {
+      "chapter_num": "16",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "16@1": {
+      "chapter_num": "16",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "16.1@0": {
+      "chapter_num": "16.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Weld')"
+    },
+    "17@0": {
+      "chapter_num": "17",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "17@1": {
+      "chapter_num": "17",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "18@0": {
+      "chapter_num": "18",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "18@1": {
+      "chapter_num": "18",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "19@0": {
+      "chapter_num": "19",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "19@1": {
+      "chapter_num": "19",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "20@0": {
+      "chapter_num": "20",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "20@1": {
+      "chapter_num": "20",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "21@0": {
+      "chapter_num": "21",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "21@1": {
+      "chapter_num": "21",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "21.1@0": {
+      "chapter_num": "21.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "22@0": {
+      "chapter_num": "22",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "22@1": {
+      "chapter_num": "22",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "23@0": {
+      "chapter_num": "23",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "23@1": {
+      "chapter_num": "23",
+      "section_index": 1,
+      "header": "Addendum Taylor",
+      "counts_for_cp": false,
+      "reason": "addendum 'taylor' (non-Joe)"
+    },
+    "23@2": {
+      "chapter_num": "23",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "24@0": {
+      "chapter_num": "24",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "24@1": {
+      "chapter_num": "24",
+      "section_index": 1,
+      "header": "Addendum Alec",
+      "counts_for_cp": false,
+      "reason": "addendum 'alec' (non-Joe)"
+    },
+    "24@2": {
+      "chapter_num": "24",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "25@0": {
+      "chapter_num": "25",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "26@0": {
+      "chapter_num": "26",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "26@1": {
+      "chapter_num": "26",
+      "section_index": 1,
+      "header": "Addendum Rory",
+      "counts_for_cp": false,
+      "reason": "addendum 'rory' (non-Joe)"
+    },
+    "26@2": {
+      "chapter_num": "26",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "27@0": {
+      "chapter_num": "27",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "27@1": {
+      "chapter_num": "27",
+      "section_index": 1,
+      "header": "Addendum Hannah",
+      "counts_for_cp": false,
+      "reason": "addendum 'hannah' (non-Joe)"
+    },
+    "27@2": {
+      "chapter_num": "27",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "28@0": {
+      "chapter_num": "28",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "28@1": {
+      "chapter_num": "28",
+      "section_index": 1,
+      "header": "Addendum Sophia",
+      "counts_for_cp": false,
+      "reason": "addendum 'sophia' (non-Joe)"
+    },
+    "28@2": {
+      "chapter_num": "28",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "29@0": {
+      "chapter_num": "29",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "29@1": {
+      "chapter_num": "29",
+      "section_index": 1,
+      "header": "Addendum Emily",
+      "counts_for_cp": false,
+      "reason": "addendum 'emily' (non-Joe)"
+    },
+    "29@2": {
+      "chapter_num": "29",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "30@0": {
+      "chapter_num": "30",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "30@1": {
+      "chapter_num": "30",
+      "section_index": 1,
+      "header": "Addendum Missy",
+      "counts_for_cp": false,
+      "reason": "addendum 'missy' (non-Joe)"
+    },
+    "30@2": {
+      "chapter_num": "30",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "31@0": {
+      "chapter_num": "31",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "31@1": {
+      "chapter_num": "31",
+      "section_index": 1,
+      "header": "31 Consensus",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "31@2": {
+      "chapter_num": "31",
+      "section_index": 2,
+      "header": "Addendum Accord",
+      "counts_for_cp": false,
+      "reason": "addendum 'accord' (non-Joe)"
+    },
+    "31@3": {
+      "chapter_num": "31",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "32@0": {
+      "chapter_num": "32",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "32@1": {
+      "chapter_num": "32",
+      "section_index": 1,
+      "header": "Preamble Taylor",
+      "counts_for_cp": false,
+      "reason": "preamble 'taylor' (non-Joe)"
+    },
+    "32@2": {
+      "chapter_num": "32",
+      "section_index": 2,
+      "header": "Celestial Forge 32 Family Fugue",
+      "counts_for_cp": true,
+      "reason": "Celestial Forge chapter-heading marker"
+    },
+    "32@3": {
+      "chapter_num": "32",
+      "section_index": 3,
+      "header": "Addendum Mike",
+      "counts_for_cp": false,
+      "reason": "addendum 'mike' (non-Joe)"
+    },
+    "32@4": {
+      "chapter_num": "32",
+      "section_index": 4,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "33@0": {
+      "chapter_num": "33",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "33@1": {
+      "chapter_num": "33",
+      "section_index": 1,
+      "header": "33 Morning Training",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "33@2": {
+      "chapter_num": "33",
+      "section_index": 2,
+      "header": "Addendum Youth Guard",
+      "counts_for_cp": false,
+      "reason": "addendum 'youth' (non-Joe)"
+    },
+    "33@3": {
+      "chapter_num": "33",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "34@0": {
+      "chapter_num": "34",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "34@1": {
+      "chapter_num": "34",
+      "section_index": 1,
+      "header": "Addendum Ethan",
+      "counts_for_cp": false,
+      "reason": "addendum 'ethan' (non-Joe)"
+    },
+    "34@2": {
+      "chapter_num": "34",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "35@0": {
+      "chapter_num": "35",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "35@1": {
+      "chapter_num": "35",
+      "section_index": 1,
+      "header": "Addendum Chris",
+      "counts_for_cp": false,
+      "reason": "addendum 'chris' (non-Joe)"
+    },
+    "35@2": {
+      "chapter_num": "35",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "35.1@0": {
+      "chapter_num": "35.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Dragon')"
+    },
+    "35.1@1": {
+      "chapter_num": "35.1",
+      "section_index": 1,
+      "header": "Addendum Margaret",
+      "counts_for_cp": false,
+      "reason": "addendum 'margaret' (non-Joe)"
+    },
+    "35.1@2": {
+      "chapter_num": "35.1",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "36@0": {
+      "chapter_num": "36",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "36@1": {
+      "chapter_num": "36",
+      "section_index": 1,
+      "header": "Addendum The Bay Bulletin",
+      "counts_for_cp": false,
+      "reason": "addendum 'the' (non-Joe)"
+    },
+    "36@2": {
+      "chapter_num": "36",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "37@0": {
+      "chapter_num": "37",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "37@1": {
+      "chapter_num": "37",
+      "section_index": 1,
+      "header": "Addendum Meeting Report",
+      "counts_for_cp": false,
+      "reason": "addendum 'meeting' (non-Joe)"
+    },
+    "37@2": {
+      "chapter_num": "37",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "38@0": {
+      "chapter_num": "38",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "38@1": {
+      "chapter_num": "38",
+      "section_index": 1,
+      "header": "38 Build Up",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "38@2": {
+      "chapter_num": "38",
+      "section_index": 2,
+      "header": "Addendum Rey",
+      "counts_for_cp": false,
+      "reason": "addendum 'rey' (non-Joe)"
+    },
+    "38@3": {
+      "chapter_num": "38",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "39@0": {
+      "chapter_num": "39",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "39@1": {
+      "chapter_num": "39",
+      "section_index": 1,
+      "header": "Addendum Kenta",
+      "counts_for_cp": false,
+      "reason": "addendum 'kenta' (non-Joe)"
+    },
+    "39@2": {
+      "chapter_num": "39",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "40@0": {
+      "chapter_num": "40",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "40@1": {
+      "chapter_num": "40",
+      "section_index": 1,
+      "header": "40 Knock Down",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "40@2": {
+      "chapter_num": "40",
+      "section_index": 2,
+      "header": "EMERGENCY NEWS ALERT",
+      "counts_for_cp": false,
+      "reason": "in-story news alert"
+    },
+    "40@3": {
+      "chapter_num": "40",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "41@0": {
+      "chapter_num": "41",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "41@1": {
+      "chapter_num": "41",
+      "section_index": 1,
+      "header": "41 Drag Out",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "41@2": {
+      "chapter_num": "41",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "41.1@0": {
+      "chapter_num": "41.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "41.1@1": {
+      "chapter_num": "41.1",
+      "section_index": 1,
+      "header": "41.1 Interlude Victoria",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'victoria'"
+    },
+    "41.2@0": {
+      "chapter_num": "41.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "41.3@0": {
+      "chapter_num": "41.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Glory')"
+    },
+    "42@0": {
+      "chapter_num": "42",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "42@1": {
+      "chapter_num": "42",
+      "section_index": 1,
+      "header": "42 Incapacitated",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "42@2": {
+      "chapter_num": "42",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "42.1@0": {
+      "chapter_num": "42.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "42.1@1": {
+      "chapter_num": "42.1",
+      "section_index": 1,
+      "header": "Preamble Tammi",
+      "counts_for_cp": false,
+      "reason": "preamble 'tammi' (non-Joe)"
+    },
+    "42.1@2": {
+      "chapter_num": "42.1",
+      "section_index": 2,
+      "header": "42.1 Interlude Neil",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'neil'"
+    },
+    "42.1@3": {
+      "chapter_num": "42.1",
+      "section_index": 3,
+      "header": "Addendum Marissa",
+      "counts_for_cp": false,
+      "reason": "addendum 'marissa' (non-Joe)"
+    },
+    "43@0": {
+      "chapter_num": "43",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "43@1": {
+      "chapter_num": "43",
+      "section_index": 1,
+      "header": "43 Ripples - Aisha",
+      "counts_for_cp": false,
+      "reason": "manual: third-person Aisha POV per sample"
+    },
+    "43@2": {
+      "chapter_num": "43",
+      "section_index": 2,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "43@3": {
+      "chapter_num": "43",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "43.1@0": {
+      "chapter_num": "43.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "43.1@1": {
+      "chapter_num": "43.1",
+      "section_index": 1,
+      "header": "43.1 Interlude Fleet",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'fleet'"
+    },
+    "43.1@2": {
+      "chapter_num": "43.1",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "44@0": {
+      "chapter_num": "44",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "44@1": {
+      "chapter_num": "44",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "45@0": {
+      "chapter_num": "45",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "45@1": {
+      "chapter_num": "45",
+      "section_index": 1,
+      "header": "45 Realization",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "45@2": {
+      "chapter_num": "45",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "45.1@0": {
+      "chapter_num": "45.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "45.1@1": {
+      "chapter_num": "45.1",
+      "section_index": 1,
+      "header": "45.1 Interlude Uppercrust",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'uppercrust'"
+    },
+    "46@0": {
+      "chapter_num": "46",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "46@1": {
+      "chapter_num": "46",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "46.1@0": {
+      "chapter_num": "46.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Weld')"
+    },
+    "46.1@1": {
+      "chapter_num": "46.1",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "46.2@0": {
+      "chapter_num": "46.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Brian')"
+    },
+    "46.2@1": {
+      "chapter_num": "46.2",
+      "section_index": 1,
+      "header": "46.2-2 Interlude Colin",
+      "counts_for_cp": false,
+      "reason": "manual: third-person Colin POV per sample"
+    },
+    "47@0": {
+      "chapter_num": "47",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "47@1": {
+      "chapter_num": "47",
+      "section_index": 1,
+      "header": "47 Downtime",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "47@2": {
+      "chapter_num": "47",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "48@0": {
+      "chapter_num": "48",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "48@1": {
+      "chapter_num": "48",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "49@0": {
+      "chapter_num": "49",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "49@1": {
+      "chapter_num": "49",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "50@0": {
+      "chapter_num": "50",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "50@1": {
+      "chapter_num": "50",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "51@0": {
+      "chapter_num": "51",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "51@1": {
+      "chapter_num": "51",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "52@0": {
+      "chapter_num": "52",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "52@1": {
+      "chapter_num": "52",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "53@0": {
+      "chapter_num": "53",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "53@1": {
+      "chapter_num": "53",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "54@0": {
+      "chapter_num": "54",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "54@1": {
+      "chapter_num": "54",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "55@0": {
+      "chapter_num": "55",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "55@1": {
+      "chapter_num": "55",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "55.1@0": {
+      "chapter_num": "55.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Fleet')"
+    },
+    "55.1@1": {
+      "chapter_num": "55.1",
+      "section_index": 1,
+      "header": "55.1 Interlude Fleet",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'fleet'"
+    },
+    "55.1@2": {
+      "chapter_num": "55.1",
+      "section_index": 2,
+      "header": "Addendum Margaret",
+      "counts_for_cp": false,
+      "reason": "addendum 'margaret' (non-Joe)"
+    },
+    "55.1@3": {
+      "chapter_num": "55.1",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "56@0": {
+      "chapter_num": "56",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "56@1": {
+      "chapter_num": "56",
+      "section_index": 1,
+      "header": "56 Arrival Time",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "56@2": {
+      "chapter_num": "56",
+      "section_index": 2,
+      "header": "***",
+      "counts_for_cp": false,
+      "reason": "scene-break / special note marker"
+    },
+    "56@3": {
+      "chapter_num": "56",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "57@0": {
+      "chapter_num": "57",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "57@1": {
+      "chapter_num": "57",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "57.1@0": {
+      "chapter_num": "57.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "57.1@1": {
+      "chapter_num": "57.1",
+      "section_index": 1,
+      "header": "57.1 Interlude Scrub",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'scrub'"
+    },
+    "57.1@2": {
+      "chapter_num": "57.1",
+      "section_index": 2,
+      "header": "57.1 Interlude Leet",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'leet'"
+    },
+    "57.1@3": {
+      "chapter_num": "57.1",
+      "section_index": 3,
+      "header": "57.1 Interlude Rey",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'rey'"
+    },
+    "58@0": {
+      "chapter_num": "58",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "58@1": {
+      "chapter_num": "58",
+      "section_index": 1,
+      "header": "Preamble Survey",
+      "counts_for_cp": false,
+      "reason": "preamble 'survey' (non-Joe)"
+    },
+    "58@2": {
+      "chapter_num": "58",
+      "section_index": 2,
+      "header": "58 Go Time",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "58@3": {
+      "chapter_num": "58",
+      "section_index": 3,
+      "header": "Note: Below are the Jumpchain descriptions for a Key Crest and an Exsphere.",
+      "counts_for_cp": false,
+      "reason": "author note section"
+    },
+    "58@4": {
+      "chapter_num": "58",
+      "section_index": 4,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "58@5": {
+      "chapter_num": "58",
+      "section_index": 5,
+      "header": "New Abilities for Tybalt:",
+      "counts_for_cp": false,
+      "reason": "companion perks footer"
+    },
+    "58.1@0": {
+      "chapter_num": "58.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Gregor')"
+    },
+    "58.1@1": {
+      "chapter_num": "58.1",
+      "section_index": 1,
+      "header": "58.1 Addendum Alec",
+      "counts_for_cp": false,
+      "reason": "chapter-title addendum 'alec'"
+    },
+    "58.2@0": {
+      "chapter_num": "58.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "58.2@1": {
+      "chapter_num": "58.2",
+      "section_index": 1,
+      "header": "58.2 Interlude Lisa Addendum Joe",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'lisa'"
+    },
+    "58.2@2": {
+      "chapter_num": "58.2",
+      "section_index": 2,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "58.2@3": {
+      "chapter_num": "58.2",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "59@0": {
+      "chapter_num": "59",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "59@1": {
+      "chapter_num": "59",
+      "section_index": 1,
+      "header": "Addendum Uppercrust",
+      "counts_for_cp": false,
+      "reason": "addendum 'uppercrust' (non-Joe)"
+    },
+    "59@2": {
+      "chapter_num": "59",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "60@0": {
+      "chapter_num": "60",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "60@1": {
+      "chapter_num": "60",
+      "section_index": 1,
+      "header": "60 Summit Discussions",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "60@2": {
+      "chapter_num": "60",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "61@0": {
+      "chapter_num": "61",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "61@1": {
+      "chapter_num": "61",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "62@0": {
+      "chapter_num": "62",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "62@1": {
+      "chapter_num": "62",
+      "section_index": 1,
+      "header": "62 Summit Consensus",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "62@2": {
+      "chapter_num": "62",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "63@0": {
+      "chapter_num": "63",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "63@1": {
+      "chapter_num": "63",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "63.1@0": {
+      "chapter_num": "63.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "63.1@1": {
+      "chapter_num": "63.1",
+      "section_index": 1,
+      "header": "63.1 Interlude Lauren",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'lauren'"
+    },
+    "64@0": {
+      "chapter_num": "64",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit but tiny (19w) — scaffolding/AN"
+    },
+    "64@1": {
+      "chapter_num": "64",
+      "section_index": 1,
+      "header": "Preamble Dragon",
+      "counts_for_cp": false,
+      "reason": "preamble 'dragon' (non-Joe)"
+    },
+    "64@2": {
+      "chapter_num": "64",
+      "section_index": 2,
+      "header": "64 Summit Review",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "64@3": {
+      "chapter_num": "64",
+      "section_index": 3,
+      "header": "Addendum James",
+      "counts_for_cp": false,
+      "reason": "addendum 'james' (non-Joe)"
+    },
+    "65@0": {
+      "chapter_num": "65",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "65@1": {
+      "chapter_num": "65",
+      "section_index": 1,
+      "header": "65 Summit Aftermath",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "65.1@0": {
+      "chapter_num": "65.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "65.1@1": {
+      "chapter_num": "65.1",
+      "section_index": 1,
+      "header": "65.1 Interlude Taylor",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'taylor'"
+    },
+    "65.2@0": {
+      "chapter_num": "65.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit but tiny (45w) — scaffolding/AN"
+    },
+    "65.2@1": {
+      "chapter_num": "65.2",
+      "section_index": 1,
+      "header": "65.2 Interlude Ben",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'ben'"
+    },
+    "65.3@0": {
+      "chapter_num": "65.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "65.3@1": {
+      "chapter_num": "65.3",
+      "section_index": 1,
+      "header": "65.3 Interlude Chubster",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'chubster'"
+    },
+    "65.4@0": {
+      "chapter_num": "65.4",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "65.4@1": {
+      "chapter_num": "65.4",
+      "section_index": 1,
+      "header": "65.4 Interlude Cothran",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'cothran'"
+    },
+    "66@0": {
+      "chapter_num": "66",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "66@1": {
+      "chapter_num": "66",
+      "section_index": 1,
+      "header": "66 Review and Preparation",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "66@2": {
+      "chapter_num": "66",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "67@0": {
+      "chapter_num": "67",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "67@1": {
+      "chapter_num": "67",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "68@0": {
+      "chapter_num": "68",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "68@1": {
+      "chapter_num": "68",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "68.1@0": {
+      "chapter_num": "68.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "68.1@1": {
+      "chapter_num": "68.1",
+      "section_index": 1,
+      "header": "68.1 Interlude Missy",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'missy'"
+    },
+    "68.2@0": {
+      "chapter_num": "68.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "68.2@1": {
+      "chapter_num": "68.2",
+      "section_index": 1,
+      "header": "68.2 Interlude Alec",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'alec'"
+    },
+    "68.3@0": {
+      "chapter_num": "68.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Sabah')"
+    },
+    "69@0": {
+      "chapter_num": "69",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "69@1": {
+      "chapter_num": "69",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "70@0": {
+      "chapter_num": "70",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "70@1": {
+      "chapter_num": "70",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "71@0": {
+      "chapter_num": "71",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit but tiny (18w) — scaffolding/AN"
+    },
+    "71@1": {
+      "chapter_num": "71",
+      "section_index": 1,
+      "header": "Preamble PHO",
+      "counts_for_cp": false,
+      "reason": "preamble 'pho' (non-Joe)"
+    },
+    "71@2": {
+      "chapter_num": "71",
+      "section_index": 2,
+      "header": "71 Good Faith",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "71@3": {
+      "chapter_num": "71",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "72@0": {
+      "chapter_num": "72",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "72@1": {
+      "chapter_num": "72",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "73@0": {
+      "chapter_num": "73",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "73@1": {
+      "chapter_num": "73",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "73@2": {
+      "chapter_num": "73",
+      "section_index": 2,
+      "header": "New abilities for Tybalt:",
+      "counts_for_cp": false,
+      "reason": "companion perks footer"
+    },
+    "74@0": {
+      "chapter_num": "74",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "74@1": {
+      "chapter_num": "74",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "74.1@0": {
+      "chapter_num": "74.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "74.1@1": {
+      "chapter_num": "74.1",
+      "section_index": 1,
+      "header": "74.1 Interlude Mike",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'mike'"
+    },
+    "74.2@0": {
+      "chapter_num": "74.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Lisa')"
+    },
+    "75@0": {
+      "chapter_num": "75",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "75@1": {
+      "chapter_num": "75",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "76@0": {
+      "chapter_num": "76",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "76.1@0": {
+      "chapter_num": "76.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "76.1@1": {
+      "chapter_num": "76.1",
+      "section_index": 1,
+      "header": "76.1 Interlude Emma",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'emma'"
+    },
+    "76.2@0": {
+      "chapter_num": "76.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Victor')"
+    },
+    "77@0": {
+      "chapter_num": "77",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "77@1": {
+      "chapter_num": "77",
+      "section_index": 1,
+      "header": "77 Determination",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "77@2": {
+      "chapter_num": "77",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "78@0": {
+      "chapter_num": "78",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "78@1": {
+      "chapter_num": "78",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "79@0": {
+      "chapter_num": "79",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "79@1": {
+      "chapter_num": "79",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "79@2": {
+      "chapter_num": "79",
+      "section_index": 2,
+      "header": "New abilities for Tybalt:",
+      "counts_for_cp": false,
+      "reason": "companion perks footer"
+    },
+    "80@0": {
+      "chapter_num": "80",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "80@1": {
+      "chapter_num": "80",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "81@0": {
+      "chapter_num": "81",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "81@1": {
+      "chapter_num": "81",
+      "section_index": 1,
+      "header": "81 Augmentations",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "81@2": {
+      "chapter_num": "81",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "82@0": {
+      "chapter_num": "82",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "82@1": {
+      "chapter_num": "82",
+      "section_index": 1,
+      "header": "Addendum Uppercrust",
+      "counts_for_cp": false,
+      "reason": "addendum 'uppercrust' (non-Joe)"
+    },
+    "82@2": {
+      "chapter_num": "82",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "82.1@0": {
+      "chapter_num": "82.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Uppercrust')"
+    },
+    "82.1@1": {
+      "chapter_num": "82.1",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "83@0": {
+      "chapter_num": "83",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "83@1": {
+      "chapter_num": "83",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "83.1@0": {
+      "chapter_num": "83.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Alec')"
+    },
+    "83.1@1": {
+      "chapter_num": "83.1",
+      "section_index": 1,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "83.1@2": {
+      "chapter_num": "83.1",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "84@0": {
+      "chapter_num": "84",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "84@1": {
+      "chapter_num": "84",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "85@0": {
+      "chapter_num": "85",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "85@1": {
+      "chapter_num": "85",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "85.1@0": {
+      "chapter_num": "85.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Taylor')"
+    },
+    "86@0": {
+      "chapter_num": "86",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "86@1": {
+      "chapter_num": "86",
+      "section_index": 1,
+      "header": "86 Pack Up",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "86@2": {
+      "chapter_num": "86",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "87@0": {
+      "chapter_num": "87",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "87@1": {
+      "chapter_num": "87",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "87.1@0": {
+      "chapter_num": "87.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "87.1@1": {
+      "chapter_num": "87.1",
+      "section_index": 1,
+      "header": "87.1 Interlude Rory",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'rory'"
+    },
+    "88@0": {
+      "chapter_num": "88",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "88@1": {
+      "chapter_num": "88",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "88.1@0": {
+      "chapter_num": "88.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "88.1@1": {
+      "chapter_num": "88.1",
+      "section_index": 1,
+      "header": "88.1 Interlude Brian",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'brian'"
+    },
+    "89@0": {
+      "chapter_num": "89",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "89@1": {
+      "chapter_num": "89",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "89.1@0": {
+      "chapter_num": "89.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "89.1@1": {
+      "chapter_num": "89.1",
+      "section_index": 1,
+      "header": "89.1 Interlude Neil",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'neil'"
+    },
+    "90@0": {
+      "chapter_num": "90",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "90@1": {
+      "chapter_num": "90",
+      "section_index": 1,
+      "header": "Addendum Taylor",
+      "counts_for_cp": false,
+      "reason": "addendum 'taylor' (non-Joe)"
+    },
+    "90@2": {
+      "chapter_num": "90",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "91@0": {
+      "chapter_num": "91",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "91@1": {
+      "chapter_num": "91",
+      "section_index": 1,
+      "header": "91 Callout",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "91@2": {
+      "chapter_num": "91",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "92@0": {
+      "chapter_num": "92",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "92@1": {
+      "chapter_num": "92",
+      "section_index": 1,
+      "header": "92 Opened Discourse",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "92@2": {
+      "chapter_num": "92",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "93@0": {
+      "chapter_num": "93",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "93@1": {
+      "chapter_num": "93",
+      "section_index": 1,
+      "header": "Celestial Forge 93 Loom and Thread",
+      "counts_for_cp": true,
+      "reason": "Celestial Forge chapter-heading marker"
+    },
+    "93@2": {
+      "chapter_num": "93",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "94@0": {
+      "chapter_num": "94",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "94@1": {
+      "chapter_num": "94",
+      "section_index": 1,
+      "header": "94 Weaving",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "94.1@0": {
+      "chapter_num": "94.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Aisha')"
+    },
+    "95@0": {
+      "chapter_num": "95",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "95@1": {
+      "chapter_num": "95",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "95.1@0": {
+      "chapter_num": "95.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "95.1@1": {
+      "chapter_num": "95.1",
+      "section_index": 1,
+      "header": "Interlude Crystal",
+      "counts_for_cp": false,
+      "reason": "interlude 'crystal' (non-Joe)"
+    },
+    "95.2@0": {
+      "chapter_num": "95.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "95.2@1": {
+      "chapter_num": "95.2",
+      "section_index": 1,
+      "header": "95.2 Interlude Amy",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'amy'"
+    },
+    "95.3@0": {
+      "chapter_num": "95.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Amy')"
+    },
+    "95.3@1": {
+      "chapter_num": "95.3",
+      "section_index": 1,
+      "header": "Addendum Mags",
+      "counts_for_cp": false,
+      "reason": "addendum 'mags' (non-Joe)"
+    },
+    "95.4@0": {
+      "chapter_num": "95.4",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Colin')"
+    },
+    "95.5@0": {
+      "chapter_num": "95.5",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Gregor')"
+    },
+    "95.5@1": {
+      "chapter_num": "95.5",
+      "section_index": 1,
+      "header": "Interlude Shawn",
+      "counts_for_cp": false,
+      "reason": "interlude 'shawn' (non-Joe)"
+    },
+    "95.5@2": {
+      "chapter_num": "95.5",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "95.6@0": {
+      "chapter_num": "95.6",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Rey')"
+    },
+    "95.6@1": {
+      "chapter_num": "95.6",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "96@0": {
+      "chapter_num": "96",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "96@1": {
+      "chapter_num": "96",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "96.1@0": {
+      "chapter_num": "96.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Uppercrust')"
+    },
+    "96.1@1": {
+      "chapter_num": "96.1",
+      "section_index": 1,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "96.1@2": {
+      "chapter_num": "96.1",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "97@0": {
+      "chapter_num": "97",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "97@1": {
+      "chapter_num": "97",
+      "section_index": 1,
+      "header": "97 Confrontations",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "97@2": {
+      "chapter_num": "97",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "98@0": {
+      "chapter_num": "98",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "98@1": {
+      "chapter_num": "98",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "98.1@0": {
+      "chapter_num": "98.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Taylor')"
+    },
+    "98.1@1": {
+      "chapter_num": "98.1",
+      "section_index": 1,
+      "header": "Interlude Taylor",
+      "counts_for_cp": false,
+      "reason": "interlude 'taylor' (non-Joe)"
+    },
+    "98.1@2": {
+      "chapter_num": "98.1",
+      "section_index": 2,
+      "header": "Addendum Danny",
+      "counts_for_cp": false,
+      "reason": "addendum 'danny' (non-Joe)"
+    },
+    "99@0": {
+      "chapter_num": "99",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "99@1": {
+      "chapter_num": "99",
+      "section_index": 1,
+      "header": "99 Main Event",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "99@2": {
+      "chapter_num": "99",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "99.1@0": {
+      "chapter_num": "99.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "99.1@1": {
+      "chapter_num": "99.1",
+      "section_index": 1,
+      "header": "99.1 Interlude Tetra",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'tetra'"
+    },
+    "99.1@2": {
+      "chapter_num": "99.1",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "99.2@0": {
+      "chapter_num": "99.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Gully')"
+    },
+    "99.3@0": {
+      "chapter_num": "99.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "99.3@1": {
+      "chapter_num": "99.3",
+      "section_index": 1,
+      "header": "99.3 Interlude Tammi - Addendum Joe",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'tammi'"
+    },
+    "99.3@2": {
+      "chapter_num": "99.3",
+      "section_index": 2,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "100@0": {
+      "chapter_num": "100",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "100@1": {
+      "chapter_num": "100",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "100.1@0": {
+      "chapter_num": "100.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "100.1@1": {
+      "chapter_num": "100.1",
+      "section_index": 1,
+      "header": "100.1 Interlude Sabah",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'sabah'"
+    },
+    "101@0": {
+      "chapter_num": "101",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "101@1": {
+      "chapter_num": "101",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "102@0": {
+      "chapter_num": "102",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "102@1": {
+      "chapter_num": "102",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "103@0": {
+      "chapter_num": "103",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "103@1": {
+      "chapter_num": "103",
+      "section_index": 1,
+      "header": "Addendum Accord",
+      "counts_for_cp": false,
+      "reason": "addendum 'accord' (non-Joe)"
+    },
+    "103@2": {
+      "chapter_num": "103",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "104@0": {
+      "chapter_num": "104",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "104@1": {
+      "chapter_num": "104",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "104.1@0": {
+      "chapter_num": "104.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Hannah')"
+    },
+    "104.1@1": {
+      "chapter_num": "104.1",
+      "section_index": 1,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "104.2@0": {
+      "chapter_num": "104.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Rachel')"
+    },
+    "104.2@1": {
+      "chapter_num": "104.2",
+      "section_index": 1,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "105@0": {
+      "chapter_num": "105",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "105@1": {
+      "chapter_num": "105",
+      "section_index": 1,
+      "header": "105 Morning Review",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "106@0": {
+      "chapter_num": "106",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "106@1": {
+      "chapter_num": "106",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "107@0": {
+      "chapter_num": "107",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "107@1": {
+      "chapter_num": "107",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "108@0": {
+      "chapter_num": "108",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "108@1": {
+      "chapter_num": "108",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "108.1@0": {
+      "chapter_num": "108.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "108.2@0": {
+      "chapter_num": "108.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Armstrong')"
+    },
+    "108.2@1": {
+      "chapter_num": "108.2",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "108.3@0": {
+      "chapter_num": "108.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Armstrong')"
+    },
+    "109@0": {
+      "chapter_num": "109",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "109@1": {
+      "chapter_num": "109",
+      "section_index": 1,
+      "header": "Addendum Lily",
+      "counts_for_cp": false,
+      "reason": "addendum 'lily' (non-Joe)"
+    },
+    "109@2": {
+      "chapter_num": "109",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "109.1@0": {
+      "chapter_num": "109.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Lily')"
+    },
+    "110@0": {
+      "chapter_num": "110",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "110@1": {
+      "chapter_num": "110",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "110.1@0": {
+      "chapter_num": "110.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Gully')"
+    },
+    "110.2@0": {
+      "chapter_num": "110.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Gully')"
+    },
+    "110.3@0": {
+      "chapter_num": "110.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Everett')"
+    },
+    "110.3@1": {
+      "chapter_num": "110.3",
+      "section_index": 1,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "110.3@2": {
+      "chapter_num": "110.3",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "111@0": {
+      "chapter_num": "111",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "111.1@0": {
+      "chapter_num": "111.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "111.1@1": {
+      "chapter_num": "111.1",
+      "section_index": 1,
+      "header": "111.1 Interlude Brian",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'brian'"
+    },
+    "111.2@0": {
+      "chapter_num": "111.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Grue')"
+    },
+    "111.3@0": {
+      "chapter_num": "111.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "111.3@1": {
+      "chapter_num": "111.3",
+      "section_index": 1,
+      "header": "111.3 Interlude Brian",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'brian'"
+    },
+    "112@0": {
+      "chapter_num": "112",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "112@1": {
+      "chapter_num": "112",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "113@0": {
+      "chapter_num": "113",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "113@1": {
+      "chapter_num": "113",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "113.1@0": {
+      "chapter_num": "113.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Taylor')"
+    },
+    "113.2@0": {
+      "chapter_num": "113.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Alan')"
+    },
+    "113.3@0": {
+      "chapter_num": "113.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Armstrong')"
+    },
+    "114@0": {
+      "chapter_num": "114",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "114@1": {
+      "chapter_num": "114",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "115@0": {
+      "chapter_num": "115",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "115@1": {
+      "chapter_num": "115",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "116@0": {
+      "chapter_num": "116",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "116.1@0": {
+      "chapter_num": "116.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Amy')"
+    },
+    "116.2@0": {
+      "chapter_num": "116.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "116.2@1": {
+      "chapter_num": "116.2",
+      "section_index": 1,
+      "header": "Preamble Vicky",
+      "counts_for_cp": false,
+      "reason": "preamble 'vicky' (non-Joe)"
+    },
+    "116.2@2": {
+      "chapter_num": "116.2",
+      "section_index": 2,
+      "header": "Interlude Panacea",
+      "counts_for_cp": false,
+      "reason": "interlude 'panacea' (non-Joe)"
+    },
+    "116.2@3": {
+      "chapter_num": "116.2",
+      "section_index": 3,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "116.3@0": {
+      "chapter_num": "116.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Crystal')"
+    },
+    "116.3@1": {
+      "chapter_num": "116.3",
+      "section_index": 1,
+      "header": "Addendum Joe",
+      "counts_for_cp": true,
+      "reason": "addendum Joe → MC"
+    },
+    "116.3@2": {
+      "chapter_num": "116.3",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "117@0": {
+      "chapter_num": "117",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "118@0": {
+      "chapter_num": "118",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "118@1": {
+      "chapter_num": "118",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "119@0": {
+      "chapter_num": "119",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "119@1": {
+      "chapter_num": "119",
+      "section_index": 1,
+      "header": "119 Astrological Engineering",
+      "counts_for_cp": true,
+      "reason": "header matches chapter main title"
+    },
+    "119.1@0": {
+      "chapter_num": "119.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Chen')"
+    },
+    "119.2@0": {
+      "chapter_num": "119.2",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Dennis')"
+    },
+    "119.3@0": {
+      "chapter_num": "119.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Gregor')"
+    },
+    "119.4@0": {
+      "chapter_num": "119.4",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit with author's-note marker"
+    },
+    "119.4@1": {
+      "chapter_num": "119.4",
+      "section_index": 1,
+      "header": "Celestial Forge 119.4 Interlude Elle",
+      "counts_for_cp": true,
+      "reason": "Celestial Forge chapter-heading marker"
+    },
+    "119.5@0": {
+      "chapter_num": "119.5",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Labyrinth')"
+    },
+    "119.5@1": {
+      "chapter_num": "119.5",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
+    },
+    "120@0": {
+      "chapter_num": "120",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "120@1": {
+      "chapter_num": "120",
+      "section_index": 1,
+      "header": "Addendum Keith",
+      "counts_for_cp": false,
+      "reason": "addendum 'keith' (non-Joe)"
+    },
+    "120.1@0": {
+      "chapter_num": "120.1",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "entire interlude chapter ('Kurt')"
+    },
+    "120.1@1": {
+      "chapter_num": "120.1",
+      "section_index": 1,
+      "header": "Interlude Kurt",
+      "counts_for_cp": false,
+      "reason": "interlude 'kurt' (non-Joe)"
+    }
+  }
+}

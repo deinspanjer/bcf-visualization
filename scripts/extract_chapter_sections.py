@@ -273,7 +273,7 @@ def _classify_section(header: str | None, text: str) -> Section:
         confidence = "low"
 
     counts_for_cp = classification == "mc"
-    sample = text[:200].replace("\n", " ").strip()
+    sample = text[:600].replace("\n", " ").strip()
     return Section(
         header=header,
         word_count=_word_count(text),

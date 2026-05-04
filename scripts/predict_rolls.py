@@ -45,6 +45,7 @@ CHAPTERS_JSON = ROOT / "data" / "derived" / "chapters.json"
 OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
 ROLLS_JSON = ROOT / "data" / "derived" / "rolls.json"
 SECTIONS_JSON = ROOT / "data" / "derived" / "chapter_sections.json"
+CLASSIFICATIONS_JSON = ROOT / "data" / "manual" / "section_classifications.json"
 OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
 
 
@@ -82,15 +83,35 @@ def shadow_words(perk_cost: int, regime: int) -> int:
 
 
 def _load_cp_words_per_chapter() -> dict[str, int]:
-    """Read chapter_sections.json and return cp-earning word count
-    keyed by chapter full_title."""
+    """Read chapter_sections.json + manual section_classifications.json
+    and return cp-earning word count keyed by chapter full_title.
+
+    The manual classifications file contains a per-section
+    counts_for_cp boolean (one per (chapter_num, section_index) pair).
+    For each chapter, we sum the word counts of just the MC sections.
+    """
     if not SECTIONS_JSON.exists():
         raise SystemExit(
             f"missing {SECTIONS_JSON.relative_to(ROOT)}; run "
             "scripts/extract_chapter_sections.py first"
         )
-    data = json.loads(SECTIONS_JSON.read_text())
-    return {c["full_title"]: c["cp_earning_word_count"] for c in data["chapters"]}
+    if not CLASSIFICATIONS_JSON.exists():
+        raise SystemExit(
+            f"missing {CLASSIFICATIONS_JSON.relative_to(ROOT)}; run "
+            "scripts/build_section_classifications.py first"
+        )
+    sections_data = json.loads(SECTIONS_JSON.read_text())
+    cls_data = json.loads(CLASSIFICATIONS_JSON.read_text())["classifications"]
+
+    out: dict[str, int] = {}
+    for c in sections_data["chapters"]:
+        total = 0
+        for i, s in enumerate(c["sections"]):
+            key = f"{c['chapter_num']}@{i}"
+            if cls_data.get(key, {}).get("counts_for_cp", True):
+                total += s["word_count"]
+        out[c["full_title"]] = total
+    return out
 
 
 # ---------- simulation ------------------------------------------------------
