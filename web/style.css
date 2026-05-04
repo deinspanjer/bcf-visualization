@@ -126,6 +126,8 @@ header .subtitle {
   scrollbar-width: thin;
   padding-bottom: 4px;
   grid-column: 1 / -1;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 #track-label-overlay {
@@ -418,6 +420,7 @@ header .subtitle {
   bottom: 32px;                /* don't capture clicks on the axis row */
   z-index: 1;
   cursor: pointer;
+  touch-action: none;
 }
 
 /* Legend */
@@ -788,14 +791,90 @@ footer {
 footer a { color: var(--gray-2); }
 
 @media (max-width: 700px) {
+  header {
+    padding: 16px 14px 8px;
+  }
+  header h1 { font-size: 1.15rem; }
+  header .subtitle {
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
   #scrubber-section { grid-template-columns: 1fr; }
+  #scrubber-section {
+    padding: 10px 10px 12px;
+    gap: 8px 10px;
+  }
   #scrubber-container,
   #legend-rail { grid-column: 1; }
   #legend-rail { grid-row: auto; }
+  #track-label-overlay {
+    left: 10px;
+    right: 10px;
+  }
+  #track-stack {
+    height: 268px;
+  }
+  .track-label {
+    font-size: 9px;
+    padding: 0 4px;
+  }
+  .track-dates    { height: 44px; }
+  .track-chapters { top: 44px; height: 42px; }
+  .track-pov      { top: 86px; height: 30px; }
+  .track-shadows  { top: 116px; height: 34px; }
+  .track-rolls    { top: 150px; height: 86px; }
+  .track-axis     { top: 236px; height: 32px; }
+  .label-chapters { top: 44px; }
+  .label-pov { top: 86px; }
+  .label-shadows { top: 116px; }
+  .label-rolls { top: 150px; }
+  .label-axis { top: 236px; }
+  .roll-lane-label { left: 64px; }
   #panels { grid-template-columns: 1fr; }
+  #panels {
+    padding: 10px 10px 20px;
+    gap: 10px;
+  }
+  .panel {
+    padding: 12px 12px 14px;
+  }
   .panel.wide { grid-column: auto; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .control-hint { display: none; }
   #zoom-controls { flex-wrap: wrap; }
-  #timeline-zoom { width: 140px; }
+  #timeline-zoom { width: min(58vw, 180px); }
+  #playback-controls {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  #play-pause {
+    width: 40px;
+    height: 34px;
+    font-size: 1rem;
+  }
+  #playback-controls select {
+    min-height: 32px;
+  }
+  #zoom-controls button,
+  #zoom-controls .link-btn {
+    min-height: 30px;
+  }
+  #scrubber-readout .dot {
+    margin: 0 4px;
+  }
+  #legend-panel {
+    max-height: none;
+  }
+  #constellation-bars {
+    grid-template-columns: minmax(100px, max-content) minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    font-size: 0.8rem;
+  }
+  .perk-list li {
+    gap: 6px;
+    font-size: 0.83rem;
+  }
+  footer {
+    padding: 8px 10px 18px;
+  }
 }

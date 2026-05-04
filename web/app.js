@@ -799,6 +799,8 @@ function renderRecent(state, ch, inPreroll) {
 function attachRollTooltip() {
   const tip = $("roll-tooltip");
   const track = $("track-rolls");
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  let pinnedDot = null;
 
   function placeTooltip(e) {
     const pad = 10;
@@ -851,7 +853,10 @@ function attachRollTooltip() {
     tip.hidden = false;
     placeTooltip(e);
   }
-  function hide() { tip.hidden = true; }
+  function hide() {
+    tip.hidden = true;
+    pinnedDot = null;
+  }
 
   track.addEventListener("mousemove", e => {
     const dot = e.target.closest(".roll-dot");
@@ -862,8 +867,24 @@ function attachRollTooltip() {
   track.addEventListener("click", e => {
     const dot = e.target.closest(".roll-dot");
     if (!dot) return;
+    if (coarsePointer) {
+      if (pinnedDot === dot) {
+        const url = dot._chapter.post_url;
+        if (url) window.open(url, "_blank", "noopener");
+        return;
+      }
+      pinnedDot = dot;
+      show(dot, e);
+      return;
+    }
     const url = dot._chapter.post_url;
     if (url) window.open(url, "_blank", "noopener");
+  });
+
+  document.addEventListener("click", e => {
+    if (tip.hidden) return;
+    if (e.target.closest(".roll-dot") || e.target.closest("#roll-tooltip")) return;
+    hide();
   });
 }
 
@@ -890,31 +911,33 @@ function attachScrubber(state) {
   }
 
   let dragging = false;
+  let activePointerId = null;
   function onPointerMove(e) {
     if (!dragging) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    setWord(state, wordFromClientX(x));
+    if (e.pointerId != null && activePointerId !== e.pointerId) return;
+    setWord(state, wordFromClientX(e.clientX));
     e.preventDefault();
   }
-  function onPointerUp() { dragging = false; document.body.style.userSelect = ""; }
+  function onPointerUp(e) {
+    if (e.pointerId != null && activePointerId !== e.pointerId) return;
+    dragging = false;
+    activePointerId = null;
+    document.body.style.userSelect = "";
+  }
 
-  hit.addEventListener("mousedown", e => {
+  hit.addEventListener("pointerdown", e => {
     if (e.target.closest(".roll-dot, .shadow-bar")) return;
     state.scrollFollow.pausedManualLock = false;
     dragging = true;
+    activePointerId = e.pointerId;
     document.body.style.userSelect = "none";
     setWord(state, wordFromClientX(e.clientX));
+    if (hit.setPointerCapture) hit.setPointerCapture(e.pointerId);
+    e.preventDefault();
   });
-  hit.addEventListener("touchstart", e => {
-    if (e.target.closest(".roll-dot, .shadow-bar")) return;
-    state.scrollFollow.pausedManualLock = false;
-    dragging = true;
-    setWord(state, wordFromClientX(e.touches[0].clientX));
-  }, { passive: false });
-  document.addEventListener("mousemove", onPointerMove);
-  document.addEventListener("touchmove", onPointerMove, { passive: false });
-  document.addEventListener("mouseup", onPointerUp);
-  document.addEventListener("touchend", onPointerUp);
+  hit.addEventListener("pointermove", onPointerMove);
+  hit.addEventListener("pointerup", onPointerUp);
+  hit.addEventListener("pointercancel", onPointerUp);
 
   playhead.addEventListener("keydown", e => {
     let delta = 0;
