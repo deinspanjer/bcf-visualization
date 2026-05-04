@@ -10,6 +10,8 @@
     "_count",
     "_status_distribution",
     "_acquired_count",
+    "_supplemental_count",
+    "_free_ride_along_count",
     "_note",
     "perks"
   ],
@@ -21,6 +23,8 @@
       "additionalProperties": { "type": "integer", "minimum": 0 }
     },
     "_acquired_count":       { "type": "integer", "minimum": 0 },
+    "_supplemental_count":   { "type": "integer", "minimum": 0 },
+    "_free_ride_along_count":{ "type": "integer", "minimum": 0 },
     "_note":                 { "type": "string" },
     "perks": {
       "type": "array",
@@ -45,7 +49,9 @@
         "acquired_chapter_num",
         "acquired_epub_sequence",
         "first_acquired_at_word_offset",
-        "matched_to_obtained"
+        "matched_to_obtained",
+        "source",
+        "acquired_instances"
       ],
       "properties": {
         "id":   { "type": "string", "minLength": 1 },
@@ -75,7 +81,24 @@
         },
         "acquired_epub_sequence":         { "type": ["integer", "null"], "minimum": 1 },
         "first_acquired_at_word_offset":  { "type": ["integer", "null"], "minimum": 0 },
-        "matched_to_obtained":            { "type": "boolean" }
+        "matched_to_obtained":            { "type": "boolean" },
+        "source": {
+          "enum": ["unabridged", "obtained_supplemental"]
+        },
+        "acquired_instances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "chapter_num", "epub_sequence", "free"],
+            "properties": {
+              "name":          { "type": "string" },
+              "chapter_num":   { "type": "string" },
+              "epub_sequence": { "type": "integer", "minimum": 0 },
+              "free":          { "type": "boolean" }
+            }
+          }
+        }
       }
     }
   }
