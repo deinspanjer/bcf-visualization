@@ -890,31 +890,52 @@ function attachScrubber(state) {
   }
 
   let dragging = false;
+  let activePointerId = null;
+  function pointerClientX(e) {
+    if (e.touches && e.touches[0]) return e.touches[0].clientX;
+    if (typeof e.clientX === "number") return e.clientX;
+    return null;
+  }
   function onPointerMove(e) {
     if (!dragging) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    if (activePointerId != null && e.pointerId != null && e.pointerId !== activePointerId) return;
+    const x = pointerClientX(e);
+    if (x == null) return;
     setWord(state, wordFromClientX(x));
     e.preventDefault();
   }
-  function onPointerUp() { dragging = false; document.body.style.userSelect = ""; }
+  function onPointerUp(e) {
+    if (activePointerId != null && e?.pointerId != null && e.pointerId !== activePointerId) return;
+    dragging = false;
+    activePointerId = null;
+    document.body.style.userSelect = "";
+  }
 
-  hit.addEventListener("mousedown", e => {
+  function startScrub(e) {
     if (e.target.closest(".roll-dot, .shadow-bar")) return;
     state.scrollFollow.pausedManualLock = false;
     dragging = true;
+    activePointerId = e.pointerId != null ? e.pointerId : null;
     document.body.style.userSelect = "none";
-    setWord(state, wordFromClientX(e.clientX));
-  });
-  hit.addEventListener("touchstart", e => {
-    if (e.target.closest(".roll-dot, .shadow-bar")) return;
-    state.scrollFollow.pausedManualLock = false;
-    dragging = true;
-    setWord(state, wordFromClientX(e.touches[0].clientX));
-  }, { passive: false });
-  document.addEventListener("mousemove", onPointerMove);
-  document.addEventListener("touchmove", onPointerMove, { passive: false });
-  document.addEventListener("mouseup", onPointerUp);
-  document.addEventListener("touchend", onPointerUp);
+    const x = pointerClientX(e);
+    if (x != null) setWord(state, wordFromClientX(x));
+    e.preventDefault();
+  }
+
+  if (window.PointerEvent) {
+    hit.addEventListener("pointerdown", startScrub);
+    document.addEventListener("pointermove", onPointerMove, { passive: false });
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerUp);
+  } else {
+    hit.addEventListener("mousedown", startScrub);
+    hit.addEventListener("touchstart", startScrub, { passive: false });
+    document.addEventListener("mousemove", onPointerMove);
+    document.addEventListener("touchmove", onPointerMove, { passive: false });
+    document.addEventListener("mouseup", onPointerUp);
+    document.addEventListener("touchend", onPointerUp);
+    document.addEventListener("touchcancel", onPointerUp);
+  }
 
   playhead.addEventListener("keydown", e => {
     let delta = 0;

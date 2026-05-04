@@ -126,6 +126,8 @@ header .subtitle {
   scrollbar-width: thin;
   padding-bottom: 4px;
   grid-column: 1 / -1;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 #track-label-overlay {
@@ -148,6 +150,7 @@ header .subtitle {
   overflow: hidden;
   cursor: crosshair;
   user-select: none;
+  touch-action: none;
 }
 
 .track {
@@ -560,6 +563,73 @@ header .subtitle {
   gap: 14px;
   font-size: 0.9rem;
   color: var(--gray-2);
+}
+
+@media (max-width: 960px) {
+  header {
+    padding: 18px 14px 6px;
+  }
+  #scrubber-section {
+    padding: 10px 14px 10px;
+    grid-template-columns: minmax(0, 1fr);
+    position: static;
+    gap: 10px;
+  }
+  #scrubber-main-column {
+    grid-column: 1;
+  }
+  #legend-rail {
+    grid-column: 1;
+  }
+  #track-label-overlay {
+    left: 14px;
+    right: 14px;
+  }
+  .control-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  html, body {
+    font-size: 14px;
+  }
+  header h1 {
+    font-size: 1.2rem;
+    line-height: 1.25;
+  }
+  header .subtitle {
+    font-size: 0.85rem;
+  }
+  #scrubber-readout,
+  #cumulative-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  #scrubber-readout .dot,
+  #cumulative-strip .dot {
+    display: none;
+  }
+  #playback-controls,
+  #zoom-controls {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  #play-pause,
+  .icon-btn,
+  .link-btn,
+  #playback-speed,
+  #timeline-zoom {
+    min-height: 40px;
+  }
+  #play-pause,
+  .icon-btn {
+    min-width: 40px;
+  }
+  #timeline-zoom {
+    min-width: 140px;
+  }
 }
 #play-pause {
   background: var(--accent);
