@@ -34,3 +34,7 @@ venv/
 
 # Subagent worktree scratch
 .claude/
+
+# Source EPUBs - copyrighted prose, kept locally, not redistributed via git.
+# See README "Source material" section for where to obtain these.
+data/raw/*.epub

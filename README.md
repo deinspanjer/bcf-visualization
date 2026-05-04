@@ -183,6 +183,14 @@ all; if it's missing, `predict_rolls.py` and `extract_chapter_sections.py`
 exit with a clear error and `spot_check.py` skips the corresponding
 check.
 
+The EPUBs themselves are not committed to this repo (gitignored under
+`data/raw/*.epub`) — they are the author's copyrighted prose. To
+re-run the EPUB-dependent parsers, download an export from the SV or
+AO3 URLs in **Source material** above and place it at
+`data/raw/Brocktons_Celestial_Forge.epub`. The derived JSON in
+`data/derived/` was produced from those sources and is sufficient for
+all downstream analysis and the scrubber.
+
 ## Phase 2: static charts and throughput analytics
 
 `scripts/make_charts.py` reads only `data/derived/*.json` and writes
