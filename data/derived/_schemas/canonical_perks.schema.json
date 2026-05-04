@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/canonical_perks.schema.json",
+  "title": "Canonical Perks",
+  "description": "Single canonical perk list derived from the Reference xlsx Unabridged List sheet (filtered to Status != 'Excluded'), enriched with cost / description from perks_catalog.json and chapter-of-acquisition from obtained_perks.json. Multi-perk Unabridged-List rows (Name with newline separators) are split into one entry per perk.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_count", "_status_distribution",
+    "_acquired_count", "_note", "perks"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "_status_distribution": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_acquired_count": { "type": "integer", "minimum": 0 },
+    "_note": { "type": "string" },
+    "perks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/perk" }
+    }
+  },
+  "$defs": {
+    "perk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constellation", "name", "jump", "status",
+        "cost", "description", "acquired", "acquired_chapter",
+        "match_quality"
+      ],
+      "properties": {
+        "constellation": {
+          "enum": [
+            "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+            "Clothing", "Magic", "Quality", "Size",
+            "Resources and Durability", "Magitech", "Alchemy",
+            "Capstone", "Personal Reality", "Felyne Perks"
+          ]
+        },
+        "name":   { "type": "string", "minLength": 1 },
+        "jump":   { "type": ["string", "null"] },
+        "status": {
+          "enum": [
+            "Obtained", "Available", "Partial",
+            "Locked", "Unknown", "Repeatable"
+          ]
+        },
+        "cost":             { "type": ["integer", "null"], "minimum": 0 },
+        "description":      { "type": ["string", "null"] },
+        "acquired":         { "type": "boolean" },
+        "acquired_chapter": { "type": ["string", "null"] },
+        "match_quality": {
+          "enum": ["exact", "name_only", "no_match"]
+        }
+      }
+    }
+  }
+}
