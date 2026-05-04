@@ -858,7 +858,21 @@ function attachRollTooltip() {
     if (!dot) return hide();
     show(dot, e);
   });
+  track.addEventListener("touchstart", e => {
+    const dot = e.target.closest(".roll-dot");
+    if (!dot) return;
+    const t = e.touches[0];
+    show(dot, { clientX: t.clientX, clientY: t.clientY });
+    e.preventDefault();
+  }, { passive: false });
+  track.addEventListener("touchmove", e => {
+    const dot = e.target.closest(".roll-dot");
+    if (!dot) return;
+    const t = e.touches[0];
+    placeTooltip({ clientX: t.clientX, clientY: t.clientY });
+  }, { passive: true });
   track.addEventListener("mouseleave", hide);
+  track.addEventListener("touchend", hide);
   track.addEventListener("click", e => {
     const dot = e.target.closest(".roll-dot");
     if (!dot) return;
@@ -890,31 +904,28 @@ function attachScrubber(state) {
   }
 
   let dragging = false;
-  function onPointerMove(e) {
+  function onPointerMove(clientX, shouldPreventDefault = false) {
     if (!dragging) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    setWord(state, wordFromClientX(x));
-    e.preventDefault();
+    setWord(state, wordFromClientX(clientX));
+    if (shouldPreventDefault) return true;
+    return false;
   }
   function onPointerUp() { dragging = false; document.body.style.userSelect = ""; }
 
-  hit.addEventListener("mousedown", e => {
+  hit.addEventListener("pointerdown", e => {
     if (e.target.closest(".roll-dot, .shadow-bar")) return;
     state.scrollFollow.pausedManualLock = false;
     dragging = true;
     document.body.style.userSelect = "none";
+    hit.setPointerCapture(e.pointerId);
     setWord(state, wordFromClientX(e.clientX));
+    e.preventDefault();
   });
-  hit.addEventListener("touchstart", e => {
-    if (e.target.closest(".roll-dot, .shadow-bar")) return;
-    state.scrollFollow.pausedManualLock = false;
-    dragging = true;
-    setWord(state, wordFromClientX(e.touches[0].clientX));
-  }, { passive: false });
-  document.addEventListener("mousemove", onPointerMove);
-  document.addEventListener("touchmove", onPointerMove, { passive: false });
-  document.addEventListener("mouseup", onPointerUp);
-  document.addEventListener("touchend", onPointerUp);
+  hit.addEventListener("pointermove", e => {
+    if (onPointerMove(e.clientX, true)) e.preventDefault();
+  });
+  hit.addEventListener("pointerup", onPointerUp);
+  hit.addEventListener("pointercancel", onPointerUp);
 
   playhead.addEventListener("keydown", e => {
     let delta = 0;
