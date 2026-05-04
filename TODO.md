@@ -39,8 +39,10 @@
 
 ## Research
 
-- Evaluate whether a local NLP model trained or tuned on the primary
-  EPUB could reliably extract power-acquisition facts from prose without
-  using a subscription LLM. Key questions: annotation volume, hardware
-  requirements, expected precision/recall, and whether a smaller local
-  model plus deterministic validators would be enough.
+- [x] Evaluate whether a local NLP model trained or tuned on the
+  primary EPUB could reliably extract power-acquisition facts from prose
+  without using a subscription LLM (see
+  `docs/local_nlp_research.md`).
+- If we pursue local NLP extraction, create annotation guidelines and a
+  150-250 passage pilot set to validate label consistency before model
+  training.
