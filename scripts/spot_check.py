@@ -373,6 +373,37 @@ def check_curator_agreement(rolls: dict, obtained: dict) -> tuple[list[str], lis
     return hard, soft
 
 
+def check_predicted_rolls(chapters: dict, rolls: dict) -> tuple[list[str], list[str]]:
+    """Compare predicted_rolls.json (regime simulation) against actual
+    rolls.json for the chapters the curator covered."""
+    hard: list[str] = []
+    soft: list[str] = []
+    try:
+        predicted = _load("predicted_rolls")
+    except FileNotFoundError:
+        print("\ncheck 7 - predicted vs actual rolls:")
+        print("  predicted_rolls.json not found; skipping (run scripts/predict_rolls.py)")
+        return hard, soft
+
+    val = predicted["_validation_chapters_1_75"]
+    actual = val["actual_total_attempts"]
+    pred = val["predicted_total_in_same_chapters"]
+    delta = pred - actual
+    pct = delta / max(actual, 1)
+
+    print(f"\ncheck 7 - regime simulation vs actual rolls (ch 1-75):")
+    print(f"  actual roll attempts:    {actual}")
+    print(f"  predicted by simulation: {pred}")
+    print(f"  delta:                   {delta:+d} ({pct:+.1%})")
+    if abs(pct) > 0.05:
+        soft.append(
+            f"  regime simulation off by {pct:+.1%} from actual rolls in "
+            "ch 1-75 — suggests ~30% of EPUB words don't count toward CP "
+            "(likely Preamble/Addendum sub-sections); see README"
+        )
+    return hard, soft
+
+
 def main() -> int:
     chapters = _load("chapters")
     rolls = _load("rolls")
@@ -394,6 +425,9 @@ def main() -> int:
     ag_hard, ag_soft = check_curator_agreement(rolls, obtained)
     hard.extend(ag_hard)
     soft.extend(ag_soft)
+    pr_hard, pr_soft = check_predicted_rolls(chapters, rolls)
+    hard.extend(pr_hard)
+    soft.extend(pr_soft)
 
     print()
     if soft:

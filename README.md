@@ -152,6 +152,7 @@ malformed data.
 | `data/derived/perks_catalog.json` | first curator xlsx, "Complete List of Perks"     | 651 perks across 14 constellations |
 | `data/derived/obtained_perks.json`| Reference xlsx, "Obtained Perks"                 | 504 acquisitions across 127 chapters (full-story, EPUB seq 1–192) |
 | `data/derived/timeline.json`      | Reference xlsx, "Timeline of Events"             | 26 dated entries June 2007 → April 25 2011 (author + Whamodyne attribution) |
+| `data/derived/predicted_rolls.json` | regime simulation over chapters.json + obtained_perks.json + EPUB | 1001 predicted roll positions (word offset + chapter), with per-chapter comparison vs actual for the curator-covered range |
 
 ## Running the parsers
 
@@ -160,9 +161,16 @@ pip install -r requirements.txt
 python3 scripts/parse_threadmarks.py
 python3 scripts/parse_rolls.py
 python3 scripts/parse_reference.py   # obtained_perks + timeline
+python3 scripts/predict_rolls.py     # regime simulation -> predicted_rolls
 python3 scripts/spot_check.py        # cross-source consistency check
 python3 scripts/make_charts.py       # static charts -> figures/
 ```
+
+`predict_rolls.py` reads the source EPUB (`data/raw/Brocktons_Celestial_Forge.epub`)
+to compute exact per-chapter word counts. The other parsers work
+without the EPUB; if it's not available the prediction step can be
+skipped (`spot_check.py` will report the file as missing and skip
+the corresponding check).
 
 ## Phase 2: static charts and throughput analytics
 
@@ -278,26 +286,44 @@ Phase 3 complete (interactive scrubber timeline).
 Next: refinement based on review, GitHub Pages deployment, or any of
 the Future Work items below.
 
+## Regime simulation finding
+
+`scripts/predict_rolls.py` walks the EPUB word-by-word, applying the
+documented three-regime model (rate, cadence, shadow), and predicts
+1001 total roll positions across the full story. Cross-validating
+against the actual roll log for chapters 1–75:
+
+- **Predicted: 587 roll attempts. Actual: 496. Delta: +91 (+18%).**
+
+The regime model over-predicts by ~18%, which suggests something like
+30% of EPUB-counted words don't actually contribute to CP earning.
+A likely explanation: many chapter titles contain "Preamble X" or
+"Addendum Y" sub-section markers (e.g., *"33 Morning Training -
+Preamble James - Addendum Youth Guard"*); those side-content sections
+may be excluded from the author's "rough draft" word count. The
+50,400-CP curator footer for chapters 1–75 implies ~1.0M words at the
+2000-word-per-100-CP rate, but EPUB exact for the same range is 1.42M
+(40% higher). The 0.42M-word delta is roughly consistent with the
+Preamble/Addendum hypothesis.
+
+This is itself a useful empirical finding — documenting the gap
+between the rule-as-stated and the rule-as-applied. Closing it would
+require parsing the EPUB at sub-chapter granularity to identify
+section boundaries, which is on the future-work list.
+
 ## Future work
 
 Captured here so they aren't lost between phases:
 
-- **Deterministic word-count → roll matching.** Walk the EPUB chapter
-  prose, accumulate exact running word counts, and at each predicted
-  threshold (100 CP under the original rule, 200 CP after ch97, with
-  shadow blocks subtracted) read the surrounding text for narrative
-  references to a roll occurring. Would let us:
-  - verify or falsify the ch1–96 cadence ambiguity (whether rolls
-    silently shifted from 100 to 200 CP/roll somewhere in 76–96)
-  - cross-validate the Reference xlsx's chapter-97-onward acquisitions
-    against the actual prose
-  - locate the precise word offset of every roll, useful for
-    visualization (a true word-level timeline rather than chapter-level)
-  - extract roll-by-roll banked CP for chapters 76+ where the curator
-    stopped maintaining
-- **Reconciliation pass on the 31 catalog gaps and 56 cosmetic name
-  variants** before any Phase 2 chart that joins rolls.json against
-  perks_catalog.json.
+- **Sub-chapter section detection.** Identify Preamble/Addendum/
+  Interlude sub-sections in EPUB chapter prose and exclude them from
+  CP-earning word counts. Should bring `predicted_rolls.json` from
+  +18% over to within a few percent of actual, and let us answer the
+  remaining mechanic questions confidently.
+- **Reconciliation pass on the remaining 54 unclassified perks**
+  (entire jumps like Bloodborne, Transformers, Lord of Light, KSP
+  that the catalog doesn't enumerate at all). Would push the
+  scrubber's by-constellation panel from 89% to ~100% coverage.
 - **Parsers for the remaining Reference xlsx sheets** (Possible Perks
   + probabilities, Future Capstone Perks, Soundtrack/Felyne perks,
   Excluded Media) when their data becomes relevant to a specific
