@@ -1,0 +1,57 @@
+name: Deploy scrubber to GitHub Pages
+
+# Manual deployment only by default. The repository is private at the
+# time of writing, and we don't want to publish copyrightable source
+# material while permission is being sought. To enable automatic
+# deploys on push, change `on:` to include `push: { branches: [main] }`.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage publishable subset
+        # Only the scrubber, the derived JSON, and the figure PNGs go to
+        # Pages. The EPUBs, MHTs, and xlsx in data/raw/ are explicitly
+        # excluded so source prose isn't republished by a Pages deploy.
+        run: |
+          mkdir -p _site
+          cp .nojekyll index.html _site/
+          cp -r web      _site/
+          mkdir -p _site/data
+          cp -r data/derived _site/data/
+          cp -r figures  _site/
+          # Sanity check: nothing under data/raw/ should be in _site/
+          if find _site -path '*data/raw*' -print -quit | grep -q .; then
+            echo "ERROR: _site contains data/raw content" >&2
+            exit 1
+          fi
+          ls -la _site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -264,13 +264,34 @@ To run locally:
 
 ```sh
 python3 -m http.server 8000
-# open http://localhost:8000/web/index.html
+# open http://localhost:8000/  (root redirects to /web/)
 ```
 
 The page reads only the JSON files in `data/derived/`. No build step,
 no dependencies, no framework — everything is plain HTML + CSS +
 vanilla JavaScript so it can be served from GitHub Pages or any
 static host.
+
+### GitHub Pages deployment
+
+`.github/workflows/deploy-pages.yml` builds a publishable subset
+(`web/`, `data/derived/`, `figures/`, plus the root redirect and
+`.nojekyll`) and uploads it via the official `actions/deploy-pages`
+flow. The workflow explicitly excludes `data/raw/` so the source
+EPUBs and MHTs aren't accidentally published.
+
+The workflow is set to **manual trigger only** (`workflow_dispatch`).
+To deploy:
+
+1. In repository **Settings → Pages**, set "Build and deployment"
+   source to "GitHub Actions".
+2. **Actions → Deploy scrubber to GitHub Pages → Run workflow**.
+
+To enable automatic deploys on every push to main, add a `push:`
+trigger to the workflow's `on:` block.
+
+The deployed site will be reachable at the standard
+`<owner>.github.io/<repo>/` URL.
 
 **Known limitation:** for chapters 76+, the by-constellation panel
 relies on a perk-name lookup against `perks_catalog.json`. The 31
@@ -282,9 +303,9 @@ Reconciling the catalog is one of the Future Work items.
 
 Phase 1 complete (raw assets, structured derivations, schemas, spot-check).
 Phase 2 complete (Tufte-style static charts and throughput analytics).
-Phase 3 complete (interactive scrubber timeline).
-Next: refinement based on review, GitHub Pages deployment, or any of
-the Future Work items below.
+Phase 3 complete (interactive scrubber timeline + GitHub Pages deploy ready).
+Open: scrubber refinement (UX review), source-prose decommit (pending
+permission), and the Future Work items below.
 
 ## Regime simulation finding
 
