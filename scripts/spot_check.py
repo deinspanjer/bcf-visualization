@@ -398,8 +398,8 @@ def check_predicted_rolls(chapters: dict, rolls: dict) -> tuple[list[str], list[
     if abs(pct) > 0.05:
         soft.append(
             f"  regime simulation off by {pct:+.1%} from actual rolls in "
-            "ch 1-75 — suggests ~30% of EPUB words don't count toward CP "
-            "(likely Preamble/Addendum sub-sections); see README"
+            "ch 1-75 — residual per-chapter noise after MC-POV section "
+            "filter; see README"
         )
     return hard, soft
 
