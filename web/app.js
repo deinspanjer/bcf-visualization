@@ -14,6 +14,12 @@ const CONSTELLATION_ORDER = [
   "Capstone", "Personal Reality",
 ];
 
+// localStorage keys. Bumped if we change the bookmark schema.
+const LS_BOOKMARK = "bcf:bookmark:chapter_num";
+const LS_SPEED    = "bcf:playback:speed";
+const LS_VERSION  = "bcf:storage:version";
+const STORAGE_VERSION = "1";
+
 // ---------- data loading -------------------------------------------------
 
 async function loadJSON(name) {
@@ -285,9 +291,96 @@ function update(state, idx) {
   renderThisChapter(c, acqs, rolls);
   renderConstellations(constMap);
   renderRecent(state);
+
+  saveBookmark(c.chapter_num);
 }
 
-function attachScrubber(state) {
+// ---------- localStorage bookmark + playback speed ----------------------
+
+function loadStorage() {
+  try {
+    if (localStorage.getItem(LS_VERSION) !== STORAGE_VERSION) {
+      // Future schema migrations would go here. For now wipe stale keys.
+      localStorage.removeItem(LS_BOOKMARK);
+      localStorage.removeItem(LS_SPEED);
+      localStorage.setItem(LS_VERSION, STORAGE_VERSION);
+    }
+    return {
+      chapter_num: localStorage.getItem(LS_BOOKMARK),
+      speed: parseFloat(localStorage.getItem(LS_SPEED)) || 1,
+    };
+  } catch {
+    return { chapter_num: null, speed: 1 };
+  }
+}
+
+function saveBookmark(chapter_num) {
+  try { localStorage.setItem(LS_BOOKMARK, chapter_num); } catch {}
+}
+
+function saveSpeed(speed) {
+  try { localStorage.setItem(LS_SPEED, String(speed)); } catch {}
+}
+
+function clearBookmark() {
+  try { localStorage.removeItem(LS_BOOKMARK); } catch {}
+}
+
+function startIndex(state, savedChapterNum) {
+  // Per spec: default to chapter 1 on first visit; restore the saved
+  // bookmark on subsequent visits if it still resolves to a chapter.
+  if (savedChapterNum && state.idxOf.has(savedChapterNum)) {
+    return state.idxOf.get(savedChapterNum);
+  }
+  return 0;
+}
+
+function attachPlaybackControls(state) {
+  const btn   = document.getElementById("play-pause");
+  const sel   = document.getElementById("playback-speed");
+  const reset = document.getElementById("reset-bookmark");
+
+  // Restore saved speed (clamp to a known option).
+  const validSpeeds = new Set([0.5, 1, 2, 4, 8, 16]);
+  const saved = parseFloat(localStorage.getItem(LS_SPEED));
+  if (validSpeeds.has(saved)) sel.value = String(saved);
+
+  let timer = null;
+  const playing = () => timer !== null;
+  const setPlaying = (v) => {
+    if (v && !playing()) {
+      // ms-per-tick: at 1x we step one chapter per 600ms; speed scales it.
+      const tick = () => {
+        const total = state.chapters.length;
+        if (state.idx >= total - 1) { setPlaying(false); return; }
+        update(state, state.idx + 1);
+      };
+      const intervalMs = Math.max(40, Math.round(600 / parseFloat(sel.value)));
+      timer = setInterval(tick, intervalMs);
+      btn.classList.add("playing");
+      btn.textContent = "❚❚";
+      btn.setAttribute("aria-label", "Pause");
+    } else if (!v && playing()) {
+      clearInterval(timer);
+      timer = null;
+      btn.classList.remove("playing");
+      btn.textContent = "▶";
+      btn.setAttribute("aria-label", "Play");
+    }
+  };
+
+  btn.addEventListener("click", () => setPlaying(!playing()));
+  sel.addEventListener("change", () => {
+    saveSpeed(parseFloat(sel.value));
+    if (playing()) { setPlaying(false); setPlaying(true); }  // re-arm at new rate
+  });
+  reset.addEventListener("click", () => {
+    clearBookmark();
+    update(state, 0);
+  });
+}
+
+function attachScrubber(state, startIdx) {
   const track = document.getElementById("scrubber-track");
   const knob = document.getElementById("scrubber-knob");
   const total = state.chapters.length;
@@ -340,8 +433,9 @@ function attachScrubber(state) {
     update(state, state.idx + delta);
   });
 
-  // Initial render at the latest chapter so the user sees a populated UI.
-  update(state, total - 1);
+  // Initial render at the requested start chapter (chapter 1 by
+  // default, or the user's saved bookmark from a previous session).
+  update(state, startIdx);
 }
 
 // ---------- bootstrap ---------------------------------------------------
@@ -351,8 +445,11 @@ function attachScrubber(state) {
     const data = await loadAll();
     const idx = buildIndex(data);
     setRegimeMarkers(idx);
-    const state = { ...idx, idx: idx.chapters.length - 1 };
-    attachScrubber(state);
+    const stored = loadStorage();
+    const state = { ...idx, idx: 0 };
+    const start = startIndex(state, stored.chapter_num);
+    attachScrubber(state, start);
+    attachPlaybackControls(state);
   } catch (err) {
     console.error(err);
     document.body.innerHTML = `

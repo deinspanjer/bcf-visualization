@@ -32,6 +32,21 @@
       <span class="dot">·</span>
       <span id="readout-date">2020-07-19</span>
     </div>
+    <div id="playback-controls">
+      <button id="play-pause" type="button" aria-label="Play">▶</button>
+      <label class="speed-label">speed
+        <select id="playback-speed" aria-label="Playback speed">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+          <option value="8">8×</option>
+          <option value="16">16×</option>
+        </select>
+      </label>
+      <button id="reset-bookmark" type="button" class="link-btn"
+              title="Clear saved chapter bookmark">reset</button>
+    </div>
   </section>
 
   <section id="panels">
