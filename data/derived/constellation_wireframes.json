@@ -1,0 +1,5926 @@
+{
+  "_source": "data/derived/obtained_perks.json (constellations + jumps); coordinates hand-designed in scripts/build_constellation_wireframes.py",
+  "_count": 14,
+  "_jumps_count": 192,
+  "_note": "Two-level wireframe model. cluster_constellations[i] is one of the 14 named constellations as a hand-drawn silhouette themed by its name (e.g. Toolkits = wrench). Each cluster's cluster_vertices array places the contained jumps in slots along that silhouette, sorted by descending perk count so the biggest sub-constellations sit on the most prominent anchor points. jump_constellations is a per-jump star pattern themed by the source media (abstract, never a literal logo); stars are perks, size encodes cost on a sqrt ramp (100=>~0.33, 800=>~0.94, null/free=>0.20).",
+  "cluster_constellations": [
+    {
+      "name": "Toolkits",
+      "shape_concept": "open-end wrench / spanner: jaws on the left, long handle trailing right",
+      "cluster_vertices": [
+        {
+          "jump": "Personal Reality",
+          "x": -0.95,
+          "y": 0.45
+        },
+        {
+          "jump": "Ace Combat",
+          "x": -0.95,
+          "y": -0.45
+        },
+        {
+          "jump": "GUNNM/Battle Angel Alita",
+          "x": -0.65,
+          "y": 0.55
+        },
+        {
+          "jump": "Macross",
+          "x": -0.65,
+          "y": -0.55
+        },
+        {
+          "jump": "Fallen London",
+          "x": -0.35,
+          "y": 0.3
+        },
+        {
+          "jump": "Bloody Roar",
+          "x": -0.35,
+          "y": -0.3
+        },
+        {
+          "jump": "No More Heroes",
+          "x": -0.05,
+          "y": 0.18
+        },
+        {
+          "jump": "Strike Witches",
+          "x": -0.05,
+          "y": -0.18
+        },
+        {
+          "jump": "Bloodborne",
+          "x": 0.3,
+          "y": 0.15
+        },
+        {
+          "jump": "Bubblegum Crisis",
+          "x": 0.3,
+          "y": -0.15
+        },
+        {
+          "jump": "Fast and Furious",
+          "x": 0.65,
+          "y": 0.12
+        },
+        {
+          "jump": "Samurai Jack",
+          "x": 0.65,
+          "y": -0.12
+        },
+        {
+          "jump": "The Elder Scrolls: Skyrim",
+          "x": 0.95,
+          "y": 0.05
+        },
+        {
+          "jump": "Valkyria Chronicles",
+          "x": 0.95,
+          "y": -0.05
+        },
+        {
+          "jump": "A Certain Scientific Railgun",
+          "x": -0.5,
+          "y": 0.0
+        },
+        {
+          "jump": "God of War",
+          "x": 1.0142,
+          "y": 0.2718
+        },
+        {
+          "jump": "Journey to the West",
+          "x": 0.835,
+          "y": 0.7006
+        },
+        {
+          "jump": "Light of Terra 4 - Lords of the Iron Line - Warhammer 40,000",
+          "x": 0.4776,
+          "y": 1.0241
+        },
+        {
+          "jump": "Light of Terra DLC 3 - A Grand Day Out",
+          "x": 0.0,
+          "y": 1.17
+        },
+        {
+          "jump": "Light of Terra DLC 4 - Lords of the Iron Line",
+          "x": -0.5114,
+          "y": 1.0966
+        },
+        {
+          "jump": "Mass Effect",
+          "x": -0.9576,
+          "y": 0.8035
+        },
+        {
+          "jump": "Outlaw Star",
+          "x": -1.246,
+          "y": 0.3339
+        },
+        {
+          "jump": "Sabaton",
+          "x": -1.3098,
+          "y": -0.231
+        },
+        {
+          "jump": "Shivers",
+          "x": -1.1222,
+          "y": -0.7858
+        }
+      ]
+    },
+    {
+      "name": "Knowledge",
+      "shape_concept": "open book: two facing pages with a central spine and corner ticks",
+      "cluster_vertices": [
+        {
+          "jump": "Star Trek - TNG+DS9",
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "jump": "Gears of War",
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "jump": "Halo UNSC",
+          "x": 0.0,
+          "y": -0.85
+        },
+        {
+          "jump": "Stargate SG-1",
+          "x": -0.85,
+          "y": 0.7
+        },
+        {
+          "jump": "Asura's Wrath",
+          "x": -0.5,
+          "y": 0.8
+        },
+        {
+          "jump": "Skies of Arcadia",
+          "x": -0.95,
+          "y": 0.0
+        },
+        {
+          "jump": "Strike Witches",
+          "x": -0.5,
+          "y": -0.8
+        },
+        {
+          "jump": "Bastion",
+          "x": -0.85,
+          "y": -0.7
+        },
+        {
+          "jump": "Fallout",
+          "x": 0.85,
+          "y": 0.7
+        },
+        {
+          "jump": "Lord of Light",
+          "x": 0.5,
+          "y": 0.8
+        },
+        {
+          "jump": "XCOM 2",
+          "x": 0.95,
+          "y": 0.0
+        },
+        {
+          "jump": "40k Redux",
+          "x": 0.5,
+          "y": -0.8
+        },
+        {
+          "jump": "Adventure Time",
+          "x": 0.85,
+          "y": -0.7
+        },
+        {
+          "jump": "Alpha Centauri",
+          "x": -0.4,
+          "y": 0.3
+        },
+        {
+          "jump": "Bubblegum Crisis 2032",
+          "x": 0.4,
+          "y": 0.3
+        },
+        {
+          "jump": "F.E.A.R.",
+          "x": -0.4,
+          "y": -0.3
+        },
+        {
+          "jump": "Firefly",
+          "x": 0.4,
+          "y": -0.3
+        },
+        {
+          "jump": "Full Metal Panic",
+          "x": 1.0142,
+          "y": 0.2718
+        },
+        {
+          "jump": "Halo",
+          "x": 0.835,
+          "y": 0.7006
+        },
+        {
+          "jump": "LoT DLC 1 - The Heathen Trail - Warhammer 40,000",
+          "x": 0.4776,
+          "y": 1.0241
+        },
+        {
+          "jump": "Marvel Cinematic Universe",
+          "x": 0.0,
+          "y": 1.17
+        },
+        {
+          "jump": "Mass Effect",
+          "x": -0.5114,
+          "y": 1.0966
+        },
+        {
+          "jump": "Red Alert 3",
+          "x": -0.9576,
+          "y": 0.8035
+        },
+        {
+          "jump": "Red Faction",
+          "x": -1.246,
+          "y": 0.3339
+        },
+        {
+          "jump": "Teen Titans",
+          "x": -1.3098,
+          "y": -0.231
+        },
+        {
+          "jump": "Titanfall",
+          "x": -1.1222,
+          "y": -0.7858
+        },
+        {
+          "jump": "Valkyria Chronicles",
+          "x": -0.705,
+          "y": -1.2211
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "shape_concept": "car side profile: hood line, roofline, two wheels, headlights",
+      "cluster_vertices": [
+        {
+          "jump": "Kerbal Space Program",
+          "x": -0.95,
+          "y": -0.2
+        },
+        {
+          "jump": "Titanfall",
+          "x": -0.95,
+          "y": 0.05
+        },
+        {
+          "jump": "Big O",
+          "x": -0.7,
+          "y": 0.2
+        },
+        {
+          "jump": "Gundam UC",
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "jump": "Gurren Lagann",
+          "x": -0.1,
+          "y": 0.65
+        },
+        {
+          "jump": "Ace Combat",
+          "x": 0.3,
+          "y": 0.65
+        },
+        {
+          "jump": "Fast and Furious",
+          "x": 0.55,
+          "y": 0.3
+        },
+        {
+          "jump": "Full Metal Panic",
+          "x": 0.85,
+          "y": 0.2
+        },
+        {
+          "jump": "G.I. Joe",
+          "x": 0.95,
+          "y": 0.05
+        },
+        {
+          "jump": "Halo",
+          "x": 0.95,
+          "y": -0.2
+        },
+        {
+          "jump": "Macross",
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "jump": "Mad Max Gauntlet",
+          "x": 0.55,
+          "y": -0.55
+        },
+        {
+          "jump": "Metal Gear",
+          "x": -0.3,
+          "y": -0.1
+        },
+        {
+          "jump": "Star Wars - Clone Wars",
+          "x": 0.3,
+          "y": -0.1
+        }
+      ]
+    },
+    {
+      "name": "Time",
+      "shape_concept": "hourglass: two stacked triangles pinching at the waist with falling-sand grains",
+      "cluster_vertices": [
+        {
+          "jump": "Girl Genius",
+          "x": -0.8,
+          "y": 0.95
+        },
+        {
+          "jump": "Ace Combat",
+          "x": 0.8,
+          "y": 0.95
+        },
+        {
+          "jump": "Age of Mythology",
+          "x": 0.0,
+          "y": 0.1
+        },
+        {
+          "jump": "F.E.A.R.",
+          "x": -0.8,
+          "y": -0.95
+        },
+        {
+          "jump": "Fast and Furious",
+          "x": 0.8,
+          "y": -0.95
+        },
+        {
+          "jump": "Gargoyles",
+          "x": -0.4,
+          "y": 0.55
+        },
+        {
+          "jump": "Gundam: After Colony",
+          "x": 0.4,
+          "y": 0.55
+        },
+        {
+          "jump": "Macross",
+          "x": -0.4,
+          "y": -0.55
+        },
+        {
+          "jump": "Sonic The Hedgehog",
+          "x": 0.4,
+          "y": -0.55
+        },
+        {
+          "jump": "Valkyria Chronicles",
+          "x": 0.0,
+          "y": 0.4
+        },
+        {
+          "jump": "XCOM",
+          "x": 0.0,
+          "y": -0.2
+        }
+      ]
+    },
+    {
+      "name": "Crafting",
+      "shape_concept": "claw hammer: split claw head, neck, long handle ending in a grip",
+      "cluster_vertices": [
+        {
+          "jump": "Devil May Cry",
+          "x": -0.85,
+          "y": 0.7
+        },
+        {
+          "jump": "Fate Servant Supplement",
+          "x": -0.85,
+          "y": 0.3
+        },
+        {
+          "jump": "Robot Unicorn Attack",
+          "x": -0.55,
+          "y": 0.7
+        },
+        {
+          "jump": "Bloodborne",
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "jump": "Light of Terra DLC 5 A Sky Filled With Steel - Warhammer 40,000",
+          "x": -0.3,
+          "y": 0.6
+        },
+        {
+          "jump": "Archer",
+          "x": -0.3,
+          "y": 0.4
+        },
+        {
+          "jump": "Borderlands",
+          "x": 0.0,
+          "y": 0.2
+        },
+        {
+          "jump": "Cave Story",
+          "x": 0.3,
+          "y": 0.0
+        },
+        {
+          "jump": "Forgotten Realms",
+          "x": 0.55,
+          "y": -0.2
+        },
+        {
+          "jump": "Lord of the Rings",
+          "x": 0.8,
+          "y": -0.45
+        },
+        {
+          "jump": "Metal Gear Rising",
+          "x": 0.95,
+          "y": -0.75
+        },
+        {
+          "jump": "Soul Calibur",
+          "x": 0.7,
+          "y": -0.85
+        },
+        {
+          "jump": "Super Mario RPG",
+          "x": 1.0142,
+          "y": 0.2718
+        },
+        {
+          "jump": "Sword and Sorcery",
+          "x": 0.835,
+          "y": 0.7006
+        },
+        {
+          "jump": "Thundercats 2011",
+          "x": 0.4776,
+          "y": 1.0241
+        },
+        {
+          "jump": "XCOM",
+          "x": 0.0,
+          "y": 1.17
+        }
+      ]
+    },
+    {
+      "name": "Clothing",
+      "shape_concept": "shirt / dress-form silhouette: collar, shoulders, sleeves, hem",
+      "cluster_vertices": [
+        {
+          "jump": "Fallen London",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "Kill la Kill",
+          "x": -0.2,
+          "y": 0.8
+        },
+        {
+          "jump": "The World Ends With You",
+          "x": 0.2,
+          "y": 0.8
+        },
+        {
+          "jump": "Actraiser",
+          "x": -0.65,
+          "y": 0.55
+        },
+        {
+          "jump": "Dodgeball",
+          "x": 0.65,
+          "y": 0.55
+        },
+        {
+          "jump": "Highschool of the Dead",
+          "x": -0.85,
+          "y": 0.1
+        },
+        {
+          "jump": "Indiana Jones",
+          "x": 0.85,
+          "y": 0.1
+        },
+        {
+          "jump": "Inukami",
+          "x": -0.55,
+          "y": 0.1
+        },
+        {
+          "jump": "Red Dwarf",
+          "x": 0.55,
+          "y": 0.1
+        },
+        {
+          "jump": "Splatoon",
+          "x": -0.45,
+          "y": -0.35
+        },
+        {
+          "jump": "Terraria",
+          "x": 0.45,
+          "y": -0.35
+        },
+        {
+          "jump": "Thundercats 2011",
+          "x": -0.55,
+          "y": -0.85
+        },
+        {
+          "jump": "Totally Spies/Martin Mystery",
+          "x": 0.55,
+          "y": -0.85
+        }
+      ]
+    },
+    {
+      "name": "Magic",
+      "shape_concept": "pointed wizard hat: wide brim, rising cone, star at the tip",
+      "cluster_vertices": [
+        {
+          "jump": "Bloodborne",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "Monster Hunter",
+          "x": -0.15,
+          "y": 0.55
+        },
+        {
+          "jump": "Tales of Symphonia",
+          "x": 0.15,
+          "y": 0.55
+        },
+        {
+          "jump": "Chrono Trigger",
+          "x": -0.3,
+          "y": 0.1
+        },
+        {
+          "jump": "F.E.A.R.",
+          "x": 0.3,
+          "y": 0.1
+        },
+        {
+          "jump": "Inukami",
+          "x": -0.45,
+          "y": -0.3
+        },
+        {
+          "jump": "Senki Zesshou Symphogear",
+          "x": 0.45,
+          "y": -0.3
+        },
+        {
+          "jump": "Binbougami Ga!",
+          "x": -0.95,
+          "y": -0.55
+        },
+        {
+          "jump": "Borderlands",
+          "x": 0.95,
+          "y": -0.55
+        },
+        {
+          "jump": "Lord of the Rings",
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "jump": "Samurai Jack",
+          "x": 0.55,
+          "y": -0.55
+        },
+        {
+          "jump": "Shivers",
+          "x": 0.0,
+          "y": -0.55
+        },
+        {
+          "jump": "XCOM 2",
+          "x": -0.2,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "name": "Quality",
+      "shape_concept": "brilliant-cut diamond: table on top, crown facets, pavilion narrowing to a culet",
+      "cluster_vertices": [
+        {
+          "jump": "Percy Jackson",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "History's Strongest Disciple: Kenichi",
+          "x": -0.55,
+          "y": 0.65
+        },
+        {
+          "jump": "Akame ga Kill",
+          "x": 0.55,
+          "y": 0.65
+        },
+        {
+          "jump": "Lord of Light",
+          "x": -0.85,
+          "y": 0.3
+        },
+        {
+          "jump": "The World Ends With You",
+          "x": 0.85,
+          "y": 0.3
+        },
+        {
+          "jump": "God of War",
+          "x": -0.85,
+          "y": -0.05
+        },
+        {
+          "jump": "Bayonetta",
+          "x": 0.85,
+          "y": -0.05
+        },
+        {
+          "jump": "Borderlands",
+          "x": -0.55,
+          "y": -0.4
+        },
+        {
+          "jump": "Gundam: After Colony",
+          "x": 0.55,
+          "y": -0.4
+        },
+        {
+          "jump": "Macross",
+          "x": 0.0,
+          "y": -0.95
+        },
+        {
+          "jump": "Viking Saga",
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "jump": "Binbougami Ga!",
+          "x": 0.3,
+          "y": 0.3
+        },
+        {
+          "jump": "Career Model",
+          "x": 0.0,
+          "y": 0.1
+        },
+        {
+          "jump": "Chrono Trigger",
+          "x": 0.0,
+          "y": -0.5
+        },
+        {
+          "jump": "Dinotopia",
+          "x": 1.0142,
+          "y": 0.2718
+        },
+        {
+          "jump": "Dune",
+          "x": 0.835,
+          "y": 0.7006
+        },
+        {
+          "jump": "Gurren Lagann",
+          "x": 0.4776,
+          "y": 1.0241
+        },
+        {
+          "jump": "King Arthur",
+          "x": 0.0,
+          "y": 1.17
+        }
+      ]
+    },
+    {
+      "name": "Size",
+      "shape_concept": "upward growth chevron stack: small triangle at base growing to a wide one above",
+      "cluster_vertices": [
+        {
+          "jump": "Transformers",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "RWBY",
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "jump": "Zoids: Legacy",
+          "x": 0.3,
+          "y": 0.55
+        },
+        {
+          "jump": "Red Faction",
+          "x": -0.55,
+          "y": 0.2
+        },
+        {
+          "jump": "Worm",
+          "x": 0.55,
+          "y": 0.2
+        },
+        {
+          "jump": "Generator Rex",
+          "x": -0.8,
+          "y": -0.2
+        },
+        {
+          "jump": "Kerbal Space Program",
+          "x": 0.8,
+          "y": -0.2
+        },
+        {
+          "jump": "James Bond: 007",
+          "x": -0.55,
+          "y": -0.55
+        }
+      ]
+    },
+    {
+      "name": "Resources and Durability",
+      "shape_concept": "kite shield: rounded shoulders narrowing to a point, center boss, trim",
+      "cluster_vertices": [
+        {
+          "jump": "Megaman Zero",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "Sabaton",
+          "x": -0.55,
+          "y": 0.85
+        },
+        {
+          "jump": "Fallout 4",
+          "x": 0.55,
+          "y": 0.85
+        },
+        {
+          "jump": "Monster Hunter",
+          "x": -0.85,
+          "y": 0.5
+        },
+        {
+          "jump": "Swat Kats",
+          "x": 0.85,
+          "y": 0.5
+        },
+        {
+          "jump": "Assassin's Creed",
+          "x": -0.75,
+          "y": 0.0
+        },
+        {
+          "jump": "Babylon 5",
+          "x": 0.75,
+          "y": 0.0
+        },
+        {
+          "jump": "Bomberman 64: The Second Attack",
+          "x": -0.55,
+          "y": -0.45
+        },
+        {
+          "jump": "Command and Conquer: Tiberium Wars",
+          "x": 0.55,
+          "y": -0.45
+        },
+        {
+          "jump": "Dune",
+          "x": 0.0,
+          "y": -0.95
+        },
+        {
+          "jump": "Fire Emblem: Awakening",
+          "x": 0.0,
+          "y": 0.3
+        },
+        {
+          "jump": "God of War",
+          "x": -0.2,
+          "y": 0.1
+        },
+        {
+          "jump": "Kim Possible",
+          "x": 0.2,
+          "y": 0.1
+        },
+        {
+          "jump": "Lego: Ninjango",
+          "x": 0.0,
+          "y": -0.1
+        },
+        {
+          "jump": "Lord of Light",
+          "x": 1.0142,
+          "y": 0.2718
+        },
+        {
+          "jump": "Mad Max Gauntlet",
+          "x": 0.835,
+          "y": 0.7006
+        },
+        {
+          "jump": "Outlaw Star",
+          "x": 0.4776,
+          "y": 1.0241
+        },
+        {
+          "jump": "Tenchi Muyo",
+          "x": 0.0,
+          "y": 1.17
+        },
+        {
+          "jump": "Totally Spies/Martin Mystery",
+          "x": -0.5114,
+          "y": 1.0966
+        },
+        {
+          "jump": "Valkyria Chronicles",
+          "x": -0.9576,
+          "y": 0.8035
+        },
+        {
+          "jump": "XCOM",
+          "x": -1.246,
+          "y": 0.3339
+        }
+      ]
+    },
+    {
+      "name": "Magitech",
+      "shape_concept": "gear ringed with teeth, lightning bolt zig-zagging across the face",
+      "cluster_vertices": [
+        {
+          "jump": "Harry Potter",
+          "x": 1.0,
+          "y": 0.0
+        },
+        {
+          "jump": "Chrono Trigger",
+          "x": 0.7071,
+          "y": 0.7071
+        },
+        {
+          "jump": "Final Fantasy VI",
+          "x": 0.0,
+          "y": 1.0
+        },
+        {
+          "jump": "Gargoyles",
+          "x": -0.7071,
+          "y": 0.7071
+        },
+        {
+          "jump": "Thundercats 2011",
+          "x": -1.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "name": "Alchemy",
+      "shape_concept": "round-bottom flask: narrow neck, bulbous body, bubbles rising from the brew",
+      "cluster_vertices": [
+        {
+          "jump": "Fullmetal Alchemist",
+          "x": -0.15,
+          "y": 0.95
+        },
+        {
+          "jump": "Fate",
+          "x": 0.15,
+          "y": 0.95
+        },
+        {
+          "jump": "Banjo-Kazooie",
+          "x": -0.15,
+          "y": 0.55
+        },
+        {
+          "jump": "Fate/",
+          "x": 0.15,
+          "y": 0.55
+        },
+        {
+          "jump": "Overlord",
+          "x": -0.45,
+          "y": 0.4
+        },
+        {
+          "jump": "Castlevania",
+          "x": 0.45,
+          "y": 0.4
+        },
+        {
+          "jump": "Journey to the West",
+          "x": -0.85,
+          "y": 0.05
+        },
+        {
+          "jump": "Minecraft",
+          "x": 0.85,
+          "y": 0.05
+        },
+        {
+          "jump": "Samurai Jack",
+          "x": -0.85,
+          "y": -0.45
+        },
+        {
+          "jump": "Secret of Evermore",
+          "x": 0.85,
+          "y": -0.45
+        },
+        {
+          "jump": "Van Helsing",
+          "x": -0.45,
+          "y": -0.85
+        }
+      ]
+    },
+    {
+      "name": "Capstone",
+      "shape_concept": "mountain peak: tall central summit flanked by two foothills",
+      "cluster_vertices": [
+        {
+          "jump": "Asura's Wrath",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "Metal Gear",
+          "x": -0.25,
+          "y": 0.5
+        },
+        {
+          "jump": "Binbougami Ga!",
+          "x": 0.25,
+          "y": 0.5
+        },
+        {
+          "jump": "Bloodborne",
+          "x": -0.55,
+          "y": 0.1
+        },
+        {
+          "jump": "God of War",
+          "x": 0.55,
+          "y": 0.1
+        },
+        {
+          "jump": "Macross",
+          "x": -0.85,
+          "y": -0.3
+        },
+        {
+          "jump": "Metal Gear Solid",
+          "x": 0.85,
+          "y": -0.3
+        },
+        {
+          "jump": "Percy Jackson",
+          "x": -0.95,
+          "y": -0.85
+        },
+        {
+          "jump": "RWBY",
+          "x": 0.95,
+          "y": -0.85
+        }
+      ]
+    },
+    {
+      "name": "Personal Reality",
+      "shape_concept": "house / workshop silhouette: pitched roof with chimney, door, two windows",
+      "cluster_vertices": [
+        {
+          "jump": "Personal Reality",
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "jump": "Lord of Light",
+          "x": -0.85,
+          "y": 0.2
+        }
+      ]
+    }
+  ],
+  "jump_constellations": [
+    {
+      "constellation": "Alchemy",
+      "jump": "Banjo-Kazooie",
+      "shape_concept": "jigsaw piece (jiggy): four-tab puzzle outline",
+      "stars": [
+        {
+          "perk_name": "Mixing Mixtures",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Alchemy",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Castlevania",
+      "shape_concept": "Vampire Killer whip: lashing arc",
+      "stars": [
+        {
+          "perk_name": "Alchemy",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.85,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Fate",
+      "shape_concept": "summoning circle fragment: three points of a magical seal",
+      "stars": [
+        {
+          "perk_name": "Thaumaturgical Focus: Alchemy",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Dapper Dressing",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Status Page",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Fate/",
+      "shape_concept": "extension of the Fate summoning sigil: paired arcs",
+      "stars": [
+        {
+          "perk_name": "Thaumaturgical Focus: Transmutation",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Magic Circuits",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Fullmetal Alchemist",
+      "shape_concept": "transmutation circle: outer ring with inscribed triangle",
+      "stars": [
+        {
+          "perk_name": "Alkahestry",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Advanced Formulae",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.74,
+          "y": -0.42
+        },
+        {
+          "perk_name": "Simplified Formulae",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.74,
+          "y": -0.42
+        },
+        {
+          "perk_name": "Alchemy Fiats",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Journey to the West",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Trigram Knowledge and Manipulation",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Minecraft",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Equivalent Exchange",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Overlord",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Innate Talent: Alchemist",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Alchemist's Laboratory",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Samurai Jack",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Alchemy",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Secret of Evermore",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Alchemist",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Alchemy",
+      "jump": "Van Helsing",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Deranged Alchemist",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Asura's Wrath",
+      "shape_concept": "six-armed wrathful warrior: head with halo, six radiating arms",
+      "stars": [
+        {
+          "perk_name": "Cyborg Hindu Godbody",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Divine Weapon",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.3,
+          "y": 0.95
+        },
+        {
+          "perk_name": "Mantra Training and Techniques",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.3,
+          "y": 0.95
+        },
+        {
+          "perk_name": "Mantra Affinity",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Resplendent Wardrobe",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.85,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Shut Up!",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.85,
+          "y": -0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Binbougami Ga!",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Burning Bright",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Bloodborne",
+      "shape_concept": "moon over the spires: crescent arc",
+      "stars": [
+        {
+          "perk_name": "Bloodied Combat",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "God of War",
+      "shape_concept": "throne of Olympus: tall single peak",
+      "stars": [
+        {
+          "perk_name": "Titan's Blood",
+          "cost": 500,
+          "size": 0.7454,
+          "x": 0.0,
+          "y": 0.85
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Macross",
+      "shape_concept": "love-and-music heart of the Galaxy: single bright star",
+      "stars": [
+        {
+          "perk_name": "Touched by the Protoculture",
+          "cost": 500,
+          "size": 0.7454,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Metal Gear",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Global Operations",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Signature Weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Metal Gear Solid",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Box-tech",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "Percy Jackson",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Monstrous Strength",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Capstone",
+      "jump": "RWBY",
+      "shape_concept": "huntress emblem: four-petal rose abstract",
+      "stars": [
+        {
+          "perk_name": "Bigger on the Inside",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Actraiser",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "The Flock's Fleece",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Dodgeball",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Garment Gloves",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Fallen London",
+      "shape_concept": "Victorian top hat and cane",
+      "stars": [
+        {
+          "perk_name": "Avid Glove",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "A Thing About Names",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Amateur Academic – Trivia",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Dabbling Academic – Fool Proof",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Highschool of the Dead",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Fashion",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Indiana Jones",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Putting On The Reich",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Inukami",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Talented: Tailoring",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Kill la Kill",
+      "shape_concept": "life-fiber thread woven into a single eye-emblem",
+      "stars": [
+        {
+          "perk_name": "Life Fiber Spool",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Tailor",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Red Dwarf",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Secular Skills",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Splatoon",
+      "shape_concept": "paint splat: irregular blob with droplet outliers",
+      "stars": [
+        {
+          "perk_name": "Sea Snail Shells",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Terraria",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Juggernaut",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "The World Ends With You",
+      "shape_concept": "Shibuya-fashion outfit: layered tee + cap silhouette",
+      "stars": [
+        {
+          "perk_name": "Fashion Nonvictim",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Flaw - Doormat",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Thundercats 2011",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Old Cloak",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Clothing",
+      "jump": "Totally Spies/Martin Mystery",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Catsuit",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Archer",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Weapon Modifications",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Bloodborne",
+      "shape_concept": "hunter's workshop bench: anvil silhouette with three tool stars above",
+      "stars": [
+        {
+          "perk_name": "Workshop Artisan",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": -0.2
+        },
+        {
+          "perk_name": "Gifts from the Little Ones",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.2
+        },
+        {
+          "perk_name": "Hunter",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": -0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Borderlands",
+      "shape_concept": "weapon-mod chip: small square",
+      "stars": [
+        {
+          "perk_name": "Bandit Gunsmith",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.3,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Cave Story",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Fingers of the North Star",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Devil May Cry",
+      "shape_concept": "Ebony & Ivory crossed over Rebellion: twin pistols flanking a long sword",
+      "stars": [
+        {
+          "perk_name": "Weapon Crafting",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "perk_name": "Cuh-Ray-Zee!",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Dark Slayer",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Get Set!",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Taunts",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Weapon Swapping",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Fate Servant Supplement",
+      "shape_concept": "command seal triskelion: three radiating spurs around a center",
+      "stars": [
+        {
+          "perk_name": "Item Construction A+++",
+          "cost": 550,
+          "size": 0.7817,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Class Jumper",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.75,
+          "y": -0.45
+        },
+        {
+          "perk_name": "Magecraft C",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.75,
+          "y": -0.45
+        },
+        {
+          "perk_name": "Noble Phantasm C",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Territory Creation E",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": -0.15
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Forgotten Realms",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Master Craftsman",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Light of Terra DLC 5 A Sky Filled With Steel - Warhammer 40,000",
+      "shape_concept": "Imperial battleship prow: long dagger profile",
+      "stars": [
+        {
+          "perk_name": "Armourer",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Fixer",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.3,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Weaponsmith",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.3,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Lord of the Rings",
+      "shape_concept": "elven smithing: ring with inscription mark",
+      "stars": [
+        {
+          "perk_name": "Dwarven Craft",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Metal Gear Rising",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "High-Frequency Manufacturer",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Robot Unicorn Attack",
+      "shape_concept": "rainbow arc with a unicorn horn poking through the apex",
+      "stars": [
+        {
+          "perk_name": "You Became A Star",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.85,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Make A Wish",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Rainbow Savior",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.75
+        },
+        {
+          "perk_name": "Shoot For The Moon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Unicornium Horn",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.85,
+          "y": 0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Soul Calibur",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Tempered Soul",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Super Mario RPG",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Engineer",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Sword and Sorcery",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "The Arcane Craft",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Thundercats 2011",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Smithing",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "XCOM",
+      "shape_concept": "engineering bench: single workbench star",
+      "stars": [
+        {
+          "perk_name": "Customized Weapons",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "40k Redux",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Technical Training",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Adventure Time",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Analysis",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Alpha Centauri",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Technician",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Asura's Wrath",
+      "shape_concept": "celestial scripture: three glyph-stars in a row",
+      "stars": [
+        {
+          "perk_name": "Demigod Atelier",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Imposing Declaration of Title",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Mantra Generation",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Bastion",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Build That Wall",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Phonograph",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Bubblegum Crisis 2032",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Grease Monkey",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "F.E.A.R.",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Synchronicity Event",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Fallout",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Certified Tech",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Skill Tag",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Firefly",
+      "shape_concept": "Serenity-class hauler: bulbous head, twin engine pods",
+      "stars": [
+        {
+          "perk_name": "Machines, They Just Speak To Me",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Full Metal Panic",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Whispered",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Gears of War",
+      "shape_concept": "Lancer-style rifle: rectangular receiver with chainsaw teeth jutting underneath",
+      "stars": [
+        {
+          "perk_name": "Xenospecialist",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.85,
+          "y": 0.2
+        },
+        {
+          "perk_name": "COG Armor",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.2
+        },
+        {
+          "perk_name": "COG Tags",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": -0.1
+        },
+        {
+          "perk_name": "Combat Boots",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.1
+        },
+        {
+          "perk_name": "Imulsion",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.4,
+          "y": -0.45
+        },
+        {
+          "perk_name": "MX8 Snub Pistol",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.1,
+          "y": -0.45
+        },
+        {
+          "perk_name": "Personal Digital Assistant",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.45
+        },
+        {
+          "perk_name": "Weapon Reload System",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.1,
+          "y": -0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Halo",
+      "shape_concept": "Halo ring on edge: long thin arc of stars",
+      "stars": [
+        {
+          "perk_name": "Erudition",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.85,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Halo UNSC",
+      "shape_concept": "Spartan helmet abstract: visor sweep, crown, jaw line",
+      "stars": [
+        {
+          "perk_name": "Engineer",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "M274 Mongoose",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "M6C Magnum",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.75
+        },
+        {
+          "perk_name": "M9 Fragmentation Grenade",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.75,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Standard Neural Interface",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.75,
+          "y": 0.2
+        },
+        {
+          "perk_name": "UNSC Marine Corp Battle Dress Uniform",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "LoT DLC 1 - The Heathen Trail - Warhammer 40,000",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "The Pleician Tome",
+          "cost": 500,
+          "size": 0.7454,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Lord of Light",
+      "shape_concept": "scripture columns: two parallel verticals",
+      "stars": [
+        {
+          "perk_name": "The Divine Machines",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Bright Spear",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": -0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Marvel Cinematic Universe",
+      "shape_concept": "infinity stones cluster: six bright stars in a hex",
+      "stars": [
+        {
+          "perk_name": "I Am Iron Man",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.85
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Mass Effect",
+      "shape_concept": "Normandy frigate: pointed prow, swept wings, twin engines",
+      "stars": [
+        {
+          "perk_name": "Not A Stupid Grunt",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.85
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Red Alert 3",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Analysis",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Red Faction",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "upgrades! Upgrades!! UPGRADES!!!",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Skies of Arcadia",
+      "shape_concept": "airship hull: long pointed prow with sail and crow's nest",
+      "stars": [
+        {
+          "perk_name": "Sky Machinist",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Cool Flag With Logo",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Secret Handshake",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Star Trek - TNG+DS9",
+      "shape_concept": "Federation starship from above: saucer section, neck, twin warp nacelles",
+      "stars": [
+        {
+          "perk_name": "Skills: Combat",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Skills: Communications",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Skills: Engineering",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.8
+        },
+        {
+          "perk_name": "Skills: Espionage",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Skills: Medicine",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": -0.1
+        },
+        {
+          "perk_name": "Skills: Navigation",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.65,
+          "y": -0.5
+        },
+        {
+          "perk_name": "Skills: Physical Sciences",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.65,
+          "y": -0.5
+        },
+        {
+          "perk_name": "Skills: Physics",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": -0.8
+        },
+        {
+          "perk_name": "Skills: Piloting",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.85,
+          "y": -0.8
+        },
+        {
+          "perk_name": "Skills: Robotics",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.3,
+          "y": -0.4
+        },
+        {
+          "perk_name": "Skills: Stealth",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.3,
+          "y": -0.4
+        },
+        {
+          "perk_name": "Skills: Weapons",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Stargate SG-1",
+      "shape_concept": "ring of chevrons: seven evenly spaced glyphs on a circle",
+      "stars": [
+        {
+          "perk_name": "Xenoarcheaologist",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Round Telephone",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.53,
+          "y": 0.6646
+        },
+        {
+          "perk_name": "Toxicology Reports",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.1891,
+          "y": 0.8287
+        },
+        {
+          "perk_name": "Unleash the Snark",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.7658,
+          "y": 0.3688
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Strike Witches",
+      "shape_concept": "single propeller hub seen edge-on",
+      "stars": [
+        {
+          "perk_name": "Technomage",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Bomber Jacket",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Call sign",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": -0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Teen Titans",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Engineering",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Titanfall",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "What's This Do?",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Valkyria Chronicles",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Valkyrian Science",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "XCOM 2",
+      "shape_concept": "tactical squad: four troopers in a line",
+      "stars": [
+        {
+          "perk_name": "Peak ADVENT Technology",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Flack Jacket",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Binbougami Ga!",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Glove of the East",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Bloodborne",
+      "shape_concept": "saw cleaver: serrated blade folded over a haft, abstracted as parallel star arcs",
+      "stars": [
+        {
+          "perk_name": "Blood Artisan Plus",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.85,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Bag of Blood Vials",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.4
+        },
+        {
+          "perk_name": "Bag of Quicksilver Bullets",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": 0.35
+        },
+        {
+          "perk_name": "Blood Bullets",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.85,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Bloodied Combat + Blood Artisan Plus",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Good Blood",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": 0.05
+        },
+        {
+          "perk_name": "Rally",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": -0.05
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Borderlands",
+      "shape_concept": "elemental shot: streak with impact splash",
+      "stars": [
+        {
+          "perk_name": "Maliwan Intern",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": -0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Chrono Trigger",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Combination Attack",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Element",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "F.E.A.R.",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Feel It Out",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Paxton Fettel",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Inukami",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Talisman Adept",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Talisman Trained",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Lord of the Rings",
+      "shape_concept": "wizard's staff",
+      "stars": [
+        {
+          "perk_name": "Elven Enchantment",
+          "cost": 500,
+          "size": 0.7454,
+          "x": 0.0,
+          "y": 0.85
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Monster Hunter",
+      "shape_concept": "great sword silhouette: massive blade tapering from wide tip to narrow grip",
+      "stars": [
+        {
+          "perk_name": "Infusionist",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "perk_name": "Elemental Mastery",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Balance Bangle",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Felyne Comrade",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Starter Weapon: Bone Rod I and Mauldrone I",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": -0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Samurai Jack",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Magic: Enchanting",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Senki Zesshou Symphogear",
+      "shape_concept": "battle-song wave: paired arcs",
+      "stars": [
+        {
+          "perk_name": "Heretical Adaptation",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Calling Card",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Shivers",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Atlantean Power Crystals",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Tales of Symphonia",
+      "shape_concept": "summon spirit pentacle: five-point star",
+      "stars": [
+        {
+          "perk_name": "That Undefinable Thing",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Iconic Outfit",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.4996,
+          "y": -0.6877
+        },
+        {
+          "perk_name": "Questionably Practical Weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.8084,
+          "y": 0.2627
+        }
+      ]
+    },
+    {
+      "constellation": "Magic",
+      "jump": "XCOM 2",
+      "shape_concept": "psi-amp pulse",
+      "stars": [
+        {
+          "perk_name": "Advanced Materials",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Magitech",
+      "jump": "Chrono Trigger",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Mega Bomb",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magitech",
+      "jump": "Final Fantasy VI",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Mechanist",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magitech",
+      "jump": "Gargoyles",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Technosorcery",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Magitech",
+      "jump": "Harry Potter",
+      "shape_concept": "wand with spell spark: line plus radiating mini-stars",
+      "stars": [
+        {
+          "perk_name": "Setup Wizard",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Wand",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Magitech",
+      "jump": "Thundercats 2011",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Magitech",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Personal Reality",
+      "jump": "Lord of Light",
+      "shape_concept": "hermit's cell: single bright star at center",
+      "stars": [
+        {
+          "perk_name": "Opulent Warehouse",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Personal Reality",
+      "jump": "Personal Reality",
+      "shape_concept": "Joe's workshop: floor plan with workbench, forge, tool wall and two doors",
+      "stars": [
+        {
+          "perk_name": "Hallowed Earth",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.95,
+          "y": 0.85
+        },
+        {
+          "perk_name": "POWER OVERWHELMING",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.95,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Detainment",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.95,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Opulent Housing",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.95,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Portal",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.5,
+          "y": 0.45
+        },
+        {
+          "perk_name": "Waterworld",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.5,
+          "y": 0.45
+        },
+        {
+          "perk_name": "A Little Less Basic",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.55,
+          "y": 0.2
+        },
+        {
+          "perk_name": "A Lot Less",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.85,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Additional Space",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Additional Space",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.85,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Additional Space - Starting Area",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.85,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Additional Space - Starting Area",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Additional Space – Lofty Loft",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.85,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Additional Space – Lofty Loft",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": -0.1
+        },
+        {
+          "perk_name": "Arena",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.2,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Arsenal",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.2,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Entertainment Room",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.95,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Extranet",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.95,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Force Wall",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.4,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Fueling Station",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.1,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Garage",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.4,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Housing Complex",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Library",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.2,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Storage Solutions",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.2,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Temporal Controls",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "The Pond",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.3,
+          "y": 0.6
+        },
+        {
+          "perk_name": "Treeline",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.3,
+          "y": 0.6
+        },
+        {
+          "perk_name": "Underside",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.2,
+          "y": 0.1
+        },
+        {
+          "perk_name": "VOWP Cellular Service",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.2,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Your Robots",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Basic Nutrition",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 1.0142,
+          "y": 0.2718
+        },
+        {
+          "perk_name": "Central Control",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.835,
+          "y": 0.7006
+        },
+        {
+          "perk_name": "Dig it",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.4776,
+          "y": 1.0241
+        },
+        {
+          "perk_name": "Digital Database",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 1.17
+        },
+        {
+          "perk_name": "Dynamic Waterworks",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.5114,
+          "y": 1.0966
+        },
+        {
+          "perk_name": "Esoteric Collection - Magic",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.9576,
+          "y": 0.8035
+        },
+        {
+          "perk_name": "Fly a Kite",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -1.246,
+          "y": 0.3339
+        },
+        {
+          "perk_name": "Free Portal",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -1.3098,
+          "y": -0.231
+        },
+        {
+          "perk_name": "Greenhouse",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -1.1222,
+          "y": -0.7858
+        },
+        {
+          "perk_name": "Gym",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.705,
+          "y": -1.2211
+        },
+        {
+          "perk_name": "Library Services",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.1264,
+          "y": -1.4445
+        },
+        {
+          "perk_name": "Lofty Loft",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.5096,
+          "y": -1.4001
+        },
+        {
+          "perk_name": "Maintenance Systems",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 1.0819,
+          "y": -1.0819
+        },
+        {
+          "perk_name": "Pilot Simulator",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 1.4753,
+          "y": -0.537
+        },
+        {
+          "perk_name": "Pipes Pipes Pipes",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 1.6039,
+          "y": 0.1403
+        },
+        {
+          "perk_name": "Realistic Ground Cover",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 1.4289,
+          "y": 0.825
+        },
+        {
+          "perk_name": "Sky Simulator",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.9693,
+          "y": 1.3844
+        },
+        {
+          "perk_name": "Starting Collection",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.3004,
+          "y": 1.7037
+        },
+        {
+          "perk_name": "The Meaning of Life",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.4581,
+          "y": 1.7097
+        },
+        {
+          "perk_name": "Who’s Got the Powa",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -1.1634,
+          "y": 1.3865
+        },
+        {
+          "perk_name": "Wildlife",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -1.6767,
+          "y": 0.7818
+        },
+        {
+          "perk_name": "Additional Keys",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.89,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Auditorium",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.7492,
+          "y": -0.8157
+        },
+        {
+          "perk_name": "Basic Accommodations",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.2663,
+          "y": -1.5091
+        },
+        {
+          "perk_name": "Computer Hub",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.5202,
+          "y": -1.9415
+        },
+        {
+          "perk_name": "Costume Closet",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.356,
+          "y": -2.0189
+        },
+        {
+          "perk_name": "Expanded Collection - Mysticism",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 1.1988,
+          "y": -1.712
+        },
+        {
+          "perk_name": "Key Link",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 1.8446,
+          "y": -1.065
+        },
+        {
+          "perk_name": "Kit and Kaboodle",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 2.1617,
+          "y": -0.1891
+        },
+        {
+          "perk_name": "Movie & TV Series Collection",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 2.0767,
+          "y": 0.7559
+        },
+        {
+          "perk_name": "Music Collection",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 1.591,
+          "y": 1.591
+        },
+        {
+          "perk_name": "Music Collection",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.7832,
+          "y": 2.1519
+        },
+        {
+          "perk_name": "Natural Lighting",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.2031,
+          "y": 2.3211
+        },
+        {
+          "perk_name": "Office",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.185,
+          "y": 2.0525
+        },
+        {
+          "perk_name": "Seeds and Seedlings",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.9742,
+          "y": 1.3823
+        },
+        {
+          "perk_name": "Shooting Range",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -2.4128,
+          "y": 0.4254
+        },
+        {
+          "perk_name": "Starting Collection",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -2.4052,
+          "y": -0.6445
+        },
+        {
+          "perk_name": "The Pond-Expansion",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.9381,
+          "y": -1.6263
+        },
+        {
+          "perk_name": "Trophy Room",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -1.0861,
+          "y": -2.3292
+        },
+        {
+          "perk_name": "Windows",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.0,
+          "y": -2.61
+        },
+        {
+          "perk_name": "Loft",
+          "cost": 0,
+          "size": 0.2,
+          "x": 1.1199,
+          "y": -2.4017
+        },
+        {
+          "perk_name": "Neutral Lighting",
+          "cost": 0,
+          "size": 0.2,
+          "x": 2.0607,
+          "y": -1.7291
+        },
+        {
+          "perk_name": "Security System",
+          "cost": 0,
+          "size": 0.2,
+          "x": 2.637,
+          "y": -0.7066
+        },
+        {
+          "perk_name": "Shelving",
+          "cost": 0,
+          "size": 0.2,
+          "x": 2.7279,
+          "y": 0.481
+        },
+        {
+          "perk_name": "Starting Space",
+          "cost": 0,
+          "size": 0.2,
+          "x": 2.3018,
+          "y": 1.6117
+        },
+        {
+          "perk_name": "The Village",
+          "cost": 0,
+          "size": 0.2,
+          "x": 1.425,
+          "y": 2.4682
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Akame ga Kill",
+      "shape_concept": "Murasame-style long sword: thin straight blade with single hilt and pommel",
+      "stars": [
+        {
+          "perk_name": "Incredibly Craftsmanship",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.85,
+          "y": 0.85
+        },
+        {
+          "perk_name": "General Level Potential",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Imperial Arms/Teigu",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Perfect Hair",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Simple Sturdy Weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": -0.85
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Bayonetta",
+      "shape_concept": "stiletto with gun-barrel heel: high heel silhouette with muzzle accent",
+      "stars": [
+        {
+          "perk_name": "Aesthetics and Flair",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Classy Contortionist",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Inexplicable Innuendo",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Binbougami Ga!",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Deadbeat Holiday",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Borderlands",
+      "shape_concept": "open loot box with three loot beams shooting up",
+      "stars": [
+        {
+          "perk_name": "Mechanical Master",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Ammunition Vending Machine",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "ECHO device with HUD and a melee weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Career Model",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Tailor Made",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Chrono Trigger",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Lathe of Heaven",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Dinotopia",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Do One Thing At A Time",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Dune",
+      "shape_concept": "sandworm trail: undulating ridge",
+      "stars": [
+        {
+          "perk_name": "Decadence",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": -0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "God of War",
+      "shape_concept": "Blade of Chaos: short blade with chain trailing back",
+      "stars": [
+        {
+          "perk_name": "Daedalus' Student",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.85,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Beauty in the Arts",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.55,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Attire",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Scowl of Sparta",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": -0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Gundam: After Colony",
+      "shape_concept": "Gundanium wings: paired flaring V on either side",
+      "stars": [
+        {
+          "perk_name": "Exotic Compatibility",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.85,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Material Synthesis Science",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Leo",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Gurren Lagann",
+      "shape_concept": "fightin' shades: paired triangle lenses",
+      "stars": [
+        {
+          "perk_name": "Stylish Mechanic",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "History's Strongest Disciple: Kenichi",
+      "shape_concept": "dojo training ring: square mat with a central practitioner and four cardinal stances",
+      "stars": [
+        {
+          "perk_name": "Secret of Steel",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Katsujinken",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Martial Arts Ninjutsu",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Master’s Body",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Sei Ki",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Weapons",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "“Sword” - Lantern Shield",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "King Arthur",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Master Craftsman",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Lord of Light",
+      "shape_concept": "chakra wheel: hub with five spokes radiating outward",
+      "stars": [
+        {
+          "perk_name": "Chosen of Death",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Aspect Cultivation",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Attribute Induction",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.8,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Demigod",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.65
+        },
+        {
+          "perk_name": "Divine Physique",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.65
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Macross",
+      "shape_concept": "stage spotlight: idol mic with sound-wave arcs",
+      "stars": [
+        {
+          "perk_name": "Ambrosial Artificer",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Bling of War",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Percy Jackson",
+      "shape_concept": "Olympian pantheon ring: twelve points around a center for the council, with a trident at the rim",
+      "stars": [
+        {
+          "perk_name": "Divine Child - Hephaestus",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Fate Finds You Interesting",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.7361,
+          "y": 0.425
+        },
+        {
+          "perk_name": "Unnatural Skill: Alchemy",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.425,
+          "y": 0.7361
+        },
+        {
+          "perk_name": "Unnatural Skill: Curses",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Unnatural Skill: Firecraft",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.425,
+          "y": 0.7361
+        },
+        {
+          "perk_name": "Unnatural Skill: Healing",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.7361,
+          "y": 0.425
+        },
+        {
+          "perk_name": "Unnatural Skill: Music",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Unnatural Skill: Naturecraft",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.7361,
+          "y": -0.425
+        },
+        {
+          "perk_name": "Unnatural Skill: Ritual",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.425,
+          "y": -0.7361
+        },
+        {
+          "perk_name": "Unnatural Skill: Runes",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.0,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Unnatural Skill: Smith",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.425,
+          "y": -0.7361
+        },
+        {
+          "perk_name": "Unnatural Skill: Stoneworking",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.7361,
+          "y": -0.425
+        },
+        {
+          "perk_name": "Unnatural Skill: Transmutation",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Unnatural Skill: Weaving",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.95,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Unnatural Skill:Enchanting",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.75,
+          "y": 0.05
+        },
+        {
+          "perk_name": "Minor Blessing Aphrodite - Beauty",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.95,
+          "y": -0.2
+        },
+        {
+          "perk_name": "Minor Blessing Apollo - Medicine",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.1,
+          "y": 0.95
+        },
+        {
+          "perk_name": "Minor Blessing Ares – Armaments",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.1,
+          "y": 0.75
+        },
+        {
+          "perk_name": "Minor Blessing Artemis - Bowmanship",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.05,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Minor Blessing Athena - Craftsmanship",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.5,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Minor Blessing Demeter - Cultivation",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.5,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Minor Blessing Dionysus - Libations",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.5,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Minor Blessing Hades - Ferrokinesis",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.5,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Minor Blessing Hera - Administration",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.3,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Minor Blessing Hermes - Invention",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.3,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Minor Blessing Hestia - Hearthfire",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Minor Blessing Poseidon – Water",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Minor Blessing Zeus – Lightning",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.65,
+          "y": 0.65
+        },
+        {
+          "perk_name": "Old Traditions",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.65,
+          "y": 0.65
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "The World Ends With You",
+      "shape_concept": "cluster of psych pins arranged on a player's pin board",
+      "stars": [
+        {
+          "perk_name": "Natural Puppy",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "My Fashion Sense is Tingling",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Entanglement",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Mental Fortress",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Player Pin",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Quality",
+      "jump": "Viking Saga",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Craftsman of the Gods",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Farming tool",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Assassin's Creed",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Built to Last",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Babylon 5",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Salvager",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Bomberman 64: The Second Attack",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Element Analysis",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Command and Conquer: Tiberium Wars",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Mauler",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Dune",
+      "shape_concept": "spice cache: single dune-peak",
+      "stars": [
+        {
+          "perk_name": "Robust Engineering",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Fallout 4",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Scrapper",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Starting Gear",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Fire Emblem: Awakening",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Armsthrift",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "God of War",
+      "shape_concept": "Spartan circular shield",
+      "stars": [
+        {
+          "perk_name": "Lack of Materials",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Kim Possible",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Reliable Invention",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Lego: Ninjango",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Efficiency",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Lord of Light",
+      "shape_concept": "deva's shield: small inverted triangle",
+      "stars": [
+        {
+          "perk_name": "Wealth",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.45,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Mad Max Gauntlet",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Rationing",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Megaman Zero",
+      "shape_concept": "Z-saber arc: curved energy slash",
+      "stars": [
+        {
+          "perk_name": "Scavenger",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.85,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Robotic Armor",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Warning",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Monster Hunter",
+      "shape_concept": "armor pauldron: two-tier curved shoulder guard",
+      "stars": [
+        {
+          "perk_name": "Waste Not",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Weapon & Item Storage Chest",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Outlaw Star",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Repair Savvy",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Sabaton",
+      "shape_concept": "stage-rig: drum kit dot pattern with overhead mic",
+      "stars": [
+        {
+          "perk_name": "Firestorm",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Panzerkampf",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.3,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Primo Victoria",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Swat Kats",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Scrapyard Skills",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Rockin' Music",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Tenchi Muyo",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Simple Scientific Solution",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Totally Spies/Martin Mystery",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Gadgeteer",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Valkyria Chronicles",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Resources: Manufacturing Line",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "XCOM",
+      "shape_concept": "kevlar plate: small horizontal rectangle",
+      "stars": [
+        {
+          "perk_name": "More With Less",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "Generator Rex",
+      "shape_concept": "nanite cluster: tight loose-knot of three points",
+      "stars": [
+        {
+          "perk_name": "Nanite Removal and Control",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Nanite Sciences",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.3,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "James Bond: 007",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Gadget Master",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "Kerbal Space Program",
+      "shape_concept": "stacked booster cluster: central core with two strap-on boosters",
+      "stars": [
+        {
+          "perk_name": "This Is How I Want It",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "They're Like Legoes, Right?",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "RWBY",
+      "shape_concept": "crossed scythe and dust crystal: long blade-arc with a faceted shard",
+      "stars": [
+        {
+          "perk_name": "Tinkerer",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.85,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Aura",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Dust",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Scroll",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.85,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Variable Weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "Red Faction",
+      "shape_concept": "diamond drill bit: triangular point with bolted base",
+      "stars": [
+        {
+          "perk_name": "Nano-Forge",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Nano-technician",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Recycler",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Sledgehammer",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "Transformers",
+      "shape_concept": "abstract Cybertronian visage: forehead crest, visor band, jaw and antennae",
+      "stars": [
+        {
+          "perk_name": "Cybertronian Forge",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.5,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Master Builder",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.5,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Science! Engineering",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Science! Mechanics",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Altmode",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.65
+        },
+        {
+          "perk_name": "Decepticon Terrorize!",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.75,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Energon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.75,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Energon Battle Pistol",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Energon Melee Weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.2
+        },
+        {
+          "perk_name": "ROBOTS IN DISGUISE! - Medium Chassis",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "Worm",
+      "shape_concept": "cape mask: insectile faceplate, eye-lens slits, mandible chevron",
+      "stars": [
+        {
+          "perk_name": "Parahuman - Tinker - Miniaturization and Efficiency",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Outside Context Problem",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Tinker-Tech Cache",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.65,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Size",
+      "jump": "Zoids: Legacy",
+      "shape_concept": "quadrupedal mecha-beast: four legs, low body, raised tail",
+      "stars": [
+        {
+          "perk_name": "Hybridization Theory",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.85,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Doppler Field Generator",
+          "cost": 5,
+          "size": 0.2357,
+          "x": -0.3,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Accelerator Equipment",
+          "cost": 3,
+          "size": 0.2357,
+          "x": 0.3,
+          "y": -0.85
+        },
+        {
+          "perk_name": "Electron Shield Generators",
+          "cost": 2,
+          "size": 0.2357,
+          "x": 0.85,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Pre-existing Variations?!",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Ace Combat",
+      "shape_concept": "vapor trail across the sky: long curved arc",
+      "stars": [
+        {
+          "perk_name": "Don't Need A Team",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Age of Mythology",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Researcher",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "F.E.A.R.",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Shipping the Product",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Fast and Furious",
+      "shape_concept": "stopwatch: single bright tick",
+      "stars": [
+        {
+          "perk_name": "Most Holy Order of the Socket Wrench",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Gargoyles",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Machinist",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Girl Genius",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Strong Spark",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Scientist: Machinery",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Gundam: After Colony",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Build Rome",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Macross",
+      "shape_concept": "fold-jump streak across space",
+      "stars": [
+        {
+          "perk_name": "Savvy Sultan",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Sonic The Hedgehog",
+      "shape_concept": "loop-de-loop track: vertical oval",
+      "stars": [
+        {
+          "perk_name": "Workaholic",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "Valkyria Chronicles",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Time: Manufacturing Line",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Time",
+      "jump": "XCOM",
+      "shape_concept": "geoscape rotation: arc of two ticks",
+      "stars": [
+        {
+          "perk_name": "One-Man Assembly Line",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.3,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "A Certain Scientific Railgun",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Micromanipulators",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Ace Combat",
+      "shape_concept": "delta-wing fighter from above: nose, swept wings, twin tails",
+      "stars": [
+        {
+          "perk_name": "Hangar",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "perk_name": "4th Generation Fighter Plane",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Basic Flight Training",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Comm Chatter",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Flight Suit",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.85,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Missile Surplus",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": -0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Bloodborne",
+      "shape_concept": "lantern silhouette: post and hanging flame",
+      "stars": [
+        {
+          "perk_name": "Workshop Equipment",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Curious Goggles",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Bloody Roar",
+      "shape_concept": "beast claw rake: three parallel slash marks",
+      "stars": [
+        {
+          "perk_name": "Armor-Shift Manufacture",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Beast Change!: Inostrancevia",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.55
+        },
+        {
+          "perk_name": "Martial Artist: Muay Thai",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Bubblegum Crisis",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Workshop",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Apartment",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Fallen London",
+      "shape_concept": "Neath umbrella + lamppost: parasol arc with a bright lamp atop a pole",
+      "stars": [
+        {
+          "perk_name": "Prismatic Laboratory",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Connections: Hell",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Connections: Rubbery Men",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "St Andrew’s Candle",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Fast and Furious",
+      "shape_concept": "muscle-car profile: low roofline, hood, four wheels",
+      "stars": [
+        {
+          "perk_name": "Garage",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": -0.55
+        },
+        {
+          "perk_name": "The Vehicle",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": -0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "GUNNM/Battle Angel Alita",
+      "shape_concept": "cybernetic frame: head, chest plate, articulated arms",
+      "stars": [
+        {
+          "perk_name": "Cyber-doctor Equipment Package",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Civilian Equipment Package",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Heirloom Weapon",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Medic Equipment Package",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.65,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Rocket Hammer",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.65,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Single Style - T’ai Chi Chuan",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": -0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "God of War",
+      "shape_concept": "smith's chain hook",
+      "stars": [
+        {
+          "perk_name": "Volcanic Forge",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Journey to the West",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Crucible of Eight Trigrams",
+          "cost": 500,
+          "size": 0.7454,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Light of Terra 4 - Lords of the Iron Line - Warhammer 40,000",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Advanced Materials Upgrade Kit",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Light of Terra DLC 3 - A Grand Day Out",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Laboratorium",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Light of Terra DLC 4 - Lords of the Iron Line",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Lathe-Wrought Armour Plating Kit",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Macross",
+      "shape_concept": "Veritech jet/battloid hybrid: wings folded with humanoid head and arms",
+      "stars": [
+        {
+          "perk_name": "Tool Kit",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Basic Training",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Basic Variable Fighter",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Serene Sinatra",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": 0.2
+        },
+        {
+          "perk_name": "Space Suit",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.85,
+          "y": 0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Mass Effect",
+      "shape_concept": "omni-tool flare: tight bright cluster",
+      "stars": [
+        {
+          "perk_name": "Class and Specialization",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.2,
+          "y": 0.2
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "No More Heroes",
+      "shape_concept": "beam katana: long luminous diagonal with hilt knot",
+      "stars": [
+        {
+          "perk_name": "Launderer System",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.85,
+          "y": -0.85
+        },
+        {
+          "perk_name": "That Sword",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": -0.2
+        },
+        {
+          "perk_name": "The Clothes",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Outlaw Star",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Diagnostic Tools",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Personal Reality",
+      "shape_concept": "open toolbox: tray with rows of slots seen from above",
+      "stars": [
+        {
+          "perk_name": "Workshop: Clothing",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": 0.5
+        },
+        {
+          "perk_name": "Workshop: Electronics",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.85,
+          "y": 0.5
+        },
+        {
+          "perk_name": "Workshop: Metalworking",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": -0.5
+        },
+        {
+          "perk_name": "Workshop: Robotics",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.85,
+          "y": -0.5
+        },
+        {
+          "perk_name": "Workshop: Woodworking",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Entrance Hall - Espirit de Kerbal",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.85,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Entrance Hall - Fleet",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Entrance Hall - Garment",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.2,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Entrance Hall - Some Old Friends",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.2,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Entrance Hall - The Matrix",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Entrance Hall – Aisha",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Entrance Hall – Survey",
+          "cost": 50,
+          "size": 0.2357,
+          "x": -0.2,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Entrance Hall – Tetra",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.2,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Entrance Hall – Tybalt",
+          "cost": 50,
+          "size": 0.2357,
+          "x": 0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Access Key",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.3
+        },
+        {
+          "perk_name": "Entrance Hall - Joe",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": -0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Sabaton",
+      "shape_concept": "the toolkit itself: small clustered tools",
+      "stars": [
+        {
+          "perk_name": "The Toolkit",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Samurai Jack",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Workshop: Magic",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Workshop: Science",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Shivers",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "The Alchemy Machine",
+          "cost": 400,
+          "size": 0.6667,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Strike Witches",
+      "shape_concept": "striker unit: twin leg-mounted propellers, each a 3-blade arrangement",
+      "stars": [
+        {
+          "perk_name": "Striker Artificer Toolkit",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.55,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Defensive Sign “Directional Shield”",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": 0.1
+        },
+        {
+          "perk_name": "First Generation Striker",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": -0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "The Elder Scrolls: Skyrim",
+      "shape_concept": "dragon's roar wave: chevron of three diverging stars",
+      "stars": [
+        {
+          "perk_name": "Skyforge",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Standing Stone: The Lover",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "Valkyria Chronicles",
+      "shape_concept": "generic / unspecified: short line",
+      "stars": [
+        {
+          "perk_name": "Hidden Hideaway / Laboratory",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Ragnite Container",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Ace Combat",
+      "shape_concept": "single-seat fighter side profile: nose, canopy, single tail",
+      "stars": [
+        {
+          "perk_name": "Technical Certainties",
+          "cost": 400,
+          "size": 0.6667,
+          "x": -0.85,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Big O",
+      "shape_concept": "Big-Bot-style megadeus: blocky head + two enormous fists at sides",
+      "stars": [
+        {
+          "perk_name": "Valuable Memories -the creation of chimeras",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Valuable Memories: Bigs",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Valuable Memories: the nature of memories",
+          "cost": 300,
+          "size": 0.5774,
+          "x": 0.55,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Valuable Memories:the construction of Megadei",
+          "cost": 300,
+          "size": 0.5774,
+          "x": -0.85,
+          "y": -0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Fast and Furious",
+      "shape_concept": "drag-strip silhouette: chassis with rear spoiler",
+      "stars": [
+        {
+          "perk_name": "Mechanic",
+          "cost": 100,
+          "size": 0.3333,
+          "x": -0.85,
+          "y": -0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Full Metal Panic",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "ARM SLAVE M6 Bushnell",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "G.I. Joe",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Superweapons",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Gundam UC",
+      "shape_concept": "mobile-suit head: V-fin antenna + dual eye lenses",
+      "stars": [
+        {
+          "perk_name": "Anaheim Degree",
+          "cost": 200,
+          "size": 0.4714,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Hangar",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.55
+        },
+        {
+          "perk_name": "Mass Production Mobile Suit: Gun-EZ",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.55
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Gurren Lagann",
+      "shape_concept": "spiral drill: tight inner-to-outer arc",
+      "stars": [
+        {
+          "perk_name": "Always a Bigger Robot",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "perk_name": "Spiral Energy",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Halo",
+      "shape_concept": "Warthog jeep: chassis bar with two wheel circles",
+      "stars": [
+        {
+          "perk_name": "Gladius-class Heavy Corvette",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.85,
+          "y": 0.1
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Kerbal Space Program",
+      "shape_concept": "rocket on the pad: nose cone, capsule, fuel stages, fins, exhaust plume",
+      "stars": [
+        {
+          "perk_name": "Aerospace Engineering Makes Things Go Fast",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.95
+        },
+        {
+          "perk_name": "Emblems",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": 0.65
+        },
+        {
+          "perk_name": "Espirit de Kerbal",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": 0.65
+        },
+        {
+          "perk_name": "Some Old Friends",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": 0.3
+        },
+        {
+          "perk_name": "Speak English, Dammit!",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.2,
+          "y": 0.3
+        },
+        {
+          "perk_name": "This Is, Actually, Rocket Science",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.2,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Macross",
+      "shape_concept": "guardian-mode fighter mid-transform: low silhouette",
+      "stars": [
+        {
+          "perk_name": "Fingers of Silver",
+          "cost": 200,
+          "size": 0.4714,
+          "x": -0.55,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Mad Max Gauntlet",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "Black Thumb",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Metal Gear",
+      "shape_concept": "generic / unspecified: single anchor star",
+      "stars": [
+        {
+          "perk_name": "A New Age of Warfare",
+          "cost": 600,
+          "size": 0.8165,
+          "x": 0.0,
+          "y": 0.0
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Star Wars - Clone Wars",
+      "shape_concept": "starfighter: stubby wings, central cockpit",
+      "stars": [
+        {
+          "perk_name": "Mechanical Genius",
+          "cost": 600,
+          "size": 0.8165,
+          "x": -0.55,
+          "y": 0.3
+        }
+      ]
+    },
+    {
+      "constellation": "Vehicles",
+      "jump": "Titanfall",
+      "shape_concept": "Titan mech standing tall: blocky head, broad chest, two stride-legs",
+      "stars": [
+        {
+          "perk_name": "Titan Engineering",
+          "cost": 100,
+          "size": 0.3333,
+          "x": 0.0,
+          "y": 0.85
+        },
+        {
+          "perk_name": "Core Ability - Amp Core",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.55,
+          "y": 0.45
+        },
+        {
+          "perk_name": "Oi!",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.55,
+          "y": 0.45
+        },
+        {
+          "perk_name": "Titan Chassis - Medium",
+          "cost": 0,
+          "size": 0.2,
+          "x": -0.3,
+          "y": 0.1
+        },
+        {
+          "perk_name": "Titan Hangar",
+          "cost": 0,
+          "size": 0.2,
+          "x": 0.3,
+          "y": 0.1
+        }
+      ]
+    }
+  ]
+}
