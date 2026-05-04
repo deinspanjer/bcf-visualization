@@ -13,13 +13,17 @@ Two-level model:
      shape on a small offset spiral so nothing is dropped.
 
   2. Per-jump mini-constellation — themed by the jump's source media,
-     as an abstract star pattern, NOT a literal logo. Stars are the
-     perks acquired in that jump; star size encodes cost (100 CP →
-     small, 800+ CP → ~1.0, null cost → smallest).
+     as an abstract star pattern, NOT a literal logo. Stars are
+     EVERY perk in the jump (acquired or not); star size encodes
+     cost (100 CP → small, 800+ CP → ~1.0, null cost → smallest).
+     Each star carries its directory id, status, and acquired chapter
+     so the renderer can fog/unfog as the scrubber moves through the
+     timeline.
 
 Coordinates are normalized to roughly [-1, 1] x [-1, 1]; the renderer
-applies 3D positioning. Reads only the obtained_perks data so that
-this artifact stays in sync with what's actually been earned in-story.
+applies 3D positioning. Reads perk_directory.json so this includes
+unacquired perks ("Available", "Partial", etc.) as fog-able stars
+in the sky alongside the acquired ones.
 
 Run:
 
@@ -39,7 +43,7 @@ from pathlib import Path
 from _common import write_validated_json
 
 ROOT = Path(__file__).resolve().parent.parent
-OBTAINED = ROOT / "data" / "derived" / "obtained_perks.json"
+DIRECTORY = ROOT / "data" / "derived" / "perk_directory.json"
 OUT = ROOT / "data" / "derived" / "constellation_wireframes.json"
 
 
@@ -1268,34 +1272,40 @@ def assign_to_slots(
 def build_jump_constellation(
     constellation: str,
     jump: str,
-    perks: list[tuple[str, int | None]],
+    perks: list[dict],
 ) -> dict:
-    """Construct one per-jump entry. Perks are passed in (name, cost)
-    pairs; we sort by descending cost so the biggest stars land on
-    the most-defining anchor points of the hand-designed shape.
-    Within a cost tier we sort by name for determinism."""
-    perks_sorted = sorted(perks, key=lambda p: (-(p[1] or 0), p[0]))
+    """Construct one per-jump entry. Each perk is the directory entry
+    dict (we read its name/cost/status/acquired_*/instances). Sort by
+    descending cost so the biggest stars land on the most-defining
+    anchor points of the hand-designed shape; ties broken by name."""
+    perks_sorted = sorted(
+        perks,
+        key=lambda p: (-(p.get("cost") or 0), p.get("name", "")),
+    )
     key = (constellation, jump)
     if key in JUMP_SHAPES:
         spec = JUMP_SHAPES[key]
         slots = spec["stars"]
         concept = spec["shape_concept"]
     else:
-        # Procedural — seed from a stable hash of the jump name so the
-        # jitter is repeatable run-to-run.
         seed = sum(ord(c) for c in f"{constellation}|{jump}") + len(perks_sorted)
         slots, concept = procedural_shape(len(perks_sorted), seed)
 
     coords = assign_to_slots(perks_sorted, slots)
     stars = [
         {
-            "perk_name": name,
-            "cost": cost,
-            "size": cost_to_size(cost),
+            "id": p["id"],
+            "perk_name": p["name"],
+            "cost": p.get("cost"),
+            "size": cost_to_size(p.get("cost")),
             "x": round(x, 4),
             "y": round(y, 4),
+            "status": p["status"],
+            "acquired_chapter_num": p.get("acquired_chapter_num"),
+            "acquired_epub_sequence": p.get("acquired_epub_sequence"),
+            "instances_count": max(1, len(p.get("acquired_instances", []))),
         }
-        for (name, cost), (x, y) in zip(perks_sorted, coords)
+        for p, (x, y) in zip(perks_sorted, coords)
     ]
     return {
         "constellation": constellation,
@@ -1332,11 +1342,11 @@ def build_cluster_constellation(
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    obtained = json.loads(OBTAINED.read_text())["perks"]
+    directory = json.loads(DIRECTORY.read_text())["perks"]
 
-    # (constellation, normalized jump) -> list of (perk_name, cost)
-    by_jump: dict[tuple[str, str], list[tuple[str, int | None]]] = defaultdict(list)
-    for p in obtained:
+    # (constellation, normalized jump) -> list of directory entries
+    by_jump: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for p in directory:
         if not p["constellation"] or not p["jump"]:
             continue
         # Felyne Perks isn't in the 14-cluster enum — skip; the schema's
@@ -1344,7 +1354,7 @@ def main() -> None:
         if p["constellation"] == "Felyne Perks":
             continue
         key = (p["constellation"], norm_jump(p["jump"]))
-        by_jump[key].append((p["perk_name"], p["cost"]))
+        by_jump[key].append(p)
 
     # Build per-jump entries
     jump_entries = [
@@ -1370,7 +1380,7 @@ def main() -> None:
         cluster_entries.append(build_cluster_constellation(name, spec, jumps_in))
 
     payload = {
-        "_source": "data/derived/obtained_perks.json (constellations + jumps); coordinates hand-designed in scripts/build_constellation_wireframes.py",
+        "_source": "data/derived/perk_directory.json (constellations + jumps); coordinates hand-designed in scripts/build_constellation_wireframes.py",
         "_count": len(cluster_entries),
         "_jumps_count": len(jump_entries),
         "_note": (
@@ -1382,8 +1392,11 @@ def main() -> None:
             "the biggest sub-constellations sit on the most prominent "
             "anchor points. jump_constellations is a per-jump star "
             "pattern themed by the source media (abstract, never a "
-            "literal logo); stars are perks, size encodes cost on a "
-            "sqrt ramp (100=>~0.33, 800=>~0.94, null/free=>0.20)."
+            "literal logo); stars are EVERY perk in the jump (acquired "
+            "or not), size encodes cost on a sqrt ramp (100=>~0.33, "
+            "800=>~0.94, null/free=>0.20). Each star carries its "
+            "directory id, status, and acquired_chapter_num so the "
+            "renderer can fog/unfog as the scrubber moves through time."
         ),
         "cluster_constellations": cluster_entries,
         "jump_constellations": jump_entries,

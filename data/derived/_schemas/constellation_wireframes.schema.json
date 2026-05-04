@@ -72,13 +72,29 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["perk_name", "cost", "size", "x", "y"],
+            "required": [
+              "id", "perk_name", "cost", "size", "x", "y",
+              "status", "acquired_chapter_num", "acquired_epub_sequence",
+              "instances_count"
+            ],
             "properties": {
+              "id":        { "type": "string", "minLength": 1 },
               "perk_name": { "type": "string", "minLength": 1 },
               "cost":      { "type": ["integer", "null"], "minimum": 0 },
               "size":      { "type": "number", "minimum": 0.0, "maximum": 1.0 },
               "x":         { "type": "number" },
-              "y":         { "type": "number" }
+              "y":         { "type": "number" },
+              "status": {
+                "enum": ["Obtained", "Available", "Partial", "Locked", "Unknown", "Repeatable"]
+              },
+              "acquired_chapter_num": {
+                "anyOf": [
+                  { "type": "null" },
+                  { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+                ]
+              },
+              "acquired_epub_sequence": { "type": ["integer", "null"], "minimum": 0 },
+              "instances_count":        { "type": "integer", "minimum": 1 }
             }
           }
         },
