@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/perk_directory.schema.json",
+  "title": "Perk Directory",
+  "description": "Authoritative roster of every rollable perk in the Brockton's Celestial Forge gacha. One entry per perk, with constellation, jump (source media), cost, and acquisition info if Joe has obtained it. Built from the Reference xlsx Unabridged List (multi-perk rows expanded), enriched from perks_catalog.json (cost / repeatable / description) and obtained_perks.json (acquisition chapter / epub_sequence).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source",
+    "_count",
+    "_status_distribution",
+    "_acquired_count",
+    "_note",
+    "perks"
+  ],
+  "properties": {
+    "_source":               { "type": "string" },
+    "_count":                { "type": "integer", "minimum": 0 },
+    "_status_distribution":  {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_acquired_count":       { "type": "integer", "minimum": 0 },
+    "_note":                 { "type": "string" },
+    "perks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/perk" }
+    }
+  },
+  "$defs": {
+    "perk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "constellation",
+        "name",
+        "jump",
+        "status",
+        "cost",
+        "cost_text",
+        "free",
+        "repeatable",
+        "description",
+        "acquired_chapter_num",
+        "acquired_epub_sequence",
+        "first_acquired_at_word_offset",
+        "matched_to_obtained"
+      ],
+      "properties": {
+        "id":   { "type": "string", "minLength": 1 },
+        "constellation": {
+          "enum": [
+            "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+            "Clothing", "Magic", "Quality", "Size",
+            "Resources and Durability", "Magitech", "Alchemy",
+            "Capstone", "Personal Reality", "Felyne Perks"
+          ]
+        },
+        "name":   { "type": "string", "minLength": 1 },
+        "jump":   { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["Obtained", "Available", "Partial", "Locked", "Unknown", "Repeatable"]
+        },
+        "cost":         { "type": ["integer", "null"], "minimum": 0 },
+        "cost_text":    { "type": ["string", "null"] },
+        "free":         { "type": "boolean" },
+        "repeatable":   { "type": "boolean" },
+        "description":  { "type": "string" },
+        "acquired_chapter_num": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+          ]
+        },
+        "acquired_epub_sequence":         { "type": ["integer", "null"], "minimum": 1 },
+        "first_acquired_at_word_offset":  { "type": ["integer", "null"], "minimum": 0 },
+        "matched_to_obtained":            { "type": "boolean" }
+      }
+    }
+  }
+}
