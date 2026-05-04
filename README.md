@@ -307,40 +307,47 @@ Phase 3 complete (interactive scrubber timeline + GitHub Pages deploy ready).
 Open: scrubber refinement (UX review), source-prose decommit (pending
 permission), and the Future Work items below.
 
-## Regime simulation finding
+## Regime simulation
 
 `scripts/predict_rolls.py` walks the EPUB word-by-word, applying the
-documented three-regime model (rate, cadence, shadow), and predicts
-1001 total roll positions across the full story. Cross-validating
-against the actual roll log for chapters 1–75:
+documented three-regime model (rate, cadence, 600/800 shadow), and
+predicts roll positions across the full story.
 
-- **Predicted: 587 roll attempts. Actual: 496. Delta: +91 (+18%).**
+The simulation excludes sub-sections marked as non-MC POV per the
+author's rule: `<p><strong>...</strong></p>` headers like
+*"Preamble Taylor"*, *"Addendum Mike"*, *"Interlude Weld"*, plus
+the always-non-MC headers *"Jumpchain abilities this chapter:"*,
+*"New Abilities for X:"*, and *"Author's Note"*. *"Addendum Joe"*
+within an interlude chapter still counts (Joe is the MC).
 
-The regime model over-predicts by ~18%, which suggests something like
-30% of EPUB-counted words don't actually contribute to CP earning.
-A likely explanation: many chapter titles contain "Preamble X" or
-"Addendum Y" sub-section markers (e.g., *"33 Morning Training -
-Preamble James - Addendum Youth Guard"*); those side-content sections
-may be excluded from the author's "rough draft" word count. The
-50,400-CP curator footer for chapters 1–75 implies ~1.0M words at the
-2000-word-per-100-CP rate, but EPUB exact for the same range is 1.42M
-(40% higher). The 0.42M-word delta is roughly consistent with the
-Preamble/Addendum hypothesis.
+Cross-validating against the actual roll log for chapters 1–75:
 
-This is itself a useful empirical finding — documenting the gap
-between the rule-as-stated and the rule-as-applied. Closing it would
-require parsing the EPUB at sub-chapter granularity to identify
-section boundaries, which is on the future-work list.
+- **Predicted: 544 roll attempts. Actual: 496. Delta: +48 (+10%).**
+
+Down from +18% before the section filter. The remaining 10% over-
+prediction is per-chapter noise rather than systematic: some
+chapters predict slightly high (ch 45: 11 vs 6), others slightly
+low (ch 58: 1 vs 5). Probably a mix of header markers that classify
+ambiguously (in-story PHO posts, news alerts, scene breaks), and
+the curator's roll log itself having bookkeeping quirks (which
+we've documented separately in spot-check).
+
+For chapters 76+ where no actual roll log exists, the simulation
+predicts roll positions that future work could validate by reading
+the EPUB prose at each predicted offset and looking for a narrative
+roll reference.
 
 ## Future work
 
 Captured here so they aren't lost between phases:
 
-- **Sub-chapter section detection.** Identify Preamble/Addendum/
-  Interlude sub-sections in EPUB chapter prose and exclude them from
-  CP-earning word counts. Should bring `predicted_rolls.json` from
-  +18% over to within a few percent of actual, and let us answer the
-  remaining mechanic questions confidently.
+- **Tighten predicted-roll accuracy from +10% toward 0%.** Likely
+  candidates: better classify section markers that aren't clearly
+  Preamble/Addendum/Interlude (in-story PHO posts, news alerts,
+  scene breaks marked with `<strong>`). Also worth investigating
+  whether free-perk grants in clusters affect the effective CP
+  rate. Closing this gap would let us validate the chapters 76+
+  predictions confidently.
 - **Reconciliation pass on the remaining 54 unclassified perks**
   (entire jumps like Bloodborne, Transformers, Lord of Light, KSP
   that the catalog doesn't enumerate at all). Would push the

@@ -76,7 +76,45 @@ def shadow_words(perk_cost: int, regime: int) -> int:
     return shadow_cp * REGIMES[3]["words_per_100_cp"] // 100
 
 
-# ---------- EPUB word counts ------------------------------------------------
+# ---------- EPUB word counts (CP-earning content only) ---------------------
+
+
+# MC POV identifier - the protagonist is Joe Wilkins.
+_MC_NAME = "joe"
+
+# Section headers that are always non-MC regardless of any character name.
+_NON_MC_HEADER_PREFIXES = (
+    "jumpchain abilities", "jumpchain perks",
+    "new abilities for",
+    "author", "a/n", "note",
+)
+
+
+def _section_counts_for_cp(header: str | None) -> bool:
+    """Decide whether a section's words contribute to CP-earning.
+
+    Per the author's mechanic and corroborated by the user:
+      - Implicit pre-first-marker content (no header): counts by default.
+        Usually just HTML scaffolding before the first real heading.
+      - "Jumpchain abilities" / "New Abilities for" / "Note" / "Author":
+        always non-MC.
+      - "Preamble X" / "Addendum X" / "Interlude X": non-MC unless X
+        starts with "Joe" (Joe is the MC, so "Addendum Joe" within an
+        interlude chapter counts).
+      - Anything else (chapter title repetitions, in-story headings):
+        counts by default.
+    """
+    if header is None:
+        return True
+    h = header.strip()
+    hl = h.lower()
+    if any(hl.startswith(p) for p in _NON_MC_HEADER_PREFIXES):
+        return False
+    m = re.match(r"^(preamble|addendum|interlude)\b\s*:?\s*(.*)", h, re.I)
+    if m:
+        target = m.group(2).strip().lower()
+        return target.startswith(_MC_NAME)
+    return True
 
 
 class _Strip(HTMLParser):
@@ -107,7 +145,40 @@ def _word_count(html: str) -> int:
     return len(text.split()) if text else 0
 
 
+_MARKER_RE = re.compile(
+    r"<p[^>]*>\s*<strong[^>]*>([^<]+)</strong>\s*</p>", re.IGNORECASE,
+)
+
+
+def _cp_earning_word_count(full_title: str, html: str) -> int:
+    """Return the count of words in this chapter that contribute to CP.
+
+    Walks all `<p><strong>X</strong></p>` section markers, splits the
+    chapter into sections each headed by a marker (plus any pre-first-
+    marker implicit section), and sums word counts only for sections
+    whose header is MC POV per `_section_counts_for_cp`.
+    """
+    markers = list(_MARKER_RE.finditer(html))
+    if not markers:
+        return _word_count(html)
+
+    sections: list[tuple[int, int, str | None]] = []
+    if markers[0].start() > 0:
+        sections.append((0, markers[0].start(), None))
+    for i, m in enumerate(markers):
+        start = m.end()
+        end = markers[i + 1].start() if i + 1 < len(markers) else len(html)
+        sections.append((start, end, m.group(1)))
+
+    total = 0
+    for start, end, header in sections:
+        if _section_counts_for_cp(header):
+            total += _word_count(html[start:end])
+    return total
+
+
 def _epub_word_counts_by_full_title() -> dict[str, int]:
+    """Map full_title -> CP-earning word count (post-section-filter)."""
     counts: dict[str, int] = {}
     with zipfile.ZipFile(EPUB) as zf:
         nav = zf.read("EPUB/nav.xhtml").decode("utf-8")
@@ -121,7 +192,7 @@ def _epub_word_counts_by_full_title() -> dict[str, int]:
                 html = zf.read(f"EPUB/{href}").decode("utf-8")
             except KeyError:
                 continue
-            counts[title] = _word_count(html)
+            counts[title] = _cp_earning_word_count(title, html)
     return counts
 
 
