@@ -3,7 +3,7 @@
 Reads:
   - data/derived/chapters.json
   - data/derived/obtained_perks.json
-  - data/raw/Brocktons_Celestial_Forge.epub  (for exact per-chapter word counts)
+  - data/derived/chapter_sections.json   (per-section CP-earning word counts)
 
 Writes:
   - data/derived/predicted_rolls.json
@@ -22,6 +22,11 @@ in cumulative-word order. Between events, it accumulates CP at the
 regime rate, subtracting any active shadow. When banked CP crosses
 the roll threshold, a roll is predicted at that exact word offset.
 
+CP-earning word counts come from chapter_sections.json, which classifies
+each section of each chapter (Preamble/Addendum/Interlude/perks/news/
+PHO posts) and records only the MC-POV word count per chapter. Run
+`scripts/extract_chapter_sections.py` first to populate that file.
+
 The prediction is then cross-validated against rolls.json for
 chapters 1-75 (where actual rolls are logged), and used to project
 roll counts for chapters 76+ where the curator stopped maintaining.
@@ -30,19 +35,16 @@ roll counts for chapters 76+ where the curator stopped maintaining.
 from __future__ import annotations
 
 import json
-import re
-import zipfile
 from dataclasses import asdict, dataclass
-from html.parser import HTMLParser
 from pathlib import Path
 
 from _common import write_validated_json
 
 ROOT = Path(__file__).resolve().parent.parent
-EPUB = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge.epub"
 CHAPTERS_JSON = ROOT / "data" / "derived" / "chapters.json"
 OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
 ROLLS_JSON = ROOT / "data" / "derived" / "rolls.json"
+SECTIONS_JSON = ROOT / "data" / "derived" / "chapter_sections.json"
 OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
 
 
@@ -76,124 +78,19 @@ def shadow_words(perk_cost: int, regime: int) -> int:
     return shadow_cp * REGIMES[3]["words_per_100_cp"] // 100
 
 
-# ---------- EPUB word counts (CP-earning content only) ---------------------
+# ---------- per-chapter CP-earning word counts ------------------------------
 
 
-# MC POV identifier - the protagonist is Joe Wilkins.
-_MC_NAME = "joe"
-
-# Section headers that are always non-MC regardless of any character name.
-_NON_MC_HEADER_PREFIXES = (
-    "jumpchain abilities", "jumpchain perks",
-    "new abilities for",
-    "author", "a/n", "note",
-)
-
-
-def _section_counts_for_cp(header: str | None) -> bool:
-    """Decide whether a section's words contribute to CP-earning.
-
-    Per the author's mechanic and corroborated by the user:
-      - Implicit pre-first-marker content (no header): counts by default.
-        Usually just HTML scaffolding before the first real heading.
-      - "Jumpchain abilities" / "New Abilities for" / "Note" / "Author":
-        always non-MC.
-      - "Preamble X" / "Addendum X" / "Interlude X": non-MC unless X
-        starts with "Joe" (Joe is the MC, so "Addendum Joe" within an
-        interlude chapter counts).
-      - Anything else (chapter title repetitions, in-story headings):
-        counts by default.
-    """
-    if header is None:
-        return True
-    h = header.strip()
-    hl = h.lower()
-    if any(hl.startswith(p) for p in _NON_MC_HEADER_PREFIXES):
-        return False
-    m = re.match(r"^(preamble|addendum|interlude)\b\s*:?\s*(.*)", h, re.I)
-    if m:
-        target = m.group(2).strip().lower()
-        return target.startswith(_MC_NAME)
-    return True
-
-
-class _Strip(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.parts: list[str] = []
-        self.skip = 0
-
-    def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style"):
-            self.skip += 1
-        if tag in ("p", "div", "br", "li", "h1", "h2", "h3"):
-            self.parts.append(" ")
-
-    def handle_endtag(self, tag):
-        if tag in ("script", "style"):
-            self.skip -= 1
-
-    def handle_data(self, data):
-        if not self.skip:
-            self.parts.append(data)
-
-
-def _word_count(html: str) -> int:
-    s = _Strip()
-    s.feed(html)
-    text = re.sub(r"\s+", " ", "".join(s.parts)).strip()
-    return len(text.split()) if text else 0
-
-
-_MARKER_RE = re.compile(
-    r"<p[^>]*>\s*<strong[^>]*>([^<]+)</strong>\s*</p>", re.IGNORECASE,
-)
-
-
-def _cp_earning_word_count(full_title: str, html: str) -> int:
-    """Return the count of words in this chapter that contribute to CP.
-
-    Walks all `<p><strong>X</strong></p>` section markers, splits the
-    chapter into sections each headed by a marker (plus any pre-first-
-    marker implicit section), and sums word counts only for sections
-    whose header is MC POV per `_section_counts_for_cp`.
-    """
-    markers = list(_MARKER_RE.finditer(html))
-    if not markers:
-        return _word_count(html)
-
-    sections: list[tuple[int, int, str | None]] = []
-    if markers[0].start() > 0:
-        sections.append((0, markers[0].start(), None))
-    for i, m in enumerate(markers):
-        start = m.end()
-        end = markers[i + 1].start() if i + 1 < len(markers) else len(html)
-        sections.append((start, end, m.group(1)))
-
-    total = 0
-    for start, end, header in sections:
-        if _section_counts_for_cp(header):
-            total += _word_count(html[start:end])
-    return total
-
-
-def _epub_word_counts_by_full_title() -> dict[str, int]:
-    """Map full_title -> CP-earning word count (post-section-filter)."""
-    counts: dict[str, int] = {}
-    with zipfile.ZipFile(EPUB) as zf:
-        nav = zf.read("EPUB/nav.xhtml").decode("utf-8")
-        for href, title in re.findall(
-            r'<a[^>]*?href="([^"]+)"[^>]*>([^<]+)</a>', nav, re.DOTALL
-        ):
-            title = title.strip()
-            if not title or title == "Introduction":
-                continue
-            try:
-                html = zf.read(f"EPUB/{href}").decode("utf-8")
-            except KeyError:
-                continue
-            counts[title] = _cp_earning_word_count(title, html)
-    return counts
+def _load_cp_words_per_chapter() -> dict[str, int]:
+    """Read chapter_sections.json and return cp-earning word count
+    keyed by chapter full_title."""
+    if not SECTIONS_JSON.exists():
+        raise SystemExit(
+            f"missing {SECTIONS_JSON.relative_to(ROOT)}; run "
+            "scripts/extract_chapter_sections.py first"
+        )
+    data = json.loads(SECTIONS_JSON.read_text())
+    return {c["full_title"]: c["cp_earning_word_count"] for c in data["chapters"]}
 
 
 # ---------- simulation ------------------------------------------------------
@@ -316,20 +213,13 @@ def main() -> None:
     chapters = sorted(chapters_data["chapters"], key=lambda c: tuple(c["sort_key"]))
     obtained = json.loads(OBTAINED_JSON.read_text())["perks"]
 
-    # Get EPUB exact word counts. Fail loudly if the EPUB isn't there;
-    # this script is build-time only.
-    if not EPUB.exists():
-        raise SystemExit(
-            f"missing {EPUB.relative_to(ROOT)}; this script needs the source "
-            "EPUB to compute exact per-chapter word counts."
-        )
-    exact_words = _epub_word_counts_by_full_title()
-    missing_titles = [c for c in chapters if c["full_title"] not in exact_words]
+    cp_words = _load_cp_words_per_chapter()
+    missing_titles = [c for c in chapters if c["full_title"] not in cp_words]
     if missing_titles:
         raise SystemExit(
-            f"{len(missing_titles)} chapter title(s) in chapters.json not found "
-            f"in EPUB nav (first: {missing_titles[0]['full_title']!r}). "
-            "Verify the EPUB matches the threadmark exports."
+            f"{len(missing_titles)} chapter title(s) in chapters.json missing "
+            f"from chapter_sections.json (first: {missing_titles[0]['full_title']!r}). "
+            "Re-run scripts/extract_chapter_sections.py."
         )
 
     paid_by_chapter: dict[str, list[dict]] = {}
@@ -339,7 +229,7 @@ def main() -> None:
         paid_by_chapter.setdefault(p["chapter_num"], []).append(p)
 
     predicted, chap_start, chap_end, total_words = _simulate(
-        chapters, paid_by_chapter, exact_words,
+        chapters, paid_by_chapter, cp_words,
     )
 
     # Cross-validate per-chapter roll counts against rolls.json (ch 1-75).
@@ -365,8 +255,9 @@ def main() -> None:
 
     payload = {
         "_source": (
-            "Simulated from chapters.json + obtained_perks.json + EPUB exact "
-            "word counts using the documented three-regime model."
+            "Simulated from chapters.json + obtained_perks.json + per-section "
+            "CP-earning word counts (chapter_sections.json) using the "
+            "documented three-regime model."
         ),
         "_count": len(predicted),
         "_total_words_epub_exact": total_words,

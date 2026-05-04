@@ -152,7 +152,9 @@ malformed data.
 | `data/derived/perks_catalog.json` | first curator xlsx, "Complete List of Perks"     | 651 perks across 14 constellations |
 | `data/derived/obtained_perks.json`| Reference xlsx, "Obtained Perks"                 | 504 acquisitions across 127 chapters (full-story, EPUB seq 1–192) |
 | `data/derived/timeline.json`      | Reference xlsx, "Timeline of Events"             | 26 dated entries June 2007 → April 25 2011 (author + Whamodyne attribution) |
-| `data/derived/predicted_rolls.json` | regime simulation over chapters.json + obtained_perks.json + EPUB | 1001 predicted roll positions (word offset + chapter), with per-chapter comparison vs actual for the curator-covered range |
+| `data/derived/predicted_rolls.json` | regime simulation over chapters.json + obtained_perks.json + chapter_sections.json | predicted roll positions (word offset + chapter), with per-chapter comparison vs actual for the curator-covered range |
+| `data/derived/chapter_sections.json` | walked EPUB chapter HTML, scanned each section's first ~3000 chars | per-section POV classification, CP-earning word count, classification confidence, ~432 sections across 194 chapters |
+| `data/derived/extracted_perks.json` | parsed "Jumpchain abilities this chapter:" footer of each EPUB chapter | 481 author-canonical perk listings (name, source, cost, description) keyed by chapter |
 
 ## Running the parsers
 
@@ -160,17 +162,21 @@ malformed data.
 pip install -r requirements.txt
 python3 scripts/parse_threadmarks.py
 python3 scripts/parse_rolls.py
-python3 scripts/parse_reference.py   # obtained_perks + timeline
-python3 scripts/predict_rolls.py     # regime simulation -> predicted_rolls
-python3 scripts/spot_check.py        # cross-source consistency check
-python3 scripts/make_charts.py       # static charts -> figures/
+python3 scripts/parse_reference.py             # obtained_perks + timeline
+python3 scripts/extract_chapter_sections.py    # chapter_sections + extracted_perks  (needs EPUB)
+python3 scripts/predict_rolls.py               # regime simulation -> predicted_rolls
+python3 scripts/spot_check.py                  # cross-source consistency check
+python3 scripts/make_charts.py                 # static charts -> figures/
 ```
 
-`predict_rolls.py` reads the source EPUB (`data/raw/Brocktons_Celestial_Forge.epub`)
-to compute exact per-chapter word counts. The other parsers work
-without the EPUB; if it's not available the prediction step can be
-skipped (`spot_check.py` will report the file as missing and skip
-the corresponding check).
+`extract_chapter_sections.py` reads the source EPUB
+(`data/raw/Brocktons_Celestial_Forge.epub`) to compute per-section
+classification and CP-earning word counts. `predict_rolls.py` then
+reads only the derived `chapter_sections.json`, so the EPUB is only
+needed at extraction time. The other parsers don't need the EPUB at
+all; if it's missing, `predict_rolls.py` and `extract_chapter_sections.py`
+exit with a clear error and `spot_check.py` skips the corresponding
+check.
 
 ## Phase 2: static charts and throughput analytics
 
@@ -309,45 +315,74 @@ permission), and the Future Work items below.
 
 ## Regime simulation
 
-`scripts/predict_rolls.py` walks the EPUB word-by-word, applying the
-documented three-regime model (rate, cadence, 600/800 shadow), and
-predicts roll positions across the full story.
+`scripts/predict_rolls.py` simulates CP accumulation through the
+documented three-regime model (rate, cadence, 600/800 shadow) and
+predicts roll positions across the full story. It reads only the
+derived `chapter_sections.json`; the EPUB is parsed once upstream by
+`extract_chapter_sections.py`.
 
-The simulation excludes sub-sections marked as non-MC POV per the
-author's rule: `<p><strong>...</strong></p>` headers like
-*"Preamble Taylor"*, *"Addendum Mike"*, *"Interlude Weld"*, plus
-the always-non-MC headers *"Jumpchain abilities this chapter:"*,
-*"New Abilities for X:"*, and *"Author's Note"*. *"Addendum Joe"*
-within an interlude chapter still counts (Joe is the MC).
+`extract_chapter_sections.py` walks each chapter's HTML, splits it
+on `<p><strong>X</strong></p>` markers into 432 sections across 194
+chapters, and classifies each section by combining:
+
+- **Header rule** — *Preamble/Addendum/Interlude X* (non-MC unless X
+  is "Joe"); *Jumpchain abilities*, *New Abilities for*, *Author's
+  Note* (always non-MC).
+- **Content scan** — first ~3000 characters of the section, with
+  pronoun ratios (first-person vs third-person) and structural markers
+  (PHO forum posts, newspaper articles, meeting reports).
+- **Implicit-section convention** — a chapter's content before any
+  marker is always MC (this is the chapter body; the first paragraph
+  may be a third-person scene-setter, but the section as a whole is
+  the MC narrative).
+
+Each section gets a `confidence` of high/medium/low. Currently
+high=362, medium=55, low=15. Of the 432 sections, 81% of total words
+(2.17M of 2.69M) fall into MC sections that count toward CP.
 
 Cross-validating against the actual roll log for chapters 1–75:
 
-- **Predicted: 544 roll attempts. Actual: 496. Delta: +48 (+10%).**
+- **Predicted: 515 roll attempts. Actual: 496. Delta: +19 (+3.8%).**
 
-Down from +18% before the section filter. The remaining 10% over-
-prediction is per-chapter noise rather than systematic: some
-chapters predict slightly high (ch 45: 11 vs 6), others slightly
-low (ch 58: 1 vs 5). Probably a mix of header markers that classify
-ambiguously (in-story PHO posts, news alerts, scene breaks), and
-the curator's roll log itself having bookkeeping quirks (which
-we've documented separately in spot-check).
+Down from +10% before the content scan, and +18% before any section
+filter. Remaining variance is per-chapter idiosyncrasies (e.g.,
+ch 45 over by 5, ch 58.2 under by 5) — probably a mix of:
+
+- in-story headers like *"EMERGENCY NEWS ALERT"* or *"\*\*\*"* scene
+  breaks that don't match any classifier and default to MC
+- the curator counting interlude chapters that the rule says shouldn't
+  count (ch 43.1, 46.1)
+- bookkeeping quirks in the rolls log already documented in spot-check
 
 For chapters 76+ where no actual roll log exists, the simulation
-predicts roll positions that future work could validate by reading
-the EPUB prose at each predicted offset and looking for a narrative
-roll reference.
+predicts roll positions; future work could validate by reading the
+EPUB prose at each predicted offset and looking for a narrative roll
+reference.
+
+`extract_chapter_sections.py` also extracts the perk listings from
+the *"Jumpchain abilities this chapter:"* footer of each chapter
+into `data/derived/extracted_perks.json` (481 perks). This is an
+independent author-canonical record — if the curator's
+`obtained_perks.json` is missing a constellation classification, the
+extracted perks have its name, source, cost, and description, which
+can be used to fill catalog gaps. Of the 54 acquisitions still
+unclassified after item-2 reconciliation, 49 are present in the
+extracted perks with full descriptions ready for further enrichment.
 
 ## Future work
 
 Captured here so they aren't lost between phases:
 
-- **Tighten predicted-roll accuracy from +10% toward 0%.** Likely
-  candidates: better classify section markers that aren't clearly
-  Preamble/Addendum/Interlude (in-story PHO posts, news alerts,
-  scene breaks marked with `<strong>`). Also worth investigating
-  whether free-perk grants in clusters affect the effective CP
-  rate. Closing this gap would let us validate the chapters 76+
-  predictions confidently.
+- **Tighten predicted-roll accuracy from +3.8% toward 0%.** Use the
+  15 remaining low-confidence sections from `chapter_sections.json`
+  (mostly all-caps in-story news headlines and `***` scene-break
+  markers) as a manual review list. Also worth investigating whether
+  free-perk grants in clusters affect the effective CP rate.
+- **Use extracted_perks.json to fill the 49 still-unclassified
+  constellation entries.** Each missing perk has a description in
+  the extracted data; a manual or LLM-assisted classification pass
+  would push obtained_perks classification coverage from 89% toward
+  100%, eliminating the scrubber's "(other)" bucket entirely.
 - **Reconciliation pass on the remaining 54 unclassified perks**
   (entire jumps like Bloodborne, Transformers, Lord of Light, KSP
   that the catalog doesn't enumerate at all). Would push the

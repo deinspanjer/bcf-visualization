@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/chapter_sections.schema.json",
+  "title": "Chapter Sections",
+  "description": "Per-section POV classification and CP-earning word counts derived by walking each EPUB chapter's HTML and scanning each section's first ~3000 chars for first/third-person pronouns, structural markers (PHO/news/meeting), and header pattern.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_count", "_total_sections",
+    "_classification_distribution", "_confidence_distribution",
+    "_total_words", "_cp_earning_words", "_note", "chapters"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "_total_sections": { "type": "integer", "minimum": 0 },
+    "_classification_distribution": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_confidence_distribution": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_total_words":      { "type": "integer", "minimum": 0 },
+    "_cp_earning_words": { "type": "integer", "minimum": 0 },
+    "_note":             { "type": "string" },
+    "chapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chapter" }
+    }
+  },
+  "$defs": {
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "full_title", "epub_href",
+        "total_word_count", "cp_earning_word_count", "sections"
+      ],
+      "properties": {
+        "chapter_num":           { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "full_title":            { "type": "string", "minLength": 1 },
+        "epub_href":             { "type": "string", "minLength": 1 },
+        "total_word_count":      { "type": "integer", "minimum": 0 },
+        "cp_earning_word_count": { "type": "integer", "minimum": 0 },
+        "sections": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/section" }
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "header", "word_count", "counts_for_cp",
+        "classification", "confidence", "classification_reason",
+        "fp_count", "tp_count", "structural_markers", "sample"
+      ],
+      "properties": {
+        "header":                { "type": ["string", "null"] },
+        "word_count":            { "type": "integer", "minimum": 0 },
+        "counts_for_cp":         { "type": "boolean" },
+        "classification":        { "enum": ["mc", "non_mc_perks", "non_mc_other_pov", "non_mc_meta"] },
+        "confidence":            { "enum": ["high", "medium", "low"] },
+        "classification_reason": { "type": "string" },
+        "fp_count":              { "type": "integer", "minimum": 0 },
+        "tp_count":              { "type": "integer", "minimum": 0 },
+        "structural_markers":    { "type": "array", "items": { "type": "string" } },
+        "sample":                { "type": "string" }
+      }
+    }
+  }
+}
