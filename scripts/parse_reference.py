@@ -18,6 +18,7 @@ Sheets used:
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -28,6 +29,7 @@ from _common import write_validated_json
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Reference.xlsx"
+PERKS_CATALOG_JSON = ROOT / "data" / "derived" / "perks_catalog.json"
 OUT_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
 OUT_TIMELINE = ROOT / "data" / "derived" / "timeline.json"
 
@@ -47,6 +49,175 @@ class ObtainedPerk:
     cost_text: str              # original cost text, e.g. "100", "Free", "Free with Alchemist"
     free: bool                  # any "Free..." variant counts
     perk_text: str
+    constellation: str | None   # joined from catalog + Unabridged List; None if no match
+
+
+_CONSTELLATIONS = {
+    "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+    "Clothing", "Magic", "Quality", "Size",
+    "Resources and Durability", "Magitech", "Alchemy",
+    "Capstone", "Personal Reality", "Felyne Perks",
+}
+
+
+def _normalize(s: str) -> str:
+    """Cosmetic-tolerant normalization for fuzzy matching.
+
+    Lowercase, fold curly quotes to ASCII, replace any non-word char
+    (other than apostrophe) with space, collapse whitespace. Treats
+    "-", ":", "—" as separators rather than preserved characters so
+    that "Valuable Memories -the X" and "Valuable Memories: the X"
+    both reduce to "valuable memories the x".
+    """
+    if not s:
+        return ""
+    out = s.lower()
+    for a, b in [("’", "'"), ("‘", "'")]:
+        out = out.replace(a, b)
+    out = re.sub(r"[^\w\s']", " ", out)
+    out = re.sub(r"\s+", " ", out).strip()
+    return out
+
+
+# Known generic catalog entries that the obtained list expands into
+# many specific instances the catalog doesn't enumerate. Maps a regex
+# matching the obtained perk name -> constellation.
+_GENERIC_PATTERNS: list[tuple[re.Pattern, str]] = [
+    # Percy Jackson: catalog has "Minor blessings" (plural, generic);
+    # obtained has "Minor Blessing <God> - <Domain>" per blessing acquired.
+    (re.compile(r"^minor\s+blessing\b", re.I), "Quality"),
+]
+
+
+# A few constellation names are also used as in-perk prefixes ("Time:",
+# "Resources:") in the obtained list. Map to the canonical constellation.
+_CONSTELLATION_NAME_PREFIXES: dict[str, str] = {
+    "time": "Time",
+    "resources": "Resources and Durability",
+    "knowledge": "Knowledge",
+    "vehicles": "Vehicles",
+    "crafting": "Crafting",
+    "clothing": "Clothing",
+    "magic": "Magic",
+    "quality": "Quality",
+    "size": "Size",
+    "magitech": "Magitech",
+    "alchemy": "Alchemy",
+    "capstone": "Capstone",
+    "toolkits": "Toolkits",
+}
+
+
+_PREFIX_SEPARATORS = (":", " - ", " – ", " — ")
+
+
+def _prefix_candidates(name: str) -> list[str]:
+    """Yield progressively shorter prefixes of `name`, useful for
+    matching "Workshop: Metalworking" -> "Workshop" or
+    "Unnatural Skill: Smith" -> "Unnatural Skill".
+    """
+    cands = []
+    seen = {name}
+    for sep in _PREFIX_SEPARATORS:
+        if sep in name:
+            prefix = name.split(sep, 1)[0].strip()
+            if prefix and prefix not in seen:
+                cands.append(prefix)
+                seen.add(prefix)
+    return cands
+
+
+def _build_constellation_index(wb) -> dict[str, dict[str, str]]:
+    """Build a multi-key lookup from perk identifiers -> constellation.
+
+    Sources, in priority order:
+      1. perks_catalog.json (Complete List of Perks sheet)
+      2. Reference xlsx Unabridged List sheet
+
+    Returned dict has three sub-dicts: by `(name, source)` exact,
+    by `(name, source)` normalized, and by `name` normalized only.
+    """
+    by_name_source: dict[tuple[str, str], str] = {}
+    by_name_source_norm: dict[tuple[str, str], str] = {}
+    by_name_norm: dict[str, str] = {}
+
+    def add(constellation, name, source):
+        if not constellation or not name:
+            return
+        c = constellation.strip()
+        # Trim "Constellation" suffix if present
+        if c.endswith(" Constellation"):
+            c = c[: -len(" Constellation")]
+        if c not in _CONSTELLATIONS:
+            return
+        n = name.strip()
+        s = (source or "").strip()
+        by_name_source.setdefault((n, s), c)
+        nn = _normalize(n)
+        ns = _normalize(s)
+        by_name_source_norm.setdefault((nn, ns), c)
+        by_name_norm.setdefault(nn, c)
+
+    # 1. Existing catalog (already derived JSON)
+    if PERKS_CATALOG_JSON.exists():
+        catalog = json.loads(PERKS_CATALOG_JSON.read_text())
+        for p in catalog.get("perks", []):
+            add(p.get("constellation"), p.get("name"), p.get("source"))
+
+    # 2. Reference xlsx Unabridged List (multi-perk rows split by newline)
+    ws = wb["Unabridged List"]
+    for r in range(2, ws.max_row + 1):
+        constellation = ws.cell(r, 1).value
+        names_raw = ws.cell(r, 2).value
+        jump = ws.cell(r, 3).value
+        if not names_raw:
+            continue
+        for name in str(names_raw).split("\n"):
+            add(constellation, name, jump)
+
+    return {
+        "exact": by_name_source,
+        "norm": by_name_source_norm,
+        "name_only": by_name_norm,
+    }
+
+
+def _classify(idx: dict[str, dict[str, str]], name: str, source: str | None) -> str | None:
+    """Return the constellation for (name, source), trying progressively
+    more permissive matches.
+    """
+    src = source or ""
+    # 1. Exact (name, source)
+    if (name, src) in idx["exact"]:
+        return idx["exact"][(name, src)]
+    # 2. Normalized (name, source)
+    nn = _normalize(name)
+    ns = _normalize(src)
+    if (nn, ns) in idx["norm"]:
+        return idx["norm"][(nn, ns)]
+    # 3. Normalized name (any source)
+    if nn in idx["name_only"]:
+        return idx["name_only"][nn]
+    # 4. Prefix split fallbacks
+    for prefix in _prefix_candidates(name):
+        pn = _normalize(prefix)
+        # 4a: prefix is a constellation name itself ("Time: X", "Resources: X")
+        if pn in _CONSTELLATION_NAME_PREFIXES:
+            return _CONSTELLATION_NAME_PREFIXES[pn]
+        # 4b: prefix is a known catalog entry ("Workshop: X" -> "Workshop")
+        if pn in idx["name_only"]:
+            return idx["name_only"][pn]
+    # 5. Generic-pattern fallbacks for catalogs that don't enumerate
+    #    every specific instance (Percy Jackson "Minor blessings", etc.)
+    for pattern, const in _GENERIC_PATTERNS:
+        if pattern.search(name):
+            return const
+    # 6. Jump-as-constellation: Personal Reality jump perks default to
+    #    the Personal Reality constellation (115 of 118 PR-jump catalog
+    #    entries are Personal Reality; the 3 exceptions hit step 1-3 above).
+    if src in _CONSTELLATIONS:
+        return src
+    return None
 
 
 _CHAPTER_PREFIX_RE = re.compile(r"^(\d+(?:\.\d+)?)")
@@ -68,7 +239,7 @@ def _parse_cost(text: str) -> tuple[int, bool]:
     return 0, False
 
 
-def parse_obtained_perks(wb) -> list[ObtainedPerk]:
+def parse_obtained_perks(wb, constellation_idx) -> list[ObtainedPerk]:
     ws = wb["Obtained Perks"]
     perks: list[ObtainedPerk] = []
     for r in range(2, ws.max_row + 1):
@@ -82,18 +253,20 @@ def parse_obtained_perks(wb) -> list[ObtainedPerk]:
         cost, free = _parse_cost(cost_text)
         classification = _norm(ws.cell(r, 4).value) or None
         jump = _norm(ws.cell(r, 5).value) or None
+        name = _norm(ws.cell(r, 3).value)
         perks.append(
             ObtainedPerk(
                 epub_sequence=int(seq),
                 chapter_num=chapter_num,
                 chapter_full_title=title_raw,
-                perk_name=_norm(ws.cell(r, 3).value),
+                perk_name=name,
                 classification=classification,
                 jump=jump,
                 cost=cost,
                 cost_text=cost_text or "Free",
                 free=free,
                 perk_text=_norm(ws.cell(r, 7).value),
+                constellation=_classify(constellation_idx, name, jump),
             )
         )
     return perks
@@ -196,17 +369,24 @@ def parse_timeline(wb) -> list[TimelineEntry]:
 def main() -> None:
     wb = load_workbook(SRC, data_only=True)
 
-    perks = parse_obtained_perks(wb)
+    constellation_idx = _build_constellation_index(wb)
+    perks = parse_obtained_perks(wb, constellation_idx)
+
+    classified = sum(1 for p in perks if p.constellation)
     write_validated_json(
         OUT_PERKS,
         {
             "_source": "data/raw/Brocktons_Celestial_Forge_Reference.xlsx#Obtained Perks",
             "_count": len(perks),
             "_coverage": "full story (EPUB sequences 1-192, story chapters 1 - 119.5)",
+            "_classification_coverage": f"{classified}/{len(perks)} acquisitions classified to a constellation",
             "_note": (
                 "Each row is one perk acquired. Cluster rolls and free-bonus perks "
                 "each get their own row. cost is the numeric CP value (0 for any "
-                "Free... variant); cost_text preserves the original wording."
+                "Free... variant); cost_text preserves the original wording. "
+                "constellation is joined from perks_catalog.json + the Reference "
+                "xlsx Unabridged List with cosmetic-tolerant matching; null when "
+                "no match could be found."
             ),
             "perks": [asdict(p) for p in perks],
         },
@@ -238,7 +418,8 @@ def main() -> None:
     )
 
     print(f"wrote {OUT_PERKS.relative_to(ROOT)}: {len(perks)} perks "
-          f"across {len({p.chapter_num for p in perks})} chapters")
+          f"across {len({p.chapter_num for p in perks})} chapters "
+          f"({classified} classified, {len(perks) - classified} unclassified)")
     print(f"wrote {OUT_TIMELINE.relative_to(ROOT)}: {len(entries)} entries "
           f"({iso_dates and (min(iso_dates) + ' .. ' + max(iso_dates))})")
 

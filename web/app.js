@@ -23,13 +23,12 @@ async function loadJSON(name) {
 }
 
 async function loadAll() {
-  const [chapters, rolls, obtained, perksCatalog] = await Promise.all([
+  const [chapters, rolls, obtained] = await Promise.all([
     loadJSON("chapters"),
     loadJSON("rolls"),
     loadJSON("obtained_perks"),
-    loadJSON("perks_catalog"),
   ]);
-  return { chapters, rolls, obtained, perksCatalog };
+  return { chapters, rolls, obtained };
 }
 
 // ---------- chapter ordering & indexing ---------------------------------
@@ -84,39 +83,20 @@ function buildIndex(data) {
     return { words, paid, free, rolls, misses };
   });
 
-  // Cumulative per-constellation count from rolls.json (only chapters 1-75
-  // have constellation data; later chapters in obtained_perks lack a
-  // direct constellation field, so we fall back to the catalog where
-  // possible, else "Unknown").
-  const catalogByName = new Map();
-  for (const p of data.perksCatalog.perks) {
-    if (!catalogByName.has(p.name)) catalogByName.set(p.name, p);
-  }
-
-  // Constellation-by-chapter accumulator.
+  // Cumulative per-constellation count. obtained_perks.json now carries
+  // the constellation classification directly (joined at parse time
+  // against catalog + Reference Unabridged List), so we can read it
+  // straight off each acquisition. Chapters 1-75 also have constellation
+  // info in rolls.json; we use the obtained_perks classification because
+  // it covers the full story uniformly.
   let constState = new Map(CONSTELLATION_ORDER.map(c => [c, 0]));
   const constByIdx = chapters.map(c => {
-    // 1) From rolls.json (where constellation is known directly)
-    const rs = rollsByChap.get(c.chapter_num) || [];
-    for (const r of rs) {
-      if (r.kind !== "trigger" && r.kind !== "roll") continue;
-      const cn = r.constellation;
+    const acqs = acqByChap.get(c.chapter_num) || [];
+    for (const a of acqs) {
+      const cn = a.constellation;
       if (!cn) continue;
       if (!constState.has(cn)) constState.set(cn, 0);
-      constState.set(cn, constState.get(cn) + r.perks.length);
-    }
-    // 2) For chapters without rolls.json data (76+), look up each
-    //    obtained perk in the catalog by name to find its constellation.
-    if (rs.length === 0) {
-      const acqs = acqByChap.get(c.chapter_num) || [];
-      for (const a of acqs) {
-        const m = catalogByName.get(a.perk_name);
-        const cn = m ? m.constellation : null;
-        if (cn) {
-          if (!constState.has(cn)) constState.set(cn, 0);
-          constState.set(cn, constState.get(cn) + 1);
-        }
-      }
+      constState.set(cn, constState.get(cn) + 1);
     }
     return new Map(constState);
   });
