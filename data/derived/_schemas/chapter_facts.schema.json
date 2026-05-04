@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/chapter_facts.schema.json",
+  "title": "Chapter Facts (visualization backbone)",
+  "description": "Per-chapter fact table — one row per published chapter, with sections and rolls as nested 1:N dimensions. Backbone for the planned scrubber/DAW-style visualization. Shadow periods are top-level because regime-3 recovery shadows can cross chapter boundaries.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_method", "_count", "_grain", "_deferred",
+    "shadow_periods", "chapters"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_method": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "_grain":  { "type": "string" },
+    "_deferred": { "type": "array", "items": { "type": "string" } },
+    "shadow_periods": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/shadow_period" }
+    },
+    "chapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chapter" }
+    }
+  },
+  "$defs": {
+    "shadow_period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger_perk_id", "trigger_perk_name", "trigger_perk_cost",
+        "trigger_chapter_num", "trigger_word_position_epub",
+        "shadow_word_length", "shadow_end_word_position_epub",
+        "shadow_end_chapter_num"
+      ],
+      "properties": {
+        "trigger_perk_id":               { "type": ["string", "null"] },
+        "trigger_perk_name":             { "type": "string", "minLength": 1 },
+        "trigger_perk_cost":             { "type": "integer", "enum": [600, 800] },
+        "trigger_chapter_num":           { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "trigger_word_position_epub": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "shadow_word_length":            { "type": "integer", "minimum": 0 },
+        "shadow_end_word_position_epub": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "shadow_end_chapter_num":        { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+      }
+    },
+    "in_world": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_date", "start_time_of_day", "end_date",
+        "end_time_of_day", "spans_days", "confidence", "evidence"
+      ],
+      "properties": {
+        "start_date":         { "type": ["string", "null"] },
+        "start_time_of_day":  { "type": ["string", "null"], "enum": [null, "morning", "afternoon", "evening", "night"] },
+        "end_date":           { "type": ["string", "null"] },
+        "end_time_of_day":    { "type": ["string", "null"], "enum": [null, "morning", "afternoon", "evening", "night"] },
+        "spans_days":         { "type": ["integer", "null"], "minimum": 0 },
+        "confidence":         { "enum": ["high", "medium", "low", "stub"] },
+        "evidence":           { "type": ["string", "null"] }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "section_index", "header", "marker_kind", "pov_character",
+        "word_count", "cp_earning_word_count", "counts_for_cp",
+        "classification", "classification_confidence",
+        "structural_markers",
+        "char_offset_start_in_chapter", "char_offset_end_in_chapter",
+        "in_world_start_time_of_day", "in_world_end_time_of_day"
+      ],
+      "properties": {
+        "section_index":   { "type": "integer", "minimum": 0 },
+        "header":          { "type": ["string", "null"] },
+        "marker_kind": {
+          "enum": [
+            "main_implicit", "main_titled", "preamble", "addendum",
+            "interlude", "abilities", "author_note", "other"
+          ]
+        },
+        "pov_character":              { "type": ["string", "null"] },
+        "word_count":                 { "type": "integer", "minimum": 0 },
+        "cp_earning_word_count":      { "type": "integer", "minimum": 0 },
+        "counts_for_cp":              { "type": "boolean" },
+        "classification":             { "type": ["string", "null"] },
+        "classification_confidence":  { "type": ["string", "null"] },
+        "structural_markers":         { "type": "array", "items": { "type": "string" } },
+        "char_offset_start_in_chapter": { "type": "integer", "minimum": 0 },
+        "char_offset_end_in_chapter":   { "type": "integer", "minimum": 0 },
+        "in_world_start_time_of_day": { "type": ["string", "null"], "enum": [null, "morning", "afternoon", "evening", "night"] },
+        "in_world_end_time_of_day":   { "type": ["string", "null"], "enum": [null, "morning", "afternoon", "evening", "night"] }
+      }
+    },
+    "roll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roll_number", "section_index", "outcome", "constellation",
+        "purchased_perk_id", "purchased_perk_name",
+        "purchased_perk_cost", "purchased_perk_jump", "free_perks",
+        "predicted_word_position_epub", "predicted_char_offset_in_chapter",
+        "anchor_char_offset_in_chapter", "evidence_kind"
+      ],
+      "properties": {
+        "roll_number": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "section_index": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "outcome":                      { "enum": ["hit", "miss", "unknown"] },
+        "constellation":                { "type": ["string", "null"] },
+        "purchased_perk_id":            { "type": ["string", "null"] },
+        "purchased_perk_name":          { "type": ["string", "null"] },
+        "purchased_perk_cost": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "purchased_perk_jump":          { "type": ["string", "null"] },
+        "free_perks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "jump", "constellation"],
+            "properties": {
+              "id":            { "type": ["string", "null"] },
+              "name":          { "type": "string", "minLength": 1 },
+              "jump":          { "type": "string", "minLength": 1 },
+              "constellation": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "predicted_word_position_epub": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "predicted_char_offset_in_chapter": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "anchor_char_offset_in_chapter": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "evidence_kind": {
+          "enum": [
+            "direct", "general_only", "forward_ref", "silent",
+            "untracked_acquisition"
+          ]
+        }
+      }
+    },
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "full_title", "sort_key", "point_calculation_regime",
+        "epub_href",
+        "published_at", "last_edited_at", "last_edited_known",
+        "edited_lag_days", "post_url", "likes",
+        "in_world",
+        "total_word_count", "cp_earning_word_count",
+        "rolls_count", "hits_count", "misses_count", "unknowns_count",
+        "perks_gained", "paid_perks_gained", "free_perks_gained",
+        "cumulative_words_through_chapter", "cumulative_cp_earning_words",
+        "cumulative_perks_through_chapter",
+        "banked_cp_at_start", "banked_cp_at_end",
+        "pov_characters", "structural_markers",
+        "sections", "rolls"
+      ],
+      "properties": {
+        "chapter_num":     { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "full_title":      { "type": "string", "minLength": 1 },
+        "sort_key":        { "type": "array", "items": { "type": "integer" }, "minItems": 2, "maxItems": 2 },
+        "point_calculation_regime": { "type": "integer", "enum": [1, 2, 3] },
+        "epub_href":       { "type": "string" },
+
+        "published_at":    { "type": "string", "minLength": 1 },
+        "last_edited_at":  { "anyOf": [{ "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, { "type": "null" }] },
+        "last_edited_known": { "type": "boolean" },
+        "edited_lag_days": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
+        "post_url":        { "type": "string" },
+        "likes":           { "type": "integer", "minimum": 0 },
+
+        "in_world": { "$ref": "#/$defs/in_world" },
+
+        "total_word_count":           { "type": "integer", "minimum": 0 },
+        "cp_earning_word_count":      { "type": "integer", "minimum": 0 },
+        "rolls_count":                { "type": "integer", "minimum": 0 },
+        "hits_count":                 { "type": "integer", "minimum": 0 },
+        "misses_count":               { "type": "integer", "minimum": 0 },
+        "unknowns_count":             { "type": "integer", "minimum": 0 },
+        "perks_gained":               { "type": "integer", "minimum": 0 },
+        "paid_perks_gained":          { "type": "integer", "minimum": 0 },
+        "free_perks_gained":          { "type": "integer", "minimum": 0 },
+
+        "cumulative_words_through_chapter": { "type": "integer", "minimum": 0 },
+        "cumulative_cp_earning_words":      { "type": "integer", "minimum": 0 },
+        "cumulative_perks_through_chapter": { "type": "integer", "minimum": 0 },
+        "banked_cp_at_start": { "type": ["integer", "null"] },
+        "banked_cp_at_end":   { "type": ["integer", "null"] },
+
+        "pov_characters":     { "type": "array", "items": { "type": "string" } },
+        "structural_markers": { "type": "array", "items": { "type": "string" } },
+
+        "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
+        "rolls":    { "type": "array", "items": { "$ref": "#/$defs/roll" } }
+      }
+    }
+  }
+}

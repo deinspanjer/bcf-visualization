@@ -6,26 +6,50 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "_source", "_total_locations", "_locations_by_chapter",
-    "_locations_by_kind", "_note", "locations"
+    "_source", "_nuance_log",
+    "_total_locations", "_total_events",
+    "_locations_by_chapter", "_locations_by_kind",
+    "_events_by_chapter", "_events_by_anchor_kind",
+    "_note", "locations", "events"
   ],
   "properties": {
     "_source": { "type": "string" },
+    "_nuance_log": {
+      "type": "array",
+      "description": "Human-readable list of LLM-judgment nuances applied to the regex catalog (which patterns were tightened or dropped, why, and what evidence informed the decision).",
+      "items": { "type": "string" }
+    },
     "_total_locations": { "type": "integer", "minimum": 0 },
+    "_total_events": { "type": "integer", "minimum": 0 },
     "_locations_by_chapter": {
       "type": "object",
-      "description": "Map of chapter_num (string) -> candidate count.",
+      "description": "Map of chapter_num (string) -> raw candidate count.",
       "additionalProperties": { "type": "integer", "minimum": 0 }
     },
     "_locations_by_kind": {
       "type": "object",
-      "description": "Map of candidate_kind -> total count across all chapters.",
+      "description": "Map of candidate_kind -> total raw count across all chapters.",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_events_by_chapter": {
+      "type": "object",
+      "description": "Map of chapter_num (string) -> clustered-event count.",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_events_by_anchor_kind": {
+      "type": "object",
+      "description": "Map of anchor_kind -> total event count across all chapters.",
       "additionalProperties": { "type": "integer", "minimum": 0 }
     },
     "_note": { "type": "string" },
     "locations": {
       "type": "array",
       "items": { "$ref": "#/$defs/location" }
+    },
+    "events": {
+      "type": "array",
+      "description": "Clustered roll-event candidates, one per ~200-char neighborhood of regex activity. Each event carries a single elected anchor plus the set of kinds present in the cluster.",
+      "items": { "$ref": "#/$defs/event" }
     }
   },
   "$defs": {
@@ -55,6 +79,40 @@
             "constellation_reveal", "general"
           ]
         }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "epub_href", "section_index",
+        "anchor_kind", "anchor_phrase", "anchor_offset",
+        "kinds_present", "hit_count", "context"
+      ],
+      "properties": {
+        "chapter_num":    { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "epub_href":      { "type": "string", "minLength": 1 },
+        "section_index":  { "type": "integer", "minimum": 0 },
+        "anchor_kind": {
+          "enum": [
+            "roll_attempt", "miss", "acquisition",
+            "constellation_reveal", "general"
+          ]
+        },
+        "anchor_phrase":  { "type": "string", "minLength": 1 },
+        "anchor_offset":  { "type": "integer", "minimum": 0 },
+        "kinds_present": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "roll_attempt", "miss", "acquisition",
+              "constellation_reveal", "general"
+            ]
+          },
+          "minItems": 1
+        },
+        "hit_count":      { "type": "integer", "minimum": 1 },
+        "context":        { "type": "string", "minLength": 1 }
       }
     }
   }

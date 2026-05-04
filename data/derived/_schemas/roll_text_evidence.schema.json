@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/roll_text_evidence.schema.json",
+  "title": "Roll Text Evidence",
+  "description": "For each predicted roll, the prose window around its predicted position plus the regex anchors that landed inside that window. Replaces the curator's rolls.json as the ground-truth source for downstream visualization: every entry is grounded in actual EPUB prose.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_method", "_framing_note", "_window_size_words",
+    "_evidence_kinds", "_total_predicted",
+    "_evidence_kind_totals", "_evidence_kind_pct",
+    "_chapter_coverage",
+    "_by_chapter", "rolls"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_method": { "type": "string" },
+    "_framing_note": { "type": "string" },
+    "_window_size_words": { "type": "integer", "minimum": 1 },
+    "_evidence_kinds": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "_total_predicted": { "type": "integer", "minimum": 0 },
+    "_evidence_kind_totals": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_evidence_kind_pct": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "_chapter_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapters_with_predicted_rolls",
+        "chapters_with_any_specific_anchor",
+        "chapter_coverage_pct",
+        "chapters_with_direct_anchor",
+        "chapter_direct_pct"
+      ],
+      "properties": {
+        "chapters_with_predicted_rolls":     { "type": "integer", "minimum": 0 },
+        "chapters_with_any_specific_anchor": { "type": "integer", "minimum": 0 },
+        "chapter_coverage_pct":              { "type": "number" },
+        "chapters_with_direct_anchor":       { "type": "integer", "minimum": 0 },
+        "chapter_direct_pct":                { "type": "number" }
+      }
+    },
+    "_by_chapter": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rolls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/roll" }
+    }
+  },
+  "$defs": {
+    "roll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roll_number", "chapter_num", "regime", "cp_threshold",
+        "predicted_word_position_epub", "predicted_word_in_chapter",
+        "predicted_char_offset", "window_char_start", "window_char_end",
+        "evidence_kind", "matching_anchor_kinds", "matching_event_count",
+        "matching_events", "next_specific_event_offset", "prose_window"
+      ],
+      "properties": {
+        "roll_number":                 { "type": "integer", "minimum": 1 },
+        "chapter_num":                 { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "regime":                      { "type": "integer", "minimum": 1, "maximum": 3 },
+        "cp_threshold":                { "type": "integer", "minimum": 0 },
+        "predicted_word_position_epub": { "type": "integer", "minimum": 0 },
+        "predicted_word_in_chapter":   { "type": "integer", "minimum": 0 },
+        "predicted_char_offset":       { "type": "integer", "minimum": 0 },
+        "window_char_start":           { "type": "integer", "minimum": 0 },
+        "window_char_end":             { "type": "integer", "minimum": 0 },
+        "evidence_kind": {
+          "enum": ["direct", "general_only", "forward_ref", "no_evidence"]
+        },
+        "matching_anchor_kinds": {
+          "type": "array",
+          "items": {
+            "enum": ["roll_attempt", "miss", "acquisition",
+                     "constellation_reveal", "general"]
+          }
+        },
+        "matching_event_count":        { "type": "integer", "minimum": 0 },
+        "matching_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["anchor_kind", "anchor_phrase", "anchor_offset",
+                         "kinds_present", "hit_count"],
+            "properties": {
+              "anchor_kind": {
+                "enum": ["roll_attempt", "miss", "acquisition",
+                         "constellation_reveal", "general"]
+              },
+              "anchor_phrase":    { "type": "string", "minLength": 1 },
+              "anchor_offset":    { "type": "integer", "minimum": 0 },
+              "kinds_present": {
+                "type": "array",
+                "items": {
+                  "enum": ["roll_attempt", "miss", "acquisition",
+                           "constellation_reveal", "general"]
+                }
+              },
+              "hit_count":        { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "next_specific_event_offset": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "prose_window": { "type": "string" }
+      }
+    }
+  }
+}

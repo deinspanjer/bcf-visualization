@@ -4,6 +4,13 @@ Visualizations and analysis of *Brockton's Celestial Forge (Worm/Jumpchain)* by 
 
 This is an exploratory project; the plan is iterative and not yet locked down.
 
+## Documentation map
+
+- [USERS.md](USERS.md) — how to run and use the visualization.
+- [DEVELOPERS.md](DEVELOPERS.md) — data pipeline, local development, and maintenance rules.
+- [TODO.md](TODO.md) — current future work and deferred design questions.
+- [plans/daw_scrubber_v2.md](plans/daw_scrubber_v2.md) — milestone notes for the DAW scrubber work.
+
 ## Source material
 
 - Story (SV): https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/
@@ -153,9 +160,14 @@ malformed data.
 | `data/derived/obtained_perks.json`| Reference xlsx, "Obtained Perks"                 | 504 acquisitions across 127 chapters (full-story, EPUB seq 1–192) |
 | `data/derived/timeline.json`      | Reference xlsx, "Timeline of Events"             | 26 dated entries June 2007 → April 25 2011 (author + Whamodyne attribution) |
 | `data/derived/predicted_rolls.json` | regime simulation over chapters.json + obtained_perks.json + chapter_sections.json | predicted roll positions (word offset + chapter), with per-chapter comparison vs actual for the curator-covered range |
+| `data/derived/roll_locations_regex.json` | regex/text-window pass over EPUB prose near predicted roll positions | candidate text locations for roll evidence |
+| `data/derived/roll_text_evidence.json` | prose-backed roll-location extraction | text snippets and evidence metadata for matched roll events |
+| `data/derived/roll_locations_validation.json` | validation of predicted/located rolls against chapter facts | chapter-level coverage and discrepancy findings |
+| `data/derived/chapter_last_edited.json` | SV threadmark MHTs | last-edited timestamps for chapters where SV exposes them |
 | `data/derived/chapter_sections.json` | walked EPUB chapter HTML, scanned each section's first ~3000 chars | per-section POV classification, CP-earning word count, classification confidence, ~432 sections across 194 chapters |
 | `data/derived/extracted_perks.json` | parsed "Jumpchain abilities this chapter:" footer of each EPUB chapter | 481 author-canonical perk listings (name, source, cost, description) keyed by chapter |
 | `data/derived/perk_directory.json` | Reference xlsx, "Unabridged List" (Status != Excluded), enriched from perks_catalog.json + obtained_perks.json | 407 perks (one row per perk; multi-perk rows expanded), 252 matched to obtained acquisitions (~62%); spot-check surfaces obtained acquisitions not represented in the directory (mostly free bonus perks the Unabridged List doesn't enumerate) |
+| `data/derived/chapter_facts.json` | built from derived and manual inputs above | visualization backbone: chapters, rolls/acquisitions, sections, cooldown shadows, URLs, and display-ready facts |
 | `data/manual/section_classifications.json` | rule-based + manual classification of each section's CP-earning status | 432 sections classified (144 MC, 288 non-MC); the rule set is in `scripts/build_section_classifications.py` |
 | `data/manual/perk_constellation_overrides.json` | hand-curated constellation classification for the 54 perks the catalog couldn't classify | each entry has a one-line reason; pushes obtained_perks classification coverage from 89% to 100% |
 
@@ -170,6 +182,11 @@ python3 scripts/extract_chapter_sections.py    # chapter_sections + extracted_pe
 python3 scripts/build_section_classifications.py  # manual section classifications -> data/manual
 python3 scripts/build_perk_directory.py        # Unabridged List + cost/acquired joins -> perk_directory
 python3 scripts/predict_rolls.py               # regime simulation -> predicted_rolls
+python3 scripts/extract_last_edited.py         # SV threadmark edit metadata -> chapter_last_edited
+python3 scripts/find_roll_locations.py         # text windows around predicted roll positions
+python3 scripts/find_text_backed_rolls.py      # prose evidence for roll/acquisition locations
+python3 scripts/validate_roll_locations.py     # cross-check located rolls
+python3 scripts/build_chapter_facts.py         # final visualization backbone
 python3 scripts/spot_check.py                  # cross-source consistency check
 python3 scripts/make_charts.py                 # static charts -> figures/
 ```
@@ -264,20 +281,25 @@ Current state: hard checks pass. Soft findings (curator data quality):
 
 Phase 2 consumers should be aware of these.
 
-## Phase 3: interactive scrubber
+## Phase 3: interactive progression visualization
 
 `web/` contains a static, dependency-free single-page site that lets
-you drag a scrubber across the full publish history and see the
-cumulative state through that chapter: word count, paid + free perks,
-roll attempts and misses (where available), perks-by-constellation
-breakdown, the perks acquired in the current chapter, and a list of
-the most recent acquisitions.
+you review the full story as a DAW-style word-axis timeline. The
+scrubber renders real-world publish dates, chapter boundaries, POV /
+section spans, recovery cooldowns, roll/acquisition dots, and a word
+axis. Dots are constellation-colored and cost-sized; free perks render
+as tight child clusters below their purchased perk. The readout and
+panels show cumulative state through the current word position:
+chapters, words, paid/free perks, hits, misses/unknowns, acquired
+counts by constellation, and the most recent 10 acquisitions.
 
-The scrubber is regime-tinted — three muted background bands mark
-the ch1–91, ch92–96, and ch97+ regimes, with `ch 91` and `ch 97`
-labels on the track. Scrubbing works by mouse drag, click-anywhere
-on the track, touch drag, or keyboard (arrow keys, PageUp/Down,
-Home/End).
+The playhead follows the current word position while playing. Manual
+horizontal scrolling is respected while paused; during playback, a
+manual scroll holds for three seconds and then gradually catches back
+up. If playback is started from the end, the visualization jumps back
+to the beginning before replaying. Scrubbing works by mouse drag,
+click-anywhere on the track, touch drag, or keyboard (arrow keys,
+PageUp/Down, Home/End).
 
 To run locally:
 
@@ -286,10 +308,9 @@ python3 -m http.server 8000
 # open http://localhost:8000/  (root redirects to /web/)
 ```
 
-The page reads only the JSON files in `data/derived/`. No build step,
-no dependencies, no framework — everything is plain HTML + CSS +
-vanilla JavaScript so it can be served from GitHub Pages or any
-static host.
+The page reads `data/derived/chapter_facts.json`. No build step, no
+dependencies, no framework — everything is plain HTML + CSS + vanilla
+JavaScript so it can be served from GitHub Pages or any static host.
 
 ### GitHub Pages deployment
 
@@ -312,19 +333,15 @@ trigger to the workflow's `on:` block.
 The deployed site will be reachable at the standard
 `<owner>.github.io/<repo>/` URL.
 
-**Known limitation:** for chapters 76+, the by-constellation panel
-relies on a perk-name lookup against `perks_catalog.json`. The 31
-catalog gaps and 56 cosmetic naming variants from the spot-check
-mean some acquisitions don't get classified to a constellation.
-Reconciling the catalog is one of the Future Work items.
+Known limitations and future work are tracked in [TODO.md](TODO.md).
 
 ## Status
 
 Phase 1 complete (raw assets, structured derivations, schemas, spot-check).
 Phase 2 complete (Tufte-style static charts and throughput analytics).
 Phase 3 complete (interactive scrubber timeline + GitHub Pages deploy ready).
-Open: scrubber refinement (UX review), source-prose decommit (pending
-permission), and the Future Work items below.
+Open: source-prose decommit (pending permission) and the future work
+tracked in [TODO.md](TODO.md).
 
 ## Regime simulation
 

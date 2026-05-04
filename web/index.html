@@ -3,85 +3,189 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Brockton's Celestial Forge — Scrubber</title>
+  <title>Brockton's Celestial Forge — Progression Visualization</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>Brockton's Celestial Forge</h1>
-    <p class="subtitle">Scrub through 194 chapters of word-count-driven gacha. Drag the scrubber to time-travel.</p>
+    <h1>
+      <a href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" target="_blank" rel="noopener noreferrer">Brockton's Celestial Forge: Progression Visualization</a>
+    </h1>
+    <p class="byline">
+      by LordRoustabout (Lord_Roustabout)
+      <a class="site-badge" href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" target="_blank" rel="noopener noreferrer">SV</a>
+      <a class="site-badge" href="https://www.fanfiction.net/s/13574944/44/Brockton-s-Celestial-Forge" target="_blank" rel="noopener noreferrer">FF</a>
+      <a class="site-badge" href="https://archiveofourown.org/works/23949661/navigate" target="_blank" rel="noopener noreferrer">AO3</a>
+    </p>
+    <p class="viz-credit">
+      Visualization by deinspanjer
+      <a class="gh-link" href="https://github.com/deinspanjer/bcf-visualization" target="_blank" rel="noopener noreferrer" aria-label="View visualization repository on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 0.2a8 8 0 0 0-2.5 15.6c0.4 0.1 0.5-0.2 0.5-0.4v-1.4c-2.2 0.5-2.7-0.9-2.7-0.9-0.4-0.9-0.9-1.1-0.9-1.1-0.7-0.5 0.1-0.5 0.1-0.5 0.8 0.1 1.2 0.8 1.2 0.8 0.7 1.2 1.9 0.9 2.3 0.7 0.1-0.5 0.3-0.9 0.5-1.1-1.8-0.2-3.6-0.9-3.6-3.9 0-0.9 0.3-1.6 0.8-2.1-0.1-0.2-0.4-1 0.1-2.1 0 0 0.7-0.2 2.2 0.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-0.8 2.2-0.8 0.4 1.1 0.2 1.9 0.1 2.1 0.5 0.6 0.8 1.3 0.8 2.1 0 3-1.8 3.7-3.6 3.9 0.3 0.3 0.6 0.8 0.6 1.6v2.3c0 0.2 0.1 0.5 0.6 0.4A8 8 0 0 0 8 0.2Z"></path>
+        </svg>
+      </a>
+    </p>
+    <p class="subtitle">Aisha,<br>
+      Regarding your recent complaint about how difficult it is to understand what exactly Joe is talking about when he discusses the "constellations" of his "Forge" and how it "grabs perks," I have performed a new in-depth analysis of all recorded power acquisitions to date and rendered them in an interactive visualization that I hope will provide valuable insight for you.<br>
+      Similar to digital audio workstation software, the scrubber will allow you to review the power progression to your desired level of detail, with links to various recordings of what Joe and other relevant individuals were doing at that time.<br>
+      Please let me know if you observe any inaccuracies or have ideas on ways to provide additional analysis.<br>
+      - Survey</p>
   </header>
 
   <section id="scrubber-section" aria-label="Scrubber">
-    <div id="scrubber-track">
-      <div id="scrubber-fill"></div>
-      <div class="regime-marker" data-chapter="91">
-        <span class="regime-label">ch 91</span>
+    <!-- Track stack (DAW-style) -->
+    <div id="track-label-overlay" aria-hidden="true">
+      <div class="track-label label-dates">Real date</div>
+      <div class="track-label label-chapters">Chapters</div>
+      <div class="track-label label-pov">POV / sections</div>
+      <div class="track-label label-shadows">Recovery</div>
+      <div class="track-label label-rolls">Rolls</div>
+      <div class="track-label label-axis">Words</div>
+    </div>
+    <div id="scrubber-container">
+      <div id="track-stack">
+        <!-- Real-world publish years -->
+        <div class="track track-dates" id="track-dates" aria-hidden="true"></div>
+
+        <!-- Top: chapter ticks + numeric labels -->
+        <div class="track track-chapters" id="track-chapters" aria-hidden="true"></div>
+
+        <!-- POV section bands -->
+        <div class="track track-pov" id="track-pov" aria-label="POV sections"></div>
+
+        <!-- Mechanic-change markers -->
+        <div class="track track-markers" id="track-markers" aria-label="Mechanic clarification points"></div>
+
+        <!-- Shadow periods (regime-3 600/800 cooldown bars) -->
+        <div class="track track-shadows" id="track-shadows" aria-label="Recovery shadow periods"></div>
+
+        <!-- Roll outcomes: hit / miss / unknown / untracked dots -->
+        <div class="track track-rolls" id="track-rolls" aria-label="Roll events"></div>
+
+        <!-- Bottom: word-position axis (k-words tick labels) -->
+        <div class="track track-axis" id="track-axis" aria-hidden="true"></div>
+
+        <!-- Playhead overlay (drawn over all tracks) -->
+        <div id="scrubber-playhead" tabindex="0" role="slider"
+             aria-label="Word-position scrubber"
+             aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></div>
+
+        <!-- Hit/click target spans the entire stack -->
+        <div id="scrubber-hitarea" aria-hidden="true"></div>
       </div>
-      <div class="regime-marker" data-chapter="97">
-        <span class="regime-label">ch 97</span>
+    </div>
+
+    <div id="scrubber-main-column">
+      <div id="scrubber-readout">
+        <span id="readout-state"></span>
+        <span class="dot">·</span>
+        <span id="readout-words">0 words</span>
+        <span class="dot">·</span>
+        <a id="readout-sv-link" href="#" target="_blank" rel="noopener noreferrer">view on SV</a>
+        <span class="dot">·</span>
+        <span id="readout-chapter">ch 1</span>
+        <span class="dot">·</span>
+        <span id="readout-title"></span>
       </div>
-      <div id="scrubber-knob" tabindex="0" role="slider"
-           aria-label="Chapter scrubber"
-           aria-valuemin="1" aria-valuemax="194" aria-valuenow="1"></div>
+
+      <div id="cumulative-strip" aria-label="Cumulative through current position">
+        <span><strong id="stat-chapters">0</strong> chapters</span>
+        <span><strong id="stat-words">0</strong> words</span>
+        <span><strong id="stat-perks-paid">0</strong> paid</span>
+        <span><strong id="stat-perks-free">0</strong> free</span>
+        <span><strong id="stat-rolls-hits">0</strong> hits</span>
+        <span><strong id="stat-rolls-other">0</strong> misses + unknown</span>
+      </div>
+
+      <div id="playback-controls">
+        <button id="play-pause" type="button" aria-label="Play">▶</button>
+        <label class="speed-label">speed
+          <select id="playback-speed" aria-label="Playback speed (k words / second)">
+            <option value="1">1k w/s</option>
+            <option value="2">2k w/s</option>
+            <option value="5">5k w/s</option>
+            <option value="10" selected>10k w/s</option>
+            <option value="25">25k w/s</option>
+            <option value="50">50k w/s</option>
+            <option value="100">100k w/s</option>
+          </select>
+        </label>
+        <button id="reset-bookmark" type="button" class="link-btn"
+                title="Clear saved position">reset</button>
+        <span class="control-hint">horizontal scroll · drag · click track · arrows · PgUp/Dn · Home/End</span>
+      </div>
+
+      <div id="zoom-controls" aria-label="Timeline zoom controls">
+        <button id="zoom-out" type="button" class="icon-btn" aria-label="Zoom out" title="Zoom out">−</button>
+        <label class="zoom-label">zoom
+          <input id="timeline-zoom" type="range" min="1" max="32" step="1"
+                 value="8" aria-label="Timeline zoom" />
+        </label>
+        <button id="zoom-in" type="button" class="icon-btn" aria-label="Zoom in" title="Zoom in">+</button>
+        <button id="zoom-fit" type="button" class="link-btn" title="Fit the full story in view">fit</button>
+        <span id="zoom-readout">8×</span>
+      </div>
+
+      <article class="inline-detail" id="chapter-detail-panel" hidden>
+        <h2>Selected chapter</h2>
+        <div class="meta" id="this-chapter-meta"></div>
+        <ul id="this-chapter-perks" class="perk-list"></ul>
+      </article>
     </div>
-    <div id="scrubber-readout">
-      <span id="readout-chapter">ch 1</span>
-      <span class="dot">·</span>
-      <span id="readout-title">Introduction</span>
-      <span class="dot">·</span>
-      <span id="readout-date">2020-07-19</span>
-    </div>
-    <div id="playback-controls">
-      <button id="play-pause" type="button" aria-label="Play">▶</button>
-      <label class="speed-label">speed
-        <select id="playback-speed" aria-label="Playback speed">
-          <option value="0.5">0.5×</option>
-          <option value="1" selected>1×</option>
-          <option value="2">2×</option>
-          <option value="4">4×</option>
-          <option value="8">8×</option>
-          <option value="16">16×</option>
-        </select>
-      </label>
-      <button id="reset-bookmark" type="button" class="link-btn"
-              title="Clear saved chapter bookmark">reset</button>
-    </div>
+
+    <aside id="legend-rail">
+      <details id="legend-panel" open>
+        <summary>Legend</summary>
+        <div class="legend-grid">
+          <div>
+            <h2>Tracks</h2>
+            <div class="legend-row"><span class="legend-line date"></span><span>real-world publish date</span></div>
+            <div class="legend-row"><span class="legend-line chapter"></span><span>chapter boundary</span></div>
+            <div class="legend-row"><span class="legend-band pov"></span><span>POV / section span; color distinguishes POV, pale spans do not earn CP</span></div>
+            <div class="legend-row"><span class="legend-band shadow"></span><span>recovery cooldown</span></div>
+            <div class="legend-row"><span class="legend-marker"></span><span>mechanic clarification</span></div>
+          </div>
+          <div>
+            <h2>Dot color</h2>
+            <div id="constellation-legend" class="swatch-grid"></div>
+          </div>
+          <div>
+            <h2>Dot meaning</h2>
+            <div class="legend-row"><span class="legend-dot solid"></span><span>solid: simulator hit</span></div>
+            <div class="legend-row"><span class="legend-dot dashed"></span><span>dashed: untracked acquisition</span></div>
+            <div class="legend-row"><span class="legend-dot gray"></span><span>gray: miss or unknown</span></div>
+          </div>
+          <div>
+            <h2>Dot size</h2>
+            <div class="size-legend">
+              <span class="size-dot" style="--dot-size: 6px"></span><span>100</span>
+              <span class="size-dot" style="--dot-size: 9px"></span><span>300</span>
+              <span class="size-dot" style="--dot-size: 12px"></span><span>600</span>
+              <span class="size-dot" style="--dot-size: 14px"></span><span>800 CP</span>
+            </div>
+          </div>
+        </div>
+      </details>
+    </aside>
+
+    <!-- Tooltip: appears on hover/click of a roll dot -->
+    <div id="roll-tooltip" hidden></div>
   </section>
 
   <section id="panels">
-    <article class="panel" id="panel-cumulative">
-      <h2>Cumulative through this chapter</h2>
-      <div class="stat-grid">
-        <div class="stat"><div class="stat-num" id="stat-chapters">0</div><div class="stat-label">chapters</div></div>
-        <div class="stat"><div class="stat-num" id="stat-words">0</div><div class="stat-label">words</div></div>
-        <div class="stat"><div class="stat-num" id="stat-perks-paid">0</div><div class="stat-label">paid perks</div></div>
-        <div class="stat"><div class="stat-num" id="stat-perks-free">0</div><div class="stat-label">free bonuses</div></div>
-        <div class="stat"><div class="stat-num" id="stat-rolls-attempts">0</div><div class="stat-label">roll attempts</div></div>
-        <div class="stat"><div class="stat-num" id="stat-rolls-misses">0</div><div class="stat-label">misses</div></div>
-      </div>
-      <div class="meta" id="cumulative-note"></div>
-    </article>
-
-    <article class="panel" id="panel-this-chapter">
-      <h2>This chapter</h2>
-      <div class="meta" id="this-chapter-meta"></div>
-      <ul id="this-chapter-perks" class="perk-list"></ul>
-    </article>
-
     <article class="panel wide" id="panel-constellations">
       <h2>Acquired by constellation</h2>
       <div id="constellation-bars"></div>
     </article>
 
     <article class="panel wide" id="panel-recent">
-      <h2>Most recent acquisitions</h2>
+      <h2>Most recent 10 acquisitions</h2>
       <ol id="recent-perks" class="perk-list"></ol>
     </article>
   </section>
 
   <footer>
-    <p>Data: <a href="../data/derived/">data/derived/</a> ·
+    <p>Backbone data: <a href="../data/derived/chapter_facts.json">chapter_facts.json</a> ·
        Source: <a href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/">SV thread</a> ·
        <a href="../README.md">project README</a></p>
   </footer>

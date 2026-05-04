@@ -156,7 +156,12 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
      "roll_attempt"),
     (re.compile(r"\b[Cc]onstellation\s+[Rr]evealed\b"),
      "roll_attempt"),
-    (re.compile(r"\b[Cc]onstellation\s+(?:pulled|swung|moved|advanced|approached|passed)\b"),
+    # `passed` was originally bundled here, but reading the prose at ch
+    # 20 ("the Magic constellation passed me by"), ch 50 (two Magic
+    # misses both phrased "constellation passed by"), and ch 75 ("the
+    # Alchemy constellation missed a connection") shows X-constellation-
+    # passed is uniformly a MISS, not a roll attempt. Split out below.
+    (re.compile(r"\b[Cc]onstellation\s+(?:pulled|swung|moved|advanced|approached)\b"),
      "roll_attempt"),
     (re.compile(r"\bmy\s+[Rr]each\b"),
      "roll_attempt"),
@@ -164,7 +169,14 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
      "roll_attempt"),
     (re.compile(r"\bfelt\s+my\s+power\s+(?:try|reach|latch|connect|extend|reaching|trying|latching)\b"),
      "roll_attempt"),
-    (re.compile(r"\b(?:my\s+)?power\s+(?:reached|latched|connected|grasped)\b"),
+    # `connected` dropped from this verb list: "power connected" matched
+    # ch100 prose about a Final Frontier ritual ("there had still been
+    # power connected to that ceremony") that has nothing to do with the
+    # gacha roll. The remaining verbs (reached/latched/grasped) are
+    # tighter; the gacha-specific verb sense comes from the Forge anchor
+    # patterns above ("felt the Forge", "the X constellation") rather
+    # than from generic power-verb prose.
+    (re.compile(r"\b(?:my\s+)?power\s+(?:reached|latched|grasped)\b"),
      "roll_attempt"),
     (re.compile(r"\bnext\s+(?:mote|connection|chance\s+(?:to|at))\b", re.IGNORECASE),
      "roll_attempt"),
@@ -174,8 +186,17 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
      "miss"),
     (re.compile(r"\bmissed\s+(?:a|the|that|another)\s+(?:mote|connection|constellation)\b", re.IGNORECASE),
      "miss"),
-    (re.compile(r"\bwasn'?t\s+enough\b", re.IGNORECASE),
+    # X constellation passed: see note above — uniformly a miss in the
+    # curator log for ch 20 (Magic), ch 50 (Magic, twice), and the
+    # general "X constellation passed by" idiom in MC POV.
+    (re.compile(r"\b[Cc]onstellation\s+passed\b"),
      "miss"),
+    # `wasn't enough` was dropped: 4/4 false positives in the manual
+    # review (ch 5 'wasn't enough for me to compromise', ch 75 'wasn't
+    # enough time', ch100 'wasn't enough to guarantee', 'wasn't enough
+    # bandwidth'). The phrase is too common in non-gacha social/
+    # logistical prose. Real misses are anchored on the Forge/
+    # constellation patterns above and the failed/tried/missed verbs.
     (re.compile(r"\bspun\s+(?:away|out\s+of\s+reach|past)\b", re.IGNORECASE),
      "miss"),
     (re.compile(r"\b[Bb]anked\b"),
@@ -186,7 +207,13 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
      "miss"),
 
     # ---- acquisition phrasings --------------------------------------
-    (re.compile(r"\bI\s+(?:obtained|gained|received|acquired)\b"),
+    # `gained` dropped from this verb list: it triggers on capability-
+    # growth recap prose ("New technologies were folded in as I gained
+    # access to them" at ch100) that isn't a single roll event.
+    # Real "I gained" usage in roll context is rare; the same events are
+    # caught by 'I received' / 'I obtained' or by the Forge/constellation
+    # anchors. Keeping obtained/received/acquired.
+    (re.compile(r"\bI\s+(?:obtained|received|acquired)\b"),
      "acquisition"),
     (re.compile(r"\b(?:granted|gave)\s+me\s+(?:the\s+)?(?:perk|ability|power|knowledge|skill)\b", re.IGNORECASE),
      "acquisition"),
@@ -277,6 +304,27 @@ def _build_chapter_index(zf: zipfile.ZipFile) -> dict[str, str]:
 
 CONTEXT_RADIUS = 200    # chars on each side of the match in the HTML window
 
+# Window radius for collapsing nearby hits into a single "event" anchor.
+# The manual review observed that one in-prose roll often spawns 2-4
+# hits within a ~200-char window (e.g. "felt the Forge" + "the
+# Knowledge constellation" + "I received" all describe the same roll).
+# The events array gives downstream consumers a deduplicated view at
+# the roll-event grain while still preserving every raw match in
+# `locations` for transparency.
+EVENT_CLUSTER_RADIUS = 200
+
+# Anchor-kind precedence WHEN CLUSTERING into events. Prefer the most
+# specific roll anchor: a named constellation pinpoints which roll fired,
+# 'miss' marks a known failure, 'roll_attempt' marks the moment of the
+# attempt, 'acquisition' is the result, 'general' is catch-all.
+_CLUSTER_ANCHOR_RANK = {
+    "constellation_reveal": 0,
+    "miss": 1,
+    "roll_attempt": 2,
+    "acquisition": 3,
+    "general": 4,
+}
+
 
 def _collect_matches(
     section_html: str, section_html_start: int,
@@ -333,6 +381,45 @@ def _collect_matches(
     return results
 
 
+def _cluster_to_events(section_locs: list[dict]) -> list[dict]:
+    """Collapse a section's regex hits into roll-event clusters.
+
+    Two adjacent (sorted by offset) hits join the same cluster when
+    their offsets are within EVENT_CLUSTER_RADIUS chars. Within a
+    cluster we keep every member's phrase/kind for downstream analysis,
+    but elect a single "anchor" hit by _CLUSTER_ANCHOR_RANK so the
+    event has one offset, one canonical kind, and one match_phrase.
+    """
+    if not section_locs:
+        return []
+    section_locs = sorted(section_locs, key=lambda l: l["match_offset"])
+    clusters: list[list[dict]] = [[section_locs[0]]]
+    for loc in section_locs[1:]:
+        if loc["match_offset"] - clusters[-1][-1]["match_offset"] <= EVENT_CLUSTER_RADIUS:
+            clusters[-1].append(loc)
+        else:
+            clusters.append([loc])
+    out: list[dict] = []
+    for cluster in clusters:
+        anchor = min(
+            cluster,
+            key=lambda l: (_CLUSTER_ANCHOR_RANK[l["candidate_kind"]], l["match_offset"]),
+        )
+        kinds = sorted({l["candidate_kind"] for l in cluster})
+        out.append({
+            "chapter_num": anchor["chapter_num"],
+            "epub_href": anchor["epub_href"],
+            "section_index": anchor["section_index"],
+            "anchor_kind": anchor["candidate_kind"],
+            "anchor_phrase": anchor["match_phrase"],
+            "anchor_offset": anchor["match_offset"],
+            "kinds_present": kinds,
+            "hit_count": len(cluster),
+            "context": anchor["context"],
+        })
+    return out
+
+
 def _build_context(
     chapter_html: str, match_offset: int, match_length: int,
 ) -> str:
@@ -376,6 +463,7 @@ def main() -> None:
     sections_by_chap = {c["chapter_num"]: c for c in sections_data["chapters"]}
 
     locations: list[dict] = []
+    events: list[dict] = []
     by_chapter: dict[str, int] = {}
     by_kind: dict[str, int] = {}
 
@@ -410,9 +498,10 @@ def main() -> None:
                     continue
                 section_html = html[s_start:s_end]
                 matches = _collect_matches(section_html, s_start)
+                section_locs: list[dict] = []
                 for offset, length, phrase, kind in matches:
                     context = _build_context(html, offset, length)
-                    locations.append({
+                    loc = {
                         "chapter_num": c["chapter_num"],
                         "epub_href": href,
                         "section_index": section_index,
@@ -420,9 +509,23 @@ def main() -> None:
                         "match_offset": offset,
                         "context": context,
                         "candidate_kind": kind,
-                    })
+                    }
+                    locations.append(loc)
+                    section_locs.append(loc)
                     by_chapter[c["chapter_num"]] = by_chapter.get(c["chapter_num"], 0) + 1
                     by_kind[kind] = by_kind.get(kind, 0) + 1
+                # Cluster within-section: hits whose offsets are within
+                # EVENT_CLUSTER_RADIUS chars of the previous one in the
+                # cluster collapse into a single event. The event's
+                # anchor kind/phrase/offset is taken from the highest-
+                # precedence kind in the cluster (see _CLUSTER_ANCHOR_RANK).
+                events.extend(_cluster_to_events(section_locs))
+
+    events_by_chapter: dict[str, int] = {}
+    events_by_anchor_kind: dict[str, int] = {}
+    for ev in events:
+        events_by_chapter[ev["chapter_num"]] = events_by_chapter.get(ev["chapter_num"], 0) + 1
+        events_by_anchor_kind[ev["anchor_kind"]] = events_by_anchor_kind.get(ev["anchor_kind"], 0) + 1
 
     payload = {
         "_source": (
@@ -433,13 +536,39 @@ def main() -> None:
             "Preamble/Addendum/Interlude non-Joe POVs, perk listings, "
             "PHO posts, news articles, meeting reports, and author notes)."
         ),
+        "_nuance_log": [
+            "Reclassified 'X constellation passed' from roll_attempt to miss "
+            "(uniformly a miss in the curator log for ch 20 / ch 50 — "
+            "'the Magic constellation passed me by' = miss, not attempt).",
+            "Dropped \"wasn't enough\" pattern (4/4 false positives in the manual "
+            "review: matched social/logistical prose like 'wasn't enough time', "
+            "'wasn't enough bandwidth'). Real misses are caught by other anchors.",
+            "Dropped 'gained' from the 'I obtained|gained|received|acquired' "
+            "verb list (ch 100 prose 'New technologies were folded in as I "
+            "gained access to them' is capability-recap, not a single roll).",
+            "Dropped 'connected' from the 'my power reached|latched|connected|"
+            "grasped' verb list (ch 100 'power connected to that ceremony' "
+            "matched a Final Frontier ritual, not a Forge connection).",
+            "Added events array: hits within 200 chars of each other in the "
+            "same section collapse to one event. Anchor kind precedence for "
+            "clustering: constellation_reveal > miss > roll_attempt > "
+            "acquisition > general (named constellation pinpoints the event "
+            "more reliably than the generic verb anchors).",
+        ],
         "_total_locations": len(locations),
+        "_total_events": len(events),
         "_locations_by_chapter": dict(sorted(
             by_chapter.items(),
             key=lambda kv: (int(kv[0].split('.')[0]),
                             int(kv[0].split('.')[1]) if '.' in kv[0] else 0),
         )),
         "_locations_by_kind": dict(sorted(by_kind.items())),
+        "_events_by_chapter": dict(sorted(
+            events_by_chapter.items(),
+            key=lambda kv: (int(kv[0].split('.')[0]),
+                            int(kv[0].split('.')[1]) if '.' in kv[0] else 0),
+        )),
+        "_events_by_anchor_kind": dict(sorted(events_by_anchor_kind.items())),
         "_note": (
             "Stage-1 regex candidates for narrative roll references. "
             "Each entry tags an in-prose phrasing that LOOKS like the "
@@ -467,16 +596,23 @@ def main() -> None:
             "acquisition > constellation_reveal > general). The "
             "match_offset is in the chapter HTML (not plain text); the "
             "context field is plain-text prose with [[match]] markers "
-            "around the phrase that matched."
+            "around the phrase that matched. The events array is the "
+            "downstream-friendly view: one entry per ~200-char prose "
+            "neighborhood of regex activity, with the highest-precedence "
+            "match elected as the anchor. Use locations for fine-grained "
+            "analysis, events for matching against curator rolls or "
+            "predicted_rolls.json."
         ),
         "locations": locations,
+        "events": events,
     }
 
     write_validated_json(OUT, payload, "roll_locations_regex")
 
     print(f"wrote {OUT.relative_to(ROOT)}: {len(locations)} candidates "
-          f"across {len(by_chapter)} chapters")
+          f"across {len(by_chapter)} chapters; {len(events)} events")
     print(f"  by kind: {by_kind}")
+    print(f"  by anchor kind (events): {events_by_anchor_kind}")
     if by_chapter:
         max_chap = max(by_chapter.items(), key=lambda kv: kv[1])
         min_chap = min(by_chapter.items(), key=lambda kv: kv[1])
