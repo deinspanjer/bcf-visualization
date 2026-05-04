@@ -10,6 +10,7 @@ This repository is organized for quick exploration first, with deeper technical 
 - **Develop / maintain the pipeline:** [DEVELOPERS.md](DEVELOPERS.md)
 - **Open tasks and future ideas:** [TODO.md](TODO.md)
 - **Current DAW scrubber milestone notes:** [plans/daw_scrubber_v2.md](plans/daw_scrubber_v2.md)
+- **Archived deep-dive reference (mechanics, timeline, datasets, charts):** [docs/reference_archive.md](docs/reference_archive.md)
 
 ## What this project includes
 
