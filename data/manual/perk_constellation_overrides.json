@@ -1,0 +1,223 @@
+{
+  "_source": "Manual constellation classification by Claude based on perk name, description (from extracted_perks.json), and existing catalog patterns for the same jump.",
+  "_count": 54,
+  "_note": "Used by parse_reference.py as a final fallback when neither perks_catalog.json nor the Reference xlsx Unabridged List can match a perk to a constellation. Keys are 'name|source' (or just 'name' if source is empty). Every entry has a one-line reason for the classification.",
+  "overrides": {
+    "Alchemy Fiats|Fullmetal Alchemist": {
+      "constellation": "Alchemy",
+      "reason": "name explicitly Alchemy; FMA is the Alchemy jump"
+    },
+    "Class Jumper|Fate Servant Supplement": {
+      "constellation": "Crafting",
+      "reason": "Fate Servant Supplement maps to Crafting per catalog"
+    },
+    "Magecraft C|Fate Servant Supplement": {
+      "constellation": "Crafting",
+      "reason": "Fate Servant Supplement maps to Crafting per catalog"
+    },
+    "Noble Phantasm C|Fate Servant Supplement": {
+      "constellation": "Crafting",
+      "reason": "Fate Servant Supplement maps to Crafting per catalog"
+    },
+    "Territory Creation E|Fate Servant Supplement": {
+      "constellation": "Crafting",
+      "reason": "Fate Servant Supplement maps to Crafting per catalog"
+    },
+    "Sky Machinist|Skies of Arcadia": {
+      "constellation": "Knowledge",
+      "reason": "machinery repair/build expertise; Skies of Arcadia maps to Knowledge"
+    },
+    "Combination Attack|Chrono Trigger": {
+      "constellation": "Magic",
+      "reason": "magic-based combo attacks per description"
+    },
+    "Element|Chrono Trigger": {
+      "constellation": "Magic",
+      "reason": "elemental magic per description (Sky/Dark/Water/Fire)"
+    },
+    "Mental Fortress|The World Ends With You": {
+      "constellation": "Quality",
+      "reason": "TWEWY personal-enhancement perk; jump maps to Quality"
+    },
+    "General Level Potential|Akame ga Kill": {
+      "constellation": "Quality",
+      "reason": "physical/spiritual ability potential; Akame ga Kill is Quality"
+    },
+    "Imperial Arms/Teigu|Akame ga Kill": {
+      "constellation": "Quality",
+      "reason": "free Teigu (special weapon); cluster freebie of Quality cap"
+    },
+    "Perfect Hair|Akame ga Kill": {
+      "constellation": "Quality",
+      "reason": "aesthetic enhancement; cluster freebie of Quality cap"
+    },
+    "Simple Sturdy Weapon|Akame ga Kill": {
+      "constellation": "Quality",
+      "reason": "starter weapon item; cluster freebie of Quality cap"
+    },
+    "Catsuit|Totally Spies/Martin Mystery": {
+      "constellation": "Clothing",
+      "reason": "literally a catsuit (clothing item)"
+    },
+    "Core Ability - Amp Core|Titanfall": {
+      "constellation": "Vehicles",
+      "reason": "Titan core ability; Titanfall is Vehicles"
+    },
+    "Oi!|Titanfall": {
+      "constellation": "Vehicles",
+      "reason": "Titanfall flavor freebie; jump maps to Vehicles"
+    },
+    "Deadbeat Holiday|Binbougami Ga!": {
+      "constellation": "Quality",
+      "reason": "personality/comedic enhancement; jump maps to Quality"
+    },
+    "ARM SLAVE M6 Bushnell|Full Metal Panic": {
+      "constellation": "Vehicles",
+      "reason": "an Arm Slave is a piloted mech; classic vehicle perk"
+    },
+    "Farming tool|Viking Saga": {
+      "constellation": "Quality",
+      "reason": "Viking Saga maps to Quality per catalog"
+    },
+    "Primo Victoria|Sabaton": {
+      "constellation": "Resources and Durability",
+      "reason": "Sabaton CD/song bonus; jump maps to R&D dominantly"
+    },
+    "Altmode|Transformers": {
+      "constellation": "Size",
+      "reason": "transformer altmode; Transformers is Size dominantly"
+    },
+    "Decepticon Terrorize!|Transformers": {
+      "constellation": "Size",
+      "reason": "transformer body switching"
+    },
+    "Energon|Transformers": {
+      "constellation": "Size",
+      "reason": "transformer fuel; cluster freebie"
+    },
+    "Energon Battle Pistol|Transformers": {
+      "constellation": "Size",
+      "reason": "transformer weapon; cluster freebie"
+    },
+    "Energon Melee Weapon|Transformers": {
+      "constellation": "Size",
+      "reason": "transformer weapon; cluster freebie"
+    },
+    "ROBOTS IN DISGUISE! - Medium Chassis|Transformers": {
+      "constellation": "Size",
+      "reason": "transformer chassis; clearly Size"
+    },
+    "Gladius-class Heavy Corvette|Halo": {
+      "constellation": "Vehicles",
+      "reason": "literal warship - Vehicles regardless of catalog mapping"
+    },
+    "Emblems|Kerbal Space Program": {
+      "constellation": "Vehicles",
+      "reason": "KSP cluster freebie; jump is Vehicles"
+    },
+    "Espirit de Kerbal|Kerbal Space Program": {
+      "constellation": "Vehicles",
+      "reason": "Kerbal team; KSP cluster freebie"
+    },
+    "Some Old Friends|Kerbal Space Program": {
+      "constellation": "Vehicles",
+      "reason": "Kerbal companions; KSP cluster freebie"
+    },
+    "Speak English, Dammit!|Kerbal Space Program": {
+      "constellation": "Vehicles",
+      "reason": "Kerbal language; KSP cluster freebie"
+    },
+    "This Is, Actually, Rocket Science|Kerbal Space Program": {
+      "constellation": "Vehicles",
+      "reason": "orbital mechanics knowledge; KSP cluster freebie"
+    },
+    "Bag of Blood Vials|Bloodborne": {
+      "constellation": "Magic",
+      "reason": "Bloodborne magical healing items; blood-themed"
+    },
+    "Bag of Quicksilver Bullets|Bloodborne": {
+      "constellation": "Magic",
+      "reason": "Bloodborne magical ammunition; blood-fused"
+    },
+    "Blood Bullets|Bloodborne": {
+      "constellation": "Magic",
+      "reason": "blood manipulation/sacrifice ability"
+    },
+    "Gifts from the Little Ones|Bloodborne": {
+      "constellation": "Crafting",
+      "reason": "Bloodborne weapon set; Crafting fits weapon items"
+    },
+    "Hunter|Bloodborne": {
+      "constellation": "Crafting",
+      "reason": "Hunter origin/role; cluster anchor"
+    },
+    "Rally|Bloodborne": {
+      "constellation": "Magic",
+      "reason": "blood-based combat recovery"
+    },
+    "Curious Goggles|Bloodborne": {
+      "constellation": "Toolkits",
+      "reason": "utility goggles; tool/equipment item"
+    },
+    "Aspect Cultivation|Lord of Light": {
+      "constellation": "Quality",
+      "reason": "personal capability enhancement (Aspect = state of being)"
+    },
+    "Attribute Induction|Lord of Light": {
+      "constellation": "Quality",
+      "reason": "personal mutant strength"
+    },
+    "Demigod|Lord of Light": {
+      "constellation": "Quality",
+      "reason": "divine body enhancement"
+    },
+    "Divine Physique|Lord of Light": {
+      "constellation": "Quality",
+      "reason": "divine body enhancement"
+    },
+    "Opulent Warehouse|Lord of Light": {
+      "constellation": "Personal Reality",
+      "reason": "warehouse/personal-reality cosmetic upgrade"
+    },
+    "Wealth|Lord of Light": {
+      "constellation": "Resources and Durability",
+      "reason": "starting wealth/resources"
+    },
+    "Good Blood|Bloodborne": {
+      "constellation": "Magic",
+      "reason": "blood enhancement; Bloodborne blood magic"
+    },
+    "Skill Tag|Fallout": {
+      "constellation": "Knowledge",
+      "reason": "boost to three skills; classic Knowledge perk"
+    },
+    "Round Telephone|Stargate SG-1": {
+      "constellation": "Knowledge",
+      "reason": "ability to operate the Stargate; Stargate maps to Knowledge"
+    },
+    "Toxicology Reports|Stargate SG-1": {
+      "constellation": "Knowledge",
+      "reason": "Goa'uld tech understanding"
+    },
+    "Unleash the Snark|Stargate SG-1": {
+      "constellation": "Knowledge",
+      "reason": "social/wit skill; Stargate freebie"
+    },
+    "Old Cloak|Thundercats 2011": {
+      "constellation": "Clothing",
+      "reason": "literal cloak/clothing item"
+    },
+    "Global Operations|Metal Gear": {
+      "constellation": "Capstone",
+      "reason": "cluster freebie of Capstone perk 'A New Age of Warfare'"
+    },
+    "Signature Weapon|Metal Gear": {
+      "constellation": "Capstone",
+      "reason": "cluster freebie of Capstone perk 'A New Age of Warfare'"
+    },
+    "Bloodied Combat + Blood Artisan Plus|Bloodborne": {
+      "constellation": "Magic",
+      "reason": "blood crystallization ability; Bloodborne blood magic"
+    }
+  }
+}

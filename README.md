@@ -156,6 +156,7 @@ malformed data.
 | `data/derived/chapter_sections.json` | walked EPUB chapter HTML, scanned each section's first ~3000 chars | per-section POV classification, CP-earning word count, classification confidence, ~432 sections across 194 chapters |
 | `data/derived/extracted_perks.json` | parsed "Jumpchain abilities this chapter:" footer of each EPUB chapter | 481 author-canonical perk listings (name, source, cost, description) keyed by chapter |
 | `data/manual/section_classifications.json` | rule-based + manual classification of each section's CP-earning status | 432 sections classified (144 MC, 288 non-MC); the rule set is in `scripts/build_section_classifications.py` |
+| `data/manual/perk_constellation_overrides.json` | hand-curated constellation classification for the 54 perks the catalog couldn't classify | each entry has a one-line reason; pushes obtained_perks classification coverage from 89% to 100% |
 
 ## Running the parsers
 
@@ -378,11 +379,6 @@ Captured here so they aren't lost between phases:
   (mostly all-caps in-story news headlines and `***` scene-break
   markers) as a manual review list. Also worth investigating whether
   free-perk grants in clusters affect the effective CP rate.
-- **Use extracted_perks.json to fill the 49 still-unclassified
-  constellation entries.** Each missing perk has a description in
-  the extracted data; a manual or LLM-assisted classification pass
-  would push obtained_perks classification coverage from 89% toward
-  100%, eliminating the scrubber's "(other)" bucket entirely.
 - **Reconciliation pass on the remaining 54 unclassified perks**
   (entire jumps like Bloodborne, Transformers, Lord of Light, KSP
   that the catalog doesn't enumerate at all). Would push the

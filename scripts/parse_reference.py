@@ -30,6 +30,7 @@ from _common import write_validated_json
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Reference.xlsx"
 PERKS_CATALOG_JSON = ROOT / "data" / "derived" / "perks_catalog.json"
+OVERRIDES_JSON = ROOT / "data" / "manual" / "perk_constellation_overrides.json"
 OUT_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
 OUT_TIMELINE = ROOT / "data" / "derived" / "timeline.json"
 
@@ -182,11 +183,33 @@ def _build_constellation_index(wb) -> dict[str, dict[str, str]]:
     }
 
 
-def _classify(idx: dict[str, dict[str, str]], name: str, source: str | None) -> str | None:
+def _load_overrides() -> dict[tuple[str, str], str]:
+    """Hand-curated (name, source) -> constellation mapping for perks
+    that neither the catalog nor the Unabridged List nor any of the
+    automated rules can classify. Each entry has a written reason.
+    """
+    if not OVERRIDES_JSON.exists():
+        return {}
+    data = json.loads(OVERRIDES_JSON.read_text())
+    out: dict[tuple[str, str], str] = {}
+    for key, val in data.get("overrides", {}).items():
+        if "|" in key:
+            name, source = key.split("|", 1)
+        else:
+            name, source = key, ""
+        out[(name, source)] = val["constellation"]
+    return out
+
+
+def _classify(idx: dict[str, dict[str, str]], name: str, source: str | None,
+              overrides: dict[tuple[str, str], str]) -> str | None:
     """Return the constellation for (name, source), trying progressively
     more permissive matches.
     """
     src = source or ""
+    # 0. Manual overrides take precedence (curated perk-by-perk).
+    if (name, src) in overrides:
+        return overrides[(name, src)]
     # 1. Exact (name, source)
     if (name, src) in idx["exact"]:
         return idx["exact"][(name, src)]
@@ -239,7 +262,7 @@ def _parse_cost(text: str) -> tuple[int, bool]:
     return 0, False
 
 
-def parse_obtained_perks(wb, constellation_idx) -> list[ObtainedPerk]:
+def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]:
     ws = wb["Obtained Perks"]
     perks: list[ObtainedPerk] = []
     for r in range(2, ws.max_row + 1):
@@ -266,7 +289,7 @@ def parse_obtained_perks(wb, constellation_idx) -> list[ObtainedPerk]:
                 cost_text=cost_text or "Free",
                 free=free,
                 perk_text=_norm(ws.cell(r, 7).value),
-                constellation=_classify(constellation_idx, name, jump),
+                constellation=_classify(constellation_idx, name, jump, overrides),
             )
         )
     return perks
@@ -370,7 +393,8 @@ def main() -> None:
     wb = load_workbook(SRC, data_only=True)
 
     constellation_idx = _build_constellation_index(wb)
-    perks = parse_obtained_perks(wb, constellation_idx)
+    overrides = _load_overrides()
+    perks = parse_obtained_perks(wb, constellation_idx, overrides)
 
     classified = sum(1 for p in perks if p.constellation)
     write_validated_json(

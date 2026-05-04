@@ -2,7 +2,7 @@
   "_source": "data/raw/Brocktons_Celestial_Forge_Reference.xlsx#Obtained Perks",
   "_count": 504,
   "_coverage": "full story (EPUB sequences 1-192, story chapters 1 - 119.5)",
-  "_classification_coverage": "450/504 acquisitions classified to a constellation",
+  "_classification_coverage": "504/504 acquisitions classified to a constellation",
   "_note": "Each row is one perk acquired. Cluster rolls and free-bonus perks each get their own row. cost is the numeric CP value (0 for any Free... variant); cost_text preserves the original wording. constellation is joined from perks_catalog.json + the Reference xlsx Unabridged List with cosmetic-tolerant matching; null when no match could be found.",
   "perks": [
     {
@@ -874,7 +874,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Your alchemy will always work as intended no matter what universe you're in.\nAlchemy can be taught, but your students will lack a lot of the fundamentals you take for granted. It is a science after all, and science is only useful if you know what it does.",
-      "constellation": null
+      "constellation": "Alchemy"
     },
     {
       "epub_sequence": 29,
@@ -3253,7 +3253,7 @@
       "cost_text": "50",
       "free": false,
       "perk_text": "The Anomalous class. Possibly a hero of another world or many worlds. There is no common denominator to this class. It is the most unpredictable of the classes. They gain no base stats (Strength, Endurance, Agility, Mana, and Luck) above the E Rank base level (E x10 the human peak.). They gain a discount on one stat of their choice. They gain one Skill of their choice as their Class Skill (Territory Creation). Jumper also can pick Personalised Class Name for free. You get one C rank Skill (Magecraft) free and receive an E rank for free in any Class Skill you have according to your bought Class. You receive one C rank Noble Phantasm for free.",
-      "constellation": null
+      "constellation": "Crafting"
     },
     {
       "epub_sequence": 70,
@@ -3279,7 +3279,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Knowledge about modern Thaumaturgy",
-      "constellation": null
+      "constellation": "Crafting"
     },
     {
       "epub_sequence": 70,
@@ -3292,7 +3292,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Works of Timeless Eternity: Mystic Forge, Anti-Unit (self)",
-      "constellation": null
+      "constellation": "Crafting"
     },
     {
       "epub_sequence": 70,
@@ -3305,7 +3305,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "This skill allows the servant to build a special terrain that is advantageous to oneself as a magus. A Territory allows the creator to cast stronger spells at a reduced cost, with the effects increasing as the rank does",
-      "constellation": null
+      "constellation": "Crafting"
     },
     {
       "epub_sequence": 71,
@@ -3383,7 +3383,7 @@
       "cost_text": "200",
       "free": false,
       "perk_text": "Like the famous air pirate Centime, you know your way around machinery. You can repair or build almost anything, given time and resources.",
-      "constellation": null
+      "constellation": "Knowledge"
     },
     {
       "epub_sequence": 71,
@@ -4345,7 +4345,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You didn't think I'd let you go without teaching you this one, did you? Now that you're fortified with magic, or other tricks, you're going to start noticing some of them seem compatible with your buddies' moves. Well, that's because they are. By using them together, you can merge them into one big move that'll be greater than the sum of its parts. Fusing two spells, enhancing an attack with elemental energy, even a well-coordinated double strike... there's a lot of possibilities, so try them out and see what works. Just keep in mind your buddy needs to know how to do this too, and not all techniques are going to be compatible.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 100,
@@ -4358,7 +4358,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Anyway, weak or strong, you've still got enough strength of will to you for the old guy to send you to me. I'm not just the Master of War, ya know. I'm also the keeper of Magic. Sky, Dark, Water, and Fire... used to be, everyone could call on the power of the elements. But now, only those with enough determination and a strong enough heart can use it. Lucky for you, you've got some great inner strength, so I can teach you the good stuff.\nShadow: Shadow's the element of darkness, covering everything from the space between the stars to the shadows in a cave. Void and gravity are two obvious uses, and curses and status magic fall within its domain as well. However, it's also the magic of harmony, so you might be able to throw around some elemental combos instead.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 100,
@@ -4488,7 +4488,7 @@
       "cost_text": "Free!",
       "free": true,
       "perk_text": "Your sense of individuality and self is so strong that invasive influences find your mind impenetrable. Whether it's Mind Control, Emotion Manipulation, Thought Reading, or any other kind of mind-messing mojo - You are the sole master of your own psyche. You can also see through outside manipulation and illusion more easily. Your art becomes famous for its originality and unique style, whatever you decide to apply this to.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 104,
@@ -4514,7 +4514,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You start with the potential to reach a level of physical and spiritual ability needed to become one of the generals of the empire. You also start out with a level of ability that many Captains would envy, and skill with one weapon type in particular. While this alone does not grant you the potential on par with the most powerful people in this world, it does bring you close enough that they can't instantly kill you",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 104,
@@ -4527,7 +4527,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You get one free and you may determine who it would be compatible with(besides yourself), or what qualities would make one compatible with it. First though you have to select a Teigu Type. The type of Teigu you chose will also govern what discounts you have in this section. You may also freely import an item of that type to apply the abilities of your Teigu to it(unless your Teigu is an Organism, or Extract type). Teigu options may be combine how you wish, unless noted. Discounts do not stack.\nObject: as an object your Teigu is a relatively mundane thing on it's own, and instead grants it's power to the user. It could be a ring, a flute, a pair of gloves or even something like a makeup kit, but it can't be a practical weapon or armor. However this type of Teigu excels at special abilities, making them easier to utilize rapidly or continuously. If you import an item for this, the item may actually be of any type weapon or armor included, however it will not gain any new physical abilities(though it will be increased in durability if lacking).\nFlight, Discount Object: Your Teigu holds the power of Flight, while you may be able to approximate this with other options, buying it this way will almost certainly be superior, due to it being far more natural and easier to use.\nAwareness, Discount Object: Your Teigu gives you an awareness of it, this counts for things produced directly by your Teigu, and it's physical components. Such that you may know if something interacts with your Teigu directly even if that happens quite a distance from you, or that you will know the location and movement of any projectiles you produce. Not that this effect is that great without something else to enhance it, but it's enough to be aware of your traps. (Integrated into Lantern Shield)",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 104,
@@ -4540,7 +4540,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Your hair is perfect, no matter how long, no matter what conditions, explosions constantly around you and getting beaten into the deck of a boat by water can do nothing to your perfect hair. It's never an impediment, nor will it every be damaged in a battle, even if someone shoots and hits your hair, there will be no evidence that your hair was shot. If your hairdo gets dramatically altered, it will only make you look better and take a comb and a moment to restore it.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 104,
@@ -4553,7 +4553,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "This is a simple weapon that could withstand combat against Teigu, it's nowhere near as durable, but it isn't likely to break unless faced with active effects of a Teigu. This weapon can be of any type you like, from guns to swords, whips to spears, gun-clubs or rifle-glaive, it could even be a pair of swords or similarly paired weapon. If you pick a gun, bow, or other projectile weapon you get a sizable amount of ammo to go with it, certain to last you a while before you need to get more. (Short Sword Chosen)",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 104,
@@ -4605,7 +4605,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "A nearly skintight catsuit in a color of your choice.",
-      "constellation": null
+      "constellation": "Clothing"
     },
     {
       "epub_sequence": 109,
@@ -4696,7 +4696,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "A Titan’s core ability is essentially it’s trump card. Far too powerful to be charged off of standard munitions, a core is charged off of excess power from the Titan’s reactor core until it is ready to be unleashed. Once activated, the Titan must be committed to using it, otherwise the excess energy will fry it’s internal systems.\nAmp Core - Some Pilots don’t want fancy attacks or extra missiles. Instead, they’d simply rather their Titan’s performance was boosted for a set period of time. The Amp Core provides this. A single parameter of the Titan may be boosted or extended for a set period of time, such as increasing the strength of bodyshields massively or granted indefinite dashing for a short period. Titan accuracy may be boosted, or firing rate may be increased, as examples.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 110,
@@ -4709,7 +4709,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "The funny thing about accents is how divisive they are on the frontier. The IMC troops- who come from the Core Systems, all speak with a very distinct British accent. Meanwhile, the Militia have strong American accents, and strangely, any ex-IMC defectors seem to lose the accent in a matter of weeks. Now, you have the ability to alter your own accent, which seems to spread like wildfire to anyone that follows you, so it becomes an identifier of your faction.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 111,
@@ -4748,7 +4748,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "WHAT WAS THAT YOU ARROGANT, ENTITLED SH-... oh, sorry. Was practicing for something else. As you can no doubt guess, this will help you figure out just how to overreact to a situation for comedic effect, as well as WHEN to enact those very moments. You'll get used to it in time, unless you're like a certain grumpy pants. Yeah I said it, GRUMPY PAAAANTS.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 112,
@@ -4839,7 +4839,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "A bulky Arm Slave constructed by the United States. This is a Generation 2 mech that requires less rigorous piloting, but its loud noise makes it a problem with stealth. To make up for its slowness it has thicker armor.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 113,
@@ -4917,7 +4917,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Hit ho’s with hos.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 114,
@@ -5229,7 +5229,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "In all of these cases, a CD will appear in your hand once you make your choice – a single by Sabaton in both English and Swedish concerning one of your previous adventures.",
-      "constellation": null
+      "constellation": "Resources and Durability"
     },
     {
       "epub_sequence": 129,
@@ -5255,7 +5255,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "All Transformers have an Altmode which is either an animal or machine. You can turn into any animals or machine that you fits your Chassis type. You can choose to change into any animal or vehicle form that you’ve seen in your previous adventures, or for the future you can scan it. For maximum size in your Alt form you take your robot form and add +2m (6ft 6in) to its maximum height or in case of planes, wingspan. Beast Wars Era Transformers can only choose animal or beast like forms, they’ve lost their ability to change into vehicles or other machines.",
-      "constellation": null
+      "constellation": "Size"
     },
     {
       "epub_sequence": 129,
@@ -5268,7 +5268,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You've retained your robotic body, but now can switch between human and whatever form you choose and back. You'll never run out of Energon and routine maintenance is no longer a thing. You can store your robotic body in your warehouse and jump into it at any point; or ride around/on top of its alternative form. Either way it's up to you which you choose, and switching out is easy as dropping off equipment.",
-      "constellation": null
+      "constellation": "Size"
     },
     {
       "epub_sequence": 129,
@@ -5281,7 +5281,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "In your warehouse an Energon Cube appears every 24hrs. Don’t worry about your Transformers body, Post-Jump you don’t require Energon for it. Normal transformers need an Energon Cube, which is equivalent of 1000 barrels of oil, every day. This is like the 4000 calories active duty soldiers take in. Beast Wars era, they can subsist off of an Energon Cube for 1 month. You can convert other forms of energy into Energon, but it’s very inefficient. Any other fuel source other than Energon corrodes the systems of a Transformer, it’s like poison.",
-      "constellation": null
+      "constellation": "Size"
     },
     {
       "epub_sequence": 129,
@@ -5294,7 +5294,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "This is a pistol. Reload required after 8 shots. Comes with 5x zoom.",
-      "constellation": null
+      "constellation": "Size"
     },
     {
       "epub_sequence": 129,
@@ -5307,7 +5307,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Every bot worth their Energon has a melee weapon, these weapons like everything else runs on Energon but are very efficient and practically never run out of Energon.",
-      "constellation": null
+      "constellation": "Size"
     },
     {
       "epub_sequence": 129,
@@ -5320,7 +5320,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Medium Chassis, Size: 5m (16ft 5in) to 8m (26ft 2in). You're a robot now; as such you don't need to breathe, eat, or sleep. You do require Energon to survive, without it you'll go into stasis lock. This stasis lock last forever unless your spark (lifeforce) is extinguished or you get enough Energon back in your systems. As a Transformer your strength depends on your chassis, Small Chassis can lift 25tons (22t), Medium Chassis can lift 50tons (45t), and Large Chassis can lift 100tons (90t). Transformers brain circuits are not unlike a highly advanced super computer, giving the average transformer a level of intelligence similar to that of human geniuses. Your robot body is extremely tough to damage, military grade anti- materiel weapons and Energon weapons are only thing that are capable of damaging you. Even then the average transformer can take a beating and survive.",
-      "constellation": null
+      "constellation": "Size"
     },
     {
       "epub_sequence": 130,
@@ -5411,7 +5411,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "While this ship is more meant for patrols and security roles rather than an actual ship of war, the Gladius-class serves its function well. Its armaments are somewhat smaller than most ships as a result, carrying only one small Magnetic Accelerator Cannon and two Archer missile pods with six Rampart point-defense cannons, but it does come with an extensive sensor suite to scan for anomalies and actively track targets for other ships to find and utterly obliterate. Seeing as it’s two hundred and forty-three meters in length however, it would be wise to simply retreat from any Covenant space presence.\n-Slipspace Drive: The Shaw-Fujikawa Translight Engine finally allowed Humanity access to fasterthan-light travel in the form of Slipstream Space, and thus opened their path to the stars themselves. This device works by creating ruptures in between normal space and Slipspace while surrounding the ship in a quantum field to protect them from the dangers of the alternate dimension. The engine itself does not propel the vessel through Slipspace however; it relies on the engines to do so. The more powerful the traditional propulsion of the ship, the faster it goes. However, normal models tend to be erratic and jumps can take from several weeks to months of travel time depending on the distance, with exit destinations becoming off by a matter of hundreds of thousands of kilometers. A dangerous gambit, but it’s better than nothing.\n-Self-Destruct Function: When it was clear that the Covenant were engaging in a war of extermination rather than one of conquest, the Cole Protocol was initiated. One of those requirements was that in the event of capture, a UNSC ship is to self-destruct to prevent the alien menace from collecting vital data such as navigation coordinates. It’s a drastic measure, but ultimately necessary to prevent them from finding the most important of Human worlds like Reach or Earth.\n-Escape Pods/Life Boats: While going down with the ship is often seen as an honorable act so that the Covenant do not gleam anything useful from your mind, that doesn’t always have to be the case with everyone else. What if you’re transporting some VIPs or you want the rest of your crew to survive? Don’t make the same mistake as the ships of old. This gives your ship a slew of escape pods and lifeboats dotted all along the vessel, allowing the whole crew to evacuate on a moment’s notice if something goes wrong. It could be a lifesaver.\n-Life Support System: People need air to breathe. There’s just no way of getting around this, as even the mighty SPARTAN soldiers have an air requirement. That’s why every ship has air scrubbers and environmental control so that not only can you keep a stable atmosphere going but also to stay comfortable while on these long journeys as well.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 138,
@@ -5515,7 +5515,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You'll not only find your creations and rocketships neatly emblazoned with a flag/symbol of your choice, but you'll also be able to fashion cloth emblems for Kerbals(and companions) to utilize to represent various mission types. However, you'll only be able to gift the patches so made to those whom directly participated in the mission itself. While they offer no bonuses, they do make a nice keepsake and reminder of the glories you and your Kerbals(and companions) achieved - wether it's landing on the Mun or going to the stars.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 139,
@@ -5528,7 +5528,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "While you're going to have no end of volunteers of Kerbals to go into space (seriously, where the hell are they all coming from?), it's understandable that you're going to want a special group of Kerbals to count on in a pinch - an elite force you can trust to get the job done. Twenty Kerbals have stepped up to the plate to fill that role. This group of Kerbals doesn't seem to let mishaps keep them down; while crashes, explosions, and other shenanigans will, uh, result in Critical Kerbal Existence Failure, they'll pop back up in a week or so, right as rain and raring to go for another try. All 20 of these Kerbals will automatically gain whatever perk you purchase in this jump from the Pilot, Engineer, and Scientist perk tree - Drop-In, however, doesn't count for this. Kerbals regard such things as 'sleep', 'water', 'food', and 'oxygen' as quaint, outdated suggestions. Relevant perks: Aerospace Engineering Makes Things Go Fast. They're Like Legos, Right? This Is How I Want It",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 139,
@@ -5541,7 +5541,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Hey, what are you - wait a minute! How did you four get in here!? Oh, well. Looks like you're going to get some help in this jump, whether you want to, or no - Bill, Bob, Jebediah, and Valentina are all up and raring to go. As a bonus, all four come with the 'I Am A Pilot, Actually' perk for free. I Am A Pilot, Actually - All the engineering and mathematics in the world doesn't mean much if you can't actually fly the damn things. You're far from being supernatural in skill, but you're not a weekend warrior, either - you effectively have the piloting skill of Neil Armstrong when it comes to piloting rockets, spaceships, and aeroplanes",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 139,
@@ -5554,7 +5554,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You gain perfect understanding of Kerbals and the way they speak in thier burbling, whack-ass mix of swedish meatball chef... something. Conversely, you can pick this to have them all speak english.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 139,
@@ -5567,7 +5567,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You gain an instinctive grasp and understanding of Delta V and orbital mechanics.",
-      "constellation": null
+      "constellation": "Vehicles"
     },
     {
       "epub_sequence": 140,
@@ -5671,7 +5671,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Special blood used in ministration. When injected, the user will rapidly recover from minor and middling injuries such as scratches, bruises, gashes, fractures and blood loss. A single vial's worth of this special blood is unable to regenerate lost limbs, large broken bones or other more severe injuries, but more blood injected equals more healing. The bag is given to you full, somehow containing 20 Blood Vials despite its small size.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 141,
@@ -5684,7 +5684,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "A curious bag full of quicksilver bullets. These bullets are fused with the wielders blood and will prove quite useful during the hunt while facing beasts of various sorts. These bullets, much like Blood Bullets, can assume the shape of larger projectiles by loading them together. The bag is small and easy to carry, but has the odd ability to hold 20 quicksilver bullets at a time.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 141,
@@ -5697,7 +5697,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "At any time, you may sacrifice a significant percentage of your blood to create a small supply of five blood bullets. When loaded into a weapon, they will change shape to match the necessary ammo type. A blood bullet loaded into a pistol will match the caliber, while a blood bullet loaded into a shotgun will become a shell filled with blood buck shot. You may not make any more than five at one time, additional attempts will just pointlessly drain you of blood as the bullets fail to keep shape. A single blood bullet is unable to take the shape of significantly larger projectiles, such as cannon balls, but if multiple bullets with a combined mass equal or at least close to the desired projectile are placed together, they will fuse and assume the proper shape. Blood Bullets are able to become liquid fuel for certain weapons, such as flamethrowers. Blood Bullets are unable to assume the shape of projectiles that are too complex.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 141,
@@ -5710,7 +5710,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You are given a choice of one of three trick melee weapons, and one of two projectile weapons. you will receive the two weapons of your choosing one day after beginning your journey. The first trick weapon you may choose is the Saw Cleaver, a saw with large teeth that can flip open to be wielded similarly to a sword. The second is the Hunter's Axe, a large hand axe with a handle that can be extended so it may be wielded with two hands. The third trick weapon is the threaded cane, a sturdy metal cane that can transform into a bladed chain whip. The first projectile weapon is the Hunter Pistol, a quick, simple, high damage weapon that's handy at short to medium range. Your other option is the Blunderbuss, a heavier weapon that fires a wide spread, effective at close ranges, against small groups of enemies.",
-      "constellation": null
+      "constellation": "Crafting"
     },
     {
       "epub_sequence": 141,
@@ -5723,7 +5723,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Apparently, from what you can gather, you are now a Hunter. This means a number of things, including access to the Hunter's Dream. What that means is that instead of dying, you will wake up in the Hunter's Dream and be able to travel to and from it using Lanterns found around the world. That sounds nice at first, until you realize one of your fellow hunters is a bit too good at this, the mysterious foreign one that is. This Hunter will end the nightmare soon, within a day or two, severing your connection to the dream. There isn't much you can do about it, so enjoy it while it lasts. Another boon of being a Hunter besides being able to visit the dream is the admiration of Messengers, small infantile creatures that can prove useful in some scenarios. I'll explain about them later. Lastly, it seems your new body has some. . .hidden assets. You have an affliction, though one you can control on some level. There's a beast inside you, trying to get out, trying to take you over. Though it takes a bit of concentration, you may temporarily unleash some of this beast's strength in the form of a \"Visceral Attack\". This attack temporarily transforms your hand into a beastly claw which will slide through the flesh of a prone enemy like a hot knife through butter. Careful not to draw on this power too often though. . . This perk also comes with the Mandatory \"Inner Beast\" drawback, detailed in the drawback section. (\"Inner Beast\" - There's a problem with your new body and mind. As previously mentioned, there's now a bestial side to your mind trying to claw its way out and take over, somewhat literally. Drinking or covering yourself in too much blood, consuming items like Beast Blood Pellets, or using/taking various other items or drawbacks like the Beast Claw or \"Ignorance is Bliss\" will all empower it. If it gets too powerful and manages to take over, transforming you from Hunter into Beast, you lose. There are ways to fight it though. Avoiding or pacing yourself on blood push it down a bit. Becoming more worldly and insightful will weaken it as well. Willpower can slow its power grab, but can't stop it on its own. - Your Inner Beast has been pacified, giving you access to their powers without possibility of losing yourself to them allowing you to more easily use visceral attacks)",
-      "constellation": null
+      "constellation": "Crafting"
     },
     {
       "epub_sequence": 141,
@@ -5736,7 +5736,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "After being hurt or damaged in some way, you have a short window of time where bathing yourself in the blood of your enemies will trigger a small bit of rapid recovery. It's never very much healing, meaning you're very unlikely to make a full recovery from anything too serious, but every little bit helps. You don't necessarily have to be drenched in blood, but the amount required to trigger Rally will be quite noticeable.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 142,
@@ -5827,7 +5827,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "A curious pair of goggles with a leather strap, thick lenses and strange frames made of thin tubing and metal, all coming in your choice of colors. These goggles, strange as they may look, are an incredible invention allows for those who wear them to see that which evades the notice of others. To put it in simpler terms, it allows you to see things that would normally require \"Insight\", though does nothing to help perceive these things in other ways such as hearing or smell. Can be freely worn by anyone, allowing allies to see things they may wish they hadn't as well.\n(\"Insight\" - You have seen things, heard things, learned things, all very strange things. . .and its had a noticeable effect. You have lined your brain with eyes and gained the ability to perceive things others can't. Dolls will begin to talk, you can see what some would call divine beings, you can hear singing and crying you wouldn't have heard before. Even in other worlds your senses may perceive that which the senses of the mundane may not. Beware, these things you can see and hear now can sometimes be a bit. . .much. Remember as well that your insight and uplifted senses allow you to learn of and perceive strange and unsettling things, things others would have a hard time believing in. Just be careful who you talk with this about, they may think you more insane than insightful. They're probably wrong though, probably. Lastly, good or bad, a side-effect of your new insight has cleansed your beastly idiocy and heavily weakened the beast inside.)",
-      "constellation": null
+      "constellation": "Toolkits"
     },
     {
       "epub_sequence": 149,
@@ -5918,7 +5918,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "If an Attribute is the grasp of power, then the Aspect is a state of being. To wield reflections, and to become Reflection. To summon Strength and to become it. Greater and more subtle than any Attribute. Through genetic predisposition, hypnosis and chemical therapies, your passions come to correspond with those of the Universe.\nRaising your Aspect is like removing a mask or standing straight, a mustering of yourself. It takes some energy to maintain, should you wish to be capable of being anything but an avatar, but it is the exertion of being rather than the struggle to become.\nThis is a power that requires your kindness. What is the nature of the gods who become Fire, undaunted and ferocious? Who become Death, unknowable, all-ending? Who become Divine Drunkenness, invincible in vitality and charisma? Those who look upon you in raised Aspect know, instantly and surely that you are divine, that you embody a facet of creation.\nAny powers raised in harmony with your raised Aspect are magnified and exalted – they are more than just spells or mutation, they are in service of the very order of the universe. An arrow loosed by the Goddess of the Bow might strike a man’s heart from ten miles away, or pin his courage to the wall.\nShould the God of Flowers walk in Aspect through a forest, will it blossom and lend him strength? Or does a single rose cut and displayed by his hand speak of days of sun and offer a simple strength to all who behold it?\nDemigods, though they have begun along this path are but beginners – they summon weak and feeble Aspects to match their new and uncertain Attributes, and must still undergo a battery of training exercises and therapies to fortify their natures. Mortals who develop this faculty independently are in essence on the same level as Demigods – but lack the aid of Heaven in their development.\nOnce fully matured, forevermore you will be Water or Marble, the Lute or the Joust.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 152,
@@ -5931,7 +5931,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "The Attribute is the capacity to effect the world with your will in a single, highly iconic way. It is a mutant strength, carefully developed with millennia of experience by the scientists of Heaven. With your attribute you might encourage silicates to grow into splendid – and razor sharp – trees of crystal, or have the wind sour and sicken your foes. Food cooked by your hands might keep a thousand men fed with one loaf, or you may will the birds to sing sweet praises in your favour and fly against your foes.\nMany Attributes are known best for their utility in war, but the days when mankind’s position on their world need be defended by flaming fists and opalescent eyes has passed, and Heaven cares as greatly for Attributes of craft and fragrance as those of iron and blood.\nDemigods and Mortals have just begun to harness their virtues, they are like flickering embers – offering feeble warmth, but needing careful stoking. Their attributes are unstable and untested, often needing some tool to focus their energies. The former may rely on the assistance of their superiors in the Divine, the latter have only their own wills to push further.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 152,
@@ -5944,7 +5944,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Blessed child. Your righteousness and piety have become the seed of Divinity in you. From your old form you have become young, vital. The body of a God is yours, handsome, strong, fast and with the correct mudras and psycho-conditioning, you have begun to align yourself with an Attribute and develop your godly Aspect. You are very much at the bottom rung of Heaven, but even Death Himself was once like you.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 152,
@@ -5957,7 +5957,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "The body selected for your enjoyment has been carefully shaped beyond the apex of humanity. Strong, vital and beauteous - it is a form that one could live within for hundreds of years, though at any time you may approach the Masters of Karma for a replacement, should the flames of your divine lifestyle burn it out. Care has been made that it expresses the initial mutations and brain structures to develop Aspect and Attribute - though once they have been induced, they will carry with your soul through whatever form you take.",
-      "constellation": null
+      "constellation": "Quality"
     },
     {
       "epub_sequence": 152,
@@ -5970,7 +5970,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Do the bare walls and drab concrete styling of your cosmic warehouse offend thine eyes? Did you wish for a shaded bower, gilded conservatory or tawdry bordello? While the total size and features will not be changed, the cosmetic structure and layout is yours to realign – as long as it is opulent. Change your bare metal shelving into a dozen cozy rooms, filled with leather-bound books and the smell of rich mahogany. Make your Portal appear edged with basalt and gold, and Forcefield into an invincible iron gate that parts only for you. Once set, you may change the appearance once per Jump.",
-      "constellation": null
+      "constellation": "Personal Reality"
     },
     {
       "epub_sequence": 152,
@@ -5983,7 +5983,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Not merely comfortable in your station, you are quite well arrayed with the finer things. Whether this is from your merchant holdings, your mostly symbolic but well rewarded stewardship of one of the important structures of Heaven, or just the bag of gold at your hip – you have enough capital to smooth over some eccentric purchases and a somewhat flamboyant lifestyle.",
-      "constellation": null
+      "constellation": "Resources and Durability"
     },
     {
       "epub_sequence": 153,
@@ -6178,7 +6178,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "May the good blood guide your way good hunter! In addition to having stronger white blood cells and more efficient red blood cells, your blood has been strengthened, allowing it to create much more potent Blood Bullets. This perk basically makes your blood more useful all around. Your immune system should be able to fight off most of the diseases lurking in this festering, rotting hell for one. Now, when before it could have taken more a dozen shots to put down an enemy, it should only take two or three. This allows you to be much more conservative with your bullets. Due to your blood empowering Quicksilver Bullets, they are also improved by this perk.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 160,
@@ -6217,7 +6217,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "Just three skills to Tag, and you’ll get an immediate boost to your competence in them. Not enough to be an expert, mind. Just enough to go from novice to decent, or decent to downright competent. You’ll also learn that skill faster too, so with enough practice, you really will get perfect. Most also come with tools of the trade, just to make your life easier.\nMedicine: Putting people back together – includes first aid and surgery, as well as treating diseases, radiation poisoning, and other conditions. Start with a first aid kit.\nRepair: Practical use of science – building things, fixing them when they break. Start with a toolkit.\nScience: Various high technical skills, including computers, biology, physics, and geology. Start with a nifty lab coat and gloves.",
-      "constellation": null
+      "constellation": "Knowledge"
     },
     {
       "epub_sequence": 164,
@@ -6282,7 +6282,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "The Stargate is a pretty important piece of technology, that much is certain. It's the name of the series, of COURSE it's important. You have knowledge on how to decipher its interface, and as such can use it to go from world to world.",
-      "constellation": null
+      "constellation": "Knowledge"
     },
     {
       "epub_sequence": 166,
@@ -6295,7 +6295,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "That wasn't there before. For whatever reason your blood contains just a bit of Naquadah now. Not enough to drain yourself and siphon it, but enough to utilize and work the technology of the Goa'uld. As a bonus, this allows you to sense when other Goa'uld symbiotes are nearby.",
-      "constellation": null
+      "constellation": "Knowledge"
     },
     {
       "epub_sequence": 166,
@@ -6308,7 +6308,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "All these aliens acting all hoity-toity... someone needs to take them down a peg. You always know what to say to be snarky at others, whether it be at a superior or a terrorist or an alien menace. They may have weapons and lasers, but the battle of wits belongs to you.",
-      "constellation": null
+      "constellation": "Knowledge"
     },
     {
       "epub_sequence": 169,
@@ -6438,7 +6438,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "A dull looking piece of clothing that will perfectly conceal your features and help you go unnoticed in large crowds",
-      "constellation": null
+      "constellation": "Clothing"
     },
     {
       "epub_sequence": 183,
@@ -6490,7 +6490,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "In an era of tactical espionage, a soldier can no longer trust the fight to be defined by borders or battle lines. Operations can occur anywhere on the planet, and you’ve taken the first step to prepare for that. You can speak one additional language, appropriate to your location, fluently.",
-      "constellation": null
+      "constellation": "Capstone"
     },
     {
       "epub_sequence": 184,
@@ -6503,7 +6503,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "While soldiers are often expected to be familiar with a variety of weapons, everyone has a favorite. Especially in this universe, where some of the elite are defined by their weapon of choice. You may import a weapon you already own into any number of weapons purchased, or simply combine purchased weapons, adding either new functionality or an alternate form to the weapon. Selecting a weapon as your signature grants the following benefits:\nTotal familiarity of the weapon. Operating and maintaining this weapon comes as naturally as breathing to you. This won’t make you a better shot per se, but you know how the weapon behaves as well as your own limbs.\nIn addition to standard ammo, your warehouse can produce any ammo type that could theoretically be made for it with modern day tech. This includes unorthodox picks like shotgun sabots, mercury-filled bullets, or explosive arrows. Options without conventional ammo use have other benefits, listed with the respective weapon.\nExtra bonuses to the weapon, based on your background and certain perks, these will persist if someone else is using it. R&D Unit: You can't really say there are many like it, unless you're trying to be humble. Your signature weapon is simply a masterwork: including design and material innovations that would be cutting-edge in MGS4, parts fabricated to microscopic precision, and that intangible care of a hand-made item. The benefits of this won't match the other listed perk effects, but it will improve virtually every aspect of this weapon.",
-      "constellation": null
+      "constellation": "Capstone"
     },
     {
       "epub_sequence": 186,
@@ -6529,7 +6529,7 @@
       "cost_text": "Free",
       "free": true,
       "perk_text": "You may now crystallize blood in contact with your hand into whatever shape you desire, though the more complex the shape is the more you'll need to focus. Additionally, by holding an object made of crystallized blood in your hands, you may slowly manipulate the crystal structure into something more desirable. Whether this means warping it into a new shape or making it sturdier or something else is up to you, but I'm sure you'll find more than a few creative uses.",
-      "constellation": null
+      "constellation": "Magic"
     },
     {
       "epub_sequence": 192,
