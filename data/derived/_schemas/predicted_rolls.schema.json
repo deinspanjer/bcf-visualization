@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/predicted_rolls.schema.json",
+  "title": "Predicted Rolls",
+  "description": "Roll positions predicted by simulating the documented three-regime mechanic word-by-word against the EPUB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_count", "_total_words_epub_exact",
+    "_regime_summary", "_validation_chapters_1_75",
+    "predicted", "comparison_per_chapter"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "_total_words_epub_exact": { "type": "integer", "minimum": 0 },
+    "_regime_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["1", "2", "3"],
+      "properties": {
+        "1": { "type": "string" },
+        "2": { "type": "string" },
+        "3": { "type": "string" }
+      }
+    },
+    "_validation_chapters_1_75": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actual_total_attempts", "predicted_total_in_same_chapters"],
+      "properties": {
+        "actual_total_attempts": { "type": "integer", "minimum": 0 },
+        "predicted_total_in_same_chapters": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "predicted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "roll_number", "word_position", "chapter_num", "regime", "cp_threshold"
+        ],
+        "properties": {
+          "roll_number":   { "type": "integer", "minimum": 1 },
+          "word_position": { "type": "integer", "minimum": 0 },
+          "chapter_num":   { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+          "regime":        { "enum": [1, 2, 3] },
+          "cp_threshold":  { "enum": [100, 200] }
+        }
+      }
+    },
+    "comparison_per_chapter": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["chapter_num", "actual_rolls", "predicted_rolls", "delta"],
+        "properties": {
+          "chapter_num":     { "type": "string" },
+          "actual_rolls":    { "type": "integer", "minimum": 0 },
+          "predicted_rolls": { "type": "integer", "minimum": 0 },
+          "delta":           { "type": "integer" }
+        }
+      }
+    }
+  }
+}

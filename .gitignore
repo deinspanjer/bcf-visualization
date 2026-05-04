@@ -16,3 +16,25 @@ _site/
 # counterproductive to check this file into the repository.
 # Details at https://github.com/github/pages-gem/issues/768
 Gemfile.lock
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.python-version
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Subagent worktree scratch
+.claude/
+
+# Source EPUBs - copyrighted prose, kept locally, not redistributed via git.
+# See README "Source material" section for where to obtain these.
+data/raw/*.epub

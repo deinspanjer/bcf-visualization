@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/rolls.schema.json",
+  "title": "Rolls",
+  "description": "The chronological roll log derived from the curator's xlsx.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "_coverage", "_kinds", "rolls"],
+  "properties": {
+    "_source":   { "type": "string" },
+    "_count":    { "type": "integer", "minimum": 0 },
+    "_coverage": { "type": "string" },
+    "_kinds":    { "type": "string" },
+    "rolls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/roll" }
+    }
+  },
+  "$defs": {
+    "roll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roll_number", "chapter_num", "kind",
+        "banked_before", "banked_after",
+        "constellation", "constellation_revealed",
+        "perks", "raw"
+      ],
+      "properties": {
+        "roll_number":            { "type": ["integer", "null"], "minimum": 1 },
+        "chapter_num":            { "type": "string" },
+        "kind":                   { "enum": ["trigger", "roll", "miss", "annotation"] },
+        "banked_before":          { "type": ["integer", "null"], "minimum": 0 },
+        "banked_after":           { "type": ["integer", "null"], "minimum": 0 },
+        "constellation":          { "type": ["string", "null"] },
+        "constellation_revealed": { "type": "boolean" },
+        "perks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/perk" }
+        },
+        "raw": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "description": "Triggers and rolls have full numeric fields; annotations may have all-null structured data.",
+          "if":   { "properties": { "kind": { "enum": ["trigger", "roll", "miss"] } } },
+          "then": {
+            "properties": {
+              "banked_before": { "type": "integer" },
+              "banked_after":  { "type": "integer" }
+            }
+          }
+        },
+        {
+          "description": "Misses must have no perks.",
+          "if":   { "properties": { "kind": { "const": "miss" } } },
+          "then": { "properties": { "perks": { "maxItems": 0 } } }
+        }
+      ]
+    },
+    "perk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source", "cost", "free"],
+      "properties": {
+        "name":   { "type": "string", "minLength": 1 },
+        "source": { "type": "string" },
+        "cost":   { "type": "integer", "minimum": 0 },
+        "free":   { "type": "boolean" }
+      }
+    }
+  }
+}

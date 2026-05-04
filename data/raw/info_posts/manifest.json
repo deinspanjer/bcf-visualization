@@ -1,0 +1,72 @@
+{
+  "_comment": "Candidate informational post on each captured SV page. Identified by author + post length (info posts are typically the longest on the page). Verify before relying on these picks.",
+  "_source": "data/raw/info_posts/sv_page_*.mht — offline saves of full SV thread pages",
+  "posts": [
+    {
+      "file": "sv_page_0013.mht",
+      "post_id": "post-16740514",
+      "author": "LordRoustabout",
+      "date": "2020-08-10",
+      "chars": 71037,
+      "topic": "Jumpchain Ability List by Constellation v1",
+      "confidence": "high"
+    },
+    {
+      "file": "sv_page_0171.mht",
+      "post_id": "post-17862013",
+      "author": "Trek",
+      "date": "2020-11-02",
+      "chars": 200752,
+      "topic": "Celestial Forge perk descriptions (reader-curated full list)",
+      "confidence": "high",
+      "note": "Page also has a near-identical 200k post by LightLan (post-17860450) — Trek's appears to be the polished version."
+    },
+    {
+      "file": "sv_page_0233.mht",
+      "post_id": "post-18327981",
+      "author": "Whamodyne",
+      "date": "2020-12-10",
+      "chars": 21238,
+      "topic": "In-story timeline through chapter 93",
+      "confidence": "high"
+    },
+    {
+      "file": "sv_page_0277.mht",
+      "post_id": "post-18599825",
+      "author": "HoldMyFOOF",
+      "date": "2021-01-01",
+      "chars": 4445,
+      "topic": "Brockton Bay cape population by alignment (Heroes/Rogues/Villains)",
+      "confidence": "medium"
+    },
+    {
+      "file": "sv_page_0403.mht",
+      "post_id": "post-19046125",
+      "author": "readerdreamer",
+      "date": "2021-02-02",
+      "chars": 28565,
+      "topic": "\"Dadpeiron\" — appears to be a fan omake, not a reference post",
+      "confidence": "low",
+      "note": "Possibly the wrong page captured. No obvious info post on this page."
+    },
+    {
+      "file": "sv_page_0649.mht",
+      "post_id": "post-20555377",
+      "author": "Bombastus",
+      "date": "2021-06-28",
+      "chars": 143211,
+      "topic": "Jumpchain Ability List by Constellation v2 (updated, ~2x v1)",
+      "confidence": "high"
+    },
+    {
+      "file": "sv_page_0847.mht",
+      "post_id": "post-21825286",
+      "author": "LordRoustabout",
+      "date": "2021-10-26",
+      "chars": 546,
+      "topic": "Author delay announcement",
+      "confidence": "low",
+      "note": "Only 546 chars — likely not the intended info post for this page."
+    }
+  ]
+}

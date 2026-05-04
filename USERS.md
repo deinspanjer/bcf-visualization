@@ -1,0 +1,65 @@
+# Using the visualization
+
+This project ships a static, dependency-free web visualization for
+*Brockton's Celestial Forge*. It reads committed derived JSON and does
+not require the raw EPUB or spreadsheets at runtime.
+
+## Run locally
+
+From the repository root:
+
+```sh
+python3 -m http.server 8001
+```
+
+Open <http://127.0.0.1:8001/web/>. The root page redirects to
+`/web/`, but the explicit URL is useful while developing.
+
+## Scrubber controls
+
+- **Horizontal scroll** moves the visible window across the story.
+- **Zoom** changes the width of the word-axis timeline. The default is
+  zoomed in enough for roll dots to separate visually.
+- **Play/Pause** replays progression at the selected speed. The default
+  speed is `10k w/s`.
+- **Reset** clears the saved word bookmark and returns to the pre-roll
+  lead-in.
+- **Keyboard** on the playhead supports arrows, PageUp/PageDown, Home,
+  and End.
+
+While playing, the playhead naturally stays centered except near the
+beginning and end of the scroll range. If you manually scroll while
+paused, the visualization stays where you put it. If you manually
+scroll while playing, it holds that scroll position for three seconds
+and then gradually catches back up to the natural centered position.
+Starting playback from the end jumps back to the beginning before
+replaying.
+
+## Reading the tracks
+
+- **Real date**: publish-date ticks. More detail appears as zoom
+  increases.
+- **Chapters**: chapter boundaries and major chapter labels. Click a
+  chapter tick to open the selected-chapter detail panel.
+- **POV / sections**: section spans. Color distinguishes section POV;
+  pale spans do not earn CP under the current classifier.
+- **Recovery**: cooldown shadows after expensive perks.
+- **Rolls**: hit/acquisition dots on the upper lane; misses and
+  unknowns on the lower lane. Dot color is constellation, dot size is
+  purchased perk cost, dashed border means narrated/untracked
+  acquisition, and tiny child dots below a purchase are free perks
+  bundled with that purchase.
+- **Words**: total word-position axis.
+
+The legend panel repeats these encodings and can be collapsed.
+
+## Persistence
+
+The page stores the current word position, zoom, and playback speed in
+`localStorage`. Use `reset` to clear the saved position. Browser
+storage versions are bumped when incompatible defaults change.
+
+## Data note
+
+The visualization is backed by `data/derived/chapter_facts.json`. Raw
+copyrighted prose is not needed to view the site.

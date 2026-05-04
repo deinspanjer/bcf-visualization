@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/obtained_perks.schema.json",
+  "title": "Obtained Perks",
+  "description": "Chronological log of every perk Joe acquired across the full story, derived from the second curator xlsx.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "_coverage", "_classification_coverage", "_note", "perks"],
+  "properties": {
+    "_source":   { "type": "string" },
+    "_count":    { "type": "integer", "minimum": 0 },
+    "_coverage": { "type": "string" },
+    "_classification_coverage": { "type": "string" },
+    "_note":     { "type": "string" },
+    "perks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/perk" }
+    }
+  },
+  "$defs": {
+    "perk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "epub_sequence", "chapter_num", "chapter_full_title",
+        "perk_name", "classification", "jump",
+        "cost", "cost_text", "free", "perk_text", "constellation"
+      ],
+      "properties": {
+        "epub_sequence":      { "type": "integer", "minimum": 1 },
+        "chapter_num":        { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "chapter_full_title": { "type": "string", "minLength": 1 },
+        "perk_name":          { "type": "string", "minLength": 1 },
+        "classification":     { "type": ["string", "null"] },
+        "jump":               { "type": ["string", "null"] },
+        "cost":               { "type": "integer", "minimum": 0 },
+        "cost_text":          { "type": "string", "minLength": 1 },
+        "free":               { "type": "boolean" },
+        "perk_text":          { "type": "string" },
+        "constellation": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "enum": [
+                "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+                "Clothing", "Magic", "Quality", "Size",
+                "Resources and Durability", "Magitech", "Alchemy",
+                "Capstone", "Personal Reality", "Felyne Perks"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

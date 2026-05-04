@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/perks_catalog.schema.json",
+  "title": "Perks Catalog",
+  "description": "The full list of acquirable perks across all 14 constellations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "perks"],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "perks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/perk" }
+    }
+  },
+  "$defs": {
+    "perk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constellation", "name", "source", "cost",
+        "cost_text", "repeatable", "description"
+      ],
+      "properties": {
+        "constellation": {
+          "enum": [
+            "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+            "Clothing", "Magic", "Quality", "Size",
+            "Resources and Durability", "Magitech", "Alchemy",
+            "Capstone", "Personal Reality"
+          ]
+        },
+        "name":        { "type": "string", "minLength": 1 },
+        "source":      { "type": "string" },
+        "cost":        { "type": "integer", "minimum": 0 },
+        "cost_text":   { "type": "string", "minLength": 1 },
+        "repeatable":  { "type": "boolean" },
+        "description": { "type": "string" }
+      }
+    }
+  }
+}

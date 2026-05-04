@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/chapters.schema.json",
+  "title": "Chapters",
+  "description": "Per-chapter metadata derived from the SV threadmark index MHTs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "_note", "chapters"],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "_note":   { "type": "string" },
+    "chapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chapter" }
+    }
+  },
+  "$defs": {
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "sort_key", "title", "full_title",
+        "post_id", "post_url", "publish_ts", "publish_iso",
+        "words_text", "words_approx", "likes", "author", "source_file"
+      ],
+      "properties": {
+        "chapter_num":  { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "sort_key": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "integer", "minimum": 0 }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "title":        { "type": "string", "minLength": 1 },
+        "full_title":   { "type": "string", "minLength": 1 },
+        "post_id":      { "type": "integer", "minimum": 1 },
+        "post_url":     { "type": "string", "format": "uri" },
+        "publish_ts":   { "type": "integer", "minimum": 1577836800 },
+        "publish_iso":  { "type": "string", "minLength": 10 },
+        "words_text":   { "type": "string", "pattern": "^\\d+(\\.\\d+)?k$" },
+        "words_approx": { "type": "integer", "minimum": 0 },
+        "likes":        { "type": "integer", "minimum": 0 },
+        "author":       { "type": "string", "minLength": 1 },
+        "source_file":  { "type": "string", "pattern": "^threadmarks_p\\d+\\.mht$" }
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/roll_locations_validation.schema.json",
+  "title": "Roll Locations Validation",
+  "description": "Chapter-level comparison of curator-logged rolls vs regex anchor events for chapters 1-75. Sanity check that the regex Stage-1 catalog produces enough anchors per chapter for an LLM Stage-2 pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_method", "_scope", "_findings",
+    "coverage_excluding_structural_zeros",
+    "totals", "per_chapter"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_method": { "type": "string" },
+    "_scope": { "type": "string" },
+    "_findings": {
+      "type": "array",
+      "description": "LLM-judgment notes on the gap between regex events and curator rolls. Each entry names a pattern, lists the chapters it explains, and says whether further regex work would help.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "chapters", "prose_evidence", "actionable"],
+        "properties": {
+          "name":           { "type": "string" },
+          "chapters":       { "type": "array", "items": { "type": "string" } },
+          "prose_evidence": { "type": "string" },
+          "actionable":     { "type": "boolean" }
+        }
+      }
+    },
+    "coverage_excluding_structural_zeros": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["curator_total_excluding_zero_mc_chapters", "covered", "coverage_pct"],
+      "properties": {
+        "curator_total_excluding_zero_mc_chapters": { "type": "integer", "minimum": 0 },
+        "covered":      { "type": "integer", "minimum": 0 },
+        "coverage_pct": { "type": "number" }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "curator_hits", "curator_misses", "curator_triggers", "curator_total",
+        "regex_constellation_reveals", "regex_misses_in_curator_chapters",
+        "covered_in_curator_chapters", "chapter_coverage_pct",
+        "chapters_undercollected", "chapters_undercollected_list",
+        "chapters_with_curator_rolls"
+      ],
+      "properties": {
+        "curator_hits":                   { "type": "integer", "minimum": 0 },
+        "curator_misses":                 { "type": "integer", "minimum": 0 },
+        "curator_triggers":               { "type": "integer", "minimum": 0 },
+        "curator_total":                  { "type": "integer", "minimum": 0 },
+        "regex_constellation_reveals":    { "type": "integer", "minimum": 0 },
+        "regex_misses_in_curator_chapters": { "type": "integer", "minimum": 0 },
+        "covered_in_curator_chapters":    { "type": "integer", "minimum": 0 },
+        "chapter_coverage_pct":           { "type": "number" },
+        "chapters_undercollected":        { "type": "integer", "minimum": 0 },
+        "chapters_undercollected_list": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+        },
+        "chapters_with_curator_rolls":    { "type": "integer", "minimum": 0 }
+      }
+    },
+    "per_chapter": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/row" }
+    }
+  },
+  "$defs": {
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "curator_hits", "curator_misses", "curator_triggers",
+        "regex_constellation_reveal", "regex_miss", "regex_roll_attempt",
+        "regex_acquisition", "regex_total", "undercollected"
+      ],
+      "properties": {
+        "chapter_num":               { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "curator_hits":              { "type": "integer", "minimum": 0 },
+        "curator_misses":            { "type": "integer", "minimum": 0 },
+        "curator_triggers":          { "type": "integer", "minimum": 0 },
+        "regex_constellation_reveal": { "type": "integer", "minimum": 0 },
+        "regex_miss":                { "type": "integer", "minimum": 0 },
+        "regex_roll_attempt":        { "type": "integer", "minimum": 0 },
+        "regex_acquisition":         { "type": "integer", "minimum": 0 },
+        "regex_total":               { "type": "integer", "minimum": 0 },
+        "undercollected":            { "type": "boolean" }
+      }
+    }
+  }
+}
