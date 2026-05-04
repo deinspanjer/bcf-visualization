@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/constellation_wireframes.schema.json",
+  "title": "Constellation Wireframes",
+  "description": "2D star-pattern wireframes for the 14 named cluster-constellations and every per-jump sub-constellation. Each cluster shape is themed by the constellation's name (e.g. Toolkits = wrench outline) and its vertices mark where each contained jump's mini-constellation sits. Each per-jump shape is themed by the jump's source media as an abstract star pattern, never a literal logo. Coordinates are normalized to roughly the unit square; the renderer applies 3D sphere positioning. Star size encodes perk cost (small for 100 CP, ~1.0 for 800+ CP).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "_jumps_count", "_note", "cluster_constellations", "jump_constellations"],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "_jumps_count": { "type": "integer", "minimum": 0 },
+    "_note":   { "type": "string" },
+    "cluster_constellations": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "items": { "$ref": "#/$defs/cluster" }
+    },
+    "jump_constellations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/jump" }
+    }
+  },
+  "$defs": {
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "shape_concept", "cluster_vertices"],
+      "properties": {
+        "name": {
+          "enum": [
+            "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+            "Clothing", "Magic", "Quality", "Size",
+            "Resources and Durability", "Magitech", "Alchemy",
+            "Capstone", "Personal Reality"
+          ]
+        },
+        "shape_concept": { "type": "string", "minLength": 1 },
+        "cluster_vertices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["jump", "x", "y"],
+            "properties": {
+              "jump": { "type": "string", "minLength": 1 },
+              "x":    { "type": "number" },
+              "y":    { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "jump": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["constellation", "jump", "shape_concept", "stars"],
+      "properties": {
+        "constellation": {
+          "enum": [
+            "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+            "Clothing", "Magic", "Quality", "Size",
+            "Resources and Durability", "Magitech", "Alchemy",
+            "Capstone", "Personal Reality"
+          ]
+        },
+        "jump":          { "type": "string", "minLength": 1 },
+        "shape_concept": { "type": "string", "minLength": 1 },
+        "stars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["perk_name", "cost", "size", "x", "y"],
+            "properties": {
+              "perk_name": { "type": "string", "minLength": 1 },
+              "cost":      { "type": ["integer", "null"], "minimum": 0 },
+              "size":      { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+              "x":         { "type": "number" },
+              "y":         { "type": "number" }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

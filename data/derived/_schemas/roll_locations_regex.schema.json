@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/roll_locations_regex.schema.json",
+  "title": "Roll Locations (Regex Stage 1)",
+  "description": "Stage-1 regex candidates for in-prose narrative references to roll attempts, misses, acquisitions, and constellation reveals. Produced by walking each EPUB chapter's MC-POV sections and flagging matches against a curated set of in-story phrasings. Expected to over-collect; a separate Stage-2 LLM filter will discard false positives.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_total_locations", "_locations_by_chapter",
+    "_locations_by_kind", "_note", "locations"
+  ],
+  "properties": {
+    "_source": { "type": "string" },
+    "_total_locations": { "type": "integer", "minimum": 0 },
+    "_locations_by_chapter": {
+      "type": "object",
+      "description": "Map of chapter_num (string) -> candidate count.",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_locations_by_kind": {
+      "type": "object",
+      "description": "Map of candidate_kind -> total count across all chapters.",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_note": { "type": "string" },
+    "locations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/location" }
+    }
+  },
+  "$defs": {
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "epub_href", "section_index",
+        "match_phrase", "match_offset", "context", "candidate_kind"
+      ],
+      "properties": {
+        "chapter_num":   { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "epub_href":     { "type": "string", "minLength": 1 },
+        "section_index": { "type": "integer", "minimum": 0 },
+        "match_phrase":  { "type": "string", "minLength": 1 },
+        "match_offset":  {
+          "type": "integer", "minimum": 0,
+          "description": "Character offset of the match within the chapter HTML (not plain text)."
+        },
+        "context":       {
+          "type": "string", "minLength": 1,
+          "description": "Plain-text prose context (~300 chars) around the match, with [[match]] markers around the matched substring."
+        },
+        "candidate_kind": {
+          "enum": [
+            "roll_attempt", "miss", "acquisition",
+            "constellation_reveal", "general"
+          ]
+        }
+      }
+    }
+  }
+}
