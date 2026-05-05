@@ -1,5 +1,7 @@
 # bcf-visualization
 
+## ➡️ [**View the live visualization on GitHub Pages**](https://deinspanjer.github.io/bcf-visualization/) ⬅️
+
 Visualizations and analysis of *Brockton's Celestial Forge (Worm/Jumpchain)* by LordRoustabout.
 
 This repository is organized for quick exploration first, with deeper technical details moved into dedicated docs.
