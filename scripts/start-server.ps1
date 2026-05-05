@@ -29,12 +29,12 @@ if (-not $env:HF_HOME) {
     Write-Host "HF_HOME not set; using default Hugging Face cache."
 }
 
-$Host = $env:BCF_NLP_HOST
-if (-not $Host) { $Host = '0.0.0.0' }
+$BindHost = $env:BCF_NLP_HOST
+if (-not $BindHost) { $BindHost = '0.0.0.0' }
 $Port = $env:BCF_NLP_PORT
 if (-not $Port) { $Port = '8000' }
 $LogLevel = $env:BCF_NLP_LOG_LEVEL
 if (-not $LogLevel) { $LogLevel = 'info' }
 
-Write-Host "Starting nlp.serve on $Host`:$Port (log-level=$LogLevel)"
-uv run uvicorn nlp.serve:app --host $Host --port $Port --log-level $LogLevel
+Write-Host "Starting nlp.serve on $BindHost`:$Port (log-level=$LogLevel)"
+uv run uvicorn nlp.serve:app --host $BindHost --port $Port --log-level $LogLevel
