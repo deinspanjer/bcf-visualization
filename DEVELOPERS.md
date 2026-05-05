@@ -94,3 +94,28 @@ Change-driven update matrix:
 - Do not rely on raw EPUB prose at runtime.
 - When adding user-facing track encodings, update both the legend and
   `USERS.md`.
+
+## Roadmap: local NLP extraction
+
+A model-based extraction layer is being planned to replace the
+regex-heavy parts of the current pipeline (event detection in
+`find_text_backed_rolls.py`, POV classification in
+`build_section_classifications.py`) and to add new derivations
+(in-world dates, Joe-on-screen flags, time-mode classification).
+
+Architecture: a llama.cpp labeling-assistant lane plus two fine-tuned
+encoder models (span extractor + section classifier) served from a
+FastAPI process on a local GPU box, with iMac-side scripts calling the
+endpoints over LAN. The existing deterministic parsers stay in place
+as fallbacks; the new layer is additive.
+
+Reference docs:
+
+- Feasibility study: [docs/local_nlp_research.md](docs/local_nlp_research.md)
+- Master plan: [docs/local_nlp_plan.md](docs/local_nlp_plan.md)
+- Companion docs: [label schema](docs/local_nlp_label_schema.md),
+  [setup](docs/local_nlp_setup.md),
+  [annotation playbook](docs/local_nlp_annotation_playbook.md),
+  [training](docs/local_nlp_training.md),
+  [serving](docs/local_nlp_serving.md)
+- Phased build tasks tracked in [TODO.md](TODO.md).
