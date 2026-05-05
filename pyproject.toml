@@ -1,0 +1,42 @@
+[project]
+name = "bcf-nlp"
+version = "0.1.0"
+description = "Local NLP scaffolding for the BCF visualization pipeline."
+requires-python = ">=3.11,<3.13"
+
+# Core deps that the FastAPI server, training scripts, TUI, and bootstrap
+# loop all share. Torch is intentionally NOT here so the iMac side can
+# `import nlp.client` / `import nlp.schema` without dragging in CUDA
+# wheels. Install the `gpu` extra on the Windows box.
+dependencies = [
+  "transformers>=4.45",
+  "tokenizers>=0.20",
+  "accelerate>=0.34",
+  "datasets>=3.0",
+  "evaluate>=0.4",
+  "seqeval>=1.2",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.8",
+  "httpx>=0.27",
+  "textual>=0.79",
+  "rich>=13.8",
+  "regex>=2024.7",
+  "rapidfuzz>=3.9",
+  "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+gpu = ["torch>=2.4"]
+dev = ["ruff", "pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["nlp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
