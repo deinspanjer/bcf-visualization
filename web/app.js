@@ -55,13 +55,13 @@ const POV_COLORS = [
 const MECHANIC_MARKERS = [
   {
     chapter: "91",
-    label: "ch 91",
-    title: "After this chapter, every other roll attempt is skipped. Joe still earns power at the same rate; the Forge just only checks for a connection at every other 100-point milestone.",
+    label: "¹",
+    title: "Mechanic change 1: points are accrued and spent differently from here; every other roll attempt is skipped.",
   },
   {
     chapter: "97",
-    label: "ch 97",
-    title: "Power accrues more slowly now (3,000 words per 100 points instead of 2,000), and after Joe acquires anything expensive, the Forge needs time to recover before he can earn anything new.",
+    label: "²",
+    title: "Mechanic change 2: points are accrued and spent differently from here; points accrue more slowly and expensive purchases create recovery cooldowns.",
   },
 ];
 
@@ -69,6 +69,7 @@ const MECHANIC_MARKERS = [
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
 const LS_ZOOM = "bcf:timeline:zoom";
+const LS_INTRO_COLLAPSED = "bcf:intro:collapsed";
 const LS_VERSION = "bcf:storage:version";
 const STORAGE_VERSION = "3";   // bumped when pre-roll changed from 100k to 5k
 
@@ -160,7 +161,7 @@ function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal
   return (span.start_word + span.end_word) / 2;
 }
 
-function shadowWordRange(model, sp) {
+function shadowWordRange(model, facts, sp) {
   function cpToTotal(cpPos) {
     for (const span of model.chapterSpans) {
       if (cpPos >= span.start_cp && cpPos <= span.end_cp) {
@@ -171,8 +172,44 @@ function shadowWordRange(model, sp) {
     }
     return cpPos < 0 ? 0 : model.totalWords;
   }
-  return [cpToTotal(sp.trigger_word_position_epub),
-          cpToTotal(sp.shadow_end_word_position_epub)];
+
+  function purchaseWord(chapter, roll) {
+    const fallbackRolls = chapter.rolls.filter(r => r.predicted_word_position_epub == null);
+    const fallbackIndex = fallbackRolls.indexOf(roll);
+    return rollWordPosition(model, roll, chapter,
+      Math.max(0, fallbackIndex), fallbackRolls.length || 1);
+  }
+
+  const triggerChapter = facts.chapters.find(c => c.chapter_num === sp.trigger_chapter_num);
+  const mappedStart = cpToTotal(sp.trigger_word_position_epub);
+  const mappedEnd = cpToTotal(sp.shadow_end_word_position_epub);
+  let triggerWord = mappedStart;
+  if (triggerChapter) {
+    const triggerRoll = triggerChapter.rolls.find(r =>
+      sp.trigger_perk_id && r.purchased_perk_id === sp.trigger_perk_id) ||
+      triggerChapter.rolls.find(r =>
+        r.purchased_perk_name === sp.trigger_perk_name &&
+        Number(r.purchased_perk_cost) === Number(sp.trigger_perk_cost));
+    if (triggerRoll) {
+      triggerWord = purchaseWord(triggerChapter, triggerRoll);
+    }
+  }
+
+  let nextPurchaseWord = Infinity;
+  for (const chapter of facts.chapters) {
+    for (const roll of chapter.rolls) {
+      if (roll.outcome !== "hit" && roll.evidence_kind !== "untracked_acquisition") continue;
+      const word = purchaseWord(chapter, roll);
+      if (word > triggerWord + 0.5 && word < nextPurchaseWord) {
+        nextPurchaseWord = word;
+      }
+    }
+  }
+
+  const mappedWidth = Math.max(0, mappedEnd - mappedStart);
+  const fallbackWidth = Number(sp.shadow_word_length) || 0;
+  const rawEnd = triggerWord + Math.max(mappedWidth, fallbackWidth);
+  return [triggerWord, Math.max(triggerWord, Math.min(rawEnd, nextPurchaseWord))];
 }
 
 // ---------- track rendering ----------------------------------------------
@@ -198,6 +235,12 @@ function renderTracks(model, facts) {
   renderLegend();
 }
 
+function layoutTimelineTracks() {
+  layoutChapterLabels();
+  layoutAxisLabels();
+  layoutRollDots();
+}
+
 function clampZoom(z) {
   if (!Number.isFinite(z)) return DEFAULT_ZOOM;
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(z)));
@@ -215,6 +258,7 @@ function applyTimelineZoom(state, options = {}) {
   const stack = $("track-stack");
   stack.style.width = `${timelineWidthForZoom(zoom)}px`;
   stack.dataset.zoomDetail = zoom >= 16 ? "exact" : zoom >= 8 ? "high" : zoom >= 4 ? "medium" : "low";
+  layoutTimelineTracks();
   $("timeline-zoom").value = String(zoom);
   $("zoom-readout").textContent = zoom === 1 ? "fit" : `${zoom}×`;
   saveZoom(zoom);
@@ -394,35 +438,37 @@ function renderChaptersTrack(model) {
     const ch_int = parseInt(chap.chapter_num.split(".")[0], 10);
     const isSubChapter = chap.chapter_num.includes(".");
     const isMajor = !isSubChapter && ch_int % 10 === 0;
+    const leftPct = pctOf(model, span.start_word);
     const tick = el("button", {
       type: "button",
       class: `chap-tick ${isMajor ? "major" : "minor"}`,
-      style: { left: `${pctOf(model, span.start_word).toFixed(4)}%` },
+      style: { left: `${leftPct.toFixed(4)}%` },
       title: `ch ${chap.chapter_num} — ${chap.full_title} · published ${chap.published_at.slice(0, 10)} · last edited ${chap.last_edited_at || "unknown"}`,
       "data-chapter-num": chap.chapter_num,
     });
     tick._chapter = chap;
     tick._wordPos = span.start_word;
     track.appendChild(tick);
-    if (isMajor) {
-      track.appendChild(el("div", {
-        class: "chap-label",
-        text: chap.chapter_num,
-        style: { left: `${pctOf(model, span.start_word).toFixed(4)}%` },
-      }));
-    }
+    const label = el("div", {
+      class: `chap-label ${isMajor ? "major" : isSubChapter ? "sub" : "minor"}`,
+      text: chap.chapter_num,
+      style: { left: `${leftPct.toFixed(4)}%` },
+    });
+    label._wordPct = leftPct;
+    track.appendChild(label);
   }
 }
 
 function renderShadowsTrack(model, facts) {
-  const track = $("track-shadows");
+  const track = $("track-rolls");
   for (const sp of facts.shadow_periods) {
-    const [a, b] = shadowWordRange(model, sp);
-    const widthPct = Math.max(0.1, pctOf(model, b) - pctOf(model, a));
+    const [a, b] = shadowWordRange(model, facts, sp);
+    const widthPct = pctOf(model, b) - pctOf(model, a);
+    if (widthPct <= 0) continue;
     track.appendChild(el("div", {
       class: "shadow-bar",
       style: { left: `${pctOf(model, a).toFixed(4)}%`,
-               width: `${widthPct.toFixed(4)}%` },
+               width: `${Math.max(0.02, widthPct).toFixed(4)}%` },
       title: `${sp.trigger_perk_cost} CP shadow: ${sp.trigger_perk_name} ` +
              `(ch ${sp.trigger_chapter_num} → ch ${sp.shadow_end_chapter_num})`,
     }));
@@ -439,10 +485,11 @@ function renderRollsTrack(model, facts) {
     for (const r of c.rolls) {
       const fallbackIndex = fallbackRolls.indexOf(r);
       const wp = rollWordPosition(model, r, c, Math.max(0, fallbackIndex), fallbackRolls.length || 1);
+      const leftPct = pctOf(model, wp);
       const dot = el("button", {
         type: "button",
         class: `roll-dot ${rollClass(r)}`,
-        style: rollDotStyle(model, r, wp),
+        style: rollDotStyle(r, leftPct),
         "data-chapter-num": c.chapter_num,
         "data-roll-number": r.roll_number ?? "",
         title: rollDotTitle(r, c),
@@ -450,13 +497,15 @@ function renderRollsTrack(model, facts) {
       dot._roll = r;
       dot._chapter = c;
       dot._wordPos = wp;
+      dot._wordPct = leftPct;
+      dot._dotSize = rollDotSize(r);
       track.appendChild(dot);
-      renderFreePerkCluster(track, model, r, c, wp);
+      renderFreePerkCluster(track, model, r, c, wp, leftPct);
     }
   }
 }
 
-function renderFreePerkCluster(track, model, roll, chapter, wordPos) {
+function renderFreePerkCluster(track, model, roll, chapter, wordPos, leftPct) {
   const freePerks = roll.free_perks || [];
   if (roll.outcome !== "hit" || freePerks.length === 0) return;
 
@@ -464,7 +513,7 @@ function renderFreePerkCluster(track, model, roll, chapter, wordPos) {
     const dot = el("button", {
       type: "button",
       class: "roll-dot free-sibling",
-      style: freePerkDotStyle(model, wordPos, freePerk, idx, freePerks.length),
+      style: freePerkDotStyle(leftPct, freePerk, idx, freePerks.length),
       "data-chapter-num": chapter.chapter_num,
       "data-free-index": String(idx),
       title: freePerkTitle(freePerk, roll, chapter),
@@ -480,6 +529,8 @@ function renderFreePerkCluster(track, model, roll, chapter, wordPos) {
     };
     dot._chapter = chapter;
     dot._wordPos = wordPos;
+    dot._wordPct = leftPct;
+    dot._dotSize = 4;
     track.appendChild(dot);
   });
 }
@@ -491,11 +542,11 @@ function rollClass(r) {
   return "unknown";
 }
 
-function rollDotStyle(model, r, wp) {
+function rollDotStyle(r, leftPct) {
   const size = rollDotSize(r);
   const color = rollDotColor(r);
   return {
-    left: `${pctOf(model, wp).toFixed(4)}%`,
+    left: `${leftPct.toFixed(4)}%`,
     width: `${size}px`,
     height: `${size}px`,
     marginLeft: `${-(size / 2)}px`,
@@ -504,7 +555,7 @@ function rollDotStyle(model, r, wp) {
   };
 }
 
-function freePerkDotStyle(model, wp, freePerk, idx, total) {
+function freePerkDotStyle(leftPct, freePerk, idx, total) {
   const maxCols = 5;
   const colsInRow = Math.min(maxCols, total - Math.floor(idx / maxCols) * maxCols);
   const col = idx % maxCols;
@@ -512,7 +563,7 @@ function freePerkDotStyle(model, wp, freePerk, idx, total) {
   const offset = (col - (colsInRow - 1) / 2) * 6;
   const color = CONSTELLATION_COLORS[freePerk.constellation] || "var(--hit)";
   return {
-    left: `${pctOf(model, wp).toFixed(4)}%`,
+    left: `${leftPct.toFixed(4)}%`,
     top: `${42 + row * 7}px`,
     width: "4px",
     height: "4px",
@@ -570,20 +621,98 @@ function renderLegend() {
 
 function renderAxisTrack(model) {
   const track = $("track-axis");
-  const step = 250_000;
-  const major = 500_000;
+  const step = 1_000;
   for (let w = 0; w <= model.totalWords; w += step) {
+    const leftPct = pctOf(model, w);
+    const tickClass = w % 10_000 === 0 ? "major" : w % 5_000 === 0 ? "mid" : "minor";
     track.appendChild(el("div", {
-      class: "axis-tick",
-      style: { left: `${pctOf(model, w).toFixed(4)}%` },
+      class: `axis-tick ${tickClass}`,
+      style: { left: `${leftPct.toFixed(4)}%` },
     }));
-    if (w % major === 0) {
-      track.appendChild(el("div", {
-        class: "axis-label",
+    if (w % 5_000 === 0) {
+      const label = el("div", {
+        class: `axis-label ${w === 0 ? "origin-label " : ""}${w % 50_000 === 0 ? "milestone-50 " : ""}${w % 25_000 === 0 ? "milestone-25 " : ""}${w % 10_000 === 0 ? "milestone-10" : ""}`,
         text: w === 0 ? "0" : `${(w / 1000).toFixed(0)}k`,
-        style: { left: `${pctOf(model, w).toFixed(4)}%` },
-      }));
+        style: { left: `${leftPct.toFixed(4)}%` },
+      });
+      label._wordPct = leftPct;
+      track.appendChild(label);
     }
+  }
+}
+
+function layoutItemsInRows(items, rowTops, options = {}) {
+  const rows = rowTops.map(top => ({ top, lastRight: -Infinity }));
+  const gap = options.gap ?? 4;
+  const widthOf = options.widthOf || (item => item.el.offsetWidth || 1);
+  const sorted = [...items].sort((a, b) => a.x - b.x);
+  for (const item of sorted) {
+    const width = widthOf(item);
+    const left = item.x - width / 2;
+    const right = item.x + width / 2;
+    let row = rows.find(candidate => left - gap >= candidate.lastRight);
+    if (!row) {
+      row = rows.reduce((best, candidate) =>
+        candidate.lastRight < best.lastRight ? candidate : best, rows[0]);
+    }
+    item.el.style.top = `${row.top}px`;
+    row.lastRight = Math.max(row.lastRight, right + gap);
+  }
+}
+
+function layoutChapterLabels() {
+  const stack = $("track-stack");
+  const width = stack.getBoundingClientRect().width || 1;
+  const labels = Array.from($("track-chapters").querySelectorAll(".chap-label"))
+    .filter(elm => getComputedStyle(elm).display !== "none")
+    .map(elm => ({ el: elm, x: (elm._wordPct / 100) * width }));
+  layoutItemsInRows(labels, [2, 16, 28], { gap: 5 });
+}
+
+function layoutAxisLabels() {
+  const stack = $("track-stack");
+  const width = stack.getBoundingClientRect().width || 1;
+  const labels = Array.from($("track-axis").querySelectorAll(".axis-label"))
+    .filter(elm => getComputedStyle(elm).display !== "none")
+    .map(elm => ({ el: elm, x: (elm._wordPct / 100) * width }));
+  layoutItemsInRows(labels, [2, 16], { gap: 3 });
+  const origin = $("track-axis").querySelector(".origin-label");
+  if (origin) origin.style.top = "16px";
+}
+
+function rollDotLane(dot) {
+  if (dot.classList.contains("free-sibling")) return "free";
+  if (dot.classList.contains("miss") || dot.classList.contains("unknown")) return "miss";
+  return "hit";
+}
+
+function layoutRollDots() {
+  const stack = $("track-stack");
+  const width = stack.getBoundingClientRect().width || 1;
+  const compact = $("track-rolls").getBoundingClientRect().height < 120;
+  const lanes = compact
+    ? {
+        hit: [18, 6, 30, 42],
+        miss: [66, 78, 54, 90],
+        free: [48, 58, 38, 70],
+      }
+    : {
+        hit: [26, 12, 40, 54],
+        miss: [82, 96, 68, 110],
+        free: [60, 72, 48, 84],
+      };
+  for (const [lane, rowTops] of Object.entries(lanes)) {
+    const dots = Array.from($("track-rolls").querySelectorAll(".roll-dot"))
+      .filter(dot => rollDotLane(dot) === lane)
+      .map(dot => ({
+        el: dot,
+        x: (dot._wordPct / 100) * width,
+        size: dot._dotSize || dot.offsetWidth || 6,
+      }));
+    layoutItemsInRows(dots, rowTops, {
+      gap: 2,
+      widthOf: item => item.size,
+    });
   }
 }
 
@@ -755,7 +884,7 @@ function renderConstellations(constMap, scaleMax) {
         backgroundColor: CONSTELLATION_COLORS[name],
       },
     })));
-    container.appendChild(el("span", { class: "const-count" }, String(count)));
+    container.appendChild(el("span", { class: "const-count" }, fmt(count)));
   }
 }
 
@@ -1312,6 +1441,35 @@ function saveSpeed(s) { try { localStorage.setItem(LS_SPEED, String(s)); } catch
 function saveZoom(z) { try { localStorage.setItem(LS_ZOOM, String(clampZoom(z))); } catch {} }
 function clearBookmark() { try { localStorage.removeItem(LS_BOOKMARK); } catch {} }
 
+// ---------- intro ----------------------------------------------------------
+
+function attachIntroToggle() {
+  const section = $("intro-section");
+  const toggle = $("intro-toggle");
+  const body = $("intro-body");
+  if (!section || !toggle || !body) return;
+
+  function setCollapsed(collapsed) {
+    section.classList.toggle("is-collapsed", collapsed);
+    body.hidden = collapsed;
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+  }
+
+  let isCollapsed = false;
+  try {
+    isCollapsed = localStorage.getItem(LS_INTRO_COLLAPSED) === "true";
+  } catch {}
+  setCollapsed(isCollapsed);
+
+  toggle.addEventListener("click", () => {
+    const collapsed = !body.hidden;
+    setCollapsed(collapsed);
+    try {
+      localStorage.setItem(LS_INTRO_COLLAPSED, String(collapsed));
+    } catch {}
+  });
+}
+
 // ---------- bootstrap ----------------------------------------------------
 
 (async () => {
@@ -1333,6 +1491,7 @@ function clearBookmark() { try { localStorage.removeItem(LS_BOOKMARK); } catch {
         ignoreProgrammaticScroll: false,
       },
     };
+    attachIntroToggle();
     renderTracks(model, facts);
     applyTimelineZoom(state, { center: true });
     attachRollTooltip();

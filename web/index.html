@@ -12,24 +12,32 @@
       <a href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" target="_blank" rel="noopener noreferrer">Brockton's Celestial Forge: Progression Visualization</a>
     </h1>
     <p class="byline">
-      by LordRoustabout (Lord_Roustabout)
+      <span class="story-label">Story by</span>
+      <span>LordRoustabout (Lord_Roustabout)</span>
       <a class="site-badge" href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" target="_blank" rel="noopener noreferrer">SV</a>
       <a class="site-badge" href="https://www.fanfiction.net/s/13574944/44/Brockton-s-Celestial-Forge" target="_blank" rel="noopener noreferrer">FF</a>
       <a class="site-badge" href="https://archiveofourown.org/works/23949661/navigate" target="_blank" rel="noopener noreferrer">AO3</a>
     </p>
     <p class="viz-credit">
-      Visualization v0.5.0-beta.1 by deinspanjer
+      Visualization v0.6.0-beta.2 by deinspanjer
       <a class="gh-link" href="https://github.com/deinspanjer/bcf-visualization" target="_blank" rel="noopener noreferrer" aria-label="View visualization repository on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <path d="M8 0.2a8 8 0 0 0-2.5 15.6c0.4 0.1 0.5-0.2 0.5-0.4v-1.4c-2.2 0.5-2.7-0.9-2.7-0.9-0.4-0.9-0.9-1.1-0.9-1.1-0.7-0.5 0.1-0.5 0.1-0.5 0.8 0.1 1.2 0.8 1.2 0.8 0.7 1.2 1.9 0.9 2.3 0.7 0.1-0.5 0.3-0.9 0.5-1.1-1.8-0.2-3.6-0.9-3.6-3.9 0-0.9 0.3-1.6 0.8-2.1-0.1-0.2-0.4-1 0.1-2.1 0 0 0.7-0.2 2.2 0.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-0.8 2.2-0.8 0.4 1.1 0.2 1.9 0.1 2.1 0.5 0.6 0.8 1.3 0.8 2.1 0 3-1.8 3.7-3.6 3.9 0.3 0.3 0.6 0.8 0.6 1.6v2.3c0 0.2 0.1 0.5 0.6 0.4A8 8 0 0 0 8 0.2Z"></path>
         </svg>
       </a>
     </p>
-    <p class="subtitle">Aisha,<br>
-      Regarding your recent complaint about how difficult it is to understand what exactly Joe is talking about when he discusses the "constellations" of his "Forge" and how it "grabs perks," I have performed a new in-depth analysis of all recorded power acquisitions to date and rendered them in an interactive visualization that I hope will provide valuable insight for you.<br>
-      Similar to digital audio workstation software, the scrubber will allow you to review the power progression to your desired level of detail, with links to various recordings of what Joe and other relevant individuals were doing at that time.<br>
-      Please let me know if you observe any inaccuracies or have ideas on ways to provide additional analysis.<br>
-      - Survey</p>
+    <section class="intro-section" id="intro-section" aria-labelledby="intro-toggle">
+      <button class="intro-toggle" id="intro-toggle" type="button" aria-expanded="true" aria-controls="intro-body">
+        Intro text
+      </button>
+      <div class="intro-body" id="intro-body">
+        <p class="subtitle">Aisha,<br>
+          Regarding your recent complaint about how difficult it is to understand what exactly Joe is talking about when he discusses the "constellations" of his "Forge" and how it "grabs perks," I have performed a new in-depth analysis of all recorded power acquisitions to date and rendered them in an interactive visualization that I hope will provide valuable insight for you.<br>
+          Similar to digital audio workstation software, the scrubber will allow you to review the power progression to your desired level of detail, with links to various recordings of what Joe and other relevant individuals were doing at that time.<br>
+          Please let me know if you observe any inaccuracies or have ideas on ways to provide additional analysis.<br>
+          - Survey</p>
+      </div>
+    </section>
   </header>
 
   <section id="scrubber-section" aria-label="Scrubber">
@@ -38,7 +46,6 @@
       <div class="track-label label-dates">Real date</div>
       <div class="track-label label-chapters">Chapters</div>
       <div class="track-label label-pov">POV / sections</div>
-      <div class="track-label label-shadows">Recovery</div>
       <div class="track-label label-rolls">Rolls</div>
       <div class="track-label label-axis">Words</div>
     </div>
@@ -56,10 +63,7 @@
         <!-- Mechanic-change markers -->
         <div class="track track-markers" id="track-markers" aria-label="Mechanic clarification points"></div>
 
-        <!-- Shadow periods (regime-3 600/800 cooldown bars) -->
-        <div class="track track-shadows" id="track-shadows" aria-label="Recovery shadow periods"></div>
-
-        <!-- Roll outcomes: hit / miss / unknown / untracked dots -->
+        <!-- Roll outcomes plus recovery cooldown spans -->
         <div class="track track-rolls" id="track-rolls" aria-label="Roll events"></div>
 
         <!-- Bottom: word-position axis (k-words tick labels) -->
@@ -126,6 +130,13 @@
         <span id="zoom-readout">8×</span>
       </div>
 
+      <div class="control-panels">
+        <article class="panel" id="panel-constellations">
+          <h2>Acquired by constellation</h2>
+          <div id="constellation-bars"></div>
+        </article>
+      </div>
+
       <article class="inline-detail" id="chapter-detail-panel" hidden>
         <h2>Selected chapter</h2>
         <div class="meta" id="this-chapter-meta"></div>
@@ -133,39 +144,11 @@
       </article>
     </div>
 
-    <aside id="legend-rail">
-      <details id="legend-panel" open>
-        <summary>Legend</summary>
-        <div class="legend-grid">
-          <div>
-            <h2>Tracks</h2>
-            <div class="legend-row"><span class="legend-line date"></span><span>real-world publish date</span></div>
-            <div class="legend-row"><span class="legend-line chapter"></span><span>chapter boundary</span></div>
-            <div class="legend-row"><span class="legend-band pov"></span><span>POV / section span; color distinguishes POV, pale spans do not earn CP</span></div>
-            <div class="legend-row"><span class="legend-band shadow"></span><span>recovery cooldown</span></div>
-            <div class="legend-row"><span class="legend-marker"></span><span>mechanic clarification</span></div>
-          </div>
-          <div>
-            <h2>Dot color</h2>
-            <div id="constellation-legend" class="swatch-grid"></div>
-          </div>
-          <div>
-            <h2>Dot meaning</h2>
-            <div class="legend-row"><span class="legend-dot solid"></span><span>solid: simulator hit</span></div>
-            <div class="legend-row"><span class="legend-dot dashed"></span><span>dashed: untracked acquisition</span></div>
-            <div class="legend-row"><span class="legend-dot gray"></span><span>gray: miss or unknown</span></div>
-          </div>
-          <div>
-            <h2>Dot size</h2>
-            <div class="size-legend">
-              <span class="size-dot" style="--dot-size: 6px"></span><span>100</span>
-              <span class="size-dot" style="--dot-size: 9px"></span><span>300</span>
-              <span class="size-dot" style="--dot-size: 12px"></span><span>600</span>
-              <span class="size-dot" style="--dot-size: 14px"></span><span>800 CP</span>
-            </div>
-          </div>
-        </div>
-      </details>
+    <aside id="recent-rail">
+      <article class="panel rail-panel" id="panel-recent">
+        <h2>Most recent 10 acquisitions</h2>
+        <ol id="recent-perks" class="perk-list"></ol>
+      </article>
     </aside>
 
     <!-- Tooltip: appears on hover/click of a roll dot -->
@@ -173,23 +156,39 @@
   </section>
 
   <section id="panels">
-    <article class="panel wide" id="panel-constellations">
-      <h2>Acquired by constellation</h2>
-      <div id="constellation-bars"></div>
-    </article>
-
-    <article class="panel wide" id="panel-recent">
-      <h2>Most recent 10 acquisitions</h2>
-      <ol id="recent-perks" class="perk-list"></ol>
-    </article>
+    <details id="legend-panel" class="panel wide" open>
+      <summary>Legend</summary>
+      <div class="legend-grid">
+        <div>
+          <h2>Tracks</h2>
+          <div class="legend-row"><span class="legend-line date"></span><span>real-world publish date</span></div>
+          <div class="legend-row"><span class="legend-line chapter"></span><span>chapter boundary</span></div>
+          <div class="legend-row"><span class="legend-band pov"></span><span>POV / section span; color distinguishes POV, pale spans do not earn CP</span></div>
+          <div class="legend-row"><span class="legend-band shadow"></span><span>recovery cooldown in the rolls lane</span></div>
+          <div class="legend-row"><span class="legend-marker"></span><span>mechanic change footnote</span></div>
+        </div>
+        <div>
+          <h2>Dot color</h2>
+          <div id="constellation-legend" class="swatch-grid"></div>
+        </div>
+        <div>
+          <h2>Dot meaning</h2>
+          <div class="legend-row"><span class="legend-dot solid"></span><span>solid: simulator hit</span></div>
+          <div class="legend-row"><span class="legend-dot dashed"></span><span>dashed: untracked acquisition</span></div>
+          <div class="legend-row"><span class="legend-dot gray"></span><span>gray: miss or unknown</span></div>
+        </div>
+        <div>
+          <h2>Dot size</h2>
+          <div class="size-legend">
+            <span class="size-dot" style="--dot-size: 6px"></span><span>100</span>
+            <span class="size-dot" style="--dot-size: 9px"></span><span>300</span>
+            <span class="size-dot" style="--dot-size: 12px"></span><span>600</span>
+            <span class="size-dot" style="--dot-size: 14px"></span><span>800 CP</span>
+          </div>
+        </div>
+      </div>
+    </details>
   </section>
-
-  <footer>
-    <p>Backbone data: <a href="../data/derived/chapter_facts.json">chapter_facts.json</a> ·
-       Source: <a href="https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/">SV thread</a> ·
-       <a href="../README.md">project README</a></p>
-  </footer>
-
   <script src="app.js"></script>
 </body>
 </html>
