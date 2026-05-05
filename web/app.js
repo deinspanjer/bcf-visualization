@@ -327,41 +327,52 @@ function updateScrollFollow(state, options = {}) {
   setTimelineScroll(state, container.scrollLeft + delta * easing);
 }
 
+function getISOWeek(date) {
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  target.setUTCDate(target.getUTCDate() + 4 - (target.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  return Math.ceil(((target - yearStart) / 86400000 + 1) / 7);
+}
+
 function renderRealWorldDateTrack(model) {
   const track = $("track-dates");
+  const yearSeen = new Set();
   const monthSeen = new Set();
-  const daySeen = new Set();
-  const firstYear = new Date(model.chapters[0].published_at).getFullYear();
-  const lastYear = new Date(model.chapters[model.chapters.length - 1].published_at).getFullYear();
-  for (let year = firstYear; year <= lastYear; year++) {
-    const span = model.chapterSpans.find(s =>
-      new Date(s.chapter.published_at).getFullYear() >= year);
-    if (!span) continue;
-    const date = span.chapter.published_at.slice(0, 10);
-    track.appendChild(el("div", {
-      class: "date-tick year",
-      style: { left: `${pctOf(model, span.start_word).toFixed(4)}%` },
-      title: `${year}: first chapter at or after Jan 1 is ch ${span.chapter.chapter_num}, published ${date}`,
-    }));
-    track.appendChild(el("div", {
-      class: "date-label",
-      text: String(year),
-      style: { left: `${pctOf(model, span.start_word).toFixed(4)}%` },
-    }));
-  }
+  const weekSeen = new Set();
 
   for (const span of model.chapterSpans) {
-    const date = span.chapter.published_at.slice(0, 10);
-    const month = date.slice(0, 7);
+    const date = new Date(span.chapter.published_at);
+    const dateStr = span.chapter.published_at.slice(0, 10);
     const left = `${pctOf(model, span.start_word).toFixed(4)}%`;
-    if (!monthSeen.has(month)) {
-      monthSeen.add(month);
-      const monthLabel = new Date(span.chapter.published_at)
-        .toLocaleString("en-US", { month: "short", year: "2-digit" });
+    const year = date.getFullYear();
+    const monthKey = `${year}-${date.getMonth()}`;
+    const weekKey = `${year}-${getISOWeek(date)}`;
+
+    track.appendChild(el("div", {
+      class: "date-tick chapter",
+      style: { left },
+      title: `${dateStr}: ch ${span.chapter.chapter_num} — ${span.chapter.full_title}`,
+    }));
+    track.appendChild(el("div", {
+      class: "date-label chapter-label",
+      text: dateStr.slice(5),
+      style: { left },
+    }));
+    if (!weekSeen.has(weekKey)) {
+      weekSeen.add(weekKey);
+      track.appendChild(el("div", {
+        class: "date-tick week",
+        style: { left },
+        title: `Week of ${dateStr}: ch ${span.chapter.chapter_num}`,
+      }));
+    }
+    if (!monthSeen.has(monthKey)) {
+      monthSeen.add(monthKey);
+      const monthLabel = date.toLocaleString("en-US", { month: "short" });
       track.appendChild(el("div", {
         class: "date-tick month",
         style: { left },
-        title: `${monthLabel}: first chapter is ch ${span.chapter.chapter_num}, published ${date}`,
+        title: `${monthLabel} ${year}: first chapter is ch ${span.chapter.chapter_num}, published ${dateStr}`,
       }));
       track.appendChild(el("div", {
         class: "date-label month-label",
@@ -369,16 +380,16 @@ function renderRealWorldDateTrack(model) {
         style: { left },
       }));
     }
-    if (!daySeen.has(date)) {
-      daySeen.add(date);
+    if (!yearSeen.has(year)) {
+      yearSeen.add(year);
       track.appendChild(el("div", {
-        class: "date-tick day",
+        class: "date-tick year",
         style: { left },
-        title: `${date}: ch ${span.chapter.chapter_num} — ${span.chapter.full_title}`,
+        title: `${year}: first chapter at or after Jan 1 is ch ${span.chapter.chapter_num}, published ${dateStr}`,
       }));
       track.appendChild(el("div", {
-        class: "date-label day-label",
-        text: date.slice(5),
+        class: "date-label year-label",
+        text: String(year),
         style: { left },
       }));
     }
@@ -611,11 +622,12 @@ function renderLegend() {
   const container = $("constellation-legend");
   clear(container);
   for (const name of CONSTELLATION_ORDER) {
-    container.appendChild(el("span", {
-      class: "swatch",
-      style: { backgroundColor: CONSTELLATION_COLORS[name] },
-    }));
-    container.appendChild(el("span", { text: name }));
+    container.appendChild(el("span", { class: "swatch-row" },
+      el("span", {
+        class: "swatch",
+        style: { backgroundColor: CONSTELLATION_COLORS[name] },
+      }),
+      el("span", { text: name })));
   }
 }
 
@@ -913,9 +925,7 @@ function renderRecent(state, ch, inPreroll) {
     return;
   }
   for (const { roll, chapter } of collected) {
-    const left = el("span", null,
-      el("span", { class: "perk-name" }, roll.purchased_perk_name),
-      el("span", { class: "perk-source" }, ` — ${roll.constellation || ""}`));
+    const left = el("span", { class: "perk-name" }, roll.purchased_perk_name);
     list.appendChild(el("li", null,
       left,
       el("span", { class: "perk-cost" }, roll.constellation || "?"),
@@ -1174,6 +1184,7 @@ function attachScrubber(state) {
   let activePointerId = null;
   let capturedPointerId = null;
   let activeTouchId = null;
+  let pendingChapTap = null;
 
   function pointerClientX(e) {
     if (e.touches && e.touches.length) return e.touches[0].clientX;
@@ -1181,7 +1192,7 @@ function attachScrubber(state) {
     return e.clientX;
   }
   function blockedScrubTarget(target) {
-    return target instanceof Element && target.closest(".roll-dot, .shadow-bar, .chap-tick");
+    return target instanceof Element && target.closest(".roll-dot, .shadow-bar");
   }
   function inScrubHitArea(clientX, clientY) {
     const rect = hit.getBoundingClientRect();
@@ -1190,15 +1201,40 @@ function attachScrubber(state) {
       clientY >= rect.top &&
       clientY <= rect.bottom;
   }
+  function chapTickFromTarget(target) {
+    return target instanceof Element ? target.closest(".chap-tick") : null;
+  }
+  function noteTapStart(target, clientX, clientY) {
+    const tick = chapTickFromTarget(target);
+    pendingChapTap = tick
+      ? { tick, x: clientX, y: clientY, moved: false }
+      : null;
+  }
+  function noteTapMove(clientX, clientY) {
+    if (!pendingChapTap || pendingChapTap.moved) return;
+    if (Math.hypot(clientX - pendingChapTap.x, clientY - pendingChapTap.y) > 6) {
+      pendingChapTap.moved = true;
+    }
+  }
+  function commitChapTap() {
+    const tap = pendingChapTap;
+    pendingChapTap = null;
+    if (!tap || tap.moved) return;
+    state.selectedChapterNum = tap.tick.dataset.chapterNum;
+    state.scrollFollow.pausedManualLock = false;
+    setWord(state, tap.tick._wordPos);
+    renderSelectedChapter(state);
+  }
   function beginScrub(clientX) {
     state.scrollFollow.pausedManualLock = false;
     dragging = true;
     document.body.style.userSelect = "none";
     setWord(state, wordFromClientX(clientX));
   }
-  function updateScrub(clientX) {
+  function updateScrub(clientX, clientY) {
     if (!dragging) return;
     setWord(state, wordFromClientX(clientX));
+    if (clientY != null) noteTapMove(clientX, clientY);
   }
   function releasePointerCapture() {
     if (capturedPointerId == null) return;
@@ -1215,6 +1251,7 @@ function attachScrubber(state) {
   }
   function finishScrub(e) {
     if (e && e.pointerId != null && activePointerId !== e.pointerId) return;
+    commitChapTap();
     releasePointerCapture();
     dragging = false;
     activePointerId = null;
@@ -1235,6 +1272,7 @@ function attachScrubber(state) {
       if (blockedScrubTarget(e.target)) return;
       if (!inScrubHitArea(e.clientX, e.clientY)) return;
       activePointerId = e.pointerId;
+      noteTapStart(e.target, e.clientX, e.clientY);
       if (track.setPointerCapture) {
         try {
           track.setPointerCapture(e.pointerId);
@@ -1248,7 +1286,7 @@ function attachScrubber(state) {
     });
     document.addEventListener("pointermove", e => {
       if (!dragging || activePointerId !== e.pointerId) return;
-      updateScrub(e.clientX);
+      updateScrub(e.clientX, e.clientY);
       if (e.cancelable) e.preventDefault();
     });
     document.addEventListener("pointerup", finishScrub);
@@ -1257,6 +1295,7 @@ function attachScrubber(state) {
     track.addEventListener("mousedown", e => {
       if (e.button !== 0 || blockedScrubTarget(e.target)) return;
       if (!inScrubHitArea(e.clientX, e.clientY)) return;
+      noteTapStart(e.target, e.clientX, e.clientY);
       beginScrub(e.clientX);
       e.preventDefault();
     });
@@ -1266,11 +1305,13 @@ function attachScrubber(state) {
       const touch = e.changedTouches[0];
       if (!inScrubHitArea(touch.clientX, touch.clientY)) return;
       activeTouchId = touch.identifier;
+      noteTapStart(e.target, touch.clientX, touch.clientY);
       beginScrub(touch.clientX);
-    });
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
     document.addEventListener("mousemove", e => {
       if (!dragging) return;
-      updateScrub(pointerClientX(e));
+      updateScrub(pointerClientX(e), e.clientY);
       e.preventDefault();
     });
     document.addEventListener("mouseup", finishScrub);
@@ -1278,7 +1319,7 @@ function attachScrubber(state) {
       if (!dragging || activeTouchId == null) return;
       const touch = touchById(e.touches, activeTouchId);
       if (!touch) return;
-      updateScrub(touch.clientX);
+      updateScrub(touch.clientX, touch.clientY);
       e.preventDefault();
     }, { passive: false });
     const finishTouch = e => {
