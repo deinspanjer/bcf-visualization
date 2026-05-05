@@ -799,6 +799,15 @@ function renderRecent(state, ch, inPreroll) {
 function attachRollTooltip() {
   const tip = $("roll-tooltip");
   const track = $("track-rolls");
+  const stack = $("track-stack");
+  const coarsePointerQuery = window.matchMedia
+    ? window.matchMedia("(pointer: coarse)")
+    : null;
+  let pinnedDot = null;
+  let pinnedTap = null;
+  let lastDotPointer = null;
+  let pendingDotGesture = null;
+  let handledDotPointerGesture = null;
 
   function placeTooltip(e) {
     const pad = 10;
@@ -807,6 +816,8 @@ function attachRollTooltip() {
     let y = e.clientY + 12;
     if (x + tipRect.width + pad > window.innerWidth) x = e.clientX - tipRect.width - 12;
     if (y + tipRect.height + pad > window.innerHeight) y = e.clientY - tipRect.height - 12;
+    x = Math.max(pad, Math.min(x, window.innerWidth - tipRect.width - pad));
+    y = Math.max(pad, Math.min(y, window.innerHeight - tipRect.height - pad));
     tip.style.left = `${x}px`;
     tip.style.top = `${y}px`;
   }
@@ -851,19 +862,160 @@ function attachRollTooltip() {
     tip.hidden = false;
     placeTooltip(e);
   }
-  function hide() { tip.hidden = true; }
+  function setPinnedDot(dot) {
+    if (pinnedDot && pinnedDot !== dot) pinnedDot.classList.remove("is-pinned");
+    if (!dot) {
+      for (const marked of track.querySelectorAll(".roll-dot.is-pinned")) {
+        marked.classList.remove("is-pinned");
+      }
+    }
+    pinnedDot = dot;
+    if (pinnedDot) pinnedDot.classList.add("is-pinned");
+  }
+  function currentPinnedDot() {
+    return pinnedDot || track.querySelector(".roll-dot.is-pinned");
+  }
+  function hide() {
+    tip.hidden = true;
+    pinnedTap = null;
+    setPinnedDot(null);
+  }
+  function hideHover() {
+    if (!currentPinnedDot()) tip.hidden = true;
+  }
+  function openDot(dot) {
+    const url = dot._chapter.post_url;
+    if (url) window.open(url, "_blank", "noopener");
+  }
+  function isTouchLikePointer(e) {
+    return e && (e.pointerType === "touch" || e.pointerType === "pen");
+  }
+  function shouldUsePinnedTap(e) {
+    return (coarsePointerQuery && coarsePointerQuery.matches) || isTouchLikePointer(e);
+  }
+  function pointNearDot(dot, e) {
+    if (!dot || !e) return false;
+    const pad = 14;
+    const rect = dot.getBoundingClientRect();
+    return e.clientX >= rect.left - pad &&
+      e.clientX <= rect.right + pad &&
+      e.clientY >= rect.top - pad &&
+      e.clientY <= rect.bottom + pad;
+  }
+  function pointNearPinnedTap(e) {
+    if (!pinnedTap || !e) return false;
+    return Math.hypot(e.clientX - pinnedTap.x, e.clientY - pinnedTap.y) <= 24;
+  }
+  function pinnedTapTarget(dot, e) {
+    const pinned = currentPinnedDot() || (pinnedTap && pinnedTap.dot);
+    if (!pinned) return null;
+    if (pinned === dot) return pinned;
+    if (shouldUsePinnedTap(e) && pointNearPinnedTap(e)) return pinnedTap.dot;
+    if (shouldUsePinnedTap(e) && pointNearDot(pinned, e)) return pinned;
+    return null;
+  }
+  function pinDot(dot, e) {
+    setPinnedDot(dot);
+    pinnedTap = { dot, x: e.clientX, y: e.clientY };
+    show(dot, e);
+  }
+  function markHandledDotGesture(dot) {
+    const handled = { dot };
+    handledDotPointerGesture = handled;
+    window.setTimeout(() => {
+      if (handledDotPointerGesture === handled) handledDotPointerGesture = null;
+    }, 800);
+  }
+  function handledPointerClick(dot, e) {
+    if (!handledDotPointerGesture) return false;
+    return handledDotPointerGesture.dot === dot ||
+      pointNearDot(handledDotPointerGesture.dot, e);
+  }
+  function shouldPinDot(e, dot) {
+    if (coarsePointerQuery && coarsePointerQuery.matches) return true;
+    return !!lastDotPointer &&
+      lastDotPointer.dot === dot &&
+      lastDotPointer.touchLike &&
+      performance.now() - lastDotPointer.at < 1200;
+  }
 
   track.addEventListener("mousemove", e => {
+    if (pinnedDot) return;
     const dot = e.target.closest(".roll-dot");
-    if (!dot) return hide();
+    if (!dot) return hideHover();
     show(dot, e);
   });
-  track.addEventListener("mouseleave", hide);
+  track.addEventListener("mouseleave", hideHover);
+  stack.addEventListener("pointerdown", e => {
+    const dot = e.target instanceof Element ? e.target.closest(".roll-dot") : null;
+    const pinnedTarget = pinnedTapTarget(dot, e);
+    const gestureDot = pinnedTarget || dot;
+    if (dot) {
+      lastDotPointer = {
+        dot,
+        touchLike: isTouchLikePointer(e),
+        at: performance.now(),
+      };
+    }
+    if (!gestureDot || !shouldUsePinnedTap(e)) return;
+    pendingDotGesture = {
+      pointerId: e.pointerId,
+      dot: gestureDot,
+      openTarget: pinnedTarget,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  });
+  document.addEventListener("pointermove", e => {
+    if (!pendingDotGesture || pendingDotGesture.pointerId !== e.pointerId) return;
+    if (Math.hypot(e.clientX - pendingDotGesture.startX,
+                   e.clientY - pendingDotGesture.startY) > 10) {
+      pendingDotGesture.moved = true;
+    }
+  });
+  document.addEventListener("pointerup", e => {
+    if (!pendingDotGesture || pendingDotGesture.pointerId !== e.pointerId) return;
+    const gesture = pendingDotGesture;
+    pendingDotGesture = null;
+    if (gesture.moved) return;
+    if (gesture.openTarget) openDot(gesture.openTarget);
+    else pinDot(gesture.dot, e);
+    markHandledDotGesture(gesture.dot);
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  document.addEventListener("pointercancel", e => {
+    if (pendingDotGesture && pendingDotGesture.pointerId === e.pointerId) {
+      pendingDotGesture = null;
+    }
+  });
   track.addEventListener("click", e => {
     const dot = e.target.closest(".roll-dot");
     if (!dot) return;
-    const url = dot._chapter.post_url;
-    if (url) window.open(url, "_blank", "noopener");
+    const pinnedTarget = pinnedTapTarget(dot, e);
+    if (handledPointerClick(dot, e)) {
+      handledDotPointerGesture = null;
+      e.preventDefault();
+      return;
+    }
+    if (shouldPinDot(e, dot)) {
+      e.preventDefault();
+      if (pinnedTarget) {
+        openDot(pinnedTarget);
+        return;
+      }
+      pinDot(dot, e);
+      return;
+    }
+    openDot(dot);
+  });
+  document.addEventListener("click", e => {
+    if (!pinnedDot) return;
+    if (e.target.closest(".roll-dot, #roll-tooltip")) return;
+    hide();
   });
 }
 
@@ -890,31 +1042,127 @@ function attachScrubber(state) {
   }
 
   let dragging = false;
-  function onPointerMove(e) {
-    if (!dragging) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    setWord(state, wordFromClientX(x));
-    e.preventDefault();
-  }
-  function onPointerUp() { dragging = false; document.body.style.userSelect = ""; }
+  let activePointerId = null;
+  let capturedPointerId = null;
+  let activeTouchId = null;
 
-  hit.addEventListener("mousedown", e => {
-    if (e.target.closest(".roll-dot, .shadow-bar")) return;
+  function pointerClientX(e) {
+    if (e.touches && e.touches.length) return e.touches[0].clientX;
+    if (e.changedTouches && e.changedTouches.length) return e.changedTouches[0].clientX;
+    return e.clientX;
+  }
+  function blockedScrubTarget(target) {
+    return target instanceof Element && target.closest(".roll-dot, .shadow-bar, .chap-tick");
+  }
+  function inScrubHitArea(clientX, clientY) {
+    const rect = hit.getBoundingClientRect();
+    return clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom;
+  }
+  function beginScrub(clientX) {
     state.scrollFollow.pausedManualLock = false;
     dragging = true;
     document.body.style.userSelect = "none";
-    setWord(state, wordFromClientX(e.clientX));
+    setWord(state, wordFromClientX(clientX));
+  }
+  function updateScrub(clientX) {
+    if (!dragging) return;
+    setWord(state, wordFromClientX(clientX));
+  }
+  function releasePointerCapture() {
+    if (capturedPointerId == null) return;
+    if (track.releasePointerCapture) {
+      try {
+        if (!track.hasPointerCapture || track.hasPointerCapture(capturedPointerId)) {
+          track.releasePointerCapture(capturedPointerId);
+        }
+      } catch (_) {
+        // Pointer capture can already be gone after a browser-level cancel.
+      }
+    }
+    capturedPointerId = null;
+  }
+  function finishScrub(e) {
+    if (e && e.pointerId != null && activePointerId !== e.pointerId) return;
+    releasePointerCapture();
+    dragging = false;
+    activePointerId = null;
+    activeTouchId = null;
+    document.body.style.userSelect = "";
+  }
+  function touchById(touches, id) {
+    for (const touch of touches) {
+      if (touch.identifier === id) return touch;
+    }
+    return null;
+  }
+
+  if (window.PointerEvent) {
+    track.addEventListener("pointerdown", e => {
+      if (activePointerId != null || e.isPrimary === false) return;
+      if ((e.pointerType === "mouse" || e.pointerType === "pen") && e.button !== 0) return;
+      if (blockedScrubTarget(e.target)) return;
+      if (!inScrubHitArea(e.clientX, e.clientY)) return;
+      activePointerId = e.pointerId;
+      if (track.setPointerCapture) {
+        try {
+          track.setPointerCapture(e.pointerId);
+          capturedPointerId = e.pointerId;
+        } catch (_) {
+          capturedPointerId = null;
+        }
+      }
+      beginScrub(e.clientX);
+      e.preventDefault();
+    });
+    document.addEventListener("pointermove", e => {
+      if (!dragging || activePointerId !== e.pointerId) return;
+      updateScrub(e.clientX);
+      if (e.cancelable) e.preventDefault();
+    });
+    document.addEventListener("pointerup", finishScrub);
+    document.addEventListener("pointercancel", finishScrub);
+  } else {
+    track.addEventListener("mousedown", e => {
+      if (e.button !== 0 || blockedScrubTarget(e.target)) return;
+      if (!inScrubHitArea(e.clientX, e.clientY)) return;
+      beginScrub(e.clientX);
+      e.preventDefault();
+    });
+    track.addEventListener("touchstart", e => {
+      if (dragging || e.touches.length !== 1 || e.changedTouches.length !== 1) return;
+      if (blockedScrubTarget(e.target)) return;
+      const touch = e.changedTouches[0];
+      if (!inScrubHitArea(touch.clientX, touch.clientY)) return;
+      activeTouchId = touch.identifier;
+      beginScrub(touch.clientX);
+    });
+    document.addEventListener("mousemove", e => {
+      if (!dragging) return;
+      updateScrub(pointerClientX(e));
+      e.preventDefault();
+    });
+    document.addEventListener("mouseup", finishScrub);
+    document.addEventListener("touchmove", e => {
+      if (!dragging || activeTouchId == null) return;
+      const touch = touchById(e.touches, activeTouchId);
+      if (!touch) return;
+      updateScrub(touch.clientX);
+      e.preventDefault();
+    }, { passive: false });
+    const finishTouch = e => {
+      if (activeTouchId == null || !touchById(e.changedTouches, activeTouchId)) return;
+      finishScrub(e);
+    };
+    document.addEventListener("touchend", finishTouch);
+    document.addEventListener("touchcancel", finishTouch);
+  }
+
+  window.addEventListener("blur", () => {
+    if (dragging) finishScrub();
   });
-  hit.addEventListener("touchstart", e => {
-    if (e.target.closest(".roll-dot, .shadow-bar")) return;
-    state.scrollFollow.pausedManualLock = false;
-    dragging = true;
-    setWord(state, wordFromClientX(e.touches[0].clientX));
-  }, { passive: false });
-  document.addEventListener("mousemove", onPointerMove);
-  document.addEventListener("touchmove", onPointerMove, { passive: false });
-  document.addEventListener("mouseup", onPointerUp);
-  document.addEventListener("touchend", onPointerUp);
 
   playhead.addEventListener("keydown", e => {
     let delta = 0;
