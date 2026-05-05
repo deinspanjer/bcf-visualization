@@ -45,7 +45,7 @@
   --shadow-bar-border: rgba(120, 50, 70, 0.55);
   --tooltip-shadow: rgba(0, 0, 0, 0.15);
   --preroll-stripe: rgba(0, 0, 0, 0.04);
-  --date-day-tick: rgba(42, 79, 125, 0.32);
+  --date-chapter-tick: rgba(42, 79, 125, 0.32);
   --date-line: rgba(42, 79, 125, 0.55);
 
   /* Text on the play button (which uses --accent as its background) */
@@ -95,7 +95,7 @@
     --shadow-bar-border: rgba(220, 130, 150, 0.55);
     --tooltip-shadow: rgba(0, 0, 0, 0.55);
     --preroll-stripe: rgba(255, 255, 255, 0.06);
-    --date-day-tick: rgba(110, 163, 214, 0.4);
+    --date-chapter-tick: rgba(110, 163, 214, 0.4);
     --date-line: rgba(110, 163, 214, 0.6);
 
     --on-accent: #0d1622;
@@ -143,7 +143,7 @@
   --shadow-bar-border: rgba(220, 130, 150, 0.55);
   --tooltip-shadow: rgba(0, 0, 0, 0.55);
   --preroll-stripe: rgba(255, 255, 255, 0.06);
-  --date-day-tick: rgba(110, 163, 214, 0.4);
+  --date-chapter-tick: rgba(110, 163, 214, 0.4);
   --date-line: rgba(110, 163, 214, 0.6);
 
   --on-accent: #0d1622;
@@ -412,42 +412,72 @@ header .subtitle {
 /* Real-world date track */
 .date-tick {
   position: absolute;
-  bottom: 0;
   width: 1px;
   background: var(--gray-4);
   pointer-events: auto;
   cursor: default;
 }
-.date-tick.year { top: 2px; background: var(--gray-2); }
-.date-tick.month { top: 18px; background: var(--gray-4); }
-.date-tick.day {
-  top: 30px;
-  background: var(--date-day-tick);
+.date-tick.year {
+  top: 0;
+  bottom: 0;
+  background: var(--gray-2);
+}
+.date-tick.month {
+  bottom: 0;
+  height: 24px;
+  background: var(--gray-3);
+  display: none;
+}
+.date-tick.week {
+  bottom: 0;
+  height: 12px;
+  background: var(--gray-4);
+  display: none;
+}
+.date-tick.chapter {
+  top: 0;
+  bottom: 0;
+  background: var(--date-chapter-tick);
   display: none;
 }
 .date-label {
   position: absolute;
-  top: 0;
-  transform: translateX(3px);
   font-size: 9px;
   color: var(--gray-2);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1;
+}
+.date-label.year-label {
+  top: 0;
+  transform: translateX(3px);
+  font-weight: 600;
+  color: var(--gray-1);
 }
 .date-label.month-label {
-  top: 18px;
+  top: 12px;
+  transform: translateX(3px);
   display: none;
 }
-.date-label.day-label {
-  top: 31px;
+.date-label.chapter-label {
+  top: 22px;
+  transform: translateX(-50%);
   color: var(--gray-3);
+  background: var(--label-bg-soft);
+  padding: 0 1px;
+  border-radius: 1px;
   display: none;
 }
+#track-stack[data-zoom-detail="medium"] .date-tick.month,
+#track-stack[data-zoom-detail="high"] .date-tick.month,
+#track-stack[data-zoom-detail="exact"] .date-tick.month,
 #track-stack[data-zoom-detail="medium"] .date-label.month-label,
 #track-stack[data-zoom-detail="high"] .date-label.month-label,
 #track-stack[data-zoom-detail="exact"] .date-label.month-label,
-#track-stack[data-zoom-detail="high"] .date-tick.day,
-#track-stack[data-zoom-detail="exact"] .date-tick.day,
-#track-stack[data-zoom-detail="exact"] .date-label.day-label {
+#track-stack[data-zoom-detail="high"] .date-tick.week,
+#track-stack[data-zoom-detail="exact"] .date-tick.week,
+#track-stack[data-zoom-detail="exact"] .date-tick.chapter,
+#track-stack[data-zoom-detail="exact"] .date-label.chapter-label {
   display: block;
 }
 
@@ -461,10 +491,21 @@ header .subtitle {
   padding: 0;
   pointer-events: auto;
   cursor: pointer;
+  touch-action: none;
 }
 .chap-tick.major { background: var(--gray-1); height: 72%; }
 .chap-tick.minor { background: var(--gray-3); height: 45%; }
 .chap-tick:hover { width: 2px; background: var(--accent); }
+@media (pointer: coarse) {
+  .chap-tick::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    left: -8px;
+    right: -8px;
+  }
+}
 .chap-label {
   position: absolute;
   font-size: 10px;
@@ -690,9 +731,26 @@ header .subtitle {
   flex-direction: column;
   min-width: 0;
 }
+#scrubber-chapter-readout {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--gray-1);
+  margin: 0 0 6px;
+  padding: 0 12px;
+  line-height: 1.35;
+}
+#scrubber-chapter-readout #readout-chapter {
+  font-weight: 600;
+  color: var(--ink);
+}
+#scrubber-chapter-readout .dot {
+  color: var(--gray-3);
+  margin: 0 6px;
+}
+
 #recent-rail {
   grid-column: 2;
-  grid-row: 2;
   display: flex;
   flex-direction: column;
   align-self: end;
@@ -735,14 +793,21 @@ header .subtitle {
 }
 .swatch-grid {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 8px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 4px 16px;
   align-items: center;
+}
+.swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 .swatch {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  flex: 0 0 auto;
 }
 .legend-row {
   display: flex;
