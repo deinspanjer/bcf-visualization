@@ -1,3 +1,8 @@
 openpyxl>=3.1
 jsonschema>=4.20
 matplotlib>=3.5
+# Local NLP client (iMac side). The full GPU/training stack lives in
+# pyproject.toml; the iMac only needs httpx + pydantic to call the
+# Windows FastAPI server.
+httpx>=0.27
+pydantic>=2.8

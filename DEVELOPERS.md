@@ -109,8 +109,18 @@ FastAPI process on a local GPU box, with iMac-side scripts calling the
 endpoints over LAN. The existing deterministic parsers stay in place
 as fallbacks; the new layer is additive.
 
+**Phase 0 status: scaffolded.** The `nlp/` package, FastAPI server,
+client wrapper, smoke test, and Windows setup scripts are in place.
+`/health` and `/version` work on a fresh checkout; `/extract` and
+`/classify_section` return 503 with the documented
+`*_model_not_loaded` body until trained checkpoints exist. Run
+`python3 -m pytest tests/` to exercise the scaffold without a GPU.
+For the operator workflow (Windows install, smoke test, what to do
+when a check fails), see the runbook below.
+
 Reference docs:
 
+- Operator runbook (Phase 0): [docs/local_nlp_runbook.md](docs/local_nlp_runbook.md)
 - Feasibility study: [docs/local_nlp_research.md](docs/local_nlp_research.md)
 - Master plan: [docs/local_nlp_plan.md](docs/local_nlp_plan.md)
 - Companion docs: [label schema](docs/local_nlp_label_schema.md),

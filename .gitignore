@@ -38,3 +38,18 @@ venv/
 # Source EPUBs - copyrighted prose, kept locally, not redistributed via git.
 # See README "Source material" section for where to obtain these.
 data/raw/*.epub
+
+# Local NLP work (see docs/local_nlp_*.md). Commit the .gitkeep
+# placeholders so the directory layout exists on a fresh clone, ignore
+# everything else underneath.
+checkpoints/**
+!checkpoints/**/
+!checkpoints/**/.gitkeep
+data/labeled/.proposals_raw/
+data/labeled/.tui_state.json
+data/labeled/.tui_wal.jsonl
+
+# uv / Hugging Face caches
+.uv/
+.hf_cache/
+
