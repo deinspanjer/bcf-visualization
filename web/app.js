@@ -70,6 +70,7 @@ const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
 const LS_ZOOM = "bcf:timeline:zoom";
 const LS_INTRO_COLLAPSED = "bcf:intro:collapsed";
+const LS_THEME = "bcf:theme";   // "auto" | "light" | "dark" (must match the inline script in index.html)
 const LS_VERSION = "bcf:storage:version";
 const STORAGE_VERSION = "3";   // bumped when pre-roll changed from 100k to 5k
 
@@ -1482,6 +1483,57 @@ function saveSpeed(s) { try { localStorage.setItem(LS_SPEED, String(s)); } catch
 function saveZoom(z) { try { localStorage.setItem(LS_ZOOM, String(clampZoom(z))); } catch {} }
 function clearBookmark() { try { localStorage.removeItem(LS_BOOKMARK); } catch {} }
 
+// ---------- theme ----------------------------------------------------------
+
+const THEME_PREFS = ["auto", "light", "dark"];
+const THEME_LABELS = {
+  auto: "Theme: follow system (click for light)",
+  light: "Theme: light (click for dark)",
+  dark: "Theme: dark (click to follow system)",
+};
+
+function readThemePref() {
+  try {
+    const v = localStorage.getItem(LS_THEME);
+    if (THEME_PREFS.includes(v)) return v;
+  } catch {}
+  return "auto";
+}
+
+function applyTheme(pref) {
+  if (pref === "light" || pref === "dark") {
+    document.documentElement.setAttribute("data-theme", pref);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+}
+
+function attachThemeToggle() {
+  const btn = $("theme-toggle");
+  if (!btn) return;
+
+  let pref = readThemePref();
+  applyTheme(pref);
+
+  function reflect() {
+    btn.setAttribute("data-theme-pref", pref);
+    btn.setAttribute("aria-label", THEME_LABELS[pref]);
+    btn.title = THEME_LABELS[pref];
+  }
+  reflect();
+
+  btn.addEventListener("click", () => {
+    const next = THEME_PREFS[(THEME_PREFS.indexOf(pref) + 1) % THEME_PREFS.length];
+    pref = next;
+    applyTheme(pref);
+    reflect();
+    try {
+      if (pref === "auto") localStorage.removeItem(LS_THEME);
+      else localStorage.setItem(LS_THEME, pref);
+    } catch {}
+  });
+}
+
 // ---------- intro ----------------------------------------------------------
 
 function attachIntroToggle() {
@@ -1532,6 +1584,7 @@ function attachIntroToggle() {
         ignoreProgrammaticScroll: false,
       },
     };
+    attachThemeToggle();
     attachIntroToggle();
     renderTracks(model, facts);
     applyTimelineZoom(state, { center: true });
