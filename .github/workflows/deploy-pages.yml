@@ -1,10 +1,19 @@
 name: Deploy scrubber to GitHub Pages
 
-# Manual deployment only by default. The repository is private at the
-# time of writing, and we don't want to publish copyrightable source
-# material while permission is being sought. To enable automatic
-# deploys on push, change `on:` to include `push: { branches: [main] }`.
+# Auto-deploy on pushes to main that touch publishable assets, and
+# allow manual dispatch for re-deploys without a code change. The path
+# filter avoids redeploying for doc/plan/script changes that don't
+# affect what's served on Pages.
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'data/derived/**'
+      - 'figures/**'
+      - 'index.html'
+      - '.nojekyll'
+      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 permissions:
