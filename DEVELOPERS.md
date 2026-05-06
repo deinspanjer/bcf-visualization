@@ -15,6 +15,18 @@ The web app should consume structured derived data. Keep prose parsing,
 classification, and cross-source reconciliation in scripts so the
 runtime stays pure and inspectable.
 
+The parked Phase 4 circle-sky prototype is still dependency-free and
+query-gated behind `/web/?sky=1`. It renders to `#sky-canvas` with
+Canvas 2D, using:
+
+- `chapter_facts.json` for chapter state and scrubber integration.
+- `constellation_wireframes.json` for cluster and jump geometry.
+- `roll_facts.json` for curated roll order, hit/miss outcome, banked
+  CP, and grab-cost context.
+
+Keep it out of the default `/web/` experience until the planetarium
+layout direction is settled.
+
 ## Regenerate derived data
 
 Use a virtual environment when available. If not in a venv, use
@@ -34,6 +46,8 @@ python3 scripts/extract_last_edited.py
 python3 scripts/find_roll_locations.py
 python3 scripts/find_text_backed_rolls.py
 python3 scripts/validate_roll_locations.py
+python3 scripts/derive_roll_outcomes.py
+python3 scripts/derive_roll_facts.py
 python3 scripts/build_chapter_facts.py
 python3 scripts/spot_check.py
 python3 scripts/make_charts.py

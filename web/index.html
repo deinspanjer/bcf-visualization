@@ -17,7 +17,7 @@
       } catch (e) { /* storage blocked: fall back to system pref */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=cpfix1" />
 </head>
 <body>
   <header>
@@ -32,7 +32,7 @@
       <a class="site-badge" href="https://archiveofourown.org/works/23949661/navigate" target="_blank" rel="noopener noreferrer">AO3</a>
     </p>
     <p class="viz-credit">
-      Visualization v0.6.1-beta.3 by deinspanjer
+      Visualization v0.6.5-beta.5 by deinspanjer
       <a class="gh-link" href="https://github.com/deinspanjer/bcf-visualization" target="_blank" rel="noopener noreferrer" aria-label="View visualization repository on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <path d="M8 0.2a8 8 0 0 0-2.5 15.6c0.4 0.1 0.5-0.2 0.5-0.4v-1.4c-2.2 0.5-2.7-0.9-2.7-0.9-0.4-0.9-0.9-1.1-0.9-1.1-0.7-0.5 0.1-0.5 0.1-0.5 0.8 0.1 1.2 0.8 1.2 0.8 0.7 1.2 1.9 0.9 2.3 0.7 0.1-0.5 0.3-0.9 0.5-1.1-1.8-0.2-3.6-0.9-3.6-3.9 0-0.9 0.3-1.6 0.8-2.1-0.1-0.2-0.4-1 0.1-2.1 0 0 0.7-0.2 2.2 0.8a7.5 7.5 0 0 1 4 0c1.5-1 2.2-0.8 2.2-0.8 0.4 1.1 0.2 1.9 0.1 2.1 0.5 0.6 0.8 1.3 0.8 2.1 0 3-1.8 3.7-3.6 3.9 0.3 0.3 0.6 0.8 0.6 1.6v2.3c0 0.2 0.1 0.5 0.6 0.4A8 8 0 0 0 8 0.2Z"></path>
@@ -69,6 +69,42 @@
       </div>
     </section>
   </header>
+
+  <section id="sky-section" aria-label="Celestial Forge sky view" hidden>
+    <div class="sky-shell">
+      <div class="sky-toolbar">
+        <div>
+          <h2>Celestial Forge Sky</h2>
+          <p id="sky-subtitle">neck-craning planetarium view · current chapter drives reveal and roll focus</p>
+        </div>
+        <div class="sky-controls" aria-label="Sky view controls">
+          <button id="sky-focus-toggle" type="button" class="sky-control-btn" aria-pressed="false">Focus</button>
+          <button id="sky-art-toggle" type="button" class="sky-control-btn" aria-pressed="true">Art</button>
+          <button id="sky-wire-toggle" type="button" class="sky-control-btn" aria-pressed="true">Lines</button>
+          <button id="sky-label-toggle" type="button" class="sky-control-btn" aria-pressed="true">Labels</button>
+          <button id="sky-rotate-toggle" type="button" class="sky-control-btn" aria-pressed="true">Rotate</button>
+        </div>
+      </div>
+      <div id="sky-canvas-wrap">
+        <canvas id="sky-canvas" aria-label="Overhead planetarium canvas showing Forge constellations"></canvas>
+        <div id="sky-hud" aria-live="polite">
+          <div id="sky-hud-kicker">Sky idle</div>
+          <div id="sky-hud-title">Move the scrubber to walk the Forge sky.</div>
+          <div id="sky-hud-meta">Constellation artwork, wireframes, and roll focus are driven by the current chapter.</div>
+        </div>
+      </div>
+      <div id="sky-inspector">
+        <div>
+          <span class="sky-inspector-label">Focus</span>
+          <span id="sky-focus-readout">Toolkits overhead</span>
+        </div>
+        <div>
+          <span class="sky-inspector-label">Grab</span>
+          <span id="sky-grab-readout">No roll at this chapter position</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section id="scrubber-section" aria-label="Scrubber">
     <!-- Track stack (DAW-style) -->
@@ -221,6 +257,6 @@
       </div>
     </details>
   </section>
-  <script src="app.js"></script>
+  <script src="app.js?v=cpfix1"></script>
 </body>
 </html>

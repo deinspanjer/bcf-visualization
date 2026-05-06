@@ -152,8 +152,13 @@
         "roll_number", "section_index", "outcome", "constellation",
         "purchased_perk_id", "purchased_perk_name",
         "purchased_perk_cost", "purchased_perk_jump", "free_perks",
-        "predicted_word_position_epub", "predicted_char_offset_in_chapter",
-        "anchor_char_offset_in_chapter", "evidence_kind"
+        "predicted_word_position_epub", "display_word_position_epub",
+        "predicted_char_offset_in_chapter",
+        "anchor_char_offset_in_chapter", "evidence_kind",
+        "available_cp", "banked_cp_after_roll",
+        "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
+        "roll_sequence_in_chapter", "rolls_in_chapter",
+        "fact_source", "source_kind"
       ],
       "properties": {
         "roll_number": {
@@ -187,6 +192,9 @@
         "predicted_word_position_epub": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
+        "display_word_position_epub": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
         "predicted_char_offset_in_chapter": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
@@ -199,9 +207,27 @@
         "evidence_kind": {
           "enum": [
             "direct", "general_only", "forward_ref", "silent",
-            "untracked_acquisition"
+            "untracked_acquisition", "curator_log", "interpolated",
+            "synthetic"
           ]
-        }
+        },
+        "available_cp": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "banked_cp_after_roll": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "rolled_perk_name":          { "type": ["string", "null"] },
+        "rolled_perk_cost": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "miss_cost_estimate": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "roll_sequence_in_chapter": { "type": "integer", "minimum": 1 },
+        "rolls_in_chapter":        { "type": "integer", "minimum": 1 },
+        "fact_source":             { "enum": ["curator_rolls", "roll_outcomes"] },
+        "source_kind":             { "enum": ["trigger", "roll", "miss", "interpolated"] }
       }
     },
     "chapter": {

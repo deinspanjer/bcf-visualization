@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/roll_facts.schema.json",
+  "title": "Canonical roll facts",
+  "description": "Single derived roll-attempt stream consumed by chapter_facts. Curator roll logs win where present; interpolated roll_outcomes rows are provenance-marked fallback only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "_source", "_method", "_caveat", "_counts", "rolls"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "_source": { "type": "string" },
+    "_method": { "type": "string" },
+    "_caveat": { "type": "string" },
+    "_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rolls_emitted", "curator_rows", "interpolated_rows",
+        "hits", "misses", "triggers", "free_perks"
+      ],
+      "properties": {
+        "rolls_emitted": { "type": "integer", "minimum": 0 },
+        "curator_rows": { "type": "integer", "minimum": 0 },
+        "interpolated_rows": { "type": "integer", "minimum": 0 },
+        "hits": { "type": "integer", "minimum": 0 },
+        "misses": { "type": "integer", "minimum": 0 },
+        "triggers": { "type": "integer", "minimum": 0 },
+        "free_perks": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rolls": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/roll" }
+    }
+  },
+  "$defs": {
+    "free_perk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "jump", "constellation"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "name": { "type": "string", "minLength": 1 },
+        "jump": { "type": "string", "minLength": 1 },
+        "constellation": { "type": ["string", "null"] }
+      }
+    },
+    "roll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roll_key", "roll_number", "chapter_num", "predicted_chapter_num",
+        "chapter_attribution_disagreement", "source", "source_kind",
+        "outcome", "constellation", "constellation_revealed",
+        "available_cp", "banked_cp_after_roll",
+        "purchased_perk_id", "purchased_perk_name",
+        "purchased_perk_cost", "purchased_perk_jump", "free_perks",
+        "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
+        "predicted_word_position_epub", "predicted_char_offset_in_chapter",
+        "anchor_char_offset_in_chapter", "evidence_kind",
+        "raw", "source_row_index", "roll_sequence_in_chapter",
+        "rolls_in_chapter"
+      ],
+      "properties": {
+        "roll_key": { "type": "string", "minLength": 1 },
+        "roll_number": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "chapter_num": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "predicted_chapter_num": {
+          "type": ["string", "null"],
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "chapter_attribution_disagreement": { "type": "boolean" },
+        "source": { "enum": ["curator_rolls", "roll_outcomes"] },
+        "source_kind": { "enum": ["trigger", "roll", "miss", "interpolated"] },
+        "outcome": { "enum": ["hit", "miss"] },
+        "constellation": { "type": ["string", "null"] },
+        "constellation_revealed": { "type": "boolean" },
+        "available_cp": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "banked_cp_after_roll": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "purchased_perk_id": { "type": ["string", "null"] },
+        "purchased_perk_name": { "type": ["string", "null"] },
+        "purchased_perk_cost": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "purchased_perk_jump": { "type": ["string", "null"] },
+        "free_perks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/free_perk" }
+        },
+        "rolled_perk_name": { "type": ["string", "null"] },
+        "rolled_perk_cost": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "miss_cost_estimate": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "predicted_word_position_epub": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "predicted_char_offset_in_chapter": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "anchor_char_offset_in_chapter": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "evidence_kind": {
+          "enum": [
+            "direct", "general_only", "forward_ref", "silent",
+            "curator_log", "interpolated", "synthetic"
+          ]
+        },
+        "raw": { "type": ["string", "null"] },
+        "source_row_index": { "type": "integer", "minimum": 0 },
+        "roll_sequence_in_chapter": { "type": "integer", "minimum": 1 },
+        "rolls_in_chapter": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

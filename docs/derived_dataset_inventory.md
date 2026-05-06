@@ -16,6 +16,8 @@ High-level map of the derived data used by the visualization and analytics.
 | `data/derived/predicted_rolls.json` | Simulated roll positions |
 | `data/derived/roll_locations_regex.json` | Candidate prose windows for roll evidence |
 | `data/derived/roll_text_evidence.json` | Text-backed roll/acquisition evidence |
+| `data/derived/roll_outcomes.json` | Interpolated fallback roll sequence for chapters not covered by the curator log. Not consumed directly by the app. |
+| `data/derived/roll_facts.json` | **Canonical** roll-attempt stream joined into `chapter_facts.json`. Curator rows from `rolls.json` win where present; `roll_outcomes.json` rows are provenance-marked fallback. Free perks attach to paid hits. |
 | `data/derived/roll_locations_validation.json` | Validation + discrepancy summary |
 | `data/derived/chapter_last_edited.json` | Threadmark last-edited metadata |
 | `data/derived/extracted_perks.json` | Perk footer extraction from chapter exports |
@@ -31,8 +33,15 @@ parse_wiki_timeline.py     -> timeline_wiki.json
 (human edits)              -> data/manual/timeline_manual.json
             ↓
 derive_timeline.py         -> timeline.json (canonical, schema-validated)
+derive_roll_outcomes.py    -> roll_outcomes.json (fallback interpolation)
+derive_roll_facts.py       -> roll_facts.json (canonical, schema-validated)
             ↓
-build_chapter_facts.py     -> chapter_facts.json (embeds in_world_timeline)
+build_chapter_facts.py     -> chapter_facts.json (embeds in_world_timeline + roll_facts)
 ```
 
 The canonical timeline merger never invents data: `xlsx` and `wiki` entries always carry `chapter_num=null`; only `manual` and (future) `tui` entries may attest a chapter. Multiple entries on the same in-world date from different sources are kept separate — no automated dedup.
+
+The canonical roll facts merger preserves source provenance: curator
+roll rows are trusted where available, including misses, banked CP, and
+duplicate source rows; interpolated rows remain a fallback until later
+chapters get text-backed or manually curated roll attempts.

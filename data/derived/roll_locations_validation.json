@@ -5,14 +5,7 @@
   "_findings": [
     {
       "name": "curator vs simulator: structural-zero chapters",
-      "chapters": [
-        "6.1",
-        "8.1",
-        "43.1",
-        "46.1",
-        "55.1",
-        "74.2"
-      ],
+      "chapters": [],
       "prose_evidence": "These chapters have ZERO sections with counts_for_cp=true. The simulator (which follows the author's '2000 words of MC POV per 100 CP' rule) predicts no rolls in them. The prose contains no roll narration. The curator nevertheless logged rolls in these chapters — this is the curator ticking 100-CP boundaries on raw word count, regardless of MC vs non-MC. Curator log is bookkeeping-divergent here, NOT a regex blind spot.",
       "actionable": false
     },
@@ -28,42 +21,52 @@
       "name": "curator vs simulator: minor count drift in main chapters",
       "chapters": [
         "3",
+        "6.1",
+        "8.1",
         "16",
         "17",
+        "35.1",
         "43",
+        "43.1",
+        "46.1",
+        "47",
         "54",
+        "55.1",
         "56",
         "58.2",
-        "66"
+        "66",
+        "74.2"
       ],
       "prose_evidence": "Same structural cause as ch 58: curator counts every 100-CP boundary crossing on raw words, simulator counts only on MC-POV words, prose narrates only the events the author chose to write. The drift is small in these chapters because they have proportionally more MC POV. For ground truth, prefer data/derived/roll_text_evidence.json (each predicted roll's prose window is captured directly from the EPUB).",
       "actionable": false
     }
   ],
   "coverage_excluding_structural_zeros": {
-    "curator_total_excluding_zero_mc_chapters": 468,
-    "covered": 451,
-    "coverage_pct": 96.4
+    "curator_total_excluding_zero_mc_chapters": 499,
+    "covered": 455,
+    "coverage_pct": 91.2
   },
   "totals": {
-    "curator_hits": 190,
-    "curator_misses": 305,
+    "curator_hits": 191,
+    "curator_misses": 307,
     "curator_triggers": 1,
-    "curator_total": 496,
+    "curator_total": 499,
     "regex_constellation_reveals": 340,
-    "regex_misses_in_curator_chapters": 110,
-    "covered_in_curator_chapters": 451,
-    "chapter_coverage_pct": 90.9,
-    "chapters_undercollected": 15,
+    "regex_misses_in_curator_chapters": 112,
+    "covered_in_curator_chapters": 455,
+    "chapter_coverage_pct": 91.2,
+    "chapters_undercollected": 17,
     "chapters_undercollected_list": [
       "3",
       "6.1",
       "8.1",
       "16",
       "17",
+      "35.1",
       "43",
       "43.1",
       "46.1",
+      "47",
       "54",
       "55.1",
       "56",
@@ -72,7 +75,7 @@
       "66",
       "74.2"
     ],
-    "chapters_with_curator_rolls": 82
+    "chapters_with_curator_rolls": 83
   },
   "per_chapter": [
     {
@@ -269,7 +272,7 @@
     },
     {
       "chapter_num": "15",
-      "curator_hits": 2,
+      "curator_hits": 3,
       "curator_misses": 3,
       "curator_triggers": 0,
       "regex_constellation_reveal": 7,
@@ -520,6 +523,18 @@
       "undercollected": false
     },
     {
+      "chapter_num": "35.1",
+      "curator_hits": 0,
+      "curator_misses": 1,
+      "curator_triggers": 0,
+      "regex_constellation_reveal": 0,
+      "regex_miss": 0,
+      "regex_roll_attempt": 0,
+      "regex_acquisition": 0,
+      "regex_total": 0,
+      "undercollected": true
+    },
+    {
       "chapter_num": "36",
       "curator_hits": 2,
       "curator_misses": 5,
@@ -669,23 +684,23 @@
       "curator_misses": 4,
       "curator_triggers": 0,
       "regex_constellation_reveal": 0,
-      "regex_miss": 0,
+      "regex_miss": 1,
       "regex_roll_attempt": 0,
       "regex_acquisition": 0,
-      "regex_total": 0,
+      "regex_total": 1,
       "undercollected": true
     },
     {
       "chapter_num": "47",
       "curator_hits": 2,
-      "curator_misses": 4,
+      "curator_misses": 5,
       "curator_triggers": 0,
       "regex_constellation_reveal": 2,
       "regex_miss": 1,
       "regex_roll_attempt": 1,
       "regex_acquisition": 2,
       "regex_total": 6,
-      "undercollected": false
+      "undercollected": true
     },
     {
       "chapter_num": "48",
@@ -791,8 +806,8 @@
       "regex_constellation_reveal": 0,
       "regex_miss": 0,
       "regex_roll_attempt": 0,
-      "regex_acquisition": 0,
-      "regex_total": 0,
+      "regex_acquisition": 1,
+      "regex_total": 1,
       "undercollected": true
     },
     {
@@ -1041,10 +1056,10 @@
       "curator_misses": 5,
       "curator_triggers": 0,
       "regex_constellation_reveal": 0,
-      "regex_miss": 0,
+      "regex_miss": 1,
       "regex_roll_attempt": 0,
       "regex_acquisition": 0,
-      "regex_total": 0,
+      "regex_total": 1,
       "undercollected": true
     },
     {

@@ -61,5 +61,9 @@ storage versions are bumped when incompatible defaults change.
 
 ## Data note
 
-The visualization is backed by `data/derived/chapter_facts.json`. Raw
+The scrubber is backed by `data/derived/chapter_facts.json`. Raw
 copyrighted prose is not needed to view the site.
+
+An experimental overhead sky prototype is parked at `/web/?sky=1`.
+It is not the primary UI, but remains available for planetarium design
+iteration.

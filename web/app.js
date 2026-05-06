@@ -25,6 +25,7 @@
  */
 
 const DATA_BASE = "../data/derived";
+const DATA_VERSION = "cpfix1";
 
 const CONSTELLATION_ORDER = [
   "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
@@ -65,12 +66,38 @@ const MECHANIC_MARKERS = [
   },
 ];
 
+const SKY_CLUSTER_LAYOUT = {
+  "Toolkits": { r: 0.15, a: -92, size: 0.19 },
+  "Knowledge": { r: 0.50, a: -152, size: 0.16 },
+  "Vehicles": { r: 0.62, a: -38, size: 0.14 },
+  "Time": { r: 0.45, a: 32, size: 0.13 },
+  "Crafting": { r: 0.58, a: 158, size: 0.14 },
+  "Clothing": { r: 0.68, a: 112, size: 0.13 },
+  "Magic": { r: 0.54, a: 82, size: 0.14 },
+  "Quality": { r: 0.70, a: -178, size: 0.14 },
+  "Size": { r: 0.58, a: -114, size: 0.13 },
+  "Resources and Durability": { r: 0.72, a: -76, size: 0.15 },
+  "Magitech": { r: 0.60, a: 8, size: 0.13 },
+  "Alchemy": { r: 0.42, a: 128, size: 0.13 },
+  "Capstone": { r: 0.76, a: 54, size: 0.15 },
+  "Personal Reality": { r: 0.78, a: -132, size: 0.16 },
+};
+
+const SKY_DEFAULT_PREFS = {
+  focus: false,
+  art: true,
+  wireframes: true,
+  labels: true,
+  rotate: true,
+};
+
 // localStorage keys (versioned).
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
 const LS_ZOOM = "bcf:timeline:zoom";
 const LS_INTRO_COLLAPSED = "bcf:intro:collapsed";
 const LS_THEME = "bcf:theme";   // "auto" | "light" | "dark" (must match the inline script in index.html)
+const LS_SKY_PREFS = "bcf:sky:prefs:v1";
 const LS_VERSION = "bcf:storage:version";
 const STORAGE_VERSION = "3";   // bumped when pre-roll changed from 100k to 5k
 
@@ -113,9 +140,20 @@ function $(id) { return document.getElementById(id); }
 // ---------- data loading -------------------------------------------------
 
 async function loadJSON(name) {
-  const r = await fetch(`${DATA_BASE}/${name}.json`);
+  const r = await fetch(`${DATA_BASE}/${name}.json?v=${DATA_VERSION}`, {
+    cache: "no-store",
+  });
   if (!r.ok) throw new Error(`failed to load ${name}: ${r.status}`);
   return r.json();
+}
+
+async function loadOptionalJSON(name) {
+  try {
+    return await loadJSON(name);
+  } catch (err) {
+    console.warn(`optional data not loaded: ${name}`, err);
+    return null;
+  }
 }
 
 // ---------- coordinate model ---------------------------------------------
@@ -149,13 +187,14 @@ function chapterAtWord(model, wordPos) {
 
 function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal = 1) {
   const span = model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
-  if (roll.predicted_word_position_epub == null) {
+  const cpPosition = roll.display_word_position_epub ?? roll.predicted_word_position_epub;
+  if (cpPosition == null) {
     const chapterWidth = Math.max(1, span.end_word - span.start_word);
     const slot = (fallbackIndex + 1) / (fallbackTotal + 1);
     return span.start_word + chapterWidth * slot;
   }
   if (span.end_cp > span.start_cp) {
-    const cpFrac = (roll.predicted_word_position_epub - span.start_cp) /
+    const cpFrac = (cpPosition - span.start_cp) /
                    (span.end_cp - span.start_cp);
     return span.start_word + cpFrac * (span.end_word - span.start_word);
   }
@@ -586,29 +625,61 @@ function freePerkDotStyle(leftPct, freePerk, idx, total) {
 }
 
 function rollDotColor(r) {
-  if ((r.outcome === "hit" || r.evidence_kind === "untracked_acquisition") && r.constellation) {
+  if ((r.outcome === "hit" || r.outcome === "miss" ||
+      r.evidence_kind === "untracked_acquisition") && r.constellation) {
     return CONSTELLATION_COLORS[r.constellation] || "var(--hit)";
   }
   return "var(--unknown)";
 }
 
+const ROLL_COST_SIZES = [
+  [0, 4],
+  [100, 6],
+  [200, 8],
+  [300, 9],
+  [400, 10],
+  [600, 12],
+  [800, 14],
+];
+
+function sizeForCost(cost, fallback = 6) {
+  const numericCost = Number(cost);
+  if (!Number.isFinite(numericCost)) return fallback;
+  let best = ROLL_COST_SIZES[0][1];
+  for (const [costFloor, size] of ROLL_COST_SIZES) {
+    if (numericCost >= costFloor) best = size;
+  }
+  return best;
+}
+
+function nextVisualCostAbove(availableCp) {
+  const available = Number(availableCp);
+  if (!Number.isFinite(available)) return 200;
+  for (const [cost] of ROLL_COST_SIZES) {
+    if (cost > available) return cost;
+  }
+  return available + 100;
+}
+
 function rollDotSize(r) {
-  const cost = Number(r.purchased_perk_cost);
-  if (cost === 0) return 4;
-  if (cost === 100) return 6;
-  if (cost === 200) return 8;
-  if (cost === 300) return 9;
-  if (cost === 400) return 10;
-  if (cost === 600) return 12;
-  if (cost === 800) return 14;
-  return r.outcome === "hit" ? 6 : 5;
+  if (r.outcome === "hit" || r.evidence_kind === "untracked_acquisition") {
+    return sizeForCost(r.purchased_perk_cost, 6);
+  }
+  const missCost = r.rolled_perk_cost ?? r.miss_cost_estimate ??
+    nextVisualCostAbove(r.available_cp);
+  return sizeForCost(missCost, 8);
 }
 
 function rollDotTitle(r, c) {
-  const name = r.purchased_perk_name || r.outcome;
+  const name = r.purchased_perk_name ||
+    (r.outcome === "miss" ? "missed grab" : r.outcome);
   const bits = [`ch ${c.chapter_num}`, name];
   if (r.constellation) bits.push(r.constellation);
-  if (r.purchased_perk_cost != null) bits.push(`${r.purchased_perk_cost} CP`);
+  const cost = r.purchased_perk_cost ?? r.rolled_perk_cost ?? r.miss_cost_estimate;
+  if (cost != null) bits.push(`${cost} CP`);
+  if (r.outcome === "miss" && r.available_cp != null) {
+    bits.push(`${r.available_cp} available`);
+  }
   return bits.join(" · ");
 }
 
@@ -812,6 +883,7 @@ function renderState(state) {
     : new Map(CONSTELLATION_ORDER.map(c => [c, 0]));
   renderConstellations(constMap, cumIdx.constMax);
   renderRecent(state, ch, inPreroll);
+  updateSkyState(state);
 }
 
 function renderSelectedChapter(state) {
@@ -867,11 +939,18 @@ function renderThisChapter(ch, inPreroll) {
       { class: r.outcome === "hit" ? "perk-cost" : "perk-cost free" },
       r.outcome === "hit" ? (r.constellation || "?")
         : (r.outcome === "miss" ? "miss" : "unknown"));
-    const name = r.purchased_perk_name || (r.outcome === "hit" ? "(unattributed)" : "—");
+    const name = r.purchased_perk_name || (r.outcome === "hit" ? "(unattributed)" : "missed grab");
     const left = el("span", null, el("span", { class: "perk-name" }, name));
     if (r.free_perks.length) {
       left.appendChild(el("span", { class: "perk-source" },
         ` + ${r.free_perks.length} free`));
+    }
+    if (r.outcome === "miss" && r.available_cp != null) {
+      const attempted = r.rolled_perk_cost ?? r.miss_cost_estimate;
+      const text = attempted != null
+        ? ` ${attempted} CP > ${r.available_cp} CP`
+        : ` ${r.available_cp} CP available`;
+      left.appendChild(el("span", { class: "perk-source" }, text));
     }
     list.appendChild(el("li", null, left, tagEl));
   }
@@ -932,6 +1011,824 @@ function renderRecent(state, ch, inPreroll) {
       el("span", { class: "perk-cost" }, roll.constellation || "?"),
       el("span", { class: "perk-chapter" }, `ch ${chapter.chapter_num}`)));
   }
+}
+
+// ---------- planetarium sky ----------------------------------------------
+
+function hexToRgb(hex) {
+  const m = String(hex || "").replace("#", "");
+  if (m.length !== 6) return [255, 255, 255];
+  return [
+    parseInt(m.slice(0, 2), 16),
+    parseInt(m.slice(2, 4), 16),
+    parseInt(m.slice(4, 6), 16),
+  ];
+}
+
+function rgba(hex, alpha) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function degToRad(deg) {
+  return (deg * Math.PI) / 180;
+}
+
+function skyNormName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function readSkyPrefs() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_SKY_PREFS));
+    return { ...SKY_DEFAULT_PREFS, ...(saved || {}) };
+  } catch {
+    return { ...SKY_DEFAULT_PREFS };
+  }
+}
+
+function saveSkyPrefs(prefs) {
+  try {
+    localStorage.setItem(LS_SKY_PREFS, JSON.stringify(prefs));
+  } catch {}
+}
+
+function skyHash(n) {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function makeSkyDust(count) {
+  const dust = [];
+  for (let i = 0; i < count; i++) {
+    const r = Math.sqrt(skyHash(i + 1)) * 0.985;
+    const a = skyHash(i + 1001) * Math.PI * 2;
+    dust.push({
+      x: Math.cos(a) * r,
+      y: Math.sin(a) * r,
+      size: 0.45 + skyHash(i + 2001) * 1.45,
+      phase: skyHash(i + 3001) * Math.PI * 2,
+      tint: skyHash(i + 4001),
+    });
+  }
+  return dust;
+}
+
+function buildSkyModel(wireframes) {
+  const clusterRows = wireframes?.cluster_constellations || [];
+  const jumpRows = wireframes?.jump_constellations || [];
+  const clusterByName = new Map(clusterRows.map(c => [c.name, c]));
+  const jumpByKey = new Map();
+  const perkIndex = new Map();
+
+  for (const jump of jumpRows) {
+    const key = `${jump.constellation}::${jump.jump}`;
+    jumpByKey.set(key, jump);
+    for (const star of jump.stars || []) {
+      const name = skyNormName(star.perk_name);
+      if (!name) continue;
+      const entries = perkIndex.get(name) || [];
+      entries.push({ jump, star });
+      perkIndex.set(name, entries);
+    }
+  }
+
+  const clusters = CONSTELLATION_ORDER.map(name => {
+    const data = clusterByName.get(name) || { name, cluster_vertices: [] };
+    const vertices = data.cluster_vertices || [];
+    const vertexByJump = new Map(vertices.map(v => [v.jump, v]));
+    const jumps = new Map();
+    let revealSeq = Infinity;
+    for (const v of vertices) {
+      const jump = jumpByKey.get(`${name}::${v.jump}`);
+      if (jump) {
+        jumps.set(v.jump, jump);
+        for (const star of jump.stars || []) {
+          if (star.acquired_epub_sequence != null) {
+            revealSeq = Math.min(revealSeq, Number(star.acquired_epub_sequence));
+          }
+        }
+      }
+    }
+    return {
+      name,
+      color: CONSTELLATION_COLORS[name] || "#dfe6f1",
+      data,
+      vertices,
+      vertexByJump,
+      jumps,
+      revealSeq: Number.isFinite(revealSeq) ? revealSeq : null,
+    };
+  });
+
+  return { clusters, jumpByKey, perkIndex };
+}
+
+function buildRollResolutionMaps(resolutions) {
+  const byChapterRoll = new Map();
+  const byRoll = new Map();
+  for (const r of resolutions?.rolls || []) {
+    if (r.roll_number == null) continue;
+    byChapterRoll.set(`${r.chapter_num}::${r.roll_number}`, r);
+    if (!byRoll.has(String(r.roll_number))) byRoll.set(String(r.roll_number), r);
+  }
+  return { byChapterRoll, byRoll };
+}
+
+function lookupRollResolution(sky, chapter, roll) {
+  if (!sky || !roll || roll.roll_number == null) return null;
+  return sky.resolutions.byChapterRoll.get(`${chapter.chapter_num}::${roll.roll_number}`)
+    || sky.resolutions.byRoll.get(String(roll.roll_number))
+    || null;
+}
+
+function findPerkInSky(sky, perkName, constellation) {
+  const entries = sky.model.perkIndex.get(skyNormName(perkName)) || [];
+  if (constellation) {
+    const exact = entries.find(entry => entry.jump.constellation === constellation);
+    if (exact) return exact;
+  }
+  return entries[0] || null;
+}
+
+function cheapestMissCandidate(resolution, available) {
+  let best = null;
+  for (const candidate of resolution?.outstanding_perks_with_cost_gt_banked || []) {
+    const cost = Number(candidate.cost);
+    if (!Number.isFinite(cost) || cost <= available) continue;
+    if (!best || cost < Number(best.cost)) best = candidate;
+  }
+  return best;
+}
+
+function numericOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function skyRollInfo(state, chapter, roll, wordPos) {
+  const sky = state.sky;
+  const resolution = lookupRollResolution(sky, chapter, roll);
+  const rawAvailable = numericOrNull(roll.available_cp)
+    ?? numericOrNull(resolution?.banked_at_roll)
+    ?? numericOrNull(resolution?.curator_banked_before)
+    ?? numericOrNull(roll.purchased_perk_cost)
+    ?? numericOrNull(resolution?.curator_cost)
+    ?? 100;
+  const resolutionOutcome = resolution?.curator_outcome
+    ? resolution.curator_outcome.toLowerCase()
+    : null;
+  const baseOutcome = roll.outcome === "hit" ? "hit" : (resolutionOutcome || roll.outcome || "unknown");
+  const missCandidate = baseOutcome === "hit" ? null : cheapestMissCandidate(resolution, rawAvailable);
+  let cost = numericOrNull(roll.rolled_perk_cost)
+    ?? numericOrNull(roll.purchased_perk_cost)
+    ?? numericOrNull(resolution?.curator_cost)
+    ?? numericOrNull(missCandidate?.cost);
+  let perkName = roll.purchased_perk_name
+    || resolution?.curator_perk_name
+    || missCandidate?.name
+    || (baseOutcome === "hit" ? "acquired mote" : "unresolved mote");
+  let constellation = roll.constellation
+    || resolution?.curator_constellation
+    || missCandidate?.constellation
+    || null;
+  const indexed = findPerkInSky(sky, perkName, constellation);
+  if (!constellation && indexed) constellation = indexed.jump.constellation;
+  const jump = roll.purchased_perk_jump || indexed?.jump.jump || null;
+
+  if (cost == null && baseOutcome === "hit") cost = 100;
+  const available = baseOutcome === "hit" && cost != null
+    ? Math.max(rawAvailable, cost)
+    : rawAvailable;
+  const outcome = baseOutcome === "hit" ? "hit"
+    : (cost != null && cost > available ? "miss" : baseOutcome);
+
+  return {
+    chapter,
+    roll,
+    wordPos,
+    resolution,
+    available,
+    rawAvailable,
+    cost,
+    outcome,
+    perkName,
+    constellation: constellation || "Toolkits",
+    jump,
+    source: resolution?.banked_at_roll_source || "visual fallback",
+  };
+}
+
+function findActiveSkyRoll(state, chapter) {
+  if (!chapter || !state.sky) return null;
+  const rolls = (chapter.rolls || []).filter(r =>
+    r.outcome === "hit" || r.outcome === "miss" ||
+    r.outcome === "unknown" || r.evidence_kind === "untracked_acquisition");
+  if (!rolls.length) return null;
+  const fallbackRolls = chapter.rolls.filter(r => r.predicted_word_position_epub == null);
+  let best = null;
+  for (const roll of rolls) {
+    const fallbackIndex = fallbackRolls.indexOf(roll);
+    const wordPos = rollWordPosition(
+      state.model, roll, chapter, Math.max(0, fallbackIndex), fallbackRolls.length || 1);
+    const distance = Math.abs(state.currentWord - wordPos);
+    if (!best || distance < best.distance) {
+      best = { roll, wordPos, distance };
+    }
+  }
+  if (!best) return null;
+  return skyRollInfo(state, chapter, best.roll, best.wordPos);
+}
+
+function setSkyButtonPressed(id, pressed) {
+  const btn = $(id);
+  if (btn) btn.setAttribute("aria-pressed", String(!!pressed));
+}
+
+function reflectSkyPrefs(state) {
+  const prefs = state.sky.prefs;
+  setSkyButtonPressed("sky-focus-toggle", prefs.focus);
+  setSkyButtonPressed("sky-art-toggle", prefs.art);
+  setSkyButtonPressed("sky-wire-toggle", prefs.wireframes);
+  setSkyButtonPressed("sky-label-toggle", prefs.labels);
+  setSkyButtonPressed("sky-rotate-toggle", prefs.rotate);
+  document.body.classList.toggle("sky-focus-mode", prefs.focus);
+}
+
+function attachSkyControls(state) {
+  const bindings = [
+    ["sky-focus-toggle", "focus"],
+    ["sky-art-toggle", "art"],
+    ["sky-wire-toggle", "wireframes"],
+    ["sky-label-toggle", "labels"],
+    ["sky-rotate-toggle", "rotate"],
+  ];
+  for (const [id, key] of bindings) {
+    const btn = $(id);
+    if (!btn) continue;
+    btn.addEventListener("click", () => {
+      state.sky.prefs[key] = !state.sky.prefs[key];
+      saveSkyPrefs(state.sky.prefs);
+      reflectSkyPrefs(state);
+      if (key === "focus") {
+        window.setTimeout(() => applyTimelineZoom(state, { center: true }), 60);
+      }
+    });
+  }
+  reflectSkyPrefs(state);
+}
+
+function skyFrame(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width || 1;
+  const h = rect.height || 1;
+  const radius = Math.max(120, Math.min(w, h) * 0.455);
+  return { w, h, cx: w / 2, cy: h / 2, radius };
+}
+
+function resizeSkyCanvas(state) {
+  const sky = state.sky;
+  const rect = sky.canvas.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const width = Math.max(1, Math.round(rect.width * dpr));
+  const height = Math.max(1, Math.round(rect.height * dpr));
+  if (sky.canvas.width !== width || sky.canvas.height !== height) {
+    sky.canvas.width = width;
+    sky.canvas.height = height;
+    sky.dpr = dpr;
+  }
+}
+
+function clusterScreenPosition(frame, cluster, worldRotation) {
+  const layout = SKY_CLUSTER_LAYOUT[cluster.name] || { r: 0.6, a: 0, size: 0.13 };
+  const angle = degToRad(layout.a) + worldRotation;
+  return {
+    x: frame.cx + Math.cos(angle) * layout.r * frame.radius,
+    y: frame.cy + Math.sin(angle) * layout.r * frame.radius,
+    size: layout.size * frame.radius,
+    rotation: worldRotation * 0.55 + degToRad(layout.a) * 0.18,
+  };
+}
+
+function localPoint(v, size, rotation) {
+  const x = (v?.x || 0) * size;
+  const y = -(v?.y || 0) * size;
+  const c = Math.cos(rotation);
+  const s = Math.sin(rotation);
+  return { x: x * c - y * s, y: x * s + y * c };
+}
+
+function skyTargetPoint(state, frame, active, worldRotation) {
+  const cluster = state.sky.model.clusters.find(c => c.name === active.constellation)
+    || state.sky.model.clusters[0];
+  const pos = clusterScreenPosition(frame, cluster, worldRotation);
+  const vertex = active.jump ? cluster.vertexByJump.get(active.jump) : null;
+  if (!vertex) return { x: pos.x, y: pos.y, cluster, pos };
+  const p = localPoint(vertex, pos.size * 1.45, pos.rotation);
+  return { x: pos.x + p.x, y: pos.y + p.y, cluster, pos };
+}
+
+function drawSkyBackground(ctx, frame, sky, time, worldRotation) {
+  const gradient = ctx.createRadialGradient(
+    frame.cx - frame.radius * 0.2,
+    frame.cy - frame.radius * 0.18,
+    frame.radius * 0.08,
+    frame.cx,
+    frame.cy,
+    frame.radius * 1.08);
+  gradient.addColorStop(0, "#172037");
+  gradient.addColorStop(0.46, "#080d1b");
+  gradient.addColorStop(1, "#02040a");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, frame.w, frame.h);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(frame.cx, frame.cy, frame.radius, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = "#04070e";
+  ctx.globalAlpha = 0.28;
+  ctx.fillRect(frame.cx - frame.radius, frame.cy - frame.radius, frame.radius * 2, frame.radius * 2);
+
+  for (const p of sky.dust) {
+    const c = Math.cos(worldRotation * 0.12);
+    const s = Math.sin(worldRotation * 0.12);
+    const x0 = p.x * c - p.y * s;
+    const y0 = p.x * s + p.y * c;
+    const x = frame.cx + x0 * frame.radius;
+    const y = frame.cy + y0 * frame.radius;
+    const twinkle = 0.38 + Math.sin(time * 0.0015 + p.phase) * 0.16;
+    ctx.globalAlpha = twinkle;
+    ctx.fillStyle = p.tint > 0.86 ? "#ffd9a6" : p.tint > 0.68 ? "#a9d6ff" : "#f6fbff";
+    ctx.beginPath();
+    ctx.arc(x, y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(170, 190, 220, 0.22)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(frame.cx, frame.cy, frame.radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(110, 163, 214, 0.12)";
+  for (const ring of [0.33, 0.66]) {
+    ctx.beginPath();
+    ctx.arc(frame.cx, frame.cy, frame.radius * ring, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = worldRotation + (i * Math.PI) / 4;
+    ctx.beginPath();
+    ctx.moveTo(frame.cx + Math.cos(a) * frame.radius * 0.08,
+      frame.cy + Math.sin(a) * frame.radius * 0.08);
+    ctx.lineTo(frame.cx + Math.cos(a) * frame.radius,
+      frame.cy + Math.sin(a) * frame.radius);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSkyGlyph(ctx, name, color) {
+  ctx.fillStyle = rgba(color, 0.10);
+  ctx.strokeStyle = rgba(color, 0.40);
+  ctx.lineWidth = 0.055;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  switch (name) {
+    case "Toolkits":
+      ctx.moveTo(-0.9, -0.25); ctx.lineTo(-0.48, -0.58); ctx.lineTo(-0.18, -0.28);
+      ctx.lineTo(0.82, 0.52); ctx.lineTo(0.62, 0.76); ctx.lineTo(-0.38, -0.04);
+      ctx.lineTo(-0.68, 0.28); ctx.lineTo(-0.92, 0.06); ctx.lineTo(-0.64, -0.1);
+      break;
+    case "Knowledge":
+      ctx.moveTo(-0.9, -0.55); ctx.lineTo(0, -0.28); ctx.lineTo(0.9, -0.55);
+      ctx.lineTo(0.9, 0.55); ctx.lineTo(0, 0.28); ctx.lineTo(-0.9, 0.55); ctx.closePath();
+      break;
+    case "Vehicles":
+      ctx.moveTo(-0.9, 0.2); ctx.lineTo(-0.55, -0.28); ctx.lineTo(0.2, -0.34);
+      ctx.lineTo(0.72, 0.1); ctx.lineTo(0.9, 0.42); ctx.lineTo(-0.9, 0.42); ctx.closePath();
+      break;
+    case "Time":
+      ctx.moveTo(-0.72, -0.72); ctx.lineTo(0.72, -0.72); ctx.lineTo(0, 0);
+      ctx.lineTo(0.72, 0.72); ctx.lineTo(-0.72, 0.72); ctx.lineTo(0, 0); ctx.closePath();
+      break;
+    case "Crafting":
+      ctx.moveTo(-0.75, -0.45); ctx.lineTo(-0.28, -0.78); ctx.lineTo(0.08, -0.46);
+      ctx.lineTo(-0.12, -0.2); ctx.lineTo(0.78, 0.54); ctx.lineTo(0.52, 0.8);
+      ctx.lineTo(-0.34, 0.04); ctx.lineTo(-0.56, 0.24); ctx.lineTo(-0.78, 0.02);
+      break;
+    case "Clothing":
+      ctx.moveTo(-0.52, -0.72); ctx.lineTo(-0.9, -0.32); ctx.lineTo(-0.62, 0.02);
+      ctx.lineTo(-0.48, 0.76); ctx.lineTo(0.48, 0.76); ctx.lineTo(0.62, 0.02);
+      ctx.lineTo(0.9, -0.32); ctx.lineTo(0.52, -0.72); ctx.lineTo(0.22, -0.44);
+      ctx.lineTo(0, -0.62); ctx.lineTo(-0.22, -0.44); ctx.closePath();
+      break;
+    case "Magic":
+      ctx.moveTo(-0.86, 0.56); ctx.quadraticCurveTo(0.06, 0.82, 0.82, 0.52);
+      ctx.lineTo(0.28, 0.18); ctx.lineTo(0.02, -0.84); ctx.lineTo(-0.34, 0.2); ctx.closePath();
+      break;
+    case "Quality":
+      ctx.moveTo(0, -0.86); ctx.lineTo(0.78, -0.22); ctx.lineTo(0.46, 0.84);
+      ctx.lineTo(-0.46, 0.84); ctx.lineTo(-0.78, -0.22); ctx.closePath();
+      break;
+    case "Size":
+      ctx.moveTo(-0.68, 0.72); ctx.lineTo(0, 0.32); ctx.lineTo(0.68, 0.72);
+      ctx.moveTo(-0.48, 0.18); ctx.lineTo(0, -0.12); ctx.lineTo(0.48, 0.18);
+      ctx.moveTo(-0.28, -0.28); ctx.lineTo(0, -0.54); ctx.lineTo(0.28, -0.28);
+      break;
+    case "Resources and Durability":
+      ctx.moveTo(0, -0.82); ctx.lineTo(0.72, -0.52); ctx.lineTo(0.58, 0.34);
+      ctx.quadraticCurveTo(0.28, 0.72, 0, 0.9);
+      ctx.quadraticCurveTo(-0.28, 0.72, -0.58, 0.34);
+      ctx.lineTo(-0.72, -0.52); ctx.closePath();
+      break;
+    case "Magitech":
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        const r = i % 2 ? 0.64 : 0.86;
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.moveTo(-0.18, -0.76); ctx.lineTo(0.18, -0.08); ctx.lineTo(-0.04, -0.08);
+      ctx.lineTo(0.22, 0.76);
+      break;
+    case "Alchemy":
+      ctx.moveTo(-0.22, -0.86); ctx.lineTo(0.22, -0.86); ctx.lineTo(0.22, -0.24);
+      ctx.quadraticCurveTo(0.72, 0.1, 0.58, 0.62);
+      ctx.quadraticCurveTo(0, 0.94, -0.58, 0.62);
+      ctx.quadraticCurveTo(-0.72, 0.1, -0.22, -0.24); ctx.closePath();
+      break;
+    case "Capstone":
+      ctx.moveTo(-0.9, 0.7); ctx.lineTo(-0.42, 0.08); ctx.lineTo(-0.12, 0.26);
+      ctx.lineTo(0.12, -0.78); ctx.lineTo(0.42, 0.12); ctx.lineTo(0.9, 0.7);
+      break;
+    case "Personal Reality":
+      ctx.moveTo(-0.78, 0.08); ctx.lineTo(0, -0.72); ctx.lineTo(0.78, 0.08);
+      ctx.lineTo(0.62, 0.08); ctx.lineTo(0.62, 0.78); ctx.lineTo(-0.62, 0.78);
+      ctx.lineTo(-0.62, 0.08); ctx.closePath();
+      break;
+    default:
+      ctx.arc(0, 0, 0.72, 0, Math.PI * 2);
+  }
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawClusterArt(ctx, cluster, screen, alpha) {
+  ctx.save();
+  ctx.translate(screen.x, screen.y);
+  ctx.rotate(screen.rotation);
+  ctx.scale(screen.size, screen.size);
+  ctx.globalAlpha = alpha;
+  ctx.shadowColor = rgba(cluster.color, 0.65);
+  ctx.shadowBlur = 14 / Math.max(0.5, screen.size / 80);
+  drawSkyGlyph(ctx, cluster.name, cluster.color);
+  ctx.restore();
+}
+
+function jumpHasAcquired(jump, chapterIdx) {
+  return (jump?.stars || []).some(star =>
+    star.acquired_epub_sequence != null && Number(star.acquired_epub_sequence) <= chapterIdx);
+}
+
+function drawWireframeCluster(ctx, cluster, screen, chapterIdx, active) {
+  const vertices = cluster.vertices || [];
+  if (!vertices.length) return;
+  ctx.save();
+  ctx.translate(screen.x, screen.y);
+  ctx.rotate(screen.rotation);
+  ctx.scale(screen.size, screen.size);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = rgba(cluster.color, active ? 0.82 : 0.46);
+  ctx.lineWidth = active ? 0.025 : 0.018;
+  if (vertices.length > 1) {
+    ctx.beginPath();
+    vertices.forEach((v, idx) => {
+      const x = v.x || 0;
+      const y = -(v.y || 0);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+  for (const v of vertices) {
+    const jump = cluster.jumps.get(v.jump);
+    const acquired = jumpHasAcquired(jump, chapterIdx);
+    const r = active && active.jump === v.jump ? 0.06 : acquired ? 0.04 : 0.026;
+    ctx.beginPath();
+    ctx.fillStyle = acquired ? "#ffe7a3" : rgba("#dfe6f1", 0.58);
+    ctx.strokeStyle = active && active.jump === v.jump ? "#ffffff" : rgba(cluster.color, 0.72);
+    ctx.lineWidth = 0.012;
+    ctx.arc(v.x || 0, -(v.y || 0), r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawActiveJumpStars(ctx, cluster, screen, active, chapterIdx) {
+  if (!active?.jump) return;
+  const jump = cluster.jumps.get(active.jump);
+  const vertex = cluster.vertexByJump.get(active.jump);
+  if (!jump || !vertex) return;
+  const stars = jump.stars || [];
+  const activeName = skyNormName(active.perkName);
+  ctx.save();
+  ctx.translate(screen.x, screen.y);
+  ctx.rotate(screen.rotation);
+  ctx.scale(screen.size, screen.size);
+  const anchorX = vertex.x || 0;
+  const anchorY = -(vertex.y || 0);
+  const mini = Math.min(0.34, Math.max(0.18, 0.11 + stars.length * 0.006));
+
+  if (stars.length > 1) {
+    ctx.beginPath();
+    stars.forEach((star, idx) => {
+      const x = anchorX + (star.x || 0) * mini;
+      const y = anchorY - (star.y || 0) * mini;
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = rgba(cluster.color, 0.26);
+    ctx.lineWidth = 0.01;
+    ctx.stroke();
+  }
+
+  for (const star of stars) {
+    const acquired = star.acquired_epub_sequence != null &&
+      Number(star.acquired_epub_sequence) <= chapterIdx;
+    const isActive = activeName && skyNormName(star.perk_name) === activeName;
+    const x = anchorX + (star.x || 0) * mini;
+    const y = anchorY - (star.y || 0) * mini;
+    const baseR = 0.018 + (Number(star.size) || 0.25) * 0.035;
+    ctx.beginPath();
+    ctx.fillStyle = isActive ? "#fff7bd" : acquired ? "#ffe7a3" : rgba("#dfe6f1", 0.42);
+    ctx.strokeStyle = isActive ? "#ffffff" : star.cost === 0 ? "#80e1e9" : rgba(cluster.color, 0.8);
+    ctx.lineWidth = isActive ? 0.018 : 0.01;
+    ctx.arc(x, y, isActive ? baseR * 1.7 : baseR, 0, Math.PI * 2);
+    if (star.cost === 0 && !isActive) {
+      ctx.stroke();
+    } else {
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawSkyLabel(ctx, cluster, screen, alpha, active) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = active ? "#ffffff" : "#c9d4e4";
+  ctx.font = active ? "700 14px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+    : "600 12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+  ctx.shadowBlur = 5;
+  ctx.fillText(cluster.name, screen.x, screen.y + screen.size * (active ? 1.14 : 0.98));
+  ctx.restore();
+}
+
+function drawGrabGauge(ctx, active, target, frame) {
+  if (active.cost == null || active.available == null) return;
+  const success = active.cost <= active.available;
+  const max = Math.max(100, active.cost, active.available, 800);
+  const availableR = 10 + Math.sqrt(active.available / max) * 32;
+  const costR = 10 + Math.sqrt(active.cost / max) * 32;
+  const vx = target.x - frame.cx;
+  const vy = target.y - frame.cy;
+  const len = Math.max(1, Math.hypot(vx, vy));
+  const px = -vy / len;
+  const py = vx / len;
+  let gx = target.x + px * 62;
+  let gy = target.y + py * 62;
+  gx = Math.max(78, Math.min(frame.w - 78, gx));
+  gy = Math.max(84, Math.min(frame.h - 84, gy));
+
+  ctx.save();
+  ctx.shadowColor = success ? "rgba(255, 218, 122, 0.8)" : "rgba(255, 94, 94, 0.85)";
+  ctx.shadowBlur = 18;
+  ctx.strokeStyle = "rgba(255, 226, 154, 0.88)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(gx, gy, availableR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = success ? "rgba(128, 225, 233, 0.95)" : "rgba(255, 98, 98, 0.95)";
+  ctx.fillStyle = success ? "rgba(128, 225, 233, 0.12)" : "rgba(255, 98, 98, 0.12)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(gx, gy, costR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowBlur = 4;
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`${active.available} / ${active.cost}`, gx, gy - 2);
+  ctx.fillStyle = success ? "#b8f3d1" : "#ffb7b7";
+  ctx.font = "700 10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  ctx.fillText(success ? "enough CP" : "too costly", gx, gy + 13);
+  ctx.restore();
+}
+
+function drawBeam(ctx, active, target, frame, time) {
+  const pulse = 0.65 + Math.sin(time * 0.006) * 0.22;
+  const grad = ctx.createLinearGradient(frame.cx, frame.cy, target.x, target.y);
+  grad.addColorStop(0, "rgba(255, 244, 184, 0.04)");
+  grad.addColorStop(0.25, `rgba(255, 236, 156, ${0.38 * pulse})`);
+  grad.addColorStop(0.74, `rgba(224, 137, 74, ${0.84 * pulse})`);
+  grad.addColorStop(1, "rgba(224, 137, 74, 0.05)");
+  ctx.save();
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = active.outcome === "miss" ? 4 : 6;
+  ctx.lineCap = "round";
+  ctx.shadowColor = active.outcome === "miss"
+    ? "rgba(255, 94, 94, 0.72)"
+    : "rgba(255, 218, 122, 0.82)";
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.moveTo(frame.cx, frame.cy);
+  ctx.lineTo(target.x, target.y);
+  ctx.stroke();
+
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = "#fff4b8";
+  ctx.beginPath();
+  ctx.arc(frame.cx, frame.cy, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 244, 184, 0.28)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(frame.cx, frame.cy, 20 + 5 * pulse, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  drawGrabGauge(ctx, active, target, frame);
+}
+
+function drawSkyCluster(ctx, frame, cluster, state, worldRotation, time) {
+  const sky = state.sky;
+  const active = sky.activeRoll && sky.activeRoll.constellation === cluster.name
+    ? sky.activeRoll
+    : null;
+  const screenBase = clusterScreenPosition(frame, cluster, worldRotation);
+  const revealed = cluster.revealSeq == null || sky.chapterIdx >= cluster.revealSeq;
+  const focusDim = sky.activeRoll && !active ? 0.42 : 1;
+  const revealAlpha = revealed ? 1 : 0.18;
+  const activeScale = active ? 1.62 : 1;
+  const screen = { ...screenBase, size: screenBase.size * activeScale };
+  const alpha = revealAlpha * focusDim;
+
+  if (sky.prefs.art) drawClusterArt(ctx, cluster, screen, active ? 0.82 : 0.46 * alpha);
+  if (sky.prefs.wireframes) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    drawWireframeCluster(ctx, cluster, screen, sky.chapterIdx, active);
+    ctx.restore();
+  }
+  if (active) drawActiveJumpStars(ctx, cluster, screen, active, sky.chapterIdx);
+  if (sky.prefs.labels && (revealed || active)) {
+    drawSkyLabel(ctx, cluster, screen, active ? 1 : 0.78 * alpha, !!active);
+  }
+}
+
+function drawSkyScene(state, time) {
+  const sky = state.sky;
+  if (!sky) return;
+  resizeSkyCanvas(state);
+  const ctx = sky.ctx;
+  const dpr = sky.dpr || Math.min(2, window.devicePixelRatio || 1);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const frame = skyFrame(sky.canvas);
+  const reducedMotion = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const chapterTurn = Math.max(0, sky.chapterIdx) * 0.0075;
+  const slowTurn = sky.prefs.rotate && !reducedMotion ? time * 0.000035 : 0;
+  const worldRotation = slowTurn + chapterTurn;
+
+  ctx.clearRect(0, 0, frame.w, frame.h);
+  drawSkyBackground(ctx, frame, sky, time, worldRotation);
+
+  const active = sky.activeRoll;
+  let target = null;
+  if (active) {
+    target = skyTargetPoint(state, frame, active, worldRotation);
+    drawBeam(ctx, active, target, frame, time);
+  }
+
+  const clusters = sky.model.clusters;
+  for (const cluster of clusters) {
+    if (active && cluster.name === active.constellation) continue;
+    drawSkyCluster(ctx, frame, cluster, state, worldRotation, time);
+  }
+  if (active) {
+    const activeCluster = clusters.find(c => c.name === active.constellation);
+    if (activeCluster) drawSkyCluster(ctx, frame, activeCluster, state, worldRotation, time);
+  }
+}
+
+function updateSkyHud(state) {
+  const sky = state.sky;
+  if (!sky) return;
+  const chapter = sky.chapter;
+  const active = sky.activeRoll;
+  const kicker = $("sky-hud-kicker");
+  const title = $("sky-hud-title");
+  const meta = $("sky-hud-meta");
+  const focus = $("sky-focus-readout");
+  const grab = $("sky-grab-readout");
+  if (!kicker || !title || !meta || !focus || !grab) return;
+
+  if (active) {
+    const success = active.cost != null && active.cost <= active.available;
+    const surplus = active.cost == null ? null : active.available - active.cost;
+    kicker.textContent = `Roll ${active.roll.roll_number ?? "?"} - ${active.outcome.toUpperCase()}`;
+    title.textContent = active.perkName;
+    meta.textContent = [
+      active.constellation,
+      active.jump,
+      active.cost == null ? null : `${active.cost} CP mote`,
+      `${active.available} CP available`,
+    ].filter(Boolean).join(" / ");
+    focus.textContent = `${active.constellation}${active.jump ? ` / ${active.jump}` : ""}`;
+    if (active.cost == null) {
+      grab.textContent = `${active.available} CP available; unresolved mote cost`;
+    } else if (success) {
+      grab.textContent = surplus > 0
+        ? `${active.available} CP grab covers ${active.cost} CP; ${surplus} CP stays banked`
+        : `${active.available} CP grab exactly covers ${active.cost} CP`;
+    } else {
+      grab.textContent = `${active.available} CP grab is short by ${Math.abs(surplus)} CP`;
+    }
+    return;
+  }
+
+  kicker.textContent = chapter ? `Chapter ${chapter.chapter_num}` : "Sky lead-in";
+  title.textContent = chapter
+    ? chapter.full_title.replace(/^\d+(\.\d+)?\s*/, "")
+    : "The Forge sky is waiting at the story edge.";
+  meta.textContent = chapter
+    ? `${chapter.cumulative_perks_through_chapter} perks revealed through this point`
+    : "Move into the story to reveal constellation detail.";
+  focus.textContent = chapter ? "No active roll; full sky survey" : "Toolkits overhead";
+  grab.textContent = "No roll at this chapter position";
+}
+
+function updateSkyState(state) {
+  const sky = state.sky;
+  if (!sky) return;
+  const chapter = chapterAtWord(state.model, state.currentWord);
+  sky.chapter = chapter;
+  sky.chapterIdx = chapter ? state.model.idxOf.get(chapter.chapter_num) : -1;
+  sky.activeRoll = findActiveSkyRoll(state, chapter);
+  updateSkyHud(state);
+}
+
+function initSkyView(state, wireframes, rollResolutions) {
+  const canvas = $("sky-canvas");
+  if (!canvas || !wireframes) return;
+  const sky = {
+    canvas,
+    ctx: canvas.getContext("2d"),
+    dpr: Math.min(2, window.devicePixelRatio || 1),
+    prefs: readSkyPrefs(),
+    model: buildSkyModel(wireframes),
+    resolutions: buildRollResolutionMaps(rollResolutions),
+    dust: makeSkyDust(820),
+    chapter: null,
+    chapterIdx: -1,
+    activeRoll: null,
+  };
+  state.sky = sky;
+  attachSkyControls(state);
+  if (window.ResizeObserver) {
+    sky.resizeObserver = new ResizeObserver(() => resizeSkyCanvas(state));
+    sky.resizeObserver.observe($("sky-canvas-wrap"));
+  } else {
+    window.addEventListener("resize", () => resizeSkyCanvas(state));
+  }
+  resizeSkyCanvas(state);
+  updateSkyState(state);
+
+  function tick(time) {
+    drawSkyScene(state, time);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 // ---------- tooltip on roll dots -----------------------------------------
@@ -1459,6 +2356,13 @@ function attachPlaybackControls(state) {
   });
 }
 
+// ---------- parked prototypes --------------------------------------------
+
+function skyPrototypeEnabled() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("sky") === "1" || window.location.hash === "#sky-prototype";
+}
+
 // ---------- localStorage -------------------------------------------------
 
 function loadStorage() {
@@ -1567,7 +2471,12 @@ function attachIntroToggle() {
 
 (async () => {
   try {
-    const facts = await loadJSON("chapter_facts");
+    const skyEnabled = skyPrototypeEnabled();
+    const [facts, wireframes, rollResolutions] = await Promise.all([
+      loadJSON("chapter_facts"),
+      skyEnabled ? loadOptionalJSON("constellation_wireframes") : Promise.resolve(null),
+      skyEnabled ? loadOptionalJSON("roll_resolutions") : Promise.resolve(null),
+    ]);
     const model = buildCoordinateModel(facts);
     const cumIdx = buildCumulativeIndex(facts);
     const stored = loadStorage();
@@ -1586,8 +2495,11 @@ function attachIntroToggle() {
     };
     attachThemeToggle();
     attachIntroToggle();
+    const skySection = $("sky-section");
+    if (skySection) skySection.hidden = !skyEnabled;
     renderTracks(model, facts);
     applyTimelineZoom(state, { center: true });
+    if (skyEnabled) initSkyView(state, wireframes, rollResolutions);
     attachRollTooltip();
     attachScrubber(state);
     attachChapterSelection(state);

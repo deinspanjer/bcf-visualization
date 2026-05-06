@@ -25,6 +25,8 @@ This repository is organized for quick exploration first, with deeper technical 
 - Derived story datasets in `data/derived/` (schemas in `data/derived/_schemas/`)
 - Parsing, validation, and chart scripts in `scripts/`
 - Static output charts in `figures/`
+- A parked overhead sky prototype at `/web/?sky=1` for Phase 4
+  planetarium iteration
 
 ## Source material
 
@@ -55,5 +57,6 @@ For parser commands, schema validation behavior, and dataset-by-dataset coverage
 - Phase 1: complete (raw assets + structured derivations)
 - Phase 2: complete (static charts + throughput analytics)
 - Phase 3: complete (interactive scrubber + deploy workflow)
+- Phase 4: design/prototype iteration (parked sky view, not primary UI)
 
 For limitations, caveats, and follow-up work, see [TODO.md](TODO.md).

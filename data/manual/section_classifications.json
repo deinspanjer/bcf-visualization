@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
   "_count": 432,
-  "_mc_sections": 128,
-  "_non_mc_sections": 304,
+  "_mc_sections": 142,
+  "_non_mc_sections": 290,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script.",
   "classifications": {
     "1@0": {
@@ -107,8 +107,8 @@
       "chapter_num": "6.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Taylor'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Taylor')"
     },
     "7@0": {
       "chapter_num": "7",
@@ -142,8 +142,8 @@
       "chapter_num": "8.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Amy'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Amy')"
     },
     "9@0": {
       "chapter_num": "9",
@@ -646,8 +646,8 @@
       "chapter_num": "35.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Dragon'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Dragon')"
     },
     "35.1@1": {
       "chapter_num": "35.1",
@@ -919,8 +919,8 @@
       "chapter_num": "43.1",
       "section_index": 1,
       "header": "43.1 Interlude Fleet",
-      "counts_for_cp": false,
-      "reason": "chapter-title interlude 'fleet'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'fleet')"
     },
     "43.1@2": {
       "chapter_num": "43.1",
@@ -996,8 +996,8 @@
       "chapter_num": "46.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Weld'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Weld')"
     },
     "46.1@1": {
       "chapter_num": "46.1",
@@ -1164,8 +1164,8 @@
       "chapter_num": "55.1",
       "section_index": 1,
       "header": "55.1 Interlude Fleet",
-      "counts_for_cp": false,
-      "reason": "chapter-title interlude 'fleet'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'fleet')"
     },
     "55.1@2": {
       "chapter_num": "55.1",
@@ -1745,8 +1745,8 @@
       "chapter_num": "74.2",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Lisa'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Lisa')"
     },
     "75@0": {
       "chapter_num": "75",
@@ -1906,8 +1906,8 @@
       "chapter_num": "82.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Uppercrust'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Uppercrust')"
     },
     "82.1@1": {
       "chapter_num": "82.1",
@@ -2263,8 +2263,8 @@
       "chapter_num": "95.5",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Gregor'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Gregor')"
     },
     "95.5@1": {
       "chapter_num": "95.5",
@@ -2284,8 +2284,8 @@
       "chapter_num": "95.6",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Rey'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Rey')"
     },
     "95.6@1": {
       "chapter_num": "95.6",
@@ -2417,8 +2417,8 @@
       "chapter_num": "99.1",
       "section_index": 1,
       "header": "99.1 Interlude Tetra",
-      "counts_for_cp": false,
-      "reason": "chapter-title interlude 'tetra'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'tetra')"
     },
     "99.1@2": {
       "chapter_num": "99.1",
@@ -2641,8 +2641,8 @@
       "chapter_num": "108.2",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with non-MC markers: meeting_report"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with non-MC markers: meeting_report)"
     },
     "108.2@1": {
       "chapter_num": "108.2",
@@ -2886,8 +2886,8 @@
       "chapter_num": "116.2",
       "section_index": 2,
       "header": "Interlude Panacea",
-      "counts_for_cp": false,
-      "reason": "interlude 'panacea' (non-Joe)"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: interlude 'panacea' (non-Joe))"
     },
     "116.2@3": {
       "chapter_num": "116.2",
@@ -2991,8 +2991,8 @@
       "chapter_num": "119.5",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit with inline interlude 'Labyrinth'"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Labyrinth')"
     },
     "119.5@1": {
       "chapter_num": "119.5",

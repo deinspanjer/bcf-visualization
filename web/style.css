@@ -308,6 +308,261 @@ header .subtitle {
   border-color: var(--gray-3);
 }
 
+/* --- planetarium sky -------------------------------------------------- */
+
+#sky-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 24px 10px;
+}
+
+.sky-shell {
+  border: 1px solid #2d3441;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #080a10;
+  color: #dfe6f1;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+.sky-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #283140;
+  background: #111621;
+}
+
+.sky-toolbar h2 {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #f2f6ff;
+  letter-spacing: 0;
+}
+
+#sky-subtitle {
+  margin: 2px 0 0;
+  color: #9ba8bb;
+  font-size: 0.78rem;
+}
+
+.sky-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sky-control-btn {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #465163;
+  border-radius: 6px;
+  background: #1d2532;
+  color: #c9d4e4;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.sky-control-btn:hover {
+  border-color: #6ea3d6;
+  color: #f7fbff;
+}
+
+.sky-control-btn[aria-pressed="true"] {
+  border-color: #8ab9e6;
+  background: #20344a;
+  color: #ffffff;
+}
+
+#sky-canvas-wrap {
+  position: relative;
+  height: clamp(420px, 56vh, 700px);
+  min-height: 420px;
+  background: #03050a;
+}
+
+#sky-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#sky-hud {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  width: min(420px, calc(100% - 32px));
+  padding: 10px 12px;
+  border: 1px solid rgba(150, 170, 200, 0.28);
+  border-radius: 6px;
+  background: rgba(8, 12, 19, 0.74);
+  color: #dfe6f1;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+#sky-hud-kicker {
+  margin-bottom: 2px;
+  color: #9fc8ff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+#sky-hud-title {
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+#sky-hud-meta {
+  margin-top: 3px;
+  color: #aeb9c8;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+#sky-inspector {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1px;
+  border-top: 1px solid #283140;
+  background: #283140;
+  font-size: 0.82rem;
+}
+
+#sky-inspector > div {
+  min-width: 0;
+  padding: 9px 12px;
+  background: #111621;
+  color: #dfe6f1;
+}
+
+.sky-inspector-label {
+  display: inline-block;
+  margin-right: 8px;
+  color: #8895a8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body.sky-focus-mode {
+  background: #090b10;
+}
+
+body.sky-focus-mode header .intro-section,
+body.sky-focus-mode #panels,
+body.sky-focus-mode #recent-rail,
+body.sky-focus-mode .control-panels,
+body.sky-focus-mode #chapter-detail-panel,
+body.sky-focus-mode #track-label-overlay {
+  display: none;
+}
+
+body.sky-focus-mode header {
+  max-width: none;
+  padding-top: 10px;
+  padding-bottom: 4px;
+}
+
+body.sky-focus-mode #sky-section,
+body.sky-focus-mode #scrubber-section {
+  max-width: none;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+body.sky-focus-mode #sky-canvas-wrap {
+  height: clamp(480px, calc(100vh - 380px), 820px);
+  min-height: 480px;
+}
+
+body.sky-focus-mode #scrubber-section {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  border-bottom: 0;
+  background: #090b10;
+}
+
+body.sky-focus-mode #scrubber-container,
+body.sky-focus-mode #scrubber-main-column {
+  grid-column: 1;
+}
+
+body.sky-focus-mode #scrubber-container {
+  margin-bottom: 2px;
+}
+
+body.sky-focus-mode #track-stack {
+  height: 84px;
+  border-color: #303846;
+}
+
+body.sky-focus-mode .track-dates,
+body.sky-focus-mode .track-pov,
+body.sky-focus-mode .track-markers,
+body.sky-focus-mode .track-axis,
+body.sky-focus-mode .roll-lane-label {
+  display: none;
+}
+
+body.sky-focus-mode .track-chapters {
+  top: 0;
+  height: 24px;
+}
+
+body.sky-focus-mode .track-rolls {
+  top: 24px;
+  height: 60px;
+}
+
+body.sky-focus-mode .chap-label {
+  display: none;
+}
+
+body.sky-focus-mode .chap-tick {
+  height: 100%;
+  opacity: 0.55;
+}
+
+body.sky-focus-mode .shadow-bar {
+  top: 0;
+  bottom: 0;
+}
+
+body.sky-focus-mode #scrubber-playhead,
+body.sky-focus-mode #scrubber-hitarea {
+  bottom: 0;
+}
+
+body.sky-focus-mode #scrubber-chapter-readout {
+  margin-bottom: 0;
+  color: #c9d4e4;
+}
+
+body.sky-focus-mode #scrubber-readout,
+body.sky-focus-mode #cumulative-strip,
+body.sky-focus-mode #playback-controls,
+body.sky-focus-mode #zoom-controls {
+  color: #aeb9c8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-shell {
+    scroll-behavior: auto;
+  }
+}
+
 /* --- DAW scrubber ---------------------------------------------------- */
 
 #scrubber-section {

@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Planetarium roll-focus mockup</title>
+  <desc id="desc">A proposed roll firing state where the camera narrows onto one jump mini-constellation, a reach line extends from the viewer, and the inspector reports the resolved perk.</desc>
+  <defs>
+    <radialGradient id="void" cx="50%" cy="48%" r="70%">
+      <stop offset="0" stop-color="#171a25"/>
+      <stop offset="0.5" stop-color="#080b13"/>
+      <stop offset="1" stop-color="#020306"/>
+    </radialGradient>
+    <radialGradient id="focusCone" cx="50%" cy="50%" r="48%">
+      <stop offset="0" stop-color="#f5d27b" stop-opacity="0.30"/>
+      <stop offset="0.36" stop-color="#d89d35" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#d89d35" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ray" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#fff4b8" stop-opacity="0"/>
+      <stop offset="0.22" stop-color="#fff4b8" stop-opacity="0.85"/>
+      <stop offset="0.74" stop-color="#e6a647" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#e6a647" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="blurred" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <style>
+      .ui-bg { fill: #121214; }
+      .panel { fill: #1c1c1f; stroke: #3b3f49; stroke-width: 1; }
+      .label { fill: #dfe6f1; font: 600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .small { fill: #9da8b8; font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .tiny { fill: #7f8998; font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .cluster-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .dim-line { fill: none; stroke: #566173; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.18; }
+      .star { fill: #f9f0cf; }
+      .star-paid { fill: #ffe8a1; stroke: #ffffff; stroke-width: 0.8; }
+      .star-free { fill: none; stroke: #80e1e9; stroke-width: 1.8; }
+      .star-dim { fill: #9aa7b8; opacity: 0.28; }
+      .resolved { fill: #fff6bf; stroke: #ffffff; stroke-width: 1.4; }
+      .axis { stroke: #5a6372; stroke-width: 3; stroke-linecap: round; }
+      .axis-fill { stroke: #6ea3d6; stroke-width: 3; stroke-linecap: round; }
+      .playhead { stroke: #e0894a; stroke-width: 3; stroke-linecap: round; }
+      .button { fill: #252a35; stroke: #465163; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" class="ui-bg"/>
+
+  <g id="header">
+    <text x="36" y="42" class="label">Brockton's Celestial Forge - Sky View</text>
+    <text x="36" y="66" class="small">roll-focus state: camera narrows, reach resolves, sky detail stays subordinate</text>
+    <rect x="930" y="24" width="108" height="28" rx="6" class="button"/>
+    <text x="950" y="43" class="tiny">FOV 30 deg</text>
+    <rect x="1050" y="24" width="112" height="28" rx="6" class="button"/>
+    <text x="1070" y="43" class="tiny">Abort on scrub</text>
+  </g>
+
+  <g id="scrubber">
+    <rect x="36" y="92" width="1128" height="76" rx="8" class="panel"/>
+    <text x="56" y="120" class="tiny">story position</text>
+    <line x1="158" y1="118" x2="1132" y2="118" class="axis"/>
+    <line x1="158" y1="118" x2="655" y2="118" class="axis-fill"/>
+    <line x1="655" y1="94" x2="655" y2="156" class="playhead"/>
+    <circle cx="655" cy="118" r="7" fill="#e0894a"/>
+    <text x="56" y="151" class="small">ch 91 - The Toolkit - roll queue 2/4</text>
+    <text x="935" y="151" class="small">zoomed roll animation</text>
+  </g>
+
+  <g id="sky">
+    <rect x="36" y="190" width="1128" height="476" rx="8" fill="url(#void)" stroke="#303645"/>
+    <circle cx="600" cy="428" r="214" fill="url(#focusCone)"/>
+
+    <g id="distant-context" opacity="0.75" filter="url(#blurred)">
+      <path d="M176 324 L236 290 L302 322 L302 402 L237 370 L176 404 Z" class="dim-line"/>
+      <circle cx="176" cy="324" r="3" class="star-dim"/>
+      <circle cx="236" cy="290" r="3" class="star-dim"/>
+      <circle cx="302" cy="322" r="3" class="star-dim"/>
+      <path d="M930 290 L962 352 L1028 356 L978 396 L996 460 L930 426 L866 460 L884 396 L834 356 L898 352 Z" class="dim-line"/>
+      <circle cx="930" cy="290" r="3" class="star-dim"/>
+      <circle cx="962" cy="352" r="3" class="star-dim"/>
+      <circle cx="978" cy="396" r="3" class="star-dim"/>
+      <circle cx="930" cy="426" r="3" class="star-dim"/>
+      <path d="M264 560 L308 522 L346 526 L330 546 L434 620 L410 642 L306 558 Z" class="dim-line"/>
+      <circle cx="308" cy="522" r="3" class="star-dim"/>
+      <circle cx="434" cy="620" r="3" class="star-dim"/>
+    </g>
+
+    <g id="jump-focus">
+      <text x="478" y="270" class="small">Toolkits / Sabaton mini-constellation</text>
+      <path d="M470 390 C520 318, 640 318, 728 390 C702 434, 646 467, 602 494 C558 464, 498 436, 470 390 Z"
+            fill="#0c111b" opacity="0.72" stroke="#53677f" stroke-width="1"/>
+      <path d="M514 388 L584 342 L662 366 L704 434 L628 466 L550 450 Z"
+            class="cluster-line" stroke="#6ea3d6" opacity="0.82"/>
+      <line x1="600" y1="646" x2="628" y2="466" stroke="url(#ray)" stroke-width="7" stroke-linecap="round" filter="url(#glow)"/>
+      <line x1="600" y1="646" x2="628" y2="466" stroke="#fff4b8" stroke-width="1.6" stroke-linecap="round"/>
+
+      <circle cx="514" cy="388" r="5" class="star-paid"/>
+      <circle cx="584" cy="342" r="4" class="star"/>
+      <circle cx="662" cy="366" r="5" class="star-paid"/>
+      <circle cx="704" cy="434" r="3.5" class="star-dim"/>
+      <circle cx="550" cy="450" r="4" class="star-free"/>
+      <circle cx="628" cy="466" r="10" fill="#fff3a5" opacity="0.24" filter="url(#glow)"/>
+      <circle cx="628" cy="466" r="6.5" class="resolved"/>
+      <text x="650" y="462" class="label">The Toolkit</text>
+      <text x="650" y="484" class="tiny">100 CP - acquired - line collapses into star</text>
+    </g>
+
+    <g id="camera-origin">
+      <circle cx="600" cy="646" r="7" fill="#fff4b8" opacity="0.85"/>
+      <circle cx="600" cy="646" r="22" fill="none" stroke="#fff4b8" stroke-width="1" opacity="0.32"/>
+      <text x="624" y="650" class="tiny">viewer / camera origin</text>
+    </g>
+  </g>
+
+  <g id="inspector">
+    <rect x="36" y="682" width="1128" height="54" rx="8" class="panel"/>
+    <text x="56" y="706" class="small">Roll #312 - HIT - Toolkits / Sabaton - The Toolkit - 100 CP</text>
+    <text x="56" y="727" class="tiny">Animation phases: zoom in 400ms - reach 250ms - resolve flare - zoom out 400ms. Suppress if scrubber is still moving.</text>
+    <text x="916" y="715" class="tiny">inspector, not overlaid labels</text>
+  </g>
+</svg>

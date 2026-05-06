@@ -21,6 +21,10 @@ Rules in order of precedence:
   5. Header is "Celestial Forge X Y" (the chapter-heading marker
      used in some chapters) -> MC.
   6. Header is "EMERGENCY NEWS ALERT" / "***" / similar -> non-MC.
+  7. Evidence override: if the curator roll log or acquired-perk list
+     says mechanics happened in a chapter, at least one non-meta
+     narrative section must count for CP. This catches non-Joe POV
+     interludes where Joe is still on-screen/interacting enough to earn.
 
 Two specific manual overrides (sections that the rules would mark
 REVIEW but I confirmed by reading the prose):
@@ -36,6 +40,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SECTIONS_JSON = ROOT / "data" / "derived" / "chapter_sections.json"
+ROLLS_JSON = ROOT / "data" / "derived" / "rolls.json"
+OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
 OUT = ROOT / "data" / "manual" / "section_classifications.json"
 
 AN_RE = re.compile(r"author'?s?\s+note", re.I)
@@ -154,8 +160,54 @@ def classify(section: dict, full_title: str) -> tuple[bool, str]:
     return True, f"defaulted to MC (unrecognized header {h!r})"
 
 
+def mechanics_evidence_chapters() -> set[str]:
+    """Chapters where trusted mechanics data proves CP-earning text exists."""
+    chapters: set[str] = set()
+    if ROLLS_JSON.exists():
+        rolls = json.loads(ROLLS_JSON.read_text())["rolls"]
+        for roll in rolls:
+            if roll.get("kind") in {"trigger", "roll", "miss"}:
+                chapters.add(roll["chapter_num"])
+    if OBTAINED_JSON.exists():
+        perks = json.loads(OBTAINED_JSON.read_text())["perks"]
+        for perk in perks:
+            chapters.add(perk["chapter_num"])
+    return chapters
+
+
+def is_meta_section(section: dict) -> bool:
+    header = (section.get("header") or "").strip().lower()
+    return header.startswith((
+        "jumpchain abilities",
+        "jumpchain perks",
+        "new abilities for",
+        "author",
+        "a/n",
+        "note",
+    ))
+
+
+def mechanics_override_section_index(sections: list[dict]) -> int | None:
+    """Pick the most plausible CP-earning section for a mechanics override."""
+    candidates = [
+        (i, section)
+        for i, section in enumerate(sections)
+        if not is_meta_section(section)
+    ]
+    if not candidates:
+        return None
+    substantial = [
+        (i, section)
+        for i, section in candidates
+        if section.get("word_count", 0) >= 500
+    ]
+    pool = substantial or candidates
+    return max(pool, key=lambda item: item[1].get("word_count", 0))[0]
+
+
 def main() -> None:
     sections_data = json.loads(SECTIONS_JSON.read_text())
+    mechanics_chapters = mechanics_evidence_chapters()
 
     classifications = {}
     review_count = 0
@@ -174,6 +226,25 @@ def main() -> None:
                 "counts_for_cp": counts,
                 "reason": reason,
             }
+
+        chapter_keys = [
+            f"{c['chapter_num']}@{i}"
+            for i in range(len(c["sections"]))
+        ]
+        if (
+            c["chapter_num"] in mechanics_chapters
+            and not any(classifications[key]["counts_for_cp"] for key in chapter_keys)
+        ):
+            override_index = mechanics_override_section_index(c["sections"])
+            if override_index is not None:
+                key = f"{c['chapter_num']}@{override_index}"
+                previous_reason = classifications[key]["reason"]
+                classifications[key]["counts_for_cp"] = True
+                classifications[key]["reason"] = (
+                    "mechanics evidence override: curator roll/acquisition "
+                    "exists in chapter, so at least one narrative section "
+                    f"must count for CP (was: {previous_reason})"
+                )
 
     n_mc = sum(1 for v in classifications.values() if v["counts_for_cp"])
     n_non = sum(1 for v in classifications.values() if not v["counts_for_cp"])

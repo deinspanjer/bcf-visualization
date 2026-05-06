@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Planetarium overview mockup</title>
+  <desc id="desc">A proposed Brockton's Celestial Forge sky view with a sticky scrubber, dark 3D canvas, themed constellation clusters, and a lower inspector strip.</desc>
+  <defs>
+    <radialGradient id="void" cx="52%" cy="42%" r="74%">
+      <stop offset="0" stop-color="#192034"/>
+      <stop offset="0.42" stop-color="#0c1020"/>
+      <stop offset="1" stop-color="#03050a"/>
+    </radialGradient>
+    <radialGradient id="toolkitGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#7cc8ff" stop-opacity="0.58"/>
+      <stop offset="0.38" stop-color="#2f6f9f" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#2f6f9f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="faintGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <pattern id="grain" width="48" height="48" patternUnits="userSpaceOnUse">
+      <circle cx="7" cy="9" r="0.8" fill="#ffffff" opacity="0.14"/>
+      <circle cx="31" cy="16" r="0.6" fill="#ffffff" opacity="0.10"/>
+      <circle cx="19" cy="38" r="0.5" fill="#b7d9ff" opacity="0.12"/>
+      <circle cx="43" cy="41" r="0.7" fill="#ffffff" opacity="0.08"/>
+    </pattern>
+    <style>
+      .ui-bg { fill: #121214; }
+      .panel { fill: #1c1c1f; stroke: #3b3f49; stroke-width: 1; }
+      .hairline { stroke: #3b3f49; stroke-width: 1; }
+      .label { fill: #dfe6f1; font: 600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .small { fill: #9da8b8; font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .tiny { fill: #7f8998; font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .axis { stroke: #5a6372; stroke-width: 3; stroke-linecap: round; }
+      .axis-fill { stroke: #6ea3d6; stroke-width: 3; stroke-linecap: round; }
+      .tick { stroke: #6f7784; stroke-width: 1; }
+      .playhead { stroke: #e0894a; stroke-width: 3; stroke-linecap: round; }
+      .cluster-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.72; }
+      .cluster-line.faint { opacity: 0.16; stroke-dasharray: 3 8; }
+      .cluster-label { fill: #dfe6f1; font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }
+      .star { fill: #f9f0cf; }
+      .star-paid { fill: #ffe8a1; stroke: #ffffff; stroke-width: 0.8; }
+      .star-free { fill: none; stroke: #80e1e9; stroke-width: 1.8; }
+      .star-dim { fill: #b7c3d2; opacity: 0.34; }
+      .chip { fill: #252a35; stroke: #465163; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="760" class="ui-bg"/>
+
+  <g id="header">
+    <text x="36" y="42" class="label">Brockton's Celestial Forge - Sky View</text>
+    <text x="36" y="66" class="small">inside-out Forge sky, chapter-linked reveal, minimal labels in the canvas</text>
+    <rect x="958" y="24" width="76" height="28" rx="6" class="chip"/>
+    <text x="977" y="43" class="tiny">Sky</text>
+    <rect x="1046" y="24" width="116" height="28" rx="6" class="panel"/>
+    <text x="1065" y="43" class="tiny">Scrubber</text>
+  </g>
+
+  <g id="scrubber">
+    <rect x="36" y="92" width="1128" height="76" rx="8" class="panel"/>
+    <text x="56" y="120" class="tiny">story position</text>
+    <line x1="158" y1="118" x2="1132" y2="118" class="axis"/>
+    <line x1="158" y1="118" x2="534" y2="118" class="axis-fill"/>
+    <g opacity="0.75">
+      <line x1="158" y1="106" x2="158" y2="130" class="tick"/>
+      <line x1="318" y1="110" x2="318" y2="126" class="tick"/>
+      <line x1="479" y1="110" x2="479" y2="126" class="tick"/>
+      <line x1="639" y1="106" x2="639" y2="130" class="tick"/>
+      <line x1="800" y1="110" x2="800" y2="126" class="tick"/>
+      <line x1="960" y1="110" x2="960" y2="126" class="tick"/>
+      <line x1="1132" y1="106" x2="1132" y2="130" class="tick"/>
+    </g>
+    <line x1="534" y1="94" x2="534" y2="156" class="playhead"/>
+    <circle cx="534" cy="118" r="7" fill="#e0894a"/>
+    <text x="56" y="151" class="small">ch 75 - The Toolkit - 2022-09-04</text>
+    <text x="936" y="151" class="small">2.69M words total</text>
+  </g>
+
+  <g id="sky">
+    <rect x="36" y="190" width="1128" height="476" rx="8" fill="url(#void)" stroke="#303645"/>
+    <rect x="36" y="190" width="1128" height="476" rx="8" fill="url(#grain)" opacity="0.42"/>
+    <ellipse cx="596" cy="428" rx="458" ry="198" fill="none" stroke="#293243" stroke-width="1.2" opacity="0.45"/>
+    <ellipse cx="596" cy="428" rx="308" ry="298" fill="none" stroke="#253044" stroke-width="1.2" opacity="0.28"/>
+
+    <circle cx="598" cy="425" r="120" fill="url(#toolkitGlow)" filter="url(#faintGlow)"/>
+    <g id="toolkits" filter="url(#softGlow)">
+      <path d="M488 375 L520 344 L560 346 L538 371 L563 399 L611 399 L661 418 L716 444 L752 476 L735 494 L687 467 L632 440 L575 434 L538 454 L501 442 L535 410 Z"
+            class="cluster-line" stroke="#6ea3d6"/>
+      <circle cx="488" cy="375" r="4.8" class="star-paid"/>
+      <circle cx="520" cy="344" r="3.6" class="star"/>
+      <circle cx="560" cy="346" r="5.8" class="star-paid"/>
+      <circle cx="538" cy="371" r="3.4" class="star-free"/>
+      <circle cx="563" cy="399" r="3.0" class="star-dim"/>
+      <circle cx="611" cy="399" r="4.2" class="star-paid"/>
+      <circle cx="661" cy="418" r="3.2" class="star"/>
+      <circle cx="716" cy="444" r="4.4" class="star-paid"/>
+      <circle cx="752" cy="476" r="3.2" class="star-dim"/>
+      <circle cx="735" cy="494" r="3.8" class="star-paid"/>
+      <circle cx="687" cy="467" r="3.0" class="star-free"/>
+      <circle cx="632" cy="440" r="4.0" class="star-paid"/>
+      <circle cx="575" cy="434" r="2.8" class="star"/>
+      <circle cx="538" cy="454" r="3.6" class="star-dim"/>
+      <text x="533" y="327" class="cluster-label">Toolkits</text>
+      <text x="533" y="346" class="tiny">sharp first constellation</text>
+    </g>
+
+    <g id="knowledge">
+      <path d="M202 300 L274 270 L345 300 L345 406 L275 374 L202 407 Z M274 270 L275 374"
+            class="cluster-line" stroke="#8f82f0"/>
+      <circle cx="202" cy="300" r="3.6" class="star-paid"/>
+      <circle cx="274" cy="270" r="2.8" class="star"/>
+      <circle cx="345" cy="300" r="4.0" class="star-paid"/>
+      <circle cx="345" cy="406" r="3.0" class="star-dim"/>
+      <circle cx="275" cy="374" r="3.8" class="star-free"/>
+      <circle cx="202" cy="407" r="3.2" class="star-paid"/>
+      <text x="214" y="252" class="cluster-label">Knowledge</text>
+    </g>
+
+    <g id="magic">
+      <path d="M888 276 L922 348 L998 354 L939 404 L958 478 L888 438 L818 478 L837 404 L778 354 L854 348 Z"
+            class="cluster-line" stroke="#b494ff"/>
+      <circle cx="888" cy="276" r="3.2" class="star-paid"/>
+      <circle cx="922" cy="348" r="4.5" class="star-paid"/>
+      <circle cx="998" cy="354" r="2.8" class="star-dim"/>
+      <circle cx="939" cy="404" r="3.2" class="star"/>
+      <circle cx="958" cy="478" r="3.6" class="star-paid"/>
+      <circle cx="888" cy="438" r="3.2" class="star-free"/>
+      <circle cx="818" cy="478" r="2.8" class="star-dim"/>
+      <circle cx="837" cy="404" r="3.4" class="star-paid"/>
+      <circle cx="778" cy="354" r="2.8" class="star-dim"/>
+      <circle cx="854" cy="348" r="3.0" class="star"/>
+      <text x="854" y="252" class="cluster-label">Magic</text>
+    </g>
+
+    <g id="crafting">
+      <path d="M229 548 L276 502 L315 506 L300 526 L408 610 L385 636 L278 550 L255 568 Z"
+            class="cluster-line" stroke="#46c99c"/>
+      <circle cx="229" cy="548" r="3.0" class="star-paid"/>
+      <circle cx="276" cy="502" r="4.0" class="star-paid"/>
+      <circle cx="315" cy="506" r="2.8" class="star"/>
+      <circle cx="300" cy="526" r="3.2" class="star-free"/>
+      <circle cx="408" cy="610" r="3.8" class="star-paid"/>
+      <circle cx="385" cy="636" r="2.8" class="star-dim"/>
+      <circle cx="278" cy="550" r="3.0" class="star-paid"/>
+      <text x="235" y="488" class="cluster-label">Crafting</text>
+    </g>
+
+    <g id="faint-clusters">
+      <path d="M982 566 L1032 522 L1088 552 L1088 615 L1035 648 L982 616 Z"
+            class="cluster-line faint" stroke="#d9c467"/>
+      <circle cx="982" cy="566" r="5" fill="#d9c467" opacity="0.13"/>
+      <circle cx="1032" cy="522" r="5" fill="#d9c467" opacity="0.13"/>
+      <circle cx="1088" cy="552" r="5" fill="#d9c467" opacity="0.13"/>
+      <text x="980" y="508" class="tiny">Capstone still fogged</text>
+
+      <path d="M106 235 L132 210 L158 235 L158 287 L106 287 Z"
+            class="cluster-line faint" stroke="#82a96f"/>
+      <circle cx="132" cy="210" r="5" fill="#82a96f" opacity="0.13"/>
+      <circle cx="158" cy="287" r="5" fill="#82a96f" opacity="0.13"/>
+      <text x="82" y="204" class="tiny">Personal Reality behind</text>
+    </g>
+
+    <g id="legend" transform="translate(68 598)">
+      <rect x="0" y="0" width="372" height="44" rx="6" fill="#0d111a" opacity="0.8" stroke="#384050"/>
+      <circle cx="20" cy="22" r="4" class="star-paid"/>
+      <text x="33" y="26" class="tiny">paid pulse</text>
+      <circle cx="122" cy="22" r="4" class="star-free"/>
+      <text x="136" y="26" class="tiny">free ring</text>
+      <circle cx="232" cy="22" r="4" class="star-dim"/>
+      <text x="246" y="26" class="tiny">not acquired</text>
+    </g>
+  </g>
+
+  <g id="inspector">
+    <rect x="36" y="682" width="1128" height="54" rx="8" class="panel"/>
+    <text x="56" y="712" class="small">Hover: Workshop: Metalworking - Personal Reality - Toolkits - 100 CP - acquired ch 1</text>
+    <text x="903" y="712" class="tiny">504 visible perks - 214 jump patterns</text>
+  </g>
+</svg>

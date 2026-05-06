@@ -7,8 +7,8 @@
     "Dropped 'connected' from the 'my power reached|latched|connected|grasped' verb list (ch 100 'power connected to that ceremony' matched a Final Frontier ritual, not a Forge connection).",
     "Added events array: hits within 200 chars of each other in the same section collapse to one event. Anchor kind precedence for clustering: constellation_reveal > miss > roll_attempt > acquisition > general (named constellation pinpoints the event more reliably than the generic verb anchors)."
   ],
-  "_total_locations": 1371,
-  "_total_events": 924,
+  "_total_locations": 1441,
+  "_total_events": 993,
   "_locations_by_chapter": {
     "1": 7,
     "2": 23,
@@ -56,6 +56,7 @@
     "44": 8,
     "45": 13,
     "46": 18,
+    "46.1": 1,
     "47": 8,
     "48": 20,
     "49": 11,
@@ -65,6 +66,7 @@
     "53": 7,
     "54": 9,
     "55": 20,
+    "55.1": 1,
     "56": 7,
     "57": 32,
     "58": 1,
@@ -85,6 +87,7 @@
     "72": 11,
     "73": 11,
     "74": 8,
+    "74.2": 7,
     "75": 11,
     "76": 8,
     "77": 6,
@@ -93,6 +96,7 @@
     "80": 5,
     "81": 16,
     "82": 22,
+    "82.1": 4,
     "83": 6,
     "83.1": 2,
     "84": 8,
@@ -107,11 +111,14 @@
     "93": 5,
     "94": 5,
     "95": 5,
+    "95.5": 22,
+    "95.6": 4,
     "96": 20,
     "96.1": 3,
     "97": 11,
     "98": 10,
     "99": 9,
+    "99.1": 1,
     "99.3": 1,
     "100": 15,
     "101": 7,
@@ -124,6 +131,7 @@
     "106": 8,
     "107": 4,
     "108": 7,
+    "108.2": 15,
     "109": 6,
     "110": 3,
     "110.3": 4,
@@ -133,15 +141,17 @@
     "114": 7,
     "115": 3,
     "116": 1,
+    "116.2": 6,
     "116.3": 2,
     "117": 6,
-    "118": 6
+    "118": 6,
+    "119.5": 9
   },
   "_locations_by_kind": {
-    "acquisition": 120,
-    "constellation_reveal": 484,
-    "general": 256,
-    "miss": 295,
+    "acquisition": 121,
+    "constellation_reveal": 485,
+    "general": 322,
+    "miss": 297,
     "roll_attempt": 216
   },
   "_events_by_chapter": {
@@ -191,6 +201,7 @@
     "44": 6,
     "45": 11,
     "46": 15,
+    "46.1": 1,
     "47": 6,
     "48": 13,
     "49": 7,
@@ -200,6 +211,7 @@
     "53": 6,
     "54": 6,
     "55": 12,
+    "55.1": 1,
     "56": 5,
     "57": 20,
     "58": 1,
@@ -220,6 +232,7 @@
     "72": 8,
     "73": 8,
     "74": 7,
+    "74.2": 7,
     "75": 7,
     "76": 7,
     "77": 5,
@@ -228,6 +241,7 @@
     "80": 3,
     "81": 13,
     "82": 17,
+    "82.1": 4,
     "83": 5,
     "83.1": 2,
     "84": 6,
@@ -242,11 +256,14 @@
     "93": 4,
     "94": 4,
     "95": 4,
+    "95.5": 21,
+    "95.6": 4,
     "96": 15,
     "96.1": 1,
     "97": 8,
     "98": 5,
     "99": 5,
+    "99.1": 1,
     "99.3": 1,
     "100": 12,
     "101": 5,
@@ -259,6 +276,7 @@
     "106": 6,
     "107": 2,
     "108": 6,
+    "108.2": 15,
     "109": 4,
     "110": 2,
     "110.3": 2,
@@ -268,15 +286,17 @@
     "114": 4,
     "115": 3,
     "116": 1,
+    "116.2": 6,
     "116.3": 2,
     "117": 6,
-    "118": 6
+    "118": 6,
+    "119.5": 9
   },
   "_events_by_anchor_kind": {
-    "acquisition": 96,
-    "constellation_reveal": 467,
-    "general": 164,
-    "miss": 137,
+    "acquisition": 97,
+    "constellation_reveal": 468,
+    "general": 229,
+    "miss": 139,
     "roll_attempt": 60
   },
   "_note": "Stage-1 regex candidates for narrative roll references. Each entry tags an in-prose phrasing that LOOKS like the protagonist narrating a roll attempt, miss, acquisition, or constellation reveal. This pass is intentionally liberal and over-collects; expect false positives. A separate Stage-2 LLM filter will discard candidates that, in context, don't actually describe a roll event. Use these candidates to validate predicted_rolls.json by checking that each predicted roll has at least one nearby narrative anchor; conversely, candidates with no nearby predicted roll may indicate the regime simulator is off. Interpretation key: candidate_kind = roll_attempt (the Forge moving / Joe's reach growing / felt the Forge / another mote), miss (failed-to-latch / missed mote / spun away / banked), acquisition (I obtained/gained/received / mote settled / memories of the world / new knowledge flooding in), constellation_reveal (a named constellation called out by the prose: 'the X Constellation' or 'the constellation was Y' or a quoted constellation name), general (catch-all Celestial Forge mention or vague power-reaching language; lowest confidence). When two patterns hit the same span, the more specific kind wins (precedence: roll_attempt > miss > acquisition > constellation_reveal > general). The match_offset is in the chapter HTML (not plain text); the context field is plain-text prose with [[match]] markers around the phrase that matched. The events array is the downstream-friendly view: one entry per ~200-char prose neighborhood of regex activity, with the highest-precedence match elected as the anchor. Use locations for fine-grained analysis, events for matching against curator rolls or predicted_rolls.json.",
@@ -6339,6 +6359,15 @@
       "candidate_kind": "roll_attempt"
     },
     {
+      "chapter_num": "46.1",
+      "epub_href": "chap_60.xhtml",
+      "section_index": 0,
+      "match_phrase": "slipped past",
+      "match_offset": 1960,
+      "context": "ote in their list of disasters. Well, people had been wondering what it would take to shift public attention away from what happened to Aegis. It turned out there was an obvious answer that had [[slipped past]] everyone. All it took was a mounting series of disasters culminating in the total catastrophe the city had seen the previous night. He'd been in the thick of it, right alongside the troopers an",
+      "candidate_kind": "miss"
+    },
+    {
       "chapter_num": "47",
       "epub_href": "chap_62.xhtml",
       "section_index": 1,
@@ -7264,6 +7293,15 @@
       "match_offset": 114170,
       "context": "'ve done. He glanced up as the tools in my hands faded back into spirit form. \"And I think I have a better idea of what you were talking about now.\" I nodded as the Forge missed a connection to [[the Magitech constellation]] . That use of my Noble Phantasm had taken a chunk of my mana to complete, and was fairly minor by the standards of that ability. The mana cost scaled with the size of the item and the complexity of th",
       "candidate_kind": "constellation_reveal"
+    },
+    {
+      "chapter_num": "55.1",
+      "epub_href": "chap_71.xhtml",
+      "section_index": 1,
+      "match_phrase": "new ability had",
+      "match_offset": 25425,
+      "context": "Alpha vehicle was not due to any residual issues from his recent cognitive maintenance session, nor was it due to a lack of concern regarding the significance of the event. Instead, the arrival of a [[new ability had]] triggered a disruption significant enough to divert Apeiron's attention. The enthusiasm of Aisha Laborn for the recent ability was also a factor in the diversion of Apeiron's attention. She had",
+      "candidate_kind": "acquisition"
     },
     {
       "chapter_num": "56",
@@ -9201,6 +9239,69 @@
       "candidate_kind": "roll_attempt"
     },
     {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 8103,
+      "context": "r would normally provide. No, she may have been privy to every vile thought held by the attendees of the summit, but despite clearly supernatural beauty, Survey wasn't involved with any member of the [[Celestial Forge]] , nor was there any tension or unrequited feelings. The most she had picked up was a rather close fraternal/sororal relationship with Fleet, but even that had been subtle. The general public mig",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 8783,
+      "context": "or's power in real time had cemented her credibility for the world. It was a strong message. Around Survey, subtle powers weren't. Anyone planning to leverage a specific parahuman ability against the [[Celestial Forge]] was rapidly reassessing their plans. It was such a master stroke that she almost wondered if it had been set up in advance. It hadn't been. If anything, Joe was upset at needing to admit to hav",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 14436,
+      "context": "gged in random directions by a power he couldn't predict or control, was terrifying beyond belief. Was terrifying on its own, independent of the risk of Noelle cloning him. Or any other member of the [[Celestial Forge]] . She had the sense that Joe intended the presence of his team to be a reassuring factor. A demonstration of his abilities and resources. More forces available for the inevitable strike against",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 14988,
+      "context": "ovided by Joe's growth in power had turned into a liability, and the team only made the situation worse. If she couldn't predict the abilities a clone of Joe would possess, then the rest of the [[Celestial Forge]] was even more of a concern. Would a clone of Fleet be able to move with that strength and power? Would an evil duplicate of Survey be able to scream secrets to the world? If Kataklyzein was as powerf",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 20263,
+      "context": "could bring to bear wasn't met easily, but enough combined forces could conceivably counter it. Something like Lethe was another matter. As unlikely as it was that they could effectively counter the [[Celestial Forge]] , they could at least make an attempt. You couldn't block the hit you didn't see coming. Lethe was frightening in a way entirely unique to her. And one wrong move could see her cloned. Even if s",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 23646,
+      "context": "time. There was no question that he would go scorched earth in response to any direct action by Joe. It would combine a vindictive teleporter with a situation where contact between any member of the [[Celestial Forge]] and Noelle would mean the end of the world. It was the reason why she couldn't just come clean to Joe about the threat. Every time she went over the situation just served to remind her how litt",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "match_phrase": "banked",
+      "match_offset": 64518,
+      "context": "essful rolls during this chapter. For those who are interested, there were failed rolls for the Time, Knowledge, Capstone, Magic, and Resources and Durability constellations. 500 points are currently [[banked]] , meaning the first roll of the next chapter will have 600 points available.) Last edited: Jul 1, 2022",
+      "candidate_kind": "miss"
+    },
+    {
       "chapter_num": "75",
       "epub_href": "chap_104.xhtml",
       "section_index": 0,
@@ -9982,6 +10083,42 @@
       "match_offset": 120575,
       "context": "e reinforcement of the force fields cladding his body. Instead, he enthusiastically shook my hand while sporting a smile like a sunrise. \"Thank you.\" He said as the Forge missed a connection to [[the Time constellation]] . I could tell he was attempting to keep the emotion from his voice. \"Forgive my forwardness, but when will we-\" \"Now.\" I said, and squeezed his hand. The micromanipulators cladding my han",
       "candidate_kind": "constellation_reveal"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 39734,
+      "context": "vy to. Apeiron had been exceptionally conservative with details regarding his teammates, despite feeling comfortable making a unilateral decision regarding Uppercrust's offer. The team dynamic of the [[Celestial Forge]] was difficult to feel out, standing in contrast to the vast majority of parahuman organizations Uppercrust had encountered. Still, it wasn't an unstable arrangement by any metric, so best to leave un",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 43426,
+      "context": "the speed at which they were deployed, but most people were more likely to assume the deployment of some hidden reserve of equipment or a secret project coming to fruition, not the assistance of the [[Celestial Forge]] . Apeiron's style was as recognizable as a fingerprint. It could be seen clearly in every aspect of Thurin-Ist, but would be absent from any subsequent works. The task before him would be conduc",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 48571,
+      "context": "herself to get a rather unobstructed rear view of Apeiron prior to his vanishing. She shrugged her shoulders at the accusation. \"Fine, that was a very pretty man.\" \"Something of a theme in the [[Celestial Forge]] .\" Yellowjack admitted. He turned to Uppercrust with a more serious expression. \"I am fairly certain no active stranger effect is employed, but the level of aesthetic control and management of tangent",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 56700,
+      "context": "Jacob away just to secure enough cholesterol to roll back the bulk of Apeiron's medical treatments. This is something big.\" Uppercrust inclined his head again. \"Alright, let's hear it. What does the [[Celestial Forge]] want from us?\" He could see the concern in Yellowjack's eyes, and the more controlled worry from Ferrona. Despite their recent encounter with Survey, they knew Apeiron by reputation, and had en",
+      "candidate_kind": "general"
     },
     {
       "chapter_num": "83",
@@ -10992,6 +11129,240 @@
       "candidate_kind": "constellation_reveal"
     },
     {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 1383,
+      "context": "ed directly with the team. Faultline had been meticulous in her management of every aspect of the evening, including the selection of the waitstaff. The task of preparing to host members of the [[Celestial Forge]] had been more stressful than some of the missions they had undertaken. His offer to Fleet had been a gamble, really a shot in the dark, but seeing it accepted they had put everything they had into pr",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 5268,
+      "context": "by the person in command, but it also wasn't one of those informal coalitions where matters were decided by vote and anyone could walk out whenever they wanted. Things weren't like that in the [[Celestial Forge]] . Gregor wasn't exactly sure what they were like, but there wasn't the sense that anyone was exactly 'working for' Apeiron. Fleet had acted on his own initiative, taking action against a major group w",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 5776,
+      "context": "ed he had acted without Apeiron's direction or approval and the man had confirmed as much over the course of the evening. As far as he knew, no one could figure out the command structure of the [[Celestial Forge]] . Apeiron was clearly the leader, but what exactly that entailed was anyone's guess. They'd had to work very hard to restrain themselves to keep the evening from turning into an interrogation, instead",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 7215,
+      "context": "cat had moved. The handling of his weapon, the evaluation of his environment. It all spoke to a depth of understanding and experience that was lacking, though not entirely absent, in the rest of the [[Celestial Forge]] . Even in this relaxed atmosphere, the edge was still there. No matter how casual Kataklyzein acted, Gregor couldn't dismiss him as a threat, even with him arriving unarmed. Neither of the",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 8888,
+      "context": "hanged a look with Faultline, sharing his concern and seeing that she recognized it as well. It wasn't the fact that Kataklyzein had no trouble handling that glowing black metal or that no one on the [[Celestial Forge]] had been the least bit guarded about it. It was that the double headed spear that Kataklyzein had carried was made of the same material. If the cat was concerned about someone accidentally brushing a",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 10366,
+      "context": "k. Gregor noticed Faultline eyeing it closely. While everything in the lounge was beyond the club's top shelf offerings, she seemed to had come to realize exactly how far a step down that was for the [[Celestial Forge]] . Clearly, they weren't here for the quality of the liquor. \"Hey boss lady?\" Newter called over to Faultline. \"Any chance we can get in on that?\" Faultline put a good-humored smile o",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 11571,
+      "context": "r how much.\" Fleet said dismissively. \"Not really my area, but Survey will have estimates modeled out.\" It was another tidbit of information. Insights into the dynamics and relationships of the [[Celestial Forge]] . They'd been dropping like breadcrumbs all night. The kind of facts that would drive Protectorate thinkers mad, casually thrown in to add context to either of the cape's statements. It was unde",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 11820,
+      "context": "rumbs all night. The kind of facts that would drive Protectorate thinkers mad, casually thrown in to add context to either of the cape's statements. It was understandable. The importance of the [[Celestial Forge]] was completely disproportionate to the amount of information available regarding them. Capes of their level would have dossiers documenting every detail that might make them easier to manage, or at l",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 15261,
+      "context": "reactions. The man's rugged demeanor didn't seem to be to everyone's taste, but had provoked some unabashed reactions from what Gregor had seen online. Once again, something of a theme with the [[Celestial Forge]] . \"What, just buy a bottle when they do a general release?\" Newter asked. \"That's not going to be easy.\" Faultline said. \"It's a built-in limited release. Anyone with sense would go hard w",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 23066,
+      "context": "n't concerned about the minor details that could leak through casual conversation. The reason was readily apparent if you thought about it for more than a moment. Knowing additional details about the [[Celestial Forge]] wouldn't give you an advantage against them anymore than knowing the exact tonnage of the train barreling towards you would help you survive the impact. Honestly, the facts they were learning weren't",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 23370,
+      "context": "e train barreling towards you would help you survive the impact. Honestly, the facts they were learning weren't so much revealing weaknesses as dismissing the possibility of them. Announcing that the [[Celestial Forge]] was actually much stronger, well supplied, and better coordinated than people expected wasn't the kind of analysis people were hoping to receive. If those kernels of insight were all they were",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 23862,
+      "context": "ry team could betray the trust that had been extended and sell the information gained to the highest bidder. Probably a lot of high bidders, given how desperate people were for any information on the [[Celestial Forge]] . But that wasn't what was going to happen, and not just because of the absolutely terrifying prospect of getting on the bad side of the Celestial Forge. Professional relationships carried less",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 24014,
+      "context": "esperate people were for any information on the Celestial Forge. But that wasn't what was going to happen, and not just because of the absolutely terrifying prospect of getting on the bad side of the [[Celestial Forge]] . Professional relationships carried less weight in cape circles than you would expect. That mercenary attitude was the default, not the exception. To accept Gregor's invitation and arrive ungua",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 24348,
+      "context": "as the default, not the exception. To accept Gregor's invitation and arrive unguarded and willing to engage with them was an incredibly rare thing, even when dealing with conventional capes. With the [[Celestial Forge]] it was a stroke of unbelievable fortune. But it was still fortune that needed to be capitalized on. Once again, if things were slower, calmer, or more stable then this could have been the first",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 27816,
+      "context": "ctors at play, factors that had been enough to counter every group in the city, didn't excuse their failure. Every group. Looking over at Fleet and Kataklyzein, Gregor was forced to include the [[Celestial Forge]] in that assessment as well. March's attack had ultimately failed, but it had come closer than anyone dreamed possible, downing the only man who had been able to counter her plans. Until he had",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 28430,
+      "context": "nd likely Survey. It was very possible that strike had dragged his team into the light, well before they were ready to present themselves. Possible, but uncertain, like everything regarding the [[Celestial Forge]] . Dwelling on the difficulty of his task wouldn't do any good at this point. The evening had progressed as well as they could have hoped. He could present his case, or at least make a more direc",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 47007,
+      "context": "at the very least Apeiron had done something that facilitated Fleet's ability to function. To integrate himself into society. Apeiron. No hint of any collaboration from the other members of the [[Celestial Forge]] . Members who had their own secrets that Fleet would not share. The gulf between their abilities and Apeiron's capabilities was evident in how they spoke about the man. It was no wonder the team",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 53167,
+      "context": "was the kind of reaction you only saw from beings too powerful to even be considered capes. Ashbeast, Sleeper, or the Endbringers. The world had no idea how badly they were underestimating the [[Celestial Forge]] . \"Are you doing okay?\" Fleet asked as he stepped forward to check on him. The calm, laid back man had returned. Looking at him, Gregor couldn't see any hint of the overwhelming power that",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 54583,
+      "context": "With the power at Fleet's disposal, he didn't doubt the man's ability to remove any problem that offended him, nor did he have any doubts as to what that removal would entail. \"The rest of the [[Celestial Forge]] ?\" He asked. \"Are they-\" Fleet shook his head. \"They have their own situations.\" A smile appeared on his face. \"We're all different.\" And yet Apeiron had been able to help them all. Maybe",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 58010,
+      "context": "nnections can be modified, expressions changed. It is complicated and needs to be personalized for each situation.\" Personalized to individual situations. Like the situations of the rest of the [[Celestial Forge]] . \"But Apeiron is able to do it? Or would be able to try?\" Gregor asked. Fleet nodded. \"He could. Even in the worst situations, the majority of the detrimental aspects could be addressed.",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 61701,
+      "context": "pped forward and shook Fleet's hand. The grip was firm, but lacked any of the postures of strength or durability that were so common with brutes. Because they were completely unneeded. When the [[Celestial Forge]] postured it was for the comfort and peace of mind of those around them, not to aggrandize their own position. That was what they had seen so far. All they had seen. Posturing to hold back the panic a",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 63402,
+      "context": "to hearing from them.\" Faultline said with a smile. One that died when she saw his face. \"Unless I won't.\" \"That remains to be seen.\" He said. He had received a glimpse of the true power of the [[Celestial Forge]] , once the curtain was pulled back and the truth was laid bare. Somehow, he doubted it would be any more comforting to Faultline than it had been to him. But comforting or not, they had a way fo",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 4702,
+      "context": "sade if the duo suddenly made an appearance on the other side of the country. Honestly, Blasto wished something like that would happen. It was doubtful they could accomplish anything before the [[Celestial Forge]] got the jump on them, but at least it would be a reason to leave the city. And they really needed to get out of this city. Brockton Bay was a fascinating place. The things that could be learned",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 44073,
+      "context": "leaving things at that. \"Thank you for showing me.\" He said as politely as he could. His mind was bubbling with a thousand questions for her and Apeiron. And Survey, and any other member of the [[Celestial Forge]] he could get to listen to him, but that wasn't why they were here. Yes, he might never get another chance to ask, but if he wasted Apeiron's time he would definitely never get another chance to ask.",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 51155,
+      "context": "Bakuda or Uber and Leet would you involve Lost Garden in your attack? Or even allow them the first move?\" Rey didn't hide his thoughts on the matter. Comparing the most casual demonstrations from the [[Celestial Forge]] to the effective power rabble of Lost Garden felt insulting. Apeiron took a breath before responding. \"Uber and Leet made trades with the Toybox before returning to the city. I believe they are",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 56431,
+      "context": "would happen in the meantime, and how severe his reaction would be were all unknown. Somehow, the members of Lost Garden were the only ones in the city not walking on eggshells at the thought of the [[Celestial Forge]] 's response. Too sheltered to take things seriously and too bold for their own good. \"Honestly, if it were up to me, I would have packed up after the summit.\" Blasto admitted. \"But that's not an",
+      "candidate_kind": "general"
+    },
+    {
       "chapter_num": "96",
       "epub_href": "chap_140.xhtml",
       "section_index": 0,
@@ -11467,6 +11838,15 @@
       "match_offset": 119846,
       "context": "spontaneous modeling opportunity for Tetra was a pretty far flung and probably as far as it was likely to go. The slow movement of the Celestial Forge resulted in a failed attempt to connect to [[the Alchemy constellation]] as I considered the situation. Tetra was all for it, obviously. It was a chance for her to meet more people and do new things. Survey was confident she could handle the task without compromising any",
       "candidate_kind": "constellation_reveal"
+    },
+    {
+      "chapter_num": "99.1",
+      "epub_href": "chap_146.xhtml",
+      "section_index": 1,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 4061,
+      "context": "they saw the world in a simpler way. That wasn't a bad analogy. Aisha was generally good at coming up with analogies. It was like she was constantly trying to relate everything that happened with the [[Celestial Forge]] to some comparable human experience. It wasn't always a perfect match, but it definitely helped. It helped Aisha understand what was happening and helped the rest of them relate their experiences to",
+      "candidate_kind": "general"
     },
     {
       "chapter_num": "99.3",
@@ -12108,6 +12488,141 @@
       "candidate_kind": "miss"
     },
     {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 906,
+      "context": "g effort for him to adjust to the situation. Normally he would have at least taken a moment to prepare for the arrival of representatives of major cape organizations, much less one as powerful as the [[Celestial Forge]] . Normally any meeting would be held in a room dedicated to such a purpose, not one covered in the scattered paperwork for facilitating the transfer of hostages and housing them on short notice.",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 3200,
+      "context": "would be quickly identified and addressed. So that at worst you'd see one-off issues rather than persistent subversion of your department. Arranging a proper reception and meeting space for the [[Celestial Forge]] 's representatives would have drawn far too much attention. Frankly, just having them on site might be too much for some people to contain. They had the advantage of only needing a few days of securit",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 11393,
+      "context": "vent about such matters. Apeiron seemed entirely genuine in his question. It was a stark reminder of the fact that the man had wanted to accelerate the timeframe even further. One detail of the [[Celestial Forge]] was becoming an open secret in the higher levels of the PRT, but an extremely closely guarded secret outside of those areas. There was little doubt that Garment, the new fashion cape in Brockton Bay,",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 11648,
+      "context": "er levels of the PRT, but an extremely closely guarded secret outside of those areas. There was little doubt that Garment, the new fashion cape in Brockton Bay, had some level of association with the [[Celestial Forge]] . Her apparent desire to stand apart from the rest of the group wasn't something anyone was keen to intrude in, but the scale of her abilities and their progressing nature made the connection fairly o",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 12269,
+      "context": "Something that could bring people together into a greater whole as easily as cloth and thread being turned into an immaculate dress. Of course, if such abilities had been at the disposal of the [[Celestial Forge]] , it made sense that Apeiron's sense of scale and complexity would be a little skewed in the absence of thinker assisted coordination abilities. Instead of commenting on the larger matters, Armstrong",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 14168,
+      "context": "th, growing out from the Matrix's hand as they fanned out and wove together. They spun through the air with an artistry that brought Armstrong's mind back to the presumed connection between the [[Celestial Forge]] and Garment. Just like with the fashion cape, there was a sense of performance to the man's actions as the strands of gold fused together, forming a gleaming lattice in the air that was quickly fille",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 16968,
+      "context": "on would even notice they were wearing it after the first few minutes. \"Is it statement-delayed?\" He asked, then regretted the question. It felt a bit insulting to compare something made by the [[Celestial Forge]] to conventional technology, but computer aided translation had been attempted before. Working with one statement at a time, often with context stripped away and in-built inaccuracies, as well as the",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 18053,
+      "context": "eath and examined the device more closely. And definitely did not see anything indicating the ability to generate holograms that could change apparent mouth movements, but given the reputation of the [[Celestial Forge]] , was that really surprising. Just the implication that the device could sufficiently filter and modify observations to that degree… well, there were uses for that kind of technology that were s",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 18807,
+      "context": "to the user's field of vision is still utilized for the purpose of translation of written language.\" The Matrix explained, as if it was the most normal thing in the world. And by the standards of the [[Celestial Forge]] , it just might be. Written language. In addition to two-way real-time communication capable of managing multiple languages simultaneously. All apparently produced on the spot in a handful of se",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 24330,
+      "context": "referred to them as Universal Translators. Somehow Armstrong doubted that he was being hyperbolic in that description. \"Of course.\" He said quickly. \"Would this be a formal arrangement with the [[Celestial Forge]] ?\" \"With the Matrix.\" Apeiron said firmly. Once again, the golden armor stood a little straighter while Proto Aima looked on with a smile. \"Which should simplify things to a degree, given my cur",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 29077,
+      "context": "or opened and a severe faced woman with graying hair stepped in. She gave Armstrong a serious nod as she adjusted her business suit, then paused and slowly shifted her gaze towards the members of the [[Celestial Forge]] . \"This is Hellen Palmer. She'll be handling the Matrix's registration as a PRT contact, with vendor and contractor classifications. Palmer, could you please provide the Matrix with an overview",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 32707,
+      "context": "nt robotic form, an apparent interest in classic Japanese animation, and a rumored preference for gin cocktails. It was a novel and rather candid look at the dynamics between the members of the [[Celestial Forge]] . Not as the monolithic collection of supremely powerful capes they were collectively known or suspected to be, but as a group of people with their own dynamic of interests, supports, passions, and ac",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 33118,
+      "context": "d accomplishments. The idea that a cape that most people only knew as a titanic match for Endbringer level threats would be excited about engaging in support work for the PRT, or that the rest of the [[Celestial Forge]] would evidently be happy for him, was not something that would have been entertained in Protectorate analysis. Not for people prone to looking at the situation twenty layers deep and assuming h",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 38850,
+      "context": "o face, shook her hand and spoken to her. There was no illusion or misdirection there. She had a human form when earlier she didn't. And Apeiron was directly credited with that. Of the members of the [[Celestial Forge]] , she had been the strongest outlier. Now that position fell to someone else. Armstrong straightened his back as he inquired about the man in question. \"The Matrix?\" Armstrong began. \"He has an",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 42354,
+      "context": "g was specific. Proto Aima was described as distinct from Case 53s. Personally, as someone familiar with the aspects that defined a 'proper' Case 53, Armstrong did not believe that any members of the [[Celestial Forge]] qualified. There were definitely aspects that they held in common, but not the specific set of shared circumstances that defined that classification. \"I suppose I should have the conviction to",
+      "candidate_kind": "general"
+    },
+    {
       "chapter_num": "109",
       "epub_href": "chap_164.xhtml",
       "section_index": 0,
@@ -12495,6 +13010,60 @@
       "candidate_kind": "constellation_reveal"
     },
     {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 160762,
+      "context": "violating people's minds like that?\" She asked. Apeiron gave her a look and she suddenly remembered Lethe. Lethe and the half dozen other known or suspected mental effects that were intrinsic to the [[Celestial Forge]] . \"I mean, it's criminal to use powers to extract information from people.\" Apeiron took a breath. \"This is not something I would have done.\" He admitted. \"And I can assure you that the individu",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 161489,
+      "context": "ng off some kind of serious conflict within Apeiron's team was suddenly even more frightening than what the reveal of what happened that night could mean for her. Everyone had been treating the [[Celestial Forge]] either as a homogeneous unit or basically as an extension of Apeiron. This might be the first hint of an internal conflict. While that might be seen as an advantage to Amy's situation, it had the pot",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 218252,
+      "context": "ienting, but the nanites can deal with that as well. \"Oh.\" Amy said. \"Good.\" It wasn't good. It was a fresh set of concerns when she was already near her max capacity. She had thought the [[Celestial Forge]] was bad, a collection of near Apeiron level capes accountable to no one but him. But that paled in comparison to near Apeiron level capes who were accountable to no one, not even Apeiron. She didn't",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 239865,
+      "context": "/p> Amy bit her lip. A basic immunity and resistance to other effects should have been reassuring, but trying to get that reassurance had just revealed more of the true depths of how impossible the [[Celestial Forge]] actually was. And something else hit her. Something that actually managed to pierce through the existential dread that arrived every time Apeiron revealed some new ability. She was immune to ma",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 248370,
+      "context": "just doesn't want to deal with the mess that would happen when he did what he'd done to Lung to the Triumvirate, or Protectorate Strike Team, or whatever the current protocol was for dealing with the [[Celestial Forge]] . It was an insane amount of power, and yet it had somehow been hamstrung because of the way Amy had reported on that first encounter. Because of that, and because of everything that followed. I",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "match_phrase": "the Personal Reality constellation",
+      "match_offset": 281123,
+      "context": "uthor's note: The first two rolls in this chapter were for 500 and 700 points, both failing due to landing on 800 point items. The final roll was for 900 points and landed on 100 points of items from [[the Personal Reality constellation]] . This means that despite the length of the chapter there are only 100 points of items, and that the next chapter will be starting with a 1000 point roll.) Jumpchain abilities this chapt",
+      "candidate_kind": "constellation_reveal"
+    },
+    {
       "chapter_num": "116.3",
       "epub_href": "chap_184.xhtml",
       "section_index": 1,
@@ -12619,6 +13188,87 @@
       "match_offset": 48583,
       "context": "d create them all. I knew the power and danger of the old blood, or all blood, truly. I was beyond the restrictions that other artisans labored under. The work of a lifetime in that cursed city [[granted me knowledge]] of every weapon and tool called upon in the fight against the monsters that had been created by arrogance and those dwelling in deeper realms. Mechanically the power could be boiled down to 'us",
       "candidate_kind": "acquisition"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 29295,
+      "context": "and the opportunity presented itself…\" Apeiron looked directly at the automaton and Elle nearly recoiled at the implication. She was involved. Somehow, with whatever he was doing, whatever the [[Celestial Forge]] was doing, she was connected to it. She focused her mind's eye directly on that room, on Apeiron and the automaton. Slight shifts in construction flowed through the form, a compromise between the ori",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 32097,
+      "context": "said, cutting off the panicked repetition despite her panic being very real. \"It's the Slaughterhouse Nine. They're coming.\" A brief moment of desperate hope filled her. Were they coming, or was the [[Celestial Forge]] planning to go after them? Hunting them down? Maybe it wasn't as bad as she feared. Maybe… Apeiron's face made the situation clear. \"They are coming. They're on their way now and will be here i",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 38547,
+      "context": "was referencing something from the distant past. \"It's a bit of a basic solution at this point, but still perfectly workable. Fleet called dibs. He likes those kinds of applications.\" Dibs. The [[Celestial Forge]] were calling dibs on members of the Slaughterhouse Nine. Until that moment Elle hadn't fully comprehended exactly how confident they really were. But even if they were confident, there was a reason t",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 58142,
+      "context": "rned about what had happened after she joined the Slaughterhouse Nine. Faultline made sure the whole team knew about it, in case anything happened.\" Like it was about to, or would have if not for the [[Celestial Forge]] . \"I didn't follow things after that. No one really follows news on the Nine.\" It was horrible to focus on, usually too horrible to even report on in more than the most broad details. Apeiron no",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 70684,
+      "context": "e plan to upend the concept of life and death. Even after everything she had seen, everything her awareness had shown her, she couldn't believe that she had somehow managed to underestimate the [[Celestial Forge]] . And if that was possible, then… \"Could you help me?\" She asked. \"With my power?\" Apeiron smiled at her. \"Of course. After everything, you've more than earned a contract.\" Contract.",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 78492,
+      "context": "points she felt she needed to raise, if only to know they wouldn't come back to bite her later. \"You barely know me, even after tonight. I work for a mercenary team. We aren't aligned with the [[Celestial Forge]] .\" She paused as she remembered the extensive paperwork that Faultline had been dealing with. \"At least not officially. And there's what this would mean for my power.\" \"What it would mean if you",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 80113,
+      "context": "te whiskey, Newter's treatment, the case of hologram bands that Gregor took out into the city. The city that had changed so much, and was only going to change more. What was going to happen after the [[Celestial Forge]] defeated the Slaughterhouse Nine? What was the world going to look like? Probably not like the same kind of place where Faultline had to hunt around for corporate espionage work between major clients",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 118595,
+      "context": "ough their faces and edges, through the different materials and shapes, all while maintaining balance and symmetry. The final work had the same weight she recognized from the equipment carried by the [[Celestial Forge]] , the weight intrinsic to everything Apeiron made. This was something that was more than any single dimension. Something that existed in multiple places at once while still being a distinct item, stil",
+      "candidate_kind": "general"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "match_phrase": "Celestial Forge",
+      "match_offset": 144283,
+      "context": "puzzle. \"It was part of the deal.\" \"Some deal.\" Newter said, leaning back and looking up through the new skylights. \"Anything else come up?\" Elle considered, then nodded. \"I know what the [[Celestial Forge]] will be busy with for the next few days.\" Suddenly everyone was intently focused on her. \"Apeiron told you?\" Faultline asked. Elle nodded. \"Did it come up, or was it something relevant to you?",
+      "candidate_kind": "general"
     }
   ],
   "events": [
@@ -18196,6 +18846,19 @@
       "context": "to old hang ups, not anything relevant to the current situation. It was something I needed to move past, both in general and for the sake of my powers. I just really didn't want to. The Quality [[constellation moved]] past as I considered my next action. I knew half of this was about delaying things, but there were still some things I needed to work out. A video call would be a much better idea than just a v"
     },
     {
+      "chapter_num": "46.1",
+      "epub_href": "chap_60.xhtml",
+      "section_index": 0,
+      "anchor_kind": "miss",
+      "anchor_phrase": "slipped past",
+      "anchor_offset": 1960,
+      "kinds_present": [
+        "miss"
+      ],
+      "hit_count": 1,
+      "context": "ote in their list of disasters. Well, people had been wondering what it would take to shift public attention away from what happened to Aegis. It turned out there was an obvious answer that had [[slipped past]] everyone. All it took was a mounting series of disasters culminating in the total catastrophe the city had seen the previous night. He'd been in the thick of it, right alongside the troopers an"
+    },
+    {
       "chapter_num": "47",
       "epub_href": "chap_62.xhtml",
       "section_index": 1,
@@ -19168,6 +19831,19 @@
       ],
       "hit_count": 2,
       "context": "'ve done. He glanced up as the tools in my hands faded back into spirit form. \"And I think I have a better idea of what you were talking about now.\" I nodded as the Forge missed a connection to [[the Magitech constellation]] . That use of my Noble Phantasm had taken a chunk of my mana to complete, and was fairly minor by the standards of that ability. The mana cost scaled with the size of the item and the complexity of th"
+    },
+    {
+      "chapter_num": "55.1",
+      "epub_href": "chap_71.xhtml",
+      "section_index": 1,
+      "anchor_kind": "acquisition",
+      "anchor_phrase": "new ability had",
+      "anchor_offset": 25425,
+      "kinds_present": [
+        "acquisition"
+      ],
+      "hit_count": 1,
+      "context": "Alpha vehicle was not due to any residual issues from his recent cognitive maintenance session, nor was it due to a lack of concern regarding the significance of the event. Instead, the arrival of a [[new ability had]] triggered a disruption significant enough to divert Apeiron's attention. The enthusiasm of Aisha Laborn for the recent ability was also a factor in the diversion of Apeiron's attention. She had"
     },
     {
       "chapter_num": "56",
@@ -21189,6 +21865,97 @@
       "context": "sion and leaned in with anticipation. A very familiar cluster of motes was swinging towards me. They were small motes, so even my mostly depleted reach was able to secure two of them. The rest of the [[constellation swung]] by as I felt two additional copies of Star Trek's Skills power. \"What?\" Aisha prodded. \"What is it this time?\" I smiled. \"More Star Trek.\" Her eyes widened in excitement that had a lot mo"
     },
     {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 8103,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "r would normally provide. No, she may have been privy to every vile thought held by the attendees of the summit, but despite clearly supernatural beauty, Survey wasn't involved with any member of the [[Celestial Forge]] , nor was there any tension or unrequited feelings. The most she had picked up was a rather close fraternal/sororal relationship with Fleet, but even that had been subtle. The general public mig"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 8783,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "or's power in real time had cemented her credibility for the world. It was a strong message. Around Survey, subtle powers weren't. Anyone planning to leverage a specific parahuman ability against the [[Celestial Forge]] was rapidly reassessing their plans. It was such a master stroke that she almost wondered if it had been set up in advance. It hadn't been. If anything, Joe was upset at needing to admit to hav"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 14436,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "gged in random directions by a power he couldn't predict or control, was terrifying beyond belief. Was terrifying on its own, independent of the risk of Noelle cloning him. Or any other member of the [[Celestial Forge]] . She had the sense that Joe intended the presence of his team to be a reassuring factor. A demonstration of his abilities and resources. More forces available for the inevitable strike against"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 14988,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ovided by Joe's growth in power had turned into a liability, and the team only made the situation worse. If she couldn't predict the abilities a clone of Joe would possess, then the rest of the [[Celestial Forge]] was even more of a concern. Would a clone of Fleet be able to move with that strength and power? Would an evil duplicate of Survey be able to scream secrets to the world? If Kataklyzein was as powerf"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 20263,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "could bring to bear wasn't met easily, but enough combined forces could conceivably counter it. Something like Lethe was another matter. As unlikely as it was that they could effectively counter the [[Celestial Forge]] , they could at least make an attempt. You couldn't block the hit you didn't see coming. Lethe was frightening in a way entirely unique to her. And one wrong move could see her cloned. Even if s"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 23646,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "time. There was no question that he would go scorched earth in response to any direct action by Joe. It would combine a vindictive teleporter with a situation where contact between any member of the [[Celestial Forge]] and Noelle would mean the end of the world. It was the reason why she couldn't just come clean to Joe about the threat. Every time she went over the situation just served to remind her how litt"
+    },
+    {
+      "chapter_num": "74.2",
+      "epub_href": "chap_103.xhtml",
+      "section_index": 0,
+      "anchor_kind": "miss",
+      "anchor_phrase": "banked",
+      "anchor_offset": 64518,
+      "kinds_present": [
+        "miss"
+      ],
+      "hit_count": 1,
+      "context": "essful rolls during this chapter. For those who are interested, there were failed rolls for the Time, Knowledge, Capstone, Magic, and Resources and Durability constellations. 500 points are currently [[banked]] , meaning the first roll of the next chapter will have 600 points available.) Last edited: Jul 1, 2022"
+    },
+    {
       "chapter_num": "75",
       "epub_href": "chap_104.xhtml",
       "section_index": 0,
@@ -22076,6 +22843,58 @@
       ],
       "hit_count": 2,
       "context": "e reinforcement of the force fields cladding his body. Instead, he enthusiastically shook my hand while sporting a smile like a sunrise. \"Thank you.\" He said as the Forge missed a connection to [[the Time constellation]] . I could tell he was attempting to keep the emotion from his voice. \"Forgive my forwardness, but when will we-\" \"Now.\" I said, and squeezed his hand. The micromanipulators cladding my han"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 39734,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "vy to. Apeiron had been exceptionally conservative with details regarding his teammates, despite feeling comfortable making a unilateral decision regarding Uppercrust's offer. The team dynamic of the [[Celestial Forge]] was difficult to feel out, standing in contrast to the vast majority of parahuman organizations Uppercrust had encountered. Still, it wasn't an unstable arrangement by any metric, so best to leave un"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 43426,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "the speed at which they were deployed, but most people were more likely to assume the deployment of some hidden reserve of equipment or a secret project coming to fruition, not the assistance of the [[Celestial Forge]] . Apeiron's style was as recognizable as a fingerprint. It could be seen clearly in every aspect of Thurin-Ist, but would be absent from any subsequent works. The task before him would be conduc"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 48571,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "herself to get a rather unobstructed rear view of Apeiron prior to his vanishing. She shrugged her shoulders at the accusation. \"Fine, that was a very pretty man.\" \"Something of a theme in the [[Celestial Forge]] .\" Yellowjack admitted. He turned to Uppercrust with a more serious expression. \"I am fairly certain no active stranger effect is employed, but the level of aesthetic control and management of tangent"
+    },
+    {
+      "chapter_num": "82.1",
+      "epub_href": "chap_114.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 56700,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "Jacob away just to secure enough cholesterol to roll back the bulk of Apeiron's medical treatments. This is something big.\" Uppercrust inclined his head again. \"Alright, let's hear it. What does the [[Celestial Forge]] want from us?\" He could see the concern in Yellowjack's eyes, and the more controlled worry from Ferrona. Despite their recent encounter with Survey, they knew Apeiron by reputation, and had en"
     },
     {
       "chapter_num": "83",
@@ -23221,6 +24040,331 @@
       "context": "howing up the stupid plasma loop that Uber tried to fight me with back at the storage yard. The slow rotation of the constellations passed by with a failed connection to the remaining mote from [[the Time constellation]] as Survey announced the arrival of Fleet, Garment, and her own replica droid. The droid was left in the studio as Garment flowed into the workshop. Meanwhile, Fleet appeared in a burst of speed that"
     },
     {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 1383,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ed directly with the team. Faultline had been meticulous in her management of every aspect of the evening, including the selection of the waitstaff. The task of preparing to host members of the [[Celestial Forge]] had been more stressful than some of the missions they had undertaken. His offer to Fleet had been a gamble, really a shot in the dark, but seeing it accepted they had put everything they had into pr"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 5268,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "by the person in command, but it also wasn't one of those informal coalitions where matters were decided by vote and anyone could walk out whenever they wanted. Things weren't like that in the [[Celestial Forge]] . Gregor wasn't exactly sure what they were like, but there wasn't the sense that anyone was exactly 'working for' Apeiron. Fleet had acted on his own initiative, taking action against a major group w"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 5776,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ed he had acted without Apeiron's direction or approval and the man had confirmed as much over the course of the evening. As far as he knew, no one could figure out the command structure of the [[Celestial Forge]] . Apeiron was clearly the leader, but what exactly that entailed was anyone's guess. They'd had to work very hard to restrain themselves to keep the evening from turning into an interrogation, instead"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 7215,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "cat had moved. The handling of his weapon, the evaluation of his environment. It all spoke to a depth of understanding and experience that was lacking, though not entirely absent, in the rest of the [[Celestial Forge]] . Even in this relaxed atmosphere, the edge was still there. No matter how casual Kataklyzein acted, Gregor couldn't dismiss him as a threat, even with him arriving unarmed. Neither of the"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 8888,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "hanged a look with Faultline, sharing his concern and seeing that she recognized it as well. It wasn't the fact that Kataklyzein had no trouble handling that glowing black metal or that no one on the [[Celestial Forge]] had been the least bit guarded about it. It was that the double headed spear that Kataklyzein had carried was made of the same material. If the cat was concerned about someone accidentally brushing a"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 10366,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "k. Gregor noticed Faultline eyeing it closely. While everything in the lounge was beyond the club's top shelf offerings, she seemed to had come to realize exactly how far a step down that was for the [[Celestial Forge]] . Clearly, they weren't here for the quality of the liquor. \"Hey boss lady?\" Newter called over to Faultline. \"Any chance we can get in on that?\" Faultline put a good-humored smile o"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 11571,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "r how much.\" Fleet said dismissively. \"Not really my area, but Survey will have estimates modeled out.\" It was another tidbit of information. Insights into the dynamics and relationships of the [[Celestial Forge]] . They'd been dropping like breadcrumbs all night. The kind of facts that would drive Protectorate thinkers mad, casually thrown in to add context to either of the cape's statements. It was unde"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 11820,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "rumbs all night. The kind of facts that would drive Protectorate thinkers mad, casually thrown in to add context to either of the cape's statements. It was understandable. The importance of the [[Celestial Forge]] was completely disproportionate to the amount of information available regarding them. Capes of their level would have dossiers documenting every detail that might make them easier to manage, or at l"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 15261,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "reactions. The man's rugged demeanor didn't seem to be to everyone's taste, but had provoked some unabashed reactions from what Gregor had seen online. Once again, something of a theme with the [[Celestial Forge]] . \"What, just buy a bottle when they do a general release?\" Newter asked. \"That's not going to be easy.\" Faultline said. \"It's a built-in limited release. Anyone with sense would go hard w"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 23066,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "n't concerned about the minor details that could leak through casual conversation. The reason was readily apparent if you thought about it for more than a moment. Knowing additional details about the [[Celestial Forge]] wouldn't give you an advantage against them anymore than knowing the exact tonnage of the train barreling towards you would help you survive the impact. Honestly, the facts they were learning weren't"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 23370,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "e train barreling towards you would help you survive the impact. Honestly, the facts they were learning weren't so much revealing weaknesses as dismissing the possibility of them. Announcing that the [[Celestial Forge]] was actually much stronger, well supplied, and better coordinated than people expected wasn't the kind of analysis people were hoping to receive. If those kernels of insight were all they were"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 23862,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 2,
+      "context": "ry team could betray the trust that had been extended and sell the information gained to the highest bidder. Probably a lot of high bidders, given how desperate people were for any information on the [[Celestial Forge]] . But that wasn't what was going to happen, and not just because of the absolutely terrifying prospect of getting on the bad side of the Celestial Forge. Professional relationships carried less"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 24348,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "as the default, not the exception. To accept Gregor's invitation and arrive unguarded and willing to engage with them was an incredibly rare thing, even when dealing with conventional capes. With the [[Celestial Forge]] it was a stroke of unbelievable fortune. But it was still fortune that needed to be capitalized on. Once again, if things were slower, calmer, or more stable then this could have been the first"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 27816,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ctors at play, factors that had been enough to counter every group in the city, didn't excuse their failure. Every group. Looking over at Fleet and Kataklyzein, Gregor was forced to include the [[Celestial Forge]] in that assessment as well. March's attack had ultimately failed, but it had come closer than anyone dreamed possible, downing the only man who had been able to counter her plans. Until he had"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 28430,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "nd likely Survey. It was very possible that strike had dragged his team into the light, well before they were ready to present themselves. Possible, but uncertain, like everything regarding the [[Celestial Forge]] . Dwelling on the difficulty of his task wouldn't do any good at this point. The evening had progressed as well as they could have hoped. He could present his case, or at least make a more direc"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 47007,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "at the very least Apeiron had done something that facilitated Fleet's ability to function. To integrate himself into society. Apeiron. No hint of any collaboration from the other members of the [[Celestial Forge]] . Members who had their own secrets that Fleet would not share. The gulf between their abilities and Apeiron's capabilities was evident in how they spoke about the man. It was no wonder the team"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 53167,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "was the kind of reaction you only saw from beings too powerful to even be considered capes. Ashbeast, Sleeper, or the Endbringers. The world had no idea how badly they were underestimating the [[Celestial Forge]] . \"Are you doing okay?\" Fleet asked as he stepped forward to check on him. The calm, laid back man had returned. Looking at him, Gregor couldn't see any hint of the overwhelming power that"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 54583,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "With the power at Fleet's disposal, he didn't doubt the man's ability to remove any problem that offended him, nor did he have any doubts as to what that removal would entail. \"The rest of the [[Celestial Forge]] ?\" He asked. \"Are they-\" Fleet shook his head. \"They have their own situations.\" A smile appeared on his face. \"We're all different.\" And yet Apeiron had been able to help them all. Maybe"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 58010,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "nnections can be modified, expressions changed. It is complicated and needs to be personalized for each situation.\" Personalized to individual situations. Like the situations of the rest of the [[Celestial Forge]] . \"But Apeiron is able to do it? Or would be able to try?\" Gregor asked. Fleet nodded. \"He could. Even in the worst situations, the majority of the detrimental aspects could be addressed."
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 61701,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "pped forward and shook Fleet's hand. The grip was firm, but lacked any of the postures of strength or durability that were so common with brutes. Because they were completely unneeded. When the [[Celestial Forge]] postured it was for the comfort and peace of mind of those around them, not to aggrandize their own position. That was what they had seen so far. All they had seen. Posturing to hold back the panic a"
+    },
+    {
+      "chapter_num": "95.5",
+      "epub_href": "chap_138.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 63402,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "to hearing from them.\" Faultline said with a smile. One that died when she saw his face. \"Unless I won't.\" \"That remains to be seen.\" He said. He had received a glimpse of the true power of the [[Celestial Forge]] , once the curtain was pulled back and the truth was laid bare. Somehow, he doubted it would be any more comforting to Faultline than it had been to him. But comforting or not, they had a way fo"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 4702,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "sade if the duo suddenly made an appearance on the other side of the country. Honestly, Blasto wished something like that would happen. It was doubtful they could accomplish anything before the [[Celestial Forge]] got the jump on them, but at least it would be a reason to leave the city. And they really needed to get out of this city. Brockton Bay was a fascinating place. The things that could be learned"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 44073,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "leaving things at that. \"Thank you for showing me.\" He said as politely as he could. His mind was bubbling with a thousand questions for her and Apeiron. And Survey, and any other member of the [[Celestial Forge]] he could get to listen to him, but that wasn't why they were here. Yes, he might never get another chance to ask, but if he wasted Apeiron's time he would definitely never get another chance to ask."
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 51155,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "Bakuda or Uber and Leet would you involve Lost Garden in your attack? Or even allow them the first move?\" Rey didn't hide his thoughts on the matter. Comparing the most casual demonstrations from the [[Celestial Forge]] to the effective power rabble of Lost Garden felt insulting. Apeiron took a breath before responding. \"Uber and Leet made trades with the Toybox before returning to the city. I believe they are"
+    },
+    {
+      "chapter_num": "95.6",
+      "epub_href": "chap_139.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 56431,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "would happen in the meantime, and how severe his reaction would be were all unknown. Somehow, the members of Lost Garden were the only ones in the city not walking on eggshells at the thought of the [[Celestial Forge]] 's response. Too sheltered to take things seriously and too bold for their own good. \"Honestly, if it were up to me, I would have packed up after the summit.\" Blasto admitted. \"But that's not an"
+    },
+    {
       "chapter_num": "96",
       "epub_href": "chap_140.xhtml",
       "section_index": 0,
@@ -23674,6 +24818,19 @@
       ],
       "hit_count": 2,
       "context": "spontaneous modeling opportunity for Tetra was a pretty far flung and probably as far as it was likely to go. The slow movement of the Celestial Forge resulted in a failed attempt to connect to [[the Alchemy constellation]] as I considered the situation. Tetra was all for it, obviously. It was a chance for her to meet more people and do new things. Survey was confident she could handle the task without compromising any"
+    },
+    {
+      "chapter_num": "99.1",
+      "epub_href": "chap_146.xhtml",
+      "section_index": 1,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 4061,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "they saw the world in a simpler way. That wasn't a bad analogy. Aisha was generally good at coming up with analogies. It was like she was constantly trying to relate everything that happened with the [[Celestial Forge]] to some comparable human experience. It wasn't always a perfect match, but it definitely helped. It helped Aisha understand what was happening and helped the rest of them relate their experiences to"
     },
     {
       "chapter_num": "99.3",
@@ -24417,6 +25574,201 @@
       "context": "otential upgrades. Still, it only consumed a small portion of my accumulated reach. I was a little nervous going into a meeting with Director Armstrong with enough reach to secure a major power [[banked]] up. That seemed like asking for trouble, but I wasn't going to put things off any longer. I handled the duplication potion first. With the new run of projects there was a lot of equipment they"
     },
     {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 906,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "g effort for him to adjust to the situation. Normally he would have at least taken a moment to prepare for the arrival of representatives of major cape organizations, much less one as powerful as the [[Celestial Forge]] . Normally any meeting would be held in a room dedicated to such a purpose, not one covered in the scattered paperwork for facilitating the transfer of hostages and housing them on short notice."
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 3200,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "would be quickly identified and addressed. So that at worst you'd see one-off issues rather than persistent subversion of your department. Arranging a proper reception and meeting space for the [[Celestial Forge]] 's representatives would have drawn far too much attention. Frankly, just having them on site might be too much for some people to contain. They had the advantage of only needing a few days of securit"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 11393,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "vent about such matters. Apeiron seemed entirely genuine in his question. It was a stark reminder of the fact that the man had wanted to accelerate the timeframe even further. One detail of the [[Celestial Forge]] was becoming an open secret in the higher levels of the PRT, but an extremely closely guarded secret outside of those areas. There was little doubt that Garment, the new fashion cape in Brockton Bay,"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 11648,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "er levels of the PRT, but an extremely closely guarded secret outside of those areas. There was little doubt that Garment, the new fashion cape in Brockton Bay, had some level of association with the [[Celestial Forge]] . Her apparent desire to stand apart from the rest of the group wasn't something anyone was keen to intrude in, but the scale of her abilities and their progressing nature made the connection fairly o"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 12269,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "Something that could bring people together into a greater whole as easily as cloth and thread being turned into an immaculate dress. Of course, if such abilities had been at the disposal of the [[Celestial Forge]] , it made sense that Apeiron's sense of scale and complexity would be a little skewed in the absence of thinker assisted coordination abilities. Instead of commenting on the larger matters, Armstrong"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 14168,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "th, growing out from the Matrix's hand as they fanned out and wove together. They spun through the air with an artistry that brought Armstrong's mind back to the presumed connection between the [[Celestial Forge]] and Garment. Just like with the fashion cape, there was a sense of performance to the man's actions as the strands of gold fused together, forming a gleaming lattice in the air that was quickly fille"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 16968,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "on would even notice they were wearing it after the first few minutes. \"Is it statement-delayed?\" He asked, then regretted the question. It felt a bit insulting to compare something made by the [[Celestial Forge]] to conventional technology, but computer aided translation had been attempted before. Working with one statement at a time, often with context stripped away and in-built inaccuracies, as well as the"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 18053,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "eath and examined the device more closely. And definitely did not see anything indicating the ability to generate holograms that could change apparent mouth movements, but given the reputation of the [[Celestial Forge]] , was that really surprising. Just the implication that the device could sufficiently filter and modify observations to that degree… well, there were uses for that kind of technology that were s"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 18807,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "to the user's field of vision is still utilized for the purpose of translation of written language.\" The Matrix explained, as if it was the most normal thing in the world. And by the standards of the [[Celestial Forge]] , it just might be. Written language. In addition to two-way real-time communication capable of managing multiple languages simultaneously. All apparently produced on the spot in a handful of se"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 24330,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "referred to them as Universal Translators. Somehow Armstrong doubted that he was being hyperbolic in that description. \"Of course.\" He said quickly. \"Would this be a formal arrangement with the [[Celestial Forge]] ?\" \"With the Matrix.\" Apeiron said firmly. Once again, the golden armor stood a little straighter while Proto Aima looked on with a smile. \"Which should simplify things to a degree, given my cur"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 29077,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "or opened and a severe faced woman with graying hair stepped in. She gave Armstrong a serious nod as she adjusted her business suit, then paused and slowly shifted her gaze towards the members of the [[Celestial Forge]] . \"This is Hellen Palmer. She'll be handling the Matrix's registration as a PRT contact, with vendor and contractor classifications. Palmer, could you please provide the Matrix with an overview"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 32707,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "nt robotic form, an apparent interest in classic Japanese animation, and a rumored preference for gin cocktails. It was a novel and rather candid look at the dynamics between the members of the [[Celestial Forge]] . Not as the monolithic collection of supremely powerful capes they were collectively known or suspected to be, but as a group of people with their own dynamic of interests, supports, passions, and ac"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 33118,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "d accomplishments. The idea that a cape that most people only knew as a titanic match for Endbringer level threats would be excited about engaging in support work for the PRT, or that the rest of the [[Celestial Forge]] would evidently be happy for him, was not something that would have been entertained in Protectorate analysis. Not for people prone to looking at the situation twenty layers deep and assuming h"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 38850,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "o face, shook her hand and spoken to her. There was no illusion or misdirection there. She had a human form when earlier she didn't. And Apeiron was directly credited with that. Of the members of the [[Celestial Forge]] , she had been the strongest outlier. Now that position fell to someone else. Armstrong straightened his back as he inquired about the man in question. \"The Matrix?\" Armstrong began. \"He has an"
+    },
+    {
+      "chapter_num": "108.2",
+      "epub_href": "chap_162.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 42354,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "g was specific. Proto Aima was described as distinct from Case 53s. Personally, as someone familiar with the aspects that defined a 'proper' Case 53, Armstrong did not believe that any members of the [[Celestial Forge]] qualified. There were definitely aspects that they held in common, but not the specific set of shared circumstances that defined that classification. \"I suppose I should have the conviction to"
+    },
+    {
       "chapter_num": "109",
       "epub_href": "chap_164.xhtml",
       "section_index": 0,
@@ -24840,6 +26192,84 @@
       "context": "I had to deal with was some ridiculous addition to my workshop. Oh, and on that subject, my power had also cleared the delay from Third Earth Magitech, opening the way to a missed connection to [[the Vehicles constellation]] . I shook that off and focused on explaining the current situation. \"Alma exists in a psionic realm separate from reality.\" I explained. \"That either shares properties or coexists with another p"
     },
     {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 160762,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "violating people's minds like that?\" She asked. Apeiron gave her a look and she suddenly remembered Lethe. Lethe and the half dozen other known or suspected mental effects that were intrinsic to the [[Celestial Forge]] . \"I mean, it's criminal to use powers to extract information from people.\" Apeiron took a breath. \"This is not something I would have done.\" He admitted. \"And I can assure you that the individu"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 161489,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ng off some kind of serious conflict within Apeiron's team was suddenly even more frightening than what the reveal of what happened that night could mean for her. Everyone had been treating the [[Celestial Forge]] either as a homogeneous unit or basically as an extension of Apeiron. This might be the first hint of an internal conflict. While that might be seen as an advantage to Amy's situation, it had the pot"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 218252,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ienting, but the nanites can deal with that as well. \"Oh.\" Amy said. \"Good.\" It wasn't good. It was a fresh set of concerns when she was already near her max capacity. She had thought the [[Celestial Forge]] was bad, a collection of near Apeiron level capes accountable to no one but him. But that paled in comparison to near Apeiron level capes who were accountable to no one, not even Apeiron. She didn't"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 239865,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "/p> Amy bit her lip. A basic immunity and resistance to other effects should have been reassuring, but trying to get that reassurance had just revealed more of the true depths of how impossible the [[Celestial Forge]] actually was. And something else hit her. Something that actually managed to pierce through the existential dread that arrived every time Apeiron revealed some new ability. She was immune to ma"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 248370,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "just doesn't want to deal with the mess that would happen when he did what he'd done to Lung to the Triumvirate, or Protectorate Strike Team, or whatever the current protocol was for dealing with the [[Celestial Forge]] . It was an insane amount of power, and yet it had somehow been hamstrung because of the way Amy had reported on that first encounter. Because of that, and because of everything that followed. I"
+    },
+    {
+      "chapter_num": "116.2",
+      "epub_href": "chap_183.xhtml",
+      "section_index": 2,
+      "anchor_kind": "constellation_reveal",
+      "anchor_phrase": "the Personal Reality constellation",
+      "anchor_offset": 281123,
+      "kinds_present": [
+        "constellation_reveal"
+      ],
+      "hit_count": 1,
+      "context": "uthor's note: The first two rolls in this chapter were for 500 and 700 points, both failing due to landing on 800 point items. The final roll was for 900 points and landed on 100 points of items from [[the Personal Reality constellation]] . This means that despite the length of the chapter there are only 100 points of items, and that the next chapter will be starting with a 1000 point roll.) Jumpchain abilities this chapt"
+    },
+    {
       "chapter_num": "116.3",
       "epub_href": "chap_184.xhtml",
       "section_index": 1,
@@ -25020,6 +26450,123 @@
       ],
       "hit_count": 1,
       "context": "d create them all. I knew the power and danger of the old blood, or all blood, truly. I was beyond the restrictions that other artisans labored under. The work of a lifetime in that cursed city [[granted me knowledge]] of every weapon and tool called upon in the fight against the monsters that had been created by arrogance and those dwelling in deeper realms. Mechanically the power could be boiled down to 'us"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 29295,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "and the opportunity presented itself…\" Apeiron looked directly at the automaton and Elle nearly recoiled at the implication. She was involved. Somehow, with whatever he was doing, whatever the [[Celestial Forge]] was doing, she was connected to it. She focused her mind's eye directly on that room, on Apeiron and the automaton. Slight shifts in construction flowed through the form, a compromise between the ori"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 32097,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "said, cutting off the panicked repetition despite her panic being very real. \"It's the Slaughterhouse Nine. They're coming.\" A brief moment of desperate hope filled her. Were they coming, or was the [[Celestial Forge]] planning to go after them? Hunting them down? Maybe it wasn't as bad as she feared. Maybe… Apeiron's face made the situation clear. \"They are coming. They're on their way now and will be here i"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 38547,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "was referencing something from the distant past. \"It's a bit of a basic solution at this point, but still perfectly workable. Fleet called dibs. He likes those kinds of applications.\" Dibs. The [[Celestial Forge]] were calling dibs on members of the Slaughterhouse Nine. Until that moment Elle hadn't fully comprehended exactly how confident they really were. But even if they were confident, there was a reason t"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 58142,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "rned about what had happened after she joined the Slaughterhouse Nine. Faultline made sure the whole team knew about it, in case anything happened.\" Like it was about to, or would have if not for the [[Celestial Forge]] . \"I didn't follow things after that. No one really follows news on the Nine.\" It was horrible to focus on, usually too horrible to even report on in more than the most broad details. Apeiron no"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 70684,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "e plan to upend the concept of life and death. Even after everything she had seen, everything her awareness had shown her, she couldn't believe that she had somehow managed to underestimate the [[Celestial Forge]] . And if that was possible, then… \"Could you help me?\" She asked. \"With my power?\" Apeiron smiled at her. \"Of course. After everything, you've more than earned a contract.\" Contract."
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 78492,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "points she felt she needed to raise, if only to know they wouldn't come back to bite her later. \"You barely know me, even after tonight. I work for a mercenary team. We aren't aligned with the [[Celestial Forge]] .\" She paused as she remembered the extensive paperwork that Faultline had been dealing with. \"At least not officially. And there's what this would mean for my power.\" \"What it would mean if you"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 80113,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "te whiskey, Newter's treatment, the case of hologram bands that Gregor took out into the city. The city that had changed so much, and was only going to change more. What was going to happen after the [[Celestial Forge]] defeated the Slaughterhouse Nine? What was the world going to look like? Probably not like the same kind of place where Faultline had to hunt around for corporate espionage work between major clients"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 118595,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "ough their faces and edges, through the different materials and shapes, all while maintaining balance and symmetry. The final work had the same weight she recognized from the equipment carried by the [[Celestial Forge]] , the weight intrinsic to everything Apeiron made. This was something that was more than any single dimension. Something that existed in multiple places at once while still being a distinct item, stil"
+    },
+    {
+      "chapter_num": "119.5",
+      "epub_href": "chap_192.xhtml",
+      "section_index": 0,
+      "anchor_kind": "general",
+      "anchor_phrase": "Celestial Forge",
+      "anchor_offset": 144283,
+      "kinds_present": [
+        "general"
+      ],
+      "hit_count": 1,
+      "context": "puzzle. \"It was part of the deal.\" \"Some deal.\" Newter said, leaning back and looking up through the new skylights. \"Anything else come up?\" Elle considered, then nodded. \"I know what the [[Celestial Forge]] will be busy with for the next few days.\" Suddenly everyone was intently focused on her. \"Apeiron told you?\" Faultline asked. Elle nodded. \"Did it come up, or was it something relevant to you?"
     }
   ]
 }

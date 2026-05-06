@@ -10,8 +10,10 @@ For each chapter we know:
 
   * N predicted roll positions (`predicted_rolls.json`) — the word
     offsets where the predicted-rolls model thinks Joe rolled.
-  * K obtained perks (`obtained_perks.json`) — the canonical count of
-    perks Joe actually acquired in that chapter, in narrative order.
+  * K paid acquisition units (`obtained_perks.json`) — the canonical
+    count of paid perks Joe actually acquired in that chapter, in
+    narrative order. Free perks are attached to the preceding paid
+    acquisition and do not consume a roll slot.
 
 We treat K as ground truth (canon) and N as the model's best guess for
 WHEN within the chapter rolls occurred. We do NOT trust the model's
@@ -39,8 +41,9 @@ Edge cases
 Perk assignment
 ---------------
 
-Perks are attached to hit slots in `epub_sequence` order (canonical
-narrative order) -> hit slots in `word_position` ascending order.
+Paid perks are attached to hit slots in `epub_sequence` order
+(canonical narrative order) -> hit slots in `word_position` ascending
+order. Free perks travel as `free_perks` on that paid hit.
 
 Output
 ------
@@ -103,10 +106,43 @@ def _synthetic_positions(words: int, count: int, after_real: list[int]) -> list[
     return out
 
 
+def _build_acquisition_units(obtained_perks: list[dict]) -> list[dict]:
+    """Group paid acquisitions with their trailing free perks."""
+    units: list[dict] = []
+    current_unit: dict | None = None
+    for perk in obtained_perks:
+        if not perk.get("free", False):
+            current_unit = {
+                "chapter_num": perk["chapter_num"],
+                "paid": perk,
+                "free_perks": [],
+            }
+            units.append(current_unit)
+            continue
+        if current_unit is None or current_unit["chapter_num"] != perk["chapter_num"]:
+            raise SystemExit(
+                f"orphan free perk {perk['perk_name']!r} in ch {perk['chapter_num']} — "
+                "no preceding paid acquisition in same chapter"
+            )
+        current_unit["free_perks"].append(perk)
+    return units
+
+
+def _perk_payload(perk: dict) -> dict:
+    return {
+        "name": perk["perk_name"],
+        "constellation": perk.get("constellation"),
+        "jump": perk.get("jump"),
+        "cost": perk.get("cost"),
+        "free": perk.get("free", False),
+        "epub_sequence": perk.get("epub_sequence"),
+    }
+
+
 def _build_chapter_slots(
     chapter_num: str,
     predicted: list[dict],
-    perks: list[dict],
+    acquisition_units: list[dict],
     words_approx: int,
 ) -> list[dict]:
     """Build the ordered slot list for one chapter.
@@ -118,7 +154,7 @@ def _build_chapter_slots(
         roll_number (predicted only)
     """
     n = len(predicted)
-    k = len(perks)
+    k = len(acquisition_units)
     if n == 0 and k == 0:
         return []
 
@@ -141,6 +177,7 @@ def _build_chapter_slots(
             "source": "predicted",
             "outcome": "miss",  # default; flipped to "hit" below
             "perk": None,
+            "free_perks": [],
             "roll_number": r.get("roll_number"),
             "regime": r.get("regime"),
             "cp_threshold": r.get("cp_threshold"),
@@ -152,6 +189,7 @@ def _build_chapter_slots(
             "source": "synthetic",
             "outcome": "miss",
             "perk": None,
+            "free_perks": [],
             "roll_number": None,
             "regime": None,
             "cp_threshold": None,
@@ -162,17 +200,15 @@ def _build_chapter_slots(
     # Pick which slots are hits using the proportional-spacing rule.
     n_slots = len(slots)
     hit_idxs = _hit_slot_indices(n_slots, k)
-    for idx, perk in zip(hit_idxs, perks):
+    for idx, unit in zip(hit_idxs, acquisition_units):
         slot = slots[idx]
         slot["outcome"] = "hit"
-        slot["perk"] = {
-            "name": perk["perk_name"],
-            "constellation": perk.get("constellation"),
-            "jump": perk.get("jump"),
-            "cost": perk.get("cost"),
-            "free": perk.get("free", False),
-            "epub_sequence": perk.get("epub_sequence"),
-        }
+        slot["perk"] = _perk_payload(unit["paid"])
+        slot["free_perks"] = [_perk_payload(p) for p in unit["free_perks"]]
+
+    for index, slot in enumerate(slots, start=1):
+        slot["sequence_in_chapter"] = index
+        slot["rolls_in_chapter"] = len(slots)
 
     return slots
 
@@ -197,6 +233,7 @@ def main(argv: list[str] | None = None) -> None:
     obtained_perks: list[dict] = sorted(
         perks_raw["perks"], key=lambda p: p.get("epub_sequence", 0)
     )
+    acquisition_units = _build_acquisition_units(obtained_perks)
     chapters: list[dict] = chapters_raw["chapters"]
 
     # Index chapter metadata.
@@ -211,15 +248,15 @@ def main(argv: list[str] | None = None) -> None:
     for r in predicted_rolls:
         pred_by_ch[r["chapter_num"]].append(r)
 
-    perks_by_ch: dict[str, list[dict]] = defaultdict(list)
-    for p in obtained_perks:
-        perks_by_ch[p["chapter_num"]].append(p)
+    units_by_ch: dict[str, list[dict]] = defaultdict(list)
+    for unit in acquisition_units:
+        units_by_ch[unit["chapter_num"]].append(unit)
 
     # Build slots in canonical chapter order, falling back to the union
     # of seen chapter_nums for anything that isn't in chapters.json (this
     # shouldn't happen for the main story but section keys like "58.2"
     # are present in both predictions and perks and need handling).
-    seen_chapter_nums = set(pred_by_ch) | set(perks_by_ch)
+    seen_chapter_nums = set(pred_by_ch) | set(units_by_ch)
     extra_chapter_nums = sorted(
         seen_chapter_nums - set(chapter_order),
         key=lambda c: (float(c) if _isfloat(c) else float("inf"), c),
@@ -231,24 +268,26 @@ def main(argv: list[str] | None = None) -> None:
 
     for chapter_num in iteration_order:
         preds = pred_by_ch.get(chapter_num, [])
-        perks = perks_by_ch.get(chapter_num, [])
-        if not preds and not perks:
+        units = units_by_ch.get(chapter_num, [])
+        if not preds and not units:
             continue
         slots = _build_chapter_slots(
             chapter_num,
             preds,
-            perks,
+            units,
             words_by_chapter.get(chapter_num, 0),
         )
         all_rolls.extend(slots)
 
         n_pred = len(preds)
-        k_perks = len(perks)
+        k_paid = len(units)
+        k_free = sum(len(u["free_perks"]) for u in units)
         n_synth = sum(1 for s in slots if s["source"] == "synthetic")
         per_chapter_summary.append({
             "chapter_num": chapter_num,
             "predicted_rolls": n_pred,
-            "obtained_perks": k_perks,
+            "paid_acquisitions": k_paid,
+            "free_perks": k_free,
             "slots_emitted": len(slots),
             "synthetic_slots": n_synth,
             "hits": sum(1 for s in slots if s["outcome"] == "hit"),
@@ -257,15 +296,15 @@ def main(argv: list[str] | None = None) -> None:
 
     # Counts for the file header.
     chapters_with_pred = sum(1 for c in pred_by_ch if pred_by_ch[c])
-    chapters_with_perks = sum(1 for c in perks_by_ch if perks_by_ch[c])
+    chapters_with_perks = sum(1 for c in units_by_ch if units_by_ch[c])
     chapters_with_both = sum(
-        1 for c in seen_chapter_nums if pred_by_ch.get(c) and perks_by_ch.get(c)
+        1 for c in seen_chapter_nums if pred_by_ch.get(c) and units_by_ch.get(c)
     )
     chapters_pred_only = sum(
-        1 for c in seen_chapter_nums if pred_by_ch.get(c) and not perks_by_ch.get(c)
+        1 for c in seen_chapter_nums if pred_by_ch.get(c) and not units_by_ch.get(c)
     )
     chapters_perks_only = sum(
-        1 for c in seen_chapter_nums if perks_by_ch.get(c) and not pred_by_ch.get(c)
+        1 for c in seen_chapter_nums if units_by_ch.get(c) and not pred_by_ch.get(c)
     )
 
     payload = {
@@ -275,8 +314,9 @@ def main(argv: list[str] | None = None) -> None:
             "data/derived/obtained_perks.json"
         ),
         "_method": (
-            "Per chapter, K obtained perks distributed proportionally across "
+            "Per chapter, K paid acquisition units distributed proportionally across "
             "max(N,K) roll slots using floor((i+0.5)*M/K) for hit-slot index i. "
+            "Free perks attach to their paid hit and do not consume roll slots. "
             "Where K > N, additional slots are synthesized at evenly-spaced "
             "word positions using chapters.json words_approx."
         ),
@@ -293,6 +333,8 @@ def main(argv: list[str] | None = None) -> None:
             "synthetic_slots": sum(1 for r in all_rolls if r["source"] == "synthetic"),
             "predicted_input_count": len(predicted_rolls),
             "obtained_perks_input_count": len(obtained_perks),
+            "paid_acquisitions_input_count": len(acquisition_units),
+            "free_perks_input_count": sum(len(u["free_perks"]) for u in acquisition_units),
             "chapters_with_predictions": chapters_with_pred,
             "chapters_with_perks": chapters_with_perks,
             "chapters_with_both": chapters_with_both,
