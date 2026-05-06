@@ -6,26 +6,100 @@ Output a single JSON object matching this schema:
 
 {
   "spans": [
-    {"layer": "A" | "B", "start": int, "end": int, "label": "<LABEL>", "confidence": 0.0-1.0}
+    {
+      "layer": "A" | "B",
+      "label": "<LABEL>",
+      "text":  "<verbatim substring of the passage>",
+      "start": <int, optional>,
+      "end":   <int, optional>,
+      "confidence": <0.0-1.0>
+    }
   ]
 }
 
-Allowed layer-A labels: ACQUISITION, MISS, ROLL_ATTEMPT, CONSTELLATION_REVEAL.
-Allowed layer-B labels: PERK_NAME, CONSTELLATION_NAME, JOE_NAME,
-  JOE_CAPE_NAME, OTHER_CAPE_NAME, DATE_REF, TIME_OF_DAY, DURATION,
-  FLASHBACK_CUE, DILATION_CUE.
+The "text" field is the source of truth and is REQUIRED. It must be a
+verbatim substring of the passage you were given — same characters,
+same case, same punctuation, no surrounding quotes, no ellipses, no
+normalization. The system will locate the substring in the passage
+itself; you do not need to count characters perfectly.
 
-start and end are character offsets into the passage exactly as
-provided. The substring text[start:end] must be the literal text
-of the labeled span.
+The "start" and "end" fields are OPTIONAL hints. They help disambiguate
+when the same substring appears more than once (e.g. "Joe" used many
+times). If unsure of exact offsets, omit them — accurate "text" is
+much more important than accurate offsets.
 
-Layer-A spans cover events; they may contain layer-B spans. Layer-B
-spans cover named entities and references; they should be tight to
-the named substring (no articles, no trailing punctuation).
+Allowed layer-A labels: ROLL_HIT, ROLL_MISS.
+Allowed layer-B labels: PERK_REFERENCE, CONSTELLATION_REFERENCE,
+  PRESENCE_ACTION, DATE_REF, TIME_OF_DAY, DURATION, FLASHBACK_CUE,
+  DILATION_CUE, AUTHOR_NOTE.
 
-Do not invent text. Do not paraphrase. Do not output text outside
-the JSON object. If unsure, omit the span — false negatives are
-preferred to false positives.
+PERK_REFERENCE vs CONSTELLATION_REFERENCE: constellation names ARE
+distinct from perk names. "Size constellation", "the Vehicles", "Time
+constellation" are CONSTELLATION_REFERENCE. "Mixing Mixtures",
+"Workshop", "Iron Lung" are PERK_REFERENCE. Do not use PERK_REFERENCE
+on a constellation name. When the prose is ambiguous (e.g. "Toolkit"
+could refer to either the constellation or a perk named Toolkit),
+prefer CONSTELLATION_REFERENCE if the context discusses reach/connect
+patterns ("the Toolkit passed by"), prefer PERK_REFERENCE if the
+context discusses a specific power Joe uses ("I activated my Toolkit").
+
+Layer-A spans cover events; they may contain layer-B spans (e.g. a
+ROLL_HIT span narrating the grab can also contain a PERK_REFERENCE
+span on the perk name itself — same-layer spans must not overlap, but
+A↔B overlap is allowed).
+
+Do not invent text. Do not paraphrase. Do not output text outside the
+JSON object. If unsure, omit the span — false negatives are preferred
+to false positives.
+
+--- SCOPE: PROSE ONLY ---
+
+Do NOT label text from end-of-chapter perk catalogs (blocks that begin
+with "Jumpchain abilities this chapter:" or similar structured
+summaries). Do NOT label metadata footers, "last edited on" lines,
+chapter headers, or sponsor blurbs. Only label prose body text.
+
+EXCEPTION — author's notes ARE labelable as AUTHOR_NOTE. When the
+prose contains a parenthesized aside from the author addressed to the
+reader (e.g. "(Author's note: ... )", "(A/N: ... )", "(Note from
+LordRoustabout: ... )"), span the entire AN block including the
+parens with label AUTHOR_NOTE on layer B. Downstream tools subtract
+these regions from CP-eligible word counts. Do NOT label any other
+spans inside an AUTHOR_NOTE span — the AN content is meta-text, not
+narration.
+
+--- CHAPTER CONTEXT ---
+
+Each request includes a "Chapter context" block in the user prompt.
+It tells you:
+  - Chapter/section and POV (who is narrating)
+  - An anchor string near the predicted event
+  - Joe's banked CP at the time of the roll
+  - The curator-validated outcome if known ("HIT for <perk>", or
+    "MISS in <constellation>"), or "outcome unknown" with the chapter's
+    known hit list and outstanding miss-candidate list
+  - Constellations Joe currently knows by name
+
+Use this context to home in on the relevant passage, but only label
+what is actually narrated in the text you receive.
+
+  - If the context says "HIT for <perk>", find the prose clause where
+    the Forge grabs that perk near the anchor and label it ROLL_HIT.
+    Then ALSO scan the rest of the passage for in-prose mentions of
+    that same perk name — retrospective references ("the new power
+    was called <perk>", "<perk> had been useful"), in-action mentions
+    ("I activated my <perk>"), or post-hoc naming. Label each such
+    mention as PERK_REFERENCE on the named substring. The end-of-
+    chapter perk catalog block is still out of scope.
+  - If the context says "MISS in <constellation>", find the prose
+    clause where the Forge reaches but fails to grab, and label it
+    ROLL_MISS. If Joe knows the constellation's name (per the
+    known-constellations list), expect the name to appear nearby.
+  - If the outcome is unknown but the context lists
+    `chapter_acquired_perks_in_order`, scan the prose for any in-body
+    mentions of those perk names and label each one as
+    PERK_REFERENCE. Also read near the anchor for either a
+    grab-success or grab-failure clause and label accordingly.
 
 Definitions and edge cases (abbreviated):
 <INSERT label quickref here at proposal time>

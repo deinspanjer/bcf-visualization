@@ -24,17 +24,13 @@ __all__ = ["Candidate", "QueueState", "next_candidate"]
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class Candidate:
-    """A passage candidate for annotation."""
-
-    passage_id: str
-    chapter_num: str
-    section_index: int
-    epub_char_start: int
-    epub_char_end: int
-    text: str
-    source: str = "manual"
+# Re-export the canonical Candidate from nlp.candidates so the TUI shares
+# the SAME class as iter_candidates produces. Previously this module had a
+# slim local copy that fill_queue() down-converted into — which silently
+# stripped roll_context, chapter_title, and section_header. That broke the
+# header POV tag, smart section-flag defaults, LLM chapter context, and
+# the F12 snapshot.
+from nlp.candidates import Candidate  # noqa: E402,F401
 
 
 # ---------------------------------------------------------------------------
@@ -126,17 +122,10 @@ class QueueState:
                 epub_path=self.epub_path,
             ):
                 if cand.passage_id not in already_labeled:
-                    self._queue.append(
-                        Candidate(
-                            passage_id=cand.passage_id,
-                            chapter_num=cand.chapter_num,
-                            section_index=cand.section_index,
-                            epub_char_start=cand.epub_char_start,
-                            epub_char_end=cand.epub_char_end,
-                            text=cand.text,
-                            source=cand.source,
-                        )
-                    )
+                    # `cand` IS already the rich Candidate now; append as-is
+                    # so roll_context / chapter_title / section_header
+                    # propagate through to the TUI.
+                    self._queue.append(cand)
                     added += 1
         except ImportError:
             # bootstrap agent hasn't landed yet — stub empty queue

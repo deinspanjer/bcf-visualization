@@ -17,6 +17,7 @@ propose_async(passage_text, *, passage_id, ...) -> ProposalResult
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -80,7 +81,7 @@ async def propose_async(
     def _call() -> Any:
         kwargs: dict[str, Any] = {"passage_id": passage_id}
         if model_name:
-            kwargs["model_name"] = model_name
+            kwargs["model"] = model_name
         if extra_prompt:
             kwargs["extra_prompt"] = extra_prompt
         return propose(passage_text, **kwargs)
@@ -89,11 +90,17 @@ async def propose_async(
         result = await loop.run_in_executor(None, _call)
         elapsed = time.monotonic() - t0
 
-        # Normalise span dicts from the Proposal object
+        # Normalise span dicts from the Proposal object.
+        # ProposedSpan is a @dataclass (not a pydantic model), so we have to
+        # cover dataclass, pydantic-model, and dict shapes here. The earlier
+        # version only checked for `model_dump`/`dict`, which silently dropped
+        # every span coming back from nlp.bootstrap.propose().
         raw_spans: list[dict[str, Any]] = []
         for sp in getattr(result, "spans", []):
             if hasattr(sp, "model_dump"):
                 raw_spans.append(sp.model_dump())
+            elif dataclasses.is_dataclass(sp):
+                raw_spans.append(dataclasses.asdict(sp))
             elif isinstance(sp, dict):
                 raw_spans.append(sp)
 

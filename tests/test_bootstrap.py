@@ -112,7 +112,7 @@ def test_propose_sends_chat_completions(tmp_path: Path) -> None:
     body = json.loads(req.content)
     assert body["temperature"] == 0.1
     assert body["top_p"] == 0.9
-    assert body["max_tokens"] == 512
+    assert body["max_tokens"] == 2048
     assert body["response_format"] == {"type": "json_object"}
     assert body["model"] == "test-model"
 
@@ -150,8 +150,8 @@ def test_system_message_contains_label_quickref(tmp_path: Path) -> None:
     # The marker must be replaced, not left in
     assert "<INSERT label quickref here at proposal time>" not in system_content
     # Key label names should appear
-    assert "ACQUISITION" in system_content
-    assert "PERK_NAME" in system_content
+    assert "ROLL_HIT" in system_content
+    assert "PRESENCE_ACTION" in system_content
 
 
 def test_user_message_contains_passage(tmp_path: Path) -> None:
@@ -437,3 +437,240 @@ def test_raw_response_persisted_on_retry(tmp_path: Path) -> None:
     # Either the first attempt's raw file or a retry file must exist
     files = list(raw_dir.glob("ch99_p0*.json"))
     assert len(files) >= 1
+
+
+# ---------------------------------------------------------------------------
+# roll_context threading into the user prompt
+# ---------------------------------------------------------------------------
+
+
+def test_roll_context_hit_appears_in_user_prompt(tmp_path: Path) -> None:
+    """When roll_context with a curator HIT is passed to propose(), the user
+    prompt must contain the perk name, 'HIT for', and the anchor string."""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            content=json.dumps(_make_llm_response([])).encode(),
+            headers={"content-type": "application/json"},
+        )
+
+    roll_ctx = {
+        "roll_number": 7,
+        "chapter_num": "3",
+        "section_index": 1,
+        "predicted_char_offset": 12345,
+        "anchor_string": "the wheel clicked and stopped",
+        "banked_at_roll": 150,
+        "banked_at_roll_source": "curator",
+        "curator_outcome": "HIT",
+        "curator_perk_name": "Resonance Forge",
+        "curator_constellation": "Harmonics",
+        "curator_cost": 150,
+        "curator_free_associated_perks": ["Tuning Fork"],
+        "chapter_acquired_perks_in_order": [
+            {"name": "Resonance Forge", "constellation": "Harmonics", "cost": 150, "free": False}
+        ],
+        "outstanding_perks_with_cost_gt_banked": [
+            {"name": "Grand Organ", "cost": 500, "constellation": "Harmonics"}
+        ],
+        "constellations_known_by_joe": ["Harmonics"],
+    }
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    propose(
+        _PASSAGE,
+        passage_id="ch3_p0",
+        llama_url="http://fake:11434",
+        persist_raw_dir=tmp_path / "raw",
+        roll_context=roll_ctx,
+        _client=client,
+    )
+
+    assert len(captured) == 1
+    body = json.loads(captured[0].content)
+    user_content = body["messages"][1]["content"]
+
+    # Passage text must still be present
+    assert _PASSAGE in user_content
+
+    # HIT marker, perk name, and anchor must appear
+    assert "HIT for" in user_content, "Expected 'HIT for' in user prompt"
+    assert "Resonance Forge" in user_content, "Expected perk name in user prompt"
+    assert "the wheel clicked and stopped" in user_content, "Expected anchor string in user prompt"
+
+    # Constellation and cost should appear
+    assert "Harmonics" in user_content
+    assert "150" in user_content
+
+
+# ---------------------------------------------------------------------------
+# chapter_attribution_disagreement disclaimer
+# ---------------------------------------------------------------------------
+
+
+def test_chapter_attribution_disclaimer_appears_when_flag_true(tmp_path: Path) -> None:
+    """When roll_context has chapter_attribution_disagreement=True, the user
+    prompt must contain the disclaimer mentioning both chapter numbers."""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            content=json.dumps(_make_llm_response([])).encode(),
+            headers={"content-type": "application/json"},
+        )
+
+    roll_ctx = {
+        "roll_number": 107,
+        "chapter_num": "22",           # simulator's chapter
+        "curator_chapter_num": "23",   # curator's chapter
+        "chapter_attribution_disagreement": True,
+        "section_index": 0,
+        "predicted_char_offset": 50000,
+        "anchor_string": "the wheel clicked",
+        "banked_at_roll": 100,
+        "banked_at_roll_source": "curator",
+        "curator_outcome": "HIT",
+        "curator_perk_name": "Reliable Invention",
+        "curator_constellation": "Crafting",
+        "curator_cost": 100,
+        "curator_free_associated_perks": None,
+        "chapter_acquired_perks_in_order": [
+            {"name": "Don't Need A Team", "constellation": "Crafting", "cost": 100, "free": False},
+            {"name": "Most Holy Order of the Socket Wrench", "constellation": "Crafting", "cost": 200, "free": False},
+        ],
+        "outstanding_perks_with_cost_gt_banked": [],
+        "constellations_known_by_joe": ["Crafting"],
+    }
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    propose(
+        _PASSAGE,
+        passage_id="ch22_p0",
+        llama_url="http://fake:11434",
+        persist_raw_dir=tmp_path / "raw",
+        roll_context=roll_ctx,
+        _client=client,
+    )
+
+    body = json.loads(captured[0].content)
+    user_content = body["messages"][1]["content"]
+
+    # Disclaimer must be present
+    assert "Chapter attribution disagreement" in user_content, (
+        "Expected disclaimer in user prompt when chapter_attribution_disagreement=True"
+    )
+    # Both chapter numbers must appear in the disclaimer
+    assert "chapter 23" in user_content, "Expected curator chapter number in disclaimer"
+    assert "chapter 22" in user_content, "Expected simulator chapter number in disclaimer"
+
+    # Curator perk name and outcome must still appear
+    assert "Reliable Invention" in user_content
+    assert "HIT for" in user_content
+
+
+def test_chapter_attribution_disclaimer_absent_when_flag_false(tmp_path: Path) -> None:
+    """When chapter_attribution_disagreement is False (or absent), no disclaimer
+    should appear in the user prompt."""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            content=json.dumps(_make_llm_response([])).encode(),
+            headers={"content-type": "application/json"},
+        )
+
+    roll_ctx = {
+        "roll_number": 5,
+        "chapter_num": "2",
+        "curator_chapter_num": "2",
+        "chapter_attribution_disagreement": False,
+        "section_index": 0,
+        "predicted_char_offset": 1000,
+        "anchor_string": "the wheel stopped",
+        "banked_at_roll": 200,
+        "banked_at_roll_source": "curator",
+        "curator_outcome": "HIT",
+        "curator_perk_name": "Some Perk",
+        "curator_constellation": "Toolkits",
+        "curator_cost": 200,
+        "curator_free_associated_perks": None,
+        "chapter_acquired_perks_in_order": [
+            {"name": "Some Perk", "constellation": "Toolkits", "cost": 200, "free": False}
+        ],
+        "outstanding_perks_with_cost_gt_banked": [],
+        "constellations_known_by_joe": [],
+    }
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    propose(
+        _PASSAGE,
+        passage_id="ch2_p0",
+        llama_url="http://fake:11434",
+        persist_raw_dir=tmp_path / "raw",
+        roll_context=roll_ctx,
+        _client=client,
+    )
+
+    body = json.loads(captured[0].content)
+    user_content = body["messages"][1]["content"]
+
+    assert "Chapter attribution disagreement" not in user_content, (
+        "Disclaimer must NOT appear when chapter_attribution_disagreement=False"
+    )
+
+
+def test_chapter_attribution_disclaimer_absent_when_key_missing(tmp_path: Path) -> None:
+    """When roll_context lacks the chapter_attribution_disagreement key entirely
+    (old shape), no disclaimer should appear — backwards compatible."""
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            content=json.dumps(_make_llm_response([])).encode(),
+            headers={"content-type": "application/json"},
+        )
+
+    # Old-shape roll_context without the new keys
+    roll_ctx = {
+        "roll_number": 3,
+        "chapter_num": "1",
+        "section_index": 0,
+        "predicted_char_offset": 500,
+        "anchor_string": "some anchor",
+        "banked_at_roll": 100,
+        "banked_at_roll_source": "curator",
+        "curator_outcome": "HIT",
+        "curator_perk_name": "Old Perk",
+        "curator_constellation": "Toolkits",
+        "curator_cost": 100,
+        "curator_free_associated_perks": None,
+        "chapter_acquired_perks_in_order": [],
+        "outstanding_perks_with_cost_gt_banked": [],
+        "constellations_known_by_joe": [],
+    }
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    propose(
+        _PASSAGE,
+        passage_id="ch1_p0_old",
+        llama_url="http://fake:11434",
+        persist_raw_dir=tmp_path / "raw",
+        roll_context=roll_ctx,
+        _client=client,
+    )
+
+    body = json.loads(captured[0].content)
+    user_content = body["messages"][1]["content"]
+
+    assert "Chapter attribution disagreement" not in user_content, (
+        "Disclaimer must NOT appear when chapter_attribution_disagreement key is absent"
+    )

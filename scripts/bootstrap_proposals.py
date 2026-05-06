@@ -279,6 +279,7 @@ def main(argv=None) -> int:
                     llama_url=args.llama_url,
                     model=args.model,
                     persist_raw_dir=raw_dir,
+                    roll_context=candidate.roll_context,
                 )
             except httpx.ConnectError as exc:
                 print(

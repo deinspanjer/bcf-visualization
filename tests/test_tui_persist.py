@@ -132,6 +132,51 @@ def test_append_with_section(tmp_path: Path) -> None:
     assert "header" in sec_data
 
 
+def test_append_round_trips_notes(tmp_path: Path) -> None:
+    """A SpanRecord with a non-empty `notes` round-trips through JSONL."""
+    store = JsonlAnnotationStore(tmp_path / "test.jsonl")
+    rec = SpanRecord(
+        passage_id="ch40_p03",
+        chapter_num="40",
+        section_index=0,
+        epub_char_start=0,
+        epub_char_end=200,
+        text="the new power was called Mixing Mixtures.",
+        spans=[
+            SpanAnnotation(layer="B", label="PERK_REFERENCE", start=25, end=40),
+        ],
+        source="manual",
+        model_proposal_score=None,
+        annotator="test_user",
+        annotated_at="2026-05-05T10:00:00Z",
+        notes="revisit later — boundary unclear",
+        schema_version=SCHEMA_VERSION,
+    )
+    store.append(rec)
+
+    # On-disk JSONL line carries the notes string verbatim.
+    line = (tmp_path / "test.jsonl").read_text().strip()
+    payload = json.loads(line)
+    assert payload["notes"] == "revisit later — boundary unclear"
+    assert payload["schema_version"] == 2
+
+    # Read back through the typed accessor.
+    retrieved = store.by_passage_id("ch40_p03")
+    assert retrieved is not None
+    assert retrieved.notes == "revisit later — boundary unclear"
+    assert retrieved.spans[0].label == "PERK_REFERENCE"
+
+
+def test_append_default_notes_is_empty_string(tmp_path: Path) -> None:
+    """Records built without a notes value default to ``""`` and survive round-trip."""
+    store = JsonlAnnotationStore(tmp_path / "test.jsonl")
+    rec = _span_record("ch1_p01", "2026-05-05T10:00:00Z")
+    store.append(rec)
+    retrieved = store.by_passage_id("ch1_p01")
+    assert retrieved is not None
+    assert retrieved.notes == ""
+
+
 def test_append_validates_schema_bad_span(tmp_path: Path) -> None:
     """append raises ValidationError (or TypeError) on invalid input."""
     store = JsonlAnnotationStore(tmp_path / "test.jsonl")

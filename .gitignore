@@ -46,8 +46,12 @@ checkpoints/**
 !checkpoints/**/
 !checkpoints/**/.gitkeep
 data/labeled/.proposals_raw/
-data/labeled/.tui_state.json
-data/labeled/.tui_wal.jsonl
+data/labeled/**/.tui_state.json
+data/labeled/**/.tui_wal.jsonl
+data/labeled/.tui_snapshot.json
+# LLM-generated proposal staging files (regenerable via scripts/bootstrap_proposals.py)
+data/labeled/spans/_*.jsonl
+data/labeled/sections/_*.jsonl
 
 # uv / Hugging Face caches
 .uv/

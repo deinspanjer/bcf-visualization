@@ -50,14 +50,19 @@ _MAX_RETRIES = 2
 _CHAT_PARAMS: dict[str, Any] = {
     "temperature": 0.1,
     "top_p": 0.9,
-    "max_tokens": 512,
+    # Each span now carries a verbatim text field; budget room for ~10
+    # spans plus their substrings (event spans can be 30-80 chars, entity
+    # spans 5-30 chars).  Truncation mid-string causes JSON parse fails.
+    "max_tokens": 2048,
     "response_format": {"type": "json_object"},
 }
 
 _CORRECTIVE_ADDENDUM = (
-    "Your previous output had span offsets that did not match the substring. "
-    "Re-emit valid JSON with corrected start/end offsets so that "
-    "passage_text[start:end] equals the span text you intended."
+    "Some of your spans had text that does not appear verbatim in the passage, "
+    "or were missing required fields. Re-emit valid JSON: every span MUST "
+    "include a 'text' field whose value is a verbatim substring of the "
+    "passage (same case, same punctuation, no quotes around it). Offsets "
+    "are optional hints; the system locates the substring for you."
 )
 
 # ---------------------------------------------------------------------------
@@ -92,49 +97,270 @@ def _load_system_prompt() -> str:
     return system
 
 
-def _build_user_prompt(passage_text: str) -> str:
-    return f'Passage:\n"""\n{passage_text}\n"""\n\nEmit only the JSON object.'
+def _format_roll_context(ctx: dict) -> str:
+    """Format a roll_context dict as a human-readable section for the user prompt.
+
+    Skips any bullet that would have an empty/null value.  Uses defensive
+    .get() throughout so missing keys never raise.
+    """
+    lines: list[str] = ["Chapter context for the predicted roll near this passage:"]
+
+    chapter_num = ctx.get("chapter_num")
+    section_index = ctx.get("section_index")
+    if chapter_num is not None and section_index is not None:
+        lines.append(f"- Chapter {chapter_num}, section {section_index}")
+    elif chapter_num is not None:
+        lines.append(f"- Chapter {chapter_num}")
+
+    anchor = ctx.get("anchor_string")
+    if anchor:
+        lines.append(f'- Anchor string just before the predicted roll position:\n    "{anchor}"')
+
+    banked = ctx.get("banked_at_roll")
+    banked_src = ctx.get("banked_at_roll_source")
+    if banked is not None:
+        src_tag = f" ({banked_src})" if banked_src else ""
+        lines.append(f"- Banked CP at roll: {banked}{src_tag}")
+
+    # Chapter attribution disagreement disclaimer
+    if ctx.get("chapter_attribution_disagreement"):
+        curator_ch = ctx.get("curator_chapter_num")
+        lines.append(
+            f"- ⚠ Chapter attribution disagreement: the curator placed this roll in"
+            f" chapter {curator_ch}, the simulator places it in chapter {chapter_num}."
+            " The curator's reported perk may not appear in this passage."
+        )
+
+    # Outcome block
+    outcome = ctx.get("curator_outcome")
+    if outcome == "HIT":
+        perk = ctx.get("curator_perk_name") or "unknown"
+        constellation = ctx.get("curator_constellation") or "unknown"
+        cost = ctx.get("curator_cost")
+        cost_str = str(cost) if cost is not None else "unknown"
+        free_raw = ctx.get("curator_free_associated_perks")
+        if free_raw:
+            if isinstance(free_raw, list):
+                free_names = ", ".join(str(p) for p in free_raw)
+            else:
+                free_names = str(free_raw)
+            free_str = f" Free associates: {free_names}."
+        else:
+            free_str = ""
+        lines.append(
+            f'- Curator-validated outcome: HIT for "{perk}" in "{constellation}"'
+            f" (cost {cost_str}).{free_str}"
+            " Find the prose narration of the Forge reaching and grabbing this perk near the anchor."
+        )
+    elif outcome == "MISS":
+        constellation = ctx.get("curator_constellation")
+        const_str = f'"{constellation}"' if constellation else "constellation unknown"
+        banked_val = ctx.get("banked_at_roll")
+        banked_note = (
+            f" By definition, the rolled-for perk had a cost greater than {banked_val}."
+            if banked_val is not None
+            else ""
+        )
+        lines.append(
+            f"- Curator-validated outcome: MISS in {const_str}."
+            " Find the prose narration of the Forge reaching and failing near the anchor."
+            + banked_note
+        )
+    elif outcome is None:
+        lines.append(
+            "- Outcome unknown — the prose narration will reveal HIT or MISS."
+            " If HIT, the perk is one of the listed acquired perks (the next unmatched one"
+            " in narrative order). If MISS, the rolled-for perk is somewhere in the"
+            " outstanding-miss-candidates list (cost > banked)."
+        )
+
+    acquired = ctx.get("chapter_acquired_perks_in_order")
+    if acquired:
+        if isinstance(acquired, list):
+            names = ", ".join(p.get("name", str(p)) if isinstance(p, dict) else str(p) for p in acquired)
+        else:
+            names = str(acquired)
+        lines.append(f"- This chapter's acquired perks in order: {names}")
+
+    outstanding = ctx.get("outstanding_perks_with_cost_gt_banked")
+    if outstanding:
+        if isinstance(outstanding, list):
+            parts = []
+            for p in outstanding:
+                if isinstance(p, dict):
+                    name = p.get("name", "?")
+                    cost = p.get("cost")
+                    cost_tag = f" ({cost} CP)" if cost is not None else ""
+                    parts.append(f"{name}{cost_tag}")
+                else:
+                    parts.append(str(p))
+            out_str = ", ".join(parts)
+        else:
+            out_str = str(outstanding)
+        lines.append(f"- Outstanding miss candidates (cost > banked, top 5): {out_str}")
+
+    known = ctx.get("constellations_known_by_joe")
+    if known:
+        if isinstance(known, list):
+            known_str = ", ".join(str(k) for k in known)
+        else:
+            known_str = str(known)
+        lines.append(f"- Constellations Joe currently knows by name: {known_str}")
+
+    return "\n".join(lines)
+
+
+def _build_user_prompt(passage_text: str, roll_context: Optional[dict] = None) -> str:
+    """Build the user-turn prompt.
+
+    Parameters
+    ----------
+    passage_text:
+        Verbatim passage to annotate.
+    roll_context:
+        Optional per-roll context dict from roll_resolutions.json.  When
+        provided, a formatted context block is appended after the passage.
+    """
+    parts = [f'Passage:\n"""\n{passage_text}\n"""']
+    if roll_context is not None:
+        parts.append(_format_roll_context(roll_context))
+    parts.append("Emit only the JSON object.")
+    return "\n\n".join(parts)
+
+
+def _strip_code_fence(content: str) -> str:
+    """Strip leading/trailing markdown code fences if present.
+
+    Reasoning models (e.g. DeepSeek-R1-Distill) often wrap JSON in
+    ``` ```json ... ``` ``` blocks even when ``response_format=json_object``
+    is requested.  llama.cpp's enforcement is best-effort.
+    """
+    s = content.strip()
+    if s.startswith("```"):
+        # Drop opening fence (with optional language tag) and closing fence
+        first_newline = s.find("\n")
+        if first_newline > 0:
+            s = s[first_newline + 1 :]
+        if s.rstrip().endswith("```"):
+            s = s.rstrip()[:-3].rstrip()
+    return s
+
+
+def _resolve_offsets(
+    passage_text: str,
+    declared_text: str,
+    hint_start: Optional[int],
+) -> Optional[tuple[int, int]]:
+    """Find the offsets of *declared_text* in *passage_text*.
+
+    Returns ``(start, end)`` if found, or ``None`` if the declared text
+    does not appear at all.  When the substring appears multiple times,
+    the occurrence closest to *hint_start* (if provided) wins; otherwise
+    the first occurrence wins.
+    """
+    if not declared_text:
+        return None
+
+    occurrences: list[int] = []
+    pos = 0
+    n = len(passage_text)
+    while pos <= n - len(declared_text):
+        found = passage_text.find(declared_text, pos)
+        if found < 0:
+            break
+        occurrences.append(found)
+        pos = found + 1  # allow overlapping matches; rare but possible
+
+    if not occurrences:
+        return None
+
+    if len(occurrences) == 1 or hint_start is None:
+        start = occurrences[0]
+    else:
+        start = min(occurrences, key=lambda p: abs(p - hint_start))
+
+    return start, start + len(declared_text)
 
 
 def _validate_spans(
     passage_text: str, raw_spans: list[dict[str, Any]]
-) -> tuple[list[ProposedSpan], list[str]]:
+) -> tuple[list[ProposedSpan], list[str], dict[str, int]]:
     """Parse and validate spans from LLM output.
 
-    Returns (valid_spans, error_messages).  A span is invalid if
-    passage_text[start:end] does not match the declared text field (when
-    present) or if offsets are out of range.
+    The ``text`` field is the source of truth: when present, the system
+    locates the substring in the passage and snaps offsets to the actual
+    location (using LLM-provided offsets as a disambiguation hint when
+    the substring appears multiple times).  When ``text`` is absent, the
+    LLM's offsets are used directly as a backwards-compatible fallback.
+
+    Returns ``(valid_spans, errors, stats)`` where ``stats`` counts how
+    many spans were resolved by exact-offset, snap-via-text, or
+    text-only fallback (useful for diagnostics).
     """
     valid: list[ProposedSpan] = []
     errors: list[str] = []
+    stats = {"exact": 0, "snapped": 0, "offset_only": 0}
     n = len(passage_text)
 
     for item in raw_spans:
         try:
             layer = str(item.get("layer", ""))
             label = str(item.get("label", ""))
-            start = int(item["start"])
-            end = int(item["end"])
-        except (KeyError, TypeError, ValueError) as exc:
+        except (TypeError, ValueError) as exc:
             errors.append(f"Span missing required field: {exc}")
             continue
 
-        if start < 0 or end < 0 or start > n or end > n or start >= end:
-            errors.append(
-                f"Span {label!r} offsets out of range or inverted: [{start},{end}) "
-                f"for text of length {n}"
-            )
-            continue
+        declared_text_raw = item.get("text")
+        declared_text: Optional[str] = (
+            declared_text_raw if isinstance(declared_text_raw, str) and declared_text_raw else None
+        )
 
-        declared_text: Optional[str] = item.get("text")
+        # LLM offsets are now optional hints
+        hint_start: Optional[int] = None
+        hint_end: Optional[int] = None
+        try:
+            if item.get("start") is not None:
+                hint_start = int(item["start"])
+            if item.get("end") is not None:
+                hint_end = int(item["end"])
+        except (TypeError, ValueError):
+            hint_start = hint_end = None
+
         if declared_text is not None:
-            actual = passage_text[start:end]
-            if actual != declared_text:
+            # Text-first: try the LLM-provided offsets first (cheap), then snap.
+            start = end = -1
+            if (
+                hint_start is not None
+                and hint_end is not None
+                and 0 <= hint_start < hint_end <= n
+                and passage_text[hint_start:hint_end] == declared_text
+            ):
+                start, end = hint_start, hint_end
+                stats["exact"] += 1
+            else:
+                resolved = _resolve_offsets(passage_text, declared_text, hint_start)
+                if resolved is None:
+                    errors.append(
+                        f"Span {label!r}: text {declared_text!r} not found in passage"
+                    )
+                    continue
+                start, end = resolved
+                stats["snapped"] += 1
+        else:
+            # Backwards-compatible fallback: trust LLM offsets.
+            if hint_start is None or hint_end is None:
                 errors.append(
-                    f"Span {label!r} text mismatch: declared {declared_text!r} "
-                    f"but passage[{start}:{end}] is {actual!r}"
+                    f"Span {label!r}: missing both 'text' and offsets"
                 )
                 continue
+            if hint_start < 0 or hint_end < 0 or hint_start > n or hint_end > n or hint_start >= hint_end:
+                errors.append(
+                    f"Span {label!r}: offsets out of range or inverted: "
+                    f"[{hint_start},{hint_end}) for text of length {n}"
+                )
+                continue
+            start, end = hint_start, hint_end
+            stats["offset_only"] += 1
 
         confidence_raw = item.get("confidence")
         confidence: Optional[float] = None
@@ -155,7 +381,7 @@ def _validate_spans(
             )
         )
 
-    return valid, errors
+    return valid, errors, stats
 
 
 def _mean_confidence(spans: list[ProposedSpan]) -> Optional[float]:
@@ -211,6 +437,7 @@ def propose(
     model: Optional[str] = None,
     timeout: float = _DEFAULT_TIMEOUT,
     persist_raw_dir: Optional[Path] = None,
+    roll_context: Optional[dict[str, Any]] = None,
     _client: Optional[httpx.Client] = None,  # injection point for tests
 ) -> Proposal:
     """Call llama.cpp to propose spans for *passage_text*.
@@ -231,6 +458,10 @@ def propose(
     persist_raw_dir:
         Directory for raw model output.  Defaults to
         ``data/labeled/.proposals_raw``.
+    roll_context:
+        Optional per-roll context dict (from roll_resolutions.json via
+        Candidate.roll_context).  When provided, a formatted context block
+        is appended to the user-turn prompt so the LLM sees chapter context.
 
     Returns
     -------
@@ -246,7 +477,7 @@ def propose(
     raw_dir = persist_raw_dir if persist_raw_dir is not None else _DEFAULT_RAW_DIR
 
     system_prompt = _load_system_prompt()
-    user_prompt = _build_user_prompt(passage_text)
+    user_prompt = _build_user_prompt(passage_text, roll_context=roll_context)
 
     messages: list[dict[str, str]] = [
         {"role": "system", "content": system_prompt},
@@ -272,7 +503,7 @@ def propose(
             content_str: str = ""
             try:
                 content_str = raw_response["choices"][0]["message"]["content"]
-                content_obj = json.loads(content_str)
+                content_obj = json.loads(_strip_code_fence(content_str))
                 raw_spans = content_obj.get("spans", [])
             except (KeyError, IndexError, json.JSONDecodeError) as exc:
                 if attempt < _MAX_RETRIES:
@@ -304,7 +535,7 @@ def propose(
                     mean_confidence=None,
                 )
 
-            valid_spans, errors = _validate_spans(passage_text, raw_spans)
+            valid_spans, errors, stats = _validate_spans(passage_text, raw_spans)
 
             if errors and attempt < _MAX_RETRIES:
                 error_summary = "; ".join(errors[:3])
@@ -327,6 +558,15 @@ def propose(
                 warnings.warn(
                     f"bootstrap: {len(errors)} span(s) dropped for {passage_id!r} "
                     f"after {attempt+1} attempt(s): {errors[0]}",
+                    stacklevel=2,
+                )
+
+            if stats["snapped"] or stats["offset_only"]:
+                # Diagnostic — useful when comparing models or tuning prompts.
+                warnings.warn(
+                    f"bootstrap: {passage_id!r} resolution stats "
+                    f"exact={stats['exact']} snapped={stats['snapped']} "
+                    f"offset_only={stats['offset_only']}",
                     stacklevel=2,
                 )
 

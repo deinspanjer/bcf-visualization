@@ -15,10 +15,8 @@ from nlp import schema as S
 def test_layer_a_bio_matches_doc():
     expected = [
         "O",
-        "B-ACQUISITION", "I-ACQUISITION",
-        "B-MISS", "I-MISS",
-        "B-ROLL_ATTEMPT", "I-ROLL_ATTEMPT",
-        "B-CONSTELLATION_REVEAL", "I-CONSTELLATION_REVEAL",
+        "B-ROLL_HIT", "I-ROLL_HIT",
+        "B-ROLL_MISS", "I-ROLL_MISS",
     ]
     assert S.LAYER_A_BIO == expected
     assert S.bio_tags(S.LAYER_A_LABELS) == expected
@@ -27,16 +25,15 @@ def test_layer_a_bio_matches_doc():
 def test_layer_b_bio_matches_doc():
     expected = [
         "O",
-        "B-PERK_NAME", "I-PERK_NAME",
-        "B-CONSTELLATION_NAME", "I-CONSTELLATION_NAME",
-        "B-JOE_NAME", "I-JOE_NAME",
-        "B-JOE_CAPE_NAME", "I-JOE_CAPE_NAME",
-        "B-OTHER_CAPE_NAME", "I-OTHER_CAPE_NAME",
+        "B-PERK_REFERENCE", "I-PERK_REFERENCE",
+        "B-CONSTELLATION_REFERENCE", "I-CONSTELLATION_REFERENCE",
+        "B-PRESENCE_ACTION", "I-PRESENCE_ACTION",
         "B-DATE_REF", "I-DATE_REF",
         "B-TIME_OF_DAY", "I-TIME_OF_DAY",
         "B-DURATION", "I-DURATION",
         "B-FLASHBACK_CUE", "I-FLASHBACK_CUE",
         "B-DILATION_CUE", "I-DILATION_CUE",
+        "B-AUTHOR_NOTE", "I-AUTHOR_NOTE",
     ]
     assert S.LAYER_B_BIO == expected
     assert S.bio_tags(S.LAYER_B_LABELS) == expected
@@ -56,7 +53,75 @@ def test_section_labels_catalog():
 
 
 def test_schema_version():
-    assert S.SCHEMA_VERSION == 1
+    assert S.SCHEMA_VERSION == 2
+
+
+def test_layer_b_includes_perk_reference_first():
+    """`PERK_REFERENCE` is the lead Layer-B label per the v3 doc bump."""
+    assert S.LAYER_B_LABELS[0] == "PERK_REFERENCE"
+    # All previously-shipped layer-B labels still present.
+    for old in (
+        "PRESENCE_ACTION",
+        "DATE_REF",
+        "TIME_OF_DAY",
+        "DURATION",
+        "FLASHBACK_CUE",
+        "DILATION_CUE",
+    ):
+        assert old in S.LAYER_B_LABELS
+
+
+def test_v1_record_loads_with_default_notes():
+    """A SpanRecord written under schema v1 (no `notes` field) must still
+    validate against the v3 model, with `notes` defaulting to ``""``."""
+    v1_payload = {
+        "passage_id": "ch16.1_p07",
+        "chapter_num": "16.1",
+        "section_index": 0,
+        "epub_char_start": 482311,
+        "epub_char_end": 482729,
+        "text": "Brockton focused on the wheel...",
+        "spans": [
+            {"layer": "A", "start": 95, "end": 119, "label": "ROLL_HIT"},
+        ],
+        "source": "manual",
+        "annotator": "deinspanjer",
+        "annotated_at": "2026-05-04T15:32:11Z",
+        "schema_version": 1,
+    }
+    rec = S.SpanRecord.model_validate(v1_payload)
+    assert rec.notes == ""
+    # The record's own schema_version is preserved as written; the model
+    # default only applies when the field is absent. Backward-compat is
+    # about adding the optional `notes` field, not rewriting old ones.
+    assert rec.schema_version == 1
+
+
+def test_v2_record_with_notes():
+    """A v2 record carrying a `notes` value round-trips intact and a
+    PERK_REFERENCE span is accepted on Layer B."""
+    v2_payload = {
+        "passage_id": "ch40_p03",
+        "chapter_num": "40",
+        "section_index": 0,
+        "epub_char_start": 0,
+        "epub_char_end": 200,
+        "text": "the new power was called Mixing Mixtures and felt strange.",
+        "spans": [
+            {"layer": "B", "start": 25, "end": 40, "label": "PERK_REFERENCE"},
+        ],
+        "source": "manual",
+        "annotator": "deinspanjer",
+        "annotated_at": "2026-05-05T10:00:00Z",
+        "notes": "boundary check: included full perk name without 'the'",
+        "schema_version": 2,
+    }
+    rec = S.SpanRecord.model_validate(v2_payload)
+    assert rec.notes.startswith("boundary check")
+    assert rec.spans[0].label == "PERK_REFERENCE"
+    dumped = rec.model_dump(mode="json")
+    assert dumped["notes"] == v2_payload["notes"]
+    assert dumped["schema_version"] == 2
 
 
 # --- /extract request/response -------------------------------------------

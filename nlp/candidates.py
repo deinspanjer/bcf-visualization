@@ -9,10 +9,12 @@ See docs/local_nlp_annotation_playbook.md §"Candidate selection".
 
 from __future__ import annotations
 
+import html.parser
 import json
 import random
 import warnings
-from dataclasses import dataclass
+import zipfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -28,9 +30,23 @@ class Candidate:
     chapter_num: str
     section_index: int
     epub_char_start: int
+    """For predicted_roll candidates this is a PER-CHAPTER RAW-HTML offset
+    (consistent with how predicted_char_offset is computed by
+    scripts/find_text_backed_rolls.py against a single chapter's HTML).
+    For regex_anchor candidates this is a whole-EPUB plain-text offset."""
     epub_char_end: int
+    """See epub_char_start for offset interpretation notes."""
     text: str
     source: str  # "predicted_roll" | "regex_anchor" | "section_first_chars" | ...
+    roll_context: Optional[dict] = field(default=None)
+    """Per-roll context from roll_resolutions.json.  Set for predicted_roll
+    candidates; None for regex_anchor and section_first_chars sources."""
+    chapter_title: str = ""
+    """Full chapter title from chapters.json, e.g. ``"39 Set Up - Addendum Kenta"``."""
+    section_header: str = ""
+    """Section header from chapter_sections.json, e.g. ``"Addendum Kenta"``.
+    Empty string when the section has no explicit header (often the case for
+    the chapter's primary Joe-POV section)."""
 
 
 # ---------------------------------------------------------------------------
@@ -47,6 +63,30 @@ def _read_json(path: Path) -> object:
         return json.load(fh)
 
 
+class _StripParser(html.parser.HTMLParser):
+    """Minimal HTML tag stripper — returns concatenated text data nodes."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._parts: list[str] = []
+        self._skip = False
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        if tag in {"script", "style"}:
+            self._skip = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"script", "style"}:
+            self._skip = False
+
+    def handle_data(self, data: str) -> None:
+        if not self._skip:
+            self._parts.append(data)
+
+    def text(self) -> str:
+        return "".join(self._parts)
+
+
 def _load_chapter_sections(derived_dir: Path) -> dict[str, list[dict]]:
     """Return mapping chapter_num → list[section_dict]."""
     raw = _read_json(derived_dir / "chapter_sections.json")
@@ -58,10 +98,114 @@ def _load_chapter_sections(derived_dir: Path) -> dict[str, list[dict]]:
     return result
 
 
-def _load_predicted_rolls(derived_dir: Path) -> list[dict]:
-    raw = _read_json(derived_dir / "predicted_rolls.json")
+def _load_chapter_titles(derived_dir: Path) -> dict[str, str]:
+    """Return mapping chapter_num → full_title from chapters.json.
+
+    Returns ``{}`` if the file is missing or malformed.
+    """
+    path = derived_dir / "chapters.json"
+    if not path.exists():
+        return {}
+    raw = _read_json(path)
+    if not isinstance(raw, dict):
+        return {}
+    result: dict[str, str] = {}
+    for ch in raw.get("chapters", []) or []:
+        cn = str(ch.get("chapter_num", ""))
+        title = str(ch.get("full_title", "") or "")
+        if cn:
+            result[cn] = title
+    return result
+
+
+def _load_chapter_href_map(derived_dir: Path) -> dict[str, str]:
+    """Return mapping chapter_num → epub_href from chapter_sections.json.
+
+    epub_href values are bare filenames (e.g. "chap_28.xhtml") that sit
+    inside the EPUB's "EPUB/" directory.  Returns an empty dict (with a
+    warning) when the file is missing or the field is absent.
+    """
+    path = derived_dir / "chapter_sections.json"
+    if not path.exists():
+        warnings.warn(
+            f"chapter_sections.json not found at {path}. "
+            "Per-chapter HTML extraction unavailable for predicted_roll candidates.",
+            stacklevel=4,
+        )
+        return {}
+    raw = _read_json(path)
     assert isinstance(raw, dict)
-    return list(raw["predicted"])  # type: ignore[arg-type]
+    result: dict[str, str] = {}
+    for ch in raw.get("chapters", []):
+        href = ch.get("epub_href")
+        if href:
+            result[str(ch["chapter_num"])] = href
+    return result
+
+
+def _read_chapter_html_raw(epub_path: Path, epub_href: str) -> Optional[str]:
+    """Read the raw HTML/XHTML for a single chapter from the EPUB.
+
+    *epub_href* is the bare filename (e.g. "chap_28.xhtml"); the function
+    tries both "EPUB/<href>" and "<href>" as zip member paths.
+
+    Returns None (with a warning) if the file cannot be read.
+
+    NOTE: This returns the *raw HTML* string, not plain text.  The
+    ``predicted_char_offset`` field in roll_resolutions.json is computed by
+    ``scripts/find_text_backed_rolls.py`` against the raw HTML (it indexes
+    into the same string returned by ``zf.read(...).decode("utf-8")``), so
+    any slice that uses that offset must operate in raw-HTML coordinates.
+    Strip HTML *after* slicing to render plain text for display.
+    """
+    try:
+        with zipfile.ZipFile(epub_path) as zf:
+            # Try the canonical EPUB subdirectory first, then root-relative.
+            for candidate_path in (f"EPUB/{epub_href}", epub_href):
+                try:
+                    return zf.read(candidate_path).decode("utf-8", errors="replace")
+                except KeyError:
+                    continue
+        warnings.warn(
+            f"Chapter file {epub_href!r} not found in {epub_path}. "
+            "Falling back to section sample for this candidate.",
+            stacklevel=4,
+        )
+        return None
+    except Exception as exc:
+        warnings.warn(
+            f"Could not read chapter {epub_href!r} from {epub_path}: {exc}. "
+            "Falling back to section sample for this candidate.",
+            stacklevel=4,
+        )
+        return None
+
+
+def _strip_html(raw_html: str) -> str:
+    """Strip HTML tags and return concatenated text data nodes."""
+    parser = _StripParser()
+    parser.feed(raw_html)
+    return parser.text()
+
+
+def _load_roll_resolutions(derived_dir: Path) -> dict[int, dict]:
+    """Load roll_resolutions.json and return a dict keyed by roll_number.
+
+    Returns an empty dict (with a warning) if the file is missing, so that
+    callers degrade gracefully without crashing.
+    """
+    path = derived_dir / "roll_resolutions.json"
+    if not path.exists():
+        warnings.warn(
+            f"roll_resolutions.json not found at {path}. "
+            "roll_context will be None for all predicted_roll candidates.",
+            stacklevel=4,
+        )
+        return {}
+    raw = _read_json(path)
+    assert isinstance(raw, dict)
+    rolls: list[dict] = raw.get("rolls", [])
+    return {int(r["roll_number"]): r for r in rolls}
 
 
 def _load_regex_locations(derived_dir: Path) -> list[dict]:
@@ -73,33 +217,13 @@ def _load_regex_locations(derived_dir: Path) -> list[dict]:
 def _read_epub_text(epub_path: Path) -> Optional[str]:
     """Extract plain text from EPUB (concatenated HTML bodies, stripped).
 
+    Concatenates ALL HTML/XHTML files in sorted order to produce a single
+    whole-EPUB string.  The resulting offsets are whole-EPUB-relative and are
+    used exclusively by the regex_anchor path in ``_iter_event_focused``.
+
     Returns None if the EPUB cannot be read.  Requires only stdlib.
     """
     try:
-        import zipfile
-        import html.parser
-
-        class _StripParser(html.parser.HTMLParser):
-            def __init__(self) -> None:
-                super().__init__()
-                self._parts: list[str] = []
-                self._skip = False
-
-            def handle_starttag(self, tag: str, attrs: list) -> None:
-                if tag in {"script", "style"}:
-                    self._skip = True
-
-            def handle_endtag(self, tag: str) -> None:
-                if tag in {"script", "style"}:
-                    self._skip = False
-
-            def handle_data(self, data: str) -> None:
-                if not self._skip:
-                    self._parts.append(data)
-
-            def text(self) -> str:
-                return "".join(self._parts)
-
         parts: list[str] = []
         with zipfile.ZipFile(epub_path) as zf:
             names = sorted(
@@ -145,59 +269,140 @@ def _window_from_epub(
 
 def _iter_event_focused(
     derived_dir: Path,
+    epub_path: Optional[Path],
     epub_text: Optional[str],
     counter: dict[str, int],
     rng: random.Random,
     limit: Optional[int],
 ) -> Iterator[Candidate]:
-    """Sources 1+2: predicted-roll positions and regex anchors."""
-    rolls = _load_predicted_rolls(derived_dir)
+    """Sources 1+2: predicted-roll positions and regex anchors.
+
+    *epub_text* is the whole-EPUB concatenated plain text used exclusively
+    for the regex_anchor path (its offsets are whole-EPUB-relative).
+
+    *epub_path* is the raw EPUB zip, used to read individual chapter files
+    for the predicted_roll path (predicted_char_offset is per-chapter).
+    """
+    roll_resolutions = _load_roll_resolutions(derived_dir)
+    # Use the resolution records directly as the roll list (they contain
+    # predicted_char_offset, anchor_string, chapter_num, etc.)
+    rolls = list(roll_resolutions.values())
     regex_locs = _load_regex_locations(derived_dir)
 
     # Shuffle each list independently, then interleave so we alternate sources
-    rolls = list(rolls)
-    regex_locs = list(regex_locs)
     rng.shuffle(rolls)
     rng.shuffle(regex_locs)
 
     yielded = 0
 
-    # Helper: build a Candidate from a word_position (predicted_roll)
+    # Helper: build a Candidate from a roll_resolutions record
     chapter_sections = _load_chapter_sections(derived_dir)
+    # chapter_num → epub_href (e.g. "chap_28.xhtml"), loaded once for all rolls.
+    chapter_href_map = _load_chapter_href_map(derived_dir)
+    # chapter_num → full title (e.g. "39 Set Up - Addendum Kenta")
+    chapter_titles = _load_chapter_titles(derived_dir)
 
-    def _candidate_from_roll(roll: dict) -> Optional[Candidate]:
-        ch_num = str(roll["chapter_num"])
-        word_pos: int = int(roll["word_position"])
+    def _section_header(ch_num: str, sec_idx: int) -> str:
+        """Return the section's header string from chapter_sections.json,
+        or ``""`` if missing/None."""
+        sections = chapter_sections.get(str(ch_num), [])
+        if 0 <= sec_idx < len(sections):
+            hdr = sections[sec_idx].get("header")
+            return str(hdr) if hdr else ""
+        return ""
 
-        if epub_text is not None:
-            # Approximate word-to-char offset using a simple ratio
-            # We don't have a per-chapter char offset map, so we use the word
-            # position as a rough char offset (average ~5 chars/word in prose)
-            char_est = word_pos * 5
-            start, end = _window_from_epub(epub_text, char_est)
-            text = epub_text[start:end].strip()
-            source = "predicted_roll"
-        else:
-            # Fall back: use the section's sample text
-            sections = chapter_sections.get(ch_num, [])
-            if not sections:
-                return None
-            sec = sections[0]
-            sample: str = sec.get("sample", "")
-            text = sample[:_FIRST_CHARS_WINDOW]
-            start = 0
-            end = len(text)
-            source = "section_first_chars"
+    def _candidate_from_roll(res: dict) -> Optional[Candidate]:
+        ch_num = str(res["chapter_num"])
+        # predicted_char_offset is a PER-CHAPTER RAW-HTML offset, as computed
+        # by scripts/find_text_backed_rolls.py against the individual chapter's
+        # raw HTML file (the same string returned by zf.read(...).decode("utf-8")).
+        # We slice raw HTML at this offset and strip tags afterward to render
+        # plain text — the older approach (strip first, slice second) used a
+        # different coordinate system and silently fell back for ~74 rolls
+        # where the predicted offset landed past the plain-text length.
+        char_offset: int = int(res["predicted_char_offset"])
+        sec_idx: int = int(res.get("section_index", 0))
 
+        # Build roll_context regardless of text-extraction path.
+        # outstanding_perks_with_cost_gt_banked can be very long; truncate
+        # to the top 5 by ascending cost to keep prompt size reasonable.
+        outstanding_all: list[dict] = res.get("outstanding_perks_with_cost_gt_banked", []) or []
+        outstanding_top5 = sorted(outstanding_all, key=lambda p: p.get("cost", 0))[:5]
+        roll_ctx: Optional[dict] = {
+            "roll_number": res.get("roll_number"),
+            "chapter_num": ch_num,
+            "section_index": sec_idx,
+            "predicted_char_offset": char_offset,
+            "anchor_string": res.get("anchor_string"),
+            "banked_at_roll": res.get("banked_at_roll"),
+            "banked_at_roll_source": res.get("banked_at_roll_source"),
+            "curator_chapter_num": res.get("curator_chapter_num"),
+            "chapter_attribution_disagreement": res.get("chapter_attribution_disagreement", False),
+            "curator_outcome": res.get("curator_outcome"),
+            "curator_perk_name": res.get("curator_perk_name"),
+            "curator_constellation": res.get("curator_constellation"),
+            "curator_cost": res.get("curator_cost"),
+            "curator_free_associated_perks": res.get("curator_free_associated_perks"),
+            "chapter_acquired_perks_in_order": res.get("chapter_acquired_perks_in_order"),
+            "outstanding_perks_with_cost_gt_banked": outstanding_top5,
+            "constellations_known_by_joe": res.get("constellations_known_by_joe"),
+        }
+
+        # --- Preferred path: read the individual chapter's raw HTML from the
+        # EPUB, slice in raw-HTML coordinates around the predicted offset,
+        # then strip tags to render plain text. ---
+        epub_href = chapter_href_map.get(ch_num)
+        if epub_path is not None and epub_href is not None:
+            chapter_html = _read_chapter_html_raw(epub_path, epub_href)
+            if chapter_html is not None:
+                if 0 <= char_offset <= len(chapter_html):
+                    start, end = _window_from_epub(chapter_html, char_offset)
+                    text = _strip_html(chapter_html[start:end]).strip()
+                    if text:
+                        pid = _passage_id(ch_num, counter)
+                        return Candidate(
+                            passage_id=pid,
+                            chapter_num=ch_num,
+                            section_index=sec_idx,
+                            # epub_char_start/end are per-chapter raw-HTML offsets.
+                            epub_char_start=start,
+                            epub_char_end=end,
+                            text=text,
+                            source="predicted_roll",
+                            roll_context=roll_ctx,
+                            chapter_title=chapter_titles.get(ch_num, ""),
+                            section_header=_section_header(ch_num, sec_idx),
+                        )
+
+        # --- Fallback: use the section's sample text. ---
+        # Reached when: epub_path is None, epub_href is not found,
+        # _read_chapter_html_raw fails, or offset is out of range.  Even on
+        # this path we keep the *full* roll_ctx so the LLM still sees the
+        # chapter's curator outcome, perk list, banked CP, anchor_string,
+        # and known constellations — the only thing we lose is the prose
+        # window centered on the predicted offset.
+        sections = chapter_sections.get(ch_num, [])
+        if not sections:
+            return None
+        sec = sections[0]
+        sample: str = sec.get("sample", "")
+        text = sample[:_FIRST_CHARS_WINDOW]
+        if not text:
+            return None
+        start = 0
+        end = len(text)
         pid = _passage_id(ch_num, counter)
         return Candidate(
             passage_id=pid,
             chapter_num=ch_num,
-            section_index=0,
+            section_index=sec_idx,
             epub_char_start=start,
             epub_char_end=end,
             text=text,
-            source=source,
+            source="section_first_chars",
+            roll_context=roll_ctx,
+            chapter_title=chapter_titles.get(ch_num, ""),
+            section_header=_section_header(ch_num, sec_idx),
         )
 
     def _candidate_from_regex(loc: dict) -> Optional[Candidate]:
@@ -218,6 +423,10 @@ def _iter_event_focused(
             else:
                 return None
             context: str = loc.get("context", sec.get("sample", ""))
+            # The `context` field in roll_locations_regex.json wraps the
+            # matched anchor phrase in `[[...]]` for human-readable display.
+            # Strip those markers so the LLM/labeler sees clean prose.
+            context = context.replace("[[", "").replace("]]", "")
             text = context[:_FIRST_CHARS_WINDOW]
             start = 0
             end = len(text)
@@ -232,6 +441,8 @@ def _iter_event_focused(
             epub_char_end=end,
             text=text,
             source=source,
+            chapter_title=chapter_titles.get(ch_num, ""),
+            section_header=_section_header(ch_num, section_index),
         )
 
     # Interleave the two sources
@@ -328,6 +539,7 @@ def iter_candidates(
     if strategy == "event_focused":
         yield from _iter_event_focused(
             derived_dir=derived_dir,
+            epub_path=epub_path if (epub_path is not None and epub_path.exists()) else None,
             epub_text=epub_text,
             counter=counter,
             rng=rng,

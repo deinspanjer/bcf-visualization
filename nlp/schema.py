@@ -16,28 +16,39 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SCHEMA_VERSION: int = 1
+SCHEMA_VERSION: int = 2
 
 # Layer A: event spans (mechanic-relevant moments). See label schema doc.
 LAYER_A_LABELS: list[str] = [
-    "ACQUISITION",
-    "MISS",
-    "ROLL_ATTEMPT",
-    "CONSTELLATION_REVEAL",
+    "ROLL_HIT",
+    "ROLL_MISS",
 ]
 
 # Layer B: entity / reference spans. See label schema doc.
+# `PERK_REFERENCE` is listed first because it is expected to be the most
+# frequently-fired layer-B label in pilot data.
 LAYER_B_LABELS: list[str] = [
-    "PERK_NAME",
-    "CONSTELLATION_NAME",
-    "JOE_NAME",
-    "JOE_CAPE_NAME",
-    "OTHER_CAPE_NAME",
+    "PERK_REFERENCE",
+    # Sibling of PERK_REFERENCE for constellation names in narrative
+    # prose. Mirrors the perk-reference rationale: constellation names
+    # mentioned in body prose tag where Joe is consciously aware of
+    # the constellation, and frequently co-occur with ROLL_MISS spans
+    # (the canonical miss frame is "the <X> constellation passed by").
+    # Out of scope: end-of-chapter catalog and structured summary blocks.
+    "CONSTELLATION_REFERENCE",
+    "PRESENCE_ACTION",
     "DATE_REF",
     "TIME_OF_DAY",
     "DURATION",
     "FLASHBACK_CUE",
     "DILATION_CUE",
+    # Structural exclusion marker — used to flag prose regions that should
+    # NOT count toward CP-eligible word totals. Author's notes are the
+    # canonical case (e.g. "(Author's note: ... )" blocks embedded in a
+    # chapter that's otherwise Joe-POV CP-eligible). Downstream consumers
+    # like predict_rolls.py can filter spans by this label to subtract
+    # the words from cumulative CP counts.
+    "AUTHOR_NOTE",
 ]
 
 # Multi-label section flags (independent sigmoids). See label schema doc.
@@ -75,22 +86,19 @@ LAYER_B_BIO: list[str] = bio_tags(LAYER_B_LABELS)
 # every consumer of these models free validation against the catalog.
 LayerName = Literal["A", "B"]
 LayerALabel = Literal[
-    "ACQUISITION",
-    "MISS",
-    "ROLL_ATTEMPT",
-    "CONSTELLATION_REVEAL",
+    "ROLL_HIT",
+    "ROLL_MISS",
 ]
 LayerBLabel = Literal[
-    "PERK_NAME",
-    "CONSTELLATION_NAME",
-    "JOE_NAME",
-    "JOE_CAPE_NAME",
-    "OTHER_CAPE_NAME",
+    "PERK_REFERENCE",
+    "CONSTELLATION_REFERENCE",
+    "PRESENCE_ACTION",
     "DATE_REF",
     "TIME_OF_DAY",
     "DURATION",
     "FLASHBACK_CUE",
     "DILATION_CUE",
+    "AUTHOR_NOTE",
 ]
 SectionLabelName = Literal[
     "pov_joe",
@@ -262,6 +270,7 @@ class SpanRecord(_Base):
     model_proposal_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     annotator: str
     annotated_at: str
+    notes: str = ""
     schema_version: int = SCHEMA_VERSION
 
 

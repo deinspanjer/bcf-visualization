@@ -6,13 +6,45 @@ Requires only stdlib + pydantic.
 
 from __future__ import annotations
 
+import io
 import json
 import warnings
+import zipfile
 from pathlib import Path
 
 import pytest
 
 from nlp.candidates import Candidate, iter_candidates
+
+
+def _make_fake_epub(
+    tmp_path: Path,
+    text_length: int = 5000,
+    chapter_hrefs: tuple[str, ...] = ("chap_1.xhtml", "chap_2.xhtml", "chap_5.xhtml"),
+) -> Path:
+    """Create a minimal valid EPUB zip with per-chapter xhtml files and a whole-EPUB
+    fallback file.
+
+    Each chapter file lives at ``EPUB/<href>`` so that
+    ``_read_chapter_html_raw`` can locate it.  The text is spaces/letters long enough to cover all
+    ``predicted_char_offsets`` used in the test fixture data.
+    """
+    # Build a text body long enough to cover all predicted_char_offsets in the fixture
+    body_text = ("A" * 80 + "\n") * (text_length // 81 + 1)
+    xhtml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        "<html><body><p>" + body_text + "</p></body></html>"
+    )
+    epub_path = tmp_path / "fake.epub"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        # Whole-EPUB fallback used by regex_anchor path
+        zf.writestr("OEBPS/content.xhtml", xhtml)
+        # Per-chapter files used by the predicted_roll path
+        for href in chapter_hrefs:
+            zf.writestr(f"EPUB/{href}", xhtml)
+    epub_path.write_bytes(buf.getvalue())
+    return epub_path
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +80,17 @@ def _make_predicted_rolls(tmp_path: Path, rolls: list[dict]) -> Path:
         "comparison_per_chapter": {},
     }
     p = tmp_path / "predicted_rolls.json"
+    p.write_text(json.dumps(data), encoding="utf-8")
+    return p
+
+
+def _make_roll_resolutions(tmp_path: Path, rolls: list[dict]) -> Path:
+    data = {
+        "schema_version": "1.0",
+        "generated_from": "test fixture",
+        "rolls": rolls,
+    }
+    p = tmp_path / "roll_resolutions.json"
     p.write_text(json.dumps(data), encoding="utf-8")
     return p
 
@@ -118,6 +161,80 @@ def _simple_fixture(tmp_path: Path) -> Path:
         },
     ]
 
+    # roll_resolutions.json drives Source 1; predicted_rolls.json is kept for
+    # backward compat but is no longer read by _iter_event_focused.
+    roll_resolution_entries = [
+        {
+            "roll_number": 1,
+            "chapter_num": "1",
+            "section_index": 0,
+            "predicted_word_position_epub": 100,
+            "predicted_char_offset": 500,
+            "anchor_string": "Joe felt the wheel spin",
+            "banked_at_roll": 100,
+            "banked_at_roll_source": "curator",
+            "curator_chapter_num": "1",
+            "chapter_attribution_disagreement": False,
+            "curator_outcome": "HIT",
+            "curator_perk_name": "Perfect Pitch",
+            "curator_constellation": "Toolkits",
+            "curator_cost": 100,
+            "curator_free_associated_perks": ["Access Key"],
+            "curator_banked_before": 100,
+            "curator_banked_after": 0,
+            "chapter_acquired_perks_in_order": [
+                {"name": "Perfect Pitch", "constellation": "Toolkits", "cost": 100, "free": False}
+            ],
+            "outstanding_perks_with_cost_gt_banked": [
+                {"name": "Big Perk", "cost": 800, "constellation": "Knowledge"}
+            ],
+            "constellations_known_by_joe": ["Toolkits"],
+        },
+        {
+            "roll_number": 2,
+            "chapter_num": "2",
+            "section_index": 0,
+            "predicted_word_position_epub": 200,
+            "predicted_char_offset": 1000,
+            "anchor_string": "The next day Joe tried again",
+            "banked_at_roll": 200,
+            "banked_at_roll_source": "predicted",
+            "curator_chapter_num": "2",
+            "chapter_attribution_disagreement": False,
+            "curator_outcome": "MISS",
+            "curator_perk_name": None,
+            "curator_constellation": None,
+            "curator_cost": None,
+            "curator_free_associated_perks": None,
+            "curator_banked_before": 200,
+            "curator_banked_after": 200,
+            "chapter_acquired_perks_in_order": [],
+            "outstanding_perks_with_cost_gt_banked": [],
+            "constellations_known_by_joe": [],
+        },
+        {
+            "roll_number": 3,
+            "chapter_num": "1",
+            "section_index": 0,
+            "predicted_word_position_epub": 300,
+            "predicted_char_offset": 1500,
+            "anchor_string": "He tried a third time",
+            "banked_at_roll": 150,
+            "banked_at_roll_source": "predicted",
+            "curator_chapter_num": None,
+            "chapter_attribution_disagreement": False,
+            "curator_outcome": None,
+            "curator_perk_name": None,
+            "curator_constellation": None,
+            "curator_cost": None,
+            "curator_free_associated_perks": None,
+            "curator_banked_before": 150,
+            "curator_banked_after": 150,
+            "chapter_acquired_perks_in_order": [],
+            "outstanding_perks_with_cost_gt_banked": [],
+            "constellations_known_by_joe": [],
+        },
+    ]
     rolls = [
         {"roll_number": 1, "word_position": 100, "chapter_num": "1", "regime": 1, "cp_threshold": 100},
         {"roll_number": 2, "word_position": 200, "chapter_num": "2", "regime": 1, "cp_threshold": 100},
@@ -147,6 +264,7 @@ def _simple_fixture(tmp_path: Path) -> Path:
 
     _make_chapter_sections(tmp_path, chapters)
     _make_predicted_rolls(tmp_path, rolls)
+    _make_roll_resolutions(tmp_path, roll_resolution_entries)
     _make_regex_locations(tmp_path, locations)
     return tmp_path
 
@@ -329,3 +447,186 @@ class TestUnimplementedStrategies:
         derived = _simple_fixture(tmp_path)
         with pytest.raises(ValueError, match="Unknown strategy"):
             list(iter_candidates(strategy="bogus_strategy", derived_dir=derived))
+
+
+# ---------------------------------------------------------------------------
+# Tests: roll_resolutions-driven roll_context attachment
+# ---------------------------------------------------------------------------
+
+
+class TestRollContextAttachment:
+    """Verify that predicted_roll candidates carry roll_context from
+    roll_resolutions.json and that the context dict has the expected keys."""
+
+    _EXPECTED_KEYS = {
+        "roll_number",
+        "chapter_num",
+        "section_index",
+        "predicted_char_offset",
+        "anchor_string",
+        "banked_at_roll",
+        "banked_at_roll_source",
+        "curator_chapter_num",
+        "chapter_attribution_disagreement",
+        "curator_outcome",
+        "curator_perk_name",
+        "curator_constellation",
+        "curator_cost",
+        "curator_free_associated_perks",
+        "chapter_acquired_perks_in_order",
+        "outstanding_perks_with_cost_gt_banked",
+        "constellations_known_by_joe",
+    }
+
+    def test_predicted_roll_candidates_have_roll_context(self, tmp_path: Path) -> None:
+        """Candidates from the predicted_roll source must have a non-None roll_context."""
+        derived = _simple_fixture(tmp_path)
+        epub = _make_fake_epub(tmp_path)
+        candidates = list(iter_candidates(
+            strategy="event_focused",
+            derived_dir=derived,
+            epub_path=epub,
+            seed=1337,
+        ))
+        roll_candidates = [c for c in candidates if c.source == "predicted_roll"]
+        assert roll_candidates, "Expected at least one predicted_roll candidate"
+        for c in roll_candidates:
+            assert c.roll_context is not None, (
+                f"Expected roll_context on predicted_roll candidate {c.passage_id}"
+            )
+
+    def test_roll_context_has_expected_keys(self, tmp_path: Path) -> None:
+        """roll_context must contain all required keys."""
+        derived = _simple_fixture(tmp_path)
+        epub = _make_fake_epub(tmp_path)
+        candidates = list(iter_candidates(
+            strategy="event_focused",
+            derived_dir=derived,
+            epub_path=epub,
+            seed=1337,
+        ))
+        roll_candidates = [c for c in candidates if c.source == "predicted_roll"]
+        assert roll_candidates
+        for c in roll_candidates:
+            ctx = c.roll_context
+            assert ctx is not None
+            missing = self._EXPECTED_KEYS - set(ctx.keys())
+            assert not missing, (
+                f"roll_context for {c.passage_id} missing keys: {missing}"
+            )
+
+    def test_roll_context_hit_fields_populated(self, tmp_path: Path) -> None:
+        """For the HIT roll (roll_number=1, ch1), curator fields must be set."""
+        derived = _simple_fixture(tmp_path)
+        epub = _make_fake_epub(tmp_path)
+        candidates = list(iter_candidates(
+            strategy="event_focused",
+            derived_dir=derived,
+            epub_path=epub,
+            seed=1337,
+        ))
+        hit_candidates = [
+            c for c in candidates
+            if c.source == "predicted_roll"
+            and c.roll_context is not None
+            and c.roll_context.get("curator_outcome") == "HIT"
+        ]
+        assert hit_candidates, "Expected at least one HIT roll candidate"
+        c = hit_candidates[0]
+        ctx = c.roll_context
+        assert ctx["curator_perk_name"] == "Perfect Pitch"
+        assert ctx["curator_constellation"] == "Toolkits"
+        assert ctx["anchor_string"] == "Joe felt the wheel spin"
+
+    def test_regex_anchor_candidates_have_no_roll_context(self, tmp_path: Path) -> None:
+        """Regex anchor candidates must have roll_context=None."""
+        derived = _simple_fixture(tmp_path)
+        epub = _make_fake_epub(tmp_path)
+        candidates = list(iter_candidates(
+            strategy="event_focused",
+            derived_dir=derived,
+            epub_path=epub,
+            seed=1337,
+        ))
+        regex_candidates = [c for c in candidates if c.source == "regex_anchor"]
+        assert regex_candidates, "Expected at least one regex_anchor candidate"
+        for c in regex_candidates:
+            assert c.roll_context is None, (
+                f"Expected roll_context=None for regex_anchor {c.passage_id}, "
+                f"got {c.roll_context!r}"
+            )
+
+    def test_outstanding_perks_truncated_to_top5(self, tmp_path: Path) -> None:
+        """outstanding_perks_with_cost_gt_banked in roll_context must have at most 5 entries."""
+        # Build a fixture roll with more than 5 outstanding perks
+        chapters = [
+            {
+                "chapter_num": "5",
+                "full_title": "Chapter 5",
+                "epub_href": "chap_5.xhtml",
+                "total_word_count": 1000,
+                "cp_earning_word_count": 800,
+                "sections": [
+                    {
+                        "header": None,
+                        "word_count": 800,
+                        "counts_for_cp": True,
+                        "classification": "mc",
+                        "confidence": "high",
+                        "classification_reason": "test",
+                        "fp_count": 5,
+                        "tp_count": 0,
+                        "structural_markers": [],
+                        "sample": "Long chapter with many possibilities.",
+                    }
+                ],
+            }
+        ]
+        many_outstanding = [
+            {"name": f"Perk {i}", "cost": (i + 1) * 100, "constellation": "Knowledge"}
+            for i in range(10)
+        ]
+        resolution_entries = [
+            {
+                "roll_number": 99,
+                "chapter_num": "5",
+                "section_index": 0,
+                "predicted_word_position_epub": 500,
+                "predicted_char_offset": 100,
+                "anchor_string": "some anchor",
+                "banked_at_roll": 50,
+                "banked_at_roll_source": "predicted",
+                "curator_chapter_num": None,
+                "chapter_attribution_disagreement": False,
+                "curator_outcome": None,
+                "curator_perk_name": None,
+                "curator_constellation": None,
+                "curator_cost": None,
+                "curator_free_associated_perks": None,
+                "curator_banked_before": 50,
+                "curator_banked_after": 50,
+                "chapter_acquired_perks_in_order": [],
+                "outstanding_perks_with_cost_gt_banked": many_outstanding,
+                "constellations_known_by_joe": [],
+            }
+        ]
+        _make_chapter_sections(tmp_path, chapters)
+        _make_predicted_rolls(tmp_path, [])  # empty — not used by new code
+        _make_roll_resolutions(tmp_path, resolution_entries)
+        _make_regex_locations(tmp_path, [])
+        epub = _make_fake_epub(tmp_path, text_length=10000)
+
+        candidates = list(iter_candidates(
+            strategy="event_focused",
+            derived_dir=tmp_path,
+            epub_path=epub,
+            seed=1337,
+        ))
+        roll_candidates = [c for c in candidates if c.source == "predicted_roll"]
+        assert roll_candidates
+        ctx = roll_candidates[0].roll_context
+        assert ctx is not None
+        outstanding = ctx["outstanding_perks_with_cost_gt_banked"]
+        assert len(outstanding) <= 5, (
+            f"Expected at most 5 outstanding perks, got {len(outstanding)}"
+        )
