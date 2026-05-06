@@ -357,21 +357,39 @@ Output: `data/derived/extracted_events.json` matching a schema in
 }
 ```
 
-### `extract_chapter_dates.py` (new)
+### Date / time-of-day extraction (revised)
 
-Consumes `extracted_events.json`'s `DATE_REF` / `TIME_OF_DAY` /
-`DURATION` / `FLASHBACK_CUE` / `DILATION_CUE` spans. Resolves them
-against chapter ordering (using the timeline anchors in
-`data/derived/timeline.json` for backstory and `chapters.json` for
-chapter dates) and writes a per-chapter best-guess in-world date.
+The architecture for in-world date capture has shifted since this doc
+was first drafted. The canonical in-world timeline at
+`data/derived/timeline.json` (built by `scripts/derive_timeline.py`)
+now merges xlsx + wiki + TUI-labeled spans + manual entries into a
+single schema-validated file. Pre-narration backstory is dropped at
+the cutoff (Joe's trigger, 2011-04-01); only in-narration entries
+make it through.
 
-This is the "feed candidates into the LLM for reasoning" step from
-the original conversation: the script can call llama.cpp on `:11434`
-when a passage has multiple competing date cues, with a tightly
-scoped prompt and the candidate spans pre-extracted.
+The TUI-labeled `DATE_REF` / `TIME_OF_DAY` spans are the right input
+for in-narration date and time-of-day attestation. They feed into the
+canonical timeline via `derive_timeline.py`'s `load_tui_entries` —
+currently a placeholder while annotation work is in progress. When
+spans accumulate, that one function gets fleshed out and the entries
+flow through with both `chapter_num` (from the labeled passage's
+chapter context) and `time_of_day` (from the TIME_OF_DAY span value)
+attested.
 
-Output: `data/derived/chapter_dates.json` plus a confidence field per
-chapter. Resolves a long-standing TODO item.
+Two follow-on outputs are still pending and sit on top of the
+canonical timeline:
+
+- **Per-chapter date interpolation**: every chapter → estimated
+  in-world date, even chapters not directly attested. Inputs: the
+  anchored entries in the canonical timeline (those carrying a
+  non-null `chapter_num`) plus `chapters.json` for `epub_sequence`
+  ordering. Implementation can live in `build_chapter_facts.py` or a
+  dedicated `derive_chapter_dates.py`.
+- **LLM-assisted disambiguation** (the "feed candidates into the LLM
+  for reasoning" step from the original conversation): when a passage
+  has multiple competing `DATE_REF` cues, llama.cpp on `:11434` can be
+  called with the candidate spans pre-extracted to pick the
+  highest-confidence reading.
 
 ### `build_section_classifications.py` (modified)
 

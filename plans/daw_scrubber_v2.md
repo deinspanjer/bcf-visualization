@@ -128,13 +128,11 @@ The cheapest items have the biggest perceived improvement — Phase A first prot
 - Ask user to spot-check 5 borderline calls before regenerating downstream.
 
 ### C3. In-world dates per chapter (deferred from chapter_facts spec)
-- LLM pass over each chapter's first ~2000 words extracting:
-  - `start_date` (YYYY-MM-DD)
-  - `start_time_of_day` (morning/afternoon/evening/night)
-  - `end_date`, `end_time_of_day`
-  - `evidence` (one quote)
-- Output: new `data/manual/chapter_in_world_dates.json` consumed by `build_chapter_facts.py`.
-- Reference: `timeline.json` already has 26 dated events; many will appear in prose and serve as anchors.
+- The canonical in-world timeline (`data/derived/timeline.json`, schema v2) is now in place: `scripts/derive_timeline.py` merges xlsx + wiki + (future) TUI-labeled spans + manual entries into 277 atomic in-narration entries (cutoff: Joe's trigger, 2011-04-01). Each entry already has fields for `chapter_num` and `time_of_day`; xlsx and wiki sources cannot attest these (schema-enforced), only TUI spans and human-typed manual entries can. The merged timeline is embedded into `chapter_facts.json` as `in_world_timeline`.
+- What's still missing for C3 is the **per-chapter** date table (every chapter → estimated in-world date, even chapters not directly attested). The infrastructure to feed this is in place; the work is twofold:
+  - **Anchor entries**: add ~5–10 chapter-anchored events to `data/manual/timeline_manual.json` (the only place besides TUI spans where `chapter_num` may be set). Pick distinctive events ("Story Begins", "Bakuda bombing spree", "Endbringer fight", etc.).
+  - **Interpolation pass**: a downstream consumer (could live in `build_chapter_facts.py` or a new `derive_chapter_dates.py`) reads the anchored entries and linearly interpolates by `epub_sequence` between adjacent anchors to fill every chapter.
+- LLM pass over chapter prose (originally envisioned here) is still useful for catching `DATE_REF` / `TIME_OF_DAY` cues; those become TUI-source entries via `derive_timeline.py`'s currently-empty TUI loader (`load_tui_entries`) once annotation work resumes.
 - Mostly orthogonal to C2 — can run in parallel.
 
 ### C4. Google Sheets URL pattern for perks
@@ -206,7 +204,7 @@ If the hypothesis holds, the v1 narrative ("curator over-counted via bookkeeping
 - New track between chapter ticks and POV sections.
 - Hashes at known in-world day boundaries (April 8, 9, 10, ..., 25, 2011).
 - Each hash labeled with day-of-month; tooltip shows full date.
-- Future: sub-hashes for time-of-day transitions if `chapter_in_world_dates.json` carries that.
+- Future: sub-hashes for time-of-day transitions sourced from the canonical timeline's `time_of_day` field on TUI / manual entries (xlsx and wiki entries always have `time_of_day=null` by schema rule).
 
 ### E3. Perk-link tooltips
 - If `description_url` is populated, wrap perk name in `roll-tooltip` as `<a target="_blank">`.
@@ -246,7 +244,7 @@ The plan is structured so each phase is independently executable.
 | A2, A3 | `web/index.html` |
 | C1 | `README.md` (mechanic regimes table) |
 | C2 | `data/manual/section_classifications.json` (new fields) |
-| C3 | `data/manual/chapter_in_world_dates.json` (new file), `scripts/build_chapter_facts.py` (consumer) |
+| C3 | `data/manual/timeline_manual.json` (add chapter-anchored entries), and either extend `scripts/build_chapter_facts.py` or add `scripts/derive_chapter_dates.py` to interpolate between anchors |
 | C4 | `data/derived/perk_directory.json` (new field), schema, builder script update |
 | D1–D4 | regenerates `data/derived/predicted_rolls.json`, `roll_locations_regex.json`, `roll_text_evidence.json`, `chapter_facts.json`, `roll_locations_validation.json` |
 | E4 | `README.md` |

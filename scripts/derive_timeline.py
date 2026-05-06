@@ -60,12 +60,15 @@ DEFAULT_OUTPUT = ROOT / "data" / "derived" / "timeline.json"
 
 SCHEMA_VERSION = 2
 
-# Earliest in-world date the canonical timeline includes. The story's
-# first narrated chapter is dated 2011-04-08 ("Story Begins"); the wiki
-# also dates Joe's pre-narration trigger event to 2011-04-01. We use the
-# wiki's own start date as the cutoff so the trigger is preserved while
-# all true backstory (high school graduation, etc.) is dropped. Adjust
-# this to "2011-04-08" to also drop the pre-chapter-1 trigger week.
+# Earliest in-world date the canonical timeline includes.
+#
+# Cutoff is Joe's trigger (2011-04-01) — the narrative moment his power
+# is "working", even though by the simulator's word-accumulation
+# mechanic he doesn't start gaining points until story narration begins
+# in chapter 1 on 2011-04-08. Trigger week (April 1-7) is therefore
+# kept; everything earlier (high school, college, depression backstory)
+# is dropped at merge time. The in-narration window is what the
+# planetarium will actually visualize.
 CUTOFF_IN_WORLD_DATE_ISO = "2011-04-01"
 
 # Allowed entry source values, mirrored from timeline.schema.json.
