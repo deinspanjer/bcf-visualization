@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "generated_from": "test fixture",
+  "rolls": [
+    {
+      "roll_number": 1,
+      "chapter_num": "1",
+      "section_index": 0,
+      "predicted_word_position_epub": 2169,
+      "predicted_char_offset": 50,
+      "anchor_string": "Joe felt the wheel spin",
+      "banked_at_roll": 100,
+      "banked_at_roll_source": "curator",
+      "curator_outcome": "HIT",
+      "curator_perk_name": "Perfect Pitch",
+      "curator_constellation": "Toolkits",
+      "curator_cost": 100,
+      "curator_free_associated_perks": ["Access Key"],
+      "curator_banked_before": 100,
+      "curator_banked_after": 0,
+      "chapter_acquired_perks_in_order": [
+        {"name": "Perfect Pitch", "constellation": "Toolkits", "cost": 100, "free": false},
+        {"name": "Access Key", "constellation": "Toolkits", "cost": 0, "free": true}
+      ],
+      "outstanding_perks_with_cost_gt_banked": [
+        {"name": "Damaged Microchip", "cost": 800, "constellation": "Knowledge"},
+        {"name": "Orb Design Plans", "cost": 800, "constellation": "Toolkits"}
+      ],
+      "constellations_known_by_joe": ["Toolkits"]
+    },
+    {
+      "roll_number": 2,
+      "chapter_num": "2",
+      "section_index": 0,
+      "predicted_word_position_epub": 5000,
+      "predicted_char_offset": 80,
+      "anchor_string": "The next day Joe tried again",
+      "banked_at_roll": 200,
+      "banked_at_roll_source": "predicted",
+      "curator_outcome": "MISS",
+      "curator_perk_name": null,
+      "curator_constellation": null,
+      "curator_cost": null,
+      "curator_free_associated_perks": null,
+      "curator_banked_before": 200,
+      "curator_banked_after": 200,
+      "chapter_acquired_perks_in_order": [],
+      "outstanding_perks_with_cost_gt_banked": [
+        {"name": "Some Expensive Perk", "cost": 500, "constellation": "Knowledge"}
+      ],
+      "constellations_known_by_joe": ["Toolkits", "Knowledge"]
+    }
+  ]
+}

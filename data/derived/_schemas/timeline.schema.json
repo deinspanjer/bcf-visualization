@@ -1,22 +1,30 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bcf-visualization/derived/timeline.schema.json",
-  "title": "In-world Timeline",
-  "description": "Author-provided pre-story dates merged with Whamodyne's reader-curated in-story timeline.",
+  "title": "Canonical In-world Timeline",
+  "description": "Single canonical merge of all in-world timeline entries from every available source (xlsx, wiki, TUI annotations, manual). Each entry is atomic (one dated event from one source); duplicates across sources for the same in-world date are kept as separate entries — no automated deduplication is performed. chapter_num and time_of_day are populated only when the source explicitly attests to them (TUI span tied to a chapter / time-of-day phrase, or human-typed manual entry); xlsx and wiki entries always carry chapter_num=null and time_of_day=null.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "_source", "_attribution", "_count",
-    "_first_in_world_date", "_last_in_world_date",
-    "_note", "entries"
+    "schema_version",
+    "_generated_at",
+    "_sources_used",
+    "_count",
+    "_first_in_world_date",
+    "_last_in_world_date",
+    "entries"
   ],
   "properties": {
-    "_source":              { "type": "string" },
-    "_attribution":         { "type": "string" },
+    "schema_version":       { "const": 2 },
+    "_generated_at":        { "type": "string", "format": "date-time" },
+    "_sources_used": {
+      "type": "array",
+      "items": { "enum": ["xlsx", "wiki", "tui", "manual"] },
+      "uniqueItems": true
+    },
     "_count":               { "type": "integer", "minimum": 0 },
     "_first_in_world_date": { "type": ["string", "null"], "format": "date" },
     "_last_in_world_date":  { "type": ["string", "null"], "format": "date" },
-    "_note":                { "type": "string" },
     "entries": {
       "type": "array",
       "items": { "$ref": "#/$defs/entry" }
@@ -26,14 +34,69 @@
     "entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["sequence", "in_world_date_iso", "in_world_date_text", "events", "attribution"],
+      "required": [
+        "id",
+        "in_world_date_iso",
+        "time_of_day",
+        "event_text",
+        "source",
+        "source_ref",
+        "chapter_num",
+        "tags"
+      ],
       "properties": {
-        "sequence":           { "type": "integer", "minimum": 1 },
-        "in_world_date_iso":  { "type": ["string", "null"], "format": "date" },
-        "in_world_date_text": { "type": "string" },
-        "events":             { "type": "string", "minLength": 1 },
-        "attribution":        { "enum": ["author", "Whamodyne"] }
-      }
+        "id": {
+          "description": "Stable, deterministic id derived from source + position. Format: '<source>:<source-specific-tail>'. Unique within the file.",
+          "type": "string",
+          "pattern": "^(xlsx|wiki|tui|manual):[A-Za-z0-9_:.\\-]+$"
+        },
+        "in_world_date_iso": {
+          "description": "ISO date (day-precision). The canonical timeline only contains in-narration entries (cutoff defined in scripts/derive_timeline.py), and every in-narration source attests an exact day.",
+          "type": "string",
+          "format": "date"
+        },
+        "time_of_day": {
+          "description": "Coarse diurnal anchor for the event. Controlled vocabulary aligned with chapter_facts.in_world.start_time_of_day. NULL UNLESS THE SOURCE EXPLICITLY ATTESTS THE TIME (TUI TIME_OF_DAY span on the passage, or human-typed manual entry). xlsx and wiki sources cannot attest, so their entries always have time_of_day=null. A future text-extraction pass over high-confidence phrases like 'in the morning' could populate this for xlsx/wiki entries via a separate attestation mechanism — not by mutating the source-of-record here.",
+          "enum": [null, "morning", "afternoon", "evening", "night"]
+        },
+        "event_text": {
+          "description": "Single human-readable event description. For multi-event source rows (xlsx prose blobs, wiki bullet lists), each atomic event becomes its own entry — this field never contains multi-event prose.",
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "enum": ["xlsx", "wiki", "tui", "manual"]
+        },
+        "source_ref": {
+          "description": "Free-form pointer to the upstream record this entry was derived from (xlsx row, wiki bullet position, span id, manual entry stable name). Required to be a string; use empty string only when truly no upstream pointer applies (which should be rare).",
+          "type": "string"
+        },
+        "chapter_num": {
+          "description": "Story chapter number this event happened in. NULL UNLESS THE SOURCE EXPLICITLY ATTESTS THE LINKAGE. xlsx and wiki sources cannot attest (their text doesn't carry chapter linkage), so their entries always have chapter_num=null. TUI spans carry the chapter context of the labeled passage. Manual entries set this only when the human author has verified it.",
+          "type": ["string", "null"]
+        },
+        "tags": {
+          "description": "Optional controlled-vocabulary tags. Lowercase alphanumeric + hyphen. Empty array when no tags apply.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "description": "xlsx and wiki sources may not attest chapter_num or time_of_day. Auto-extraction from prose is explicitly out of scope for the merger; it would constitute an unvetted guess. If we ever add a high-confidence text extractor it should produce a separate source category, not silently mutate xlsx/wiki entries here.",
+          "if":   { "properties": { "source": { "enum": ["xlsx", "wiki"] } } },
+          "then": {
+            "properties": {
+              "chapter_num": { "const": null },
+              "time_of_day": { "const": null }
+            }
+          }
+        }
+      ]
     }
   }
 }

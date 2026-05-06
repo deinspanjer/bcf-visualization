@@ -1,0 +1,792 @@
+{
+  "schema_version": 1,
+  "_source": "data/raw/wiki/bcf_wiki_timeline.html (Celestial Forge Fandom Wiki)",
+  "_attribution": "Celestial Forge Fandom Wiki (Whamodyne)",
+  "_note": "Auto-extracted from the Wiki Timeline section. Per the wiki header: 'Up to date through 104.2 Interlude Rachel' — i.e. these 28 in-world days correspond roughly to story chapters 1 through 104.2. Per-event chapter linkage is NOT included here; build a chapter->date mapping separately from explicit anchors.",
+  "_count": 19,
+  "_first_in_world_date": "2011-04-01",
+  "_last_in_world_date": "2011-04-28",
+  "_coverage_anchor": {
+    "in_world_date_iso": "2011-04-28",
+    "approx_chapter_num": "104.2",
+    "source": "wiki page header note"
+  },
+  "_match_stats": null,
+  "entries": [
+    {
+      "date_text": "Friday April 1st 2011",
+      "in_world_date_iso": "2011-04-01",
+      "events": [
+        {
+          "text": "Joe triggers at his parent's home in Captain's Hill neighborhood due to stress and depression at a toxic family dinner. Yes, Joe did trigger on April Fool's Day. There is a joke in there somewhere I feel it."
+        }
+      ],
+      "sequence": 1
+    },
+    {
+      "date_text": "Friday, April 8th",
+      "in_world_date_iso": "2011-04-08",
+      "events": [
+        {
+          "text": "Start of the story."
+        }
+      ],
+      "sequence": 2
+    },
+    {
+      "date_text": "Sunday, April 10th",
+      "in_world_date_iso": "2011-04-10",
+      "events": [
+        {
+          "text": "Joe goes out as a cape for the first time, and he encounters Oni Lee. This is Joe's first fight, and he has yet to choose a cape name."
+        },
+        {
+          "text": "After the fight with Oni Lee, he briefly meets the Undersiders"
+        }
+      ],
+      "sequence": 3
+    },
+    {
+      "date_text": "Monday, April 11th",
+      "in_world_date_iso": "2011-04-11",
+      "events": [
+        {
+          "text": "Tattletale posts an anonymous message to PHO reaching out for a meeting."
+        }
+      ],
+      "sequence": 4
+    },
+    {
+      "date_text": "Tuesday, April 12th",
+      "in_world_date_iso": "2011-04-12",
+      "events": [
+        {
+          "text": "Joe finally sees the message Tattletale had sent and agrees to a meeting later that day. He meets the Undersiders, which at this time includes Taylor."
+        },
+        {
+          "text": "The Undersiders commission Joe to make them knives. He agrees to work with them as his passenger tells him just how important Taylor is to the future of the world."
+        }
+      ],
+      "sequence": 5
+    },
+    {
+      "date_text": "Thursday, April 14th",
+      "in_world_date_iso": "2011-04-14",
+      "events": [
+        {
+          "text": "Joe delivers the knives to the Undersiders in the morning. They rob the bank at noon."
+        },
+        {
+          "text": "Joe, feeling guilty for the damage he indirectly caused by providing the weaponry, meets with Amy Dallon and heals her broken wrist. The fallout from this meeting shapes much of the PRT response to Joe (who still has not chosen his cape name)."
+        }
+      ],
+      "sequence": 6
+    },
+    {
+      "date_text": "Friday, April 15th",
+      "in_world_date_iso": "2011-04-15",
+      "events": [
+        {
+          "text": "Joe gets Garment Gloves while out on his morning run."
+        },
+        {
+          "text": "Joe passes his motorcycle DMV test and gets a motorcycle that afternoon."
+        },
+        {
+          "text": "Joe chooses his cape name, \"Apeiron\". He also makes an account on PHO with that name."
+        }
+      ],
+      "sequence": 7
+    },
+    {
+      "date_text": "Saturday, April 16th",
+      "in_world_date_iso": "2011-04-16",
+      "events": [
+        {
+          "text": "Joe has an appointment with with Dr. Campbell, his therapist. The ABB starts the bombing spree right as the session closes."
+        },
+        {
+          "text": "Apeiron fights with Bakuda as well as Uber & Leet while rescuing and healing the Undersiders at the storage facility. This is Apeiron's second fight and his first public appearance."
+        },
+        {
+          "text": "Garment Gloves patrols around the Docks neighborhood and meets Flechette and Shadow Stalker."
+        }
+      ],
+      "sequence": 8
+    },
+    {
+      "date_text": "Sunday, April 17th",
+      "in_world_date_iso": "2011-04-17",
+      "events": [
+        {
+          "text": "Apeiron rescues Weld from the bottom of Brockton Bay, followed by a call with Director Armstrong facilitated by the Ward."
+        },
+        {
+          "text": "Aisha Laborn follows Joe home into his workshop."
+        }
+      ],
+      "sequence": 9
+    },
+    {
+      "date_text": "Monday, April 18th",
+      "in_world_date_iso": "2011-04-18",
+      "events": [
+        {
+          "text": "Garment Gloves has meet and greet with Protectorate at the gym in the morning."
+        },
+        {
+          "text": "Joe has a call with Lisa (Tattletale), during which he states that he doesn't plan on taking any action soon. This is immediately"
+        },
+        {
+          "text": "Aisha attempts to infiltrate an ABB financial center and ends up accidentally caught in an explosion of spikes. She is badly injured, and calls Joe for help."
+        },
+        {
+          "text": "Apeiron departs to rescue Aisha, and for the first time has a serious load-out prepared and ready. He busts into ABB financial center, heals Aisha and has her retreat to the safety of his Workshop, then works to mess up ABB finances."
+        },
+        {
+          "text": "Apeiron fights against Uber & Leet, during which he displays ability to repair, upgrade, and integrate other tinker's work into his own during combat. This is Joe's third fight."
+        },
+        {
+          "text": "Joe acquires a volcano (which is alarming, because Aisha is currently in his Workshop), and later briefs Aisha on his powers."
+        },
+        {
+          "text": "Finds out March is the ABB thinker, and she has an annihilator ability."
+        },
+        {
+          "text": "Joe has a call with his sister that causes emotional stress."
+        },
+        {
+          "text": "With Aisha's help, he is able to synthesize Lethe water and make Celestial Bronze."
+        },
+        {
+          "text": "Crafts Ren, his first named object, to help Aisha control her power. He also gives Aisha an omni-tool watch."
+        }
+      ],
+      "sequence": 10
+    },
+    {
+      "date_text": "Tuesday, April 19th",
+      "in_world_date_iso": "2011-04-19",
+      "events": [
+        {
+          "text": "Acquires Veritech VF-2SS Valkyrie II main variable space fighter."
+        },
+        {
+          "text": "Joe surfs the volcano and spends some time training against the duplicates."
+        },
+        {
+          "text": "Joe meets Taylor in the library to discuss how they should address the awkward internet reaction, and discovers she is the daughter of his old faculty advisor. He is invited to Taylor's home, where he meets and is questioned by Danny Hebert."
+        },
+        {
+          "text": "Amy learns of her family backstory."
+        },
+        {
+          "text": "Joe acquires his first 600 point perk, Master Craftsman. There are 34 more 600 point perks left in the Celestial Forge."
+        },
+        {
+          "text": "Apeiron goes online and chats with Weld on PHO, and the conversation is monitored by Dragon. That leads to an online meeting between the two tinkers where they work together to try to crack Bakuda's Deadman's code."
+        },
+        {
+          "text": "The collaboration between the two tinkers stops abruptly when emergency is formally declared in Brockton Bay: Dragon's code now forces her to follow the restrictions against working with Apeiron, as per the order of the local director. Apeiron attempts to bribe Dragon with reproducible fusion power to continue confab, pushes idea that she is Mastered."
+        },
+        {
+          "text": "Dragon attacks Apeiron when he concludes that she is mastered and offers to help. He fights in retreat, ultimately tapping into the ability of his Labratorium to fight against hostile AI and managing to beat Dragon. When she reports her intention to move to Brockton Bay to chase down Apeiron, Dragon describes him as a scoundrel. Both Dragon and Dragonslayers decide to head to Brockton Bay."
+        },
+        {
+          "text": "After Dragon fight, Joe goes out and puts out docks wide fire set by Lung rampaging earlier that night. He does not go out in costume, and the city isn't actually sure who was responsible for putting out the flames."
+        }
+      ],
+      "sequence": 11
+    },
+    {
+      "date_text": "Wednesday, April 20th",
+      "in_world_date_iso": "2011-04-20",
+      "events": [
+        {
+          "text": "Joe speaks with the Undersiders about their debt to him and what he is looking for. He gives them scaled down omni-tool watches. Later he makes a wrong assumption over the source of his \"I am Iron Man\" perk."
+        },
+        {
+          "text": "Garment Gloves visits the bank to get a business loan and chooses a location for her boutique: a retail location a block from the gym."
+        },
+        {
+          "text": "Joe researches Natural Alchemy potions and starts developing hand-crafted divine nanotech."
+        }
+      ],
+      "sequence": 12
+    },
+    {
+      "date_text": "Thursday, April 21st",
+      "in_world_date_iso": "2011-04-21",
+      "events": [
+        {
+          "text": "A number of upgrades are completed, both for the workshop and his equipment.\nJoe and Garment work together to make new boots and combat uniforms for each other. Later, he spars with Fleet driving the Motoroid in order to get a feel for the Boots of Kickass."
+        },
+        {
+          "text": "Joe builds a mantic energy circuit throughout the entire volcano base."
+        },
+        {
+          "text": "Joe's duplicates turn Trauma the lantern shield into a soul bound wristband that anchors a subspace inventory."
+        },
+        {
+          "text": "Joe upgrades his cerebral implant to be Shatterbird proof."
+        },
+        {
+          "text": "The encounter starts with a call between Apeiron and Bakuda, with March joining after a few exchanges. Apeiron keeps up the banter in order to trace the connection to their location. When the call is cut off, the fight between Joe and ABB spreads across the city."
+        },
+        {
+          "text": "One duplicate heads to take down Bakuda's base and manages to get info on Bakuda's Deadman's switch, allowing them to trace all implanted bombs. The other duplicate goes to rescue Chen and, after healing him, gives him a magic sword, armor, and unlocks his Aura."
+        },
+        {
+          "text": "Apeiron makes his city-wide scans of ABB forces and bomb effects available to the public."
+        },
+        {
+          "text": "Apeiron is ambushed by a swarm of Oni Lee's using March's sting attack, almost killing him and causing severe damage. March and Lung setup a televised execution while he lies bleeding on the ground struggling to recover."
+        },
+        {
+          "text": "The life fibers were embedded inside Joe's body during the explosion, and the exposure to blood causes a massive surge in life fiber energy. This gives him enough power to fight back. March takes a serious blow and flies into a shipping container."
+        },
+        {
+          "text": "Damage from Dust blasted into his body necessitates that he use his lantern shield for the Aura control it facilitates."
+        },
+        {
+          "text": "Oni Lee finally takes a serious hit and retreats. Lung ramps up even more."
+        },
+        {
+          "text": "Joe gets the beast roar perk and turns into a half-human half-Inostrancevia. Apeiron transforms and fights Lung over the Bay. The duplicate shows up in a Gundam and takes over the fight. Dragon enters the fight against Lung in one of her powered suits."
+        },
+        {
+          "text": "Joe and the Gundam kick Lung high into the sky, where he is targeted by Fleet and killed by the motoroid launching at FTL speeds."
+        },
+        {
+          "text": "That night multiple sets of duplicates work on Joe, trying to figure out how to separate Tetra from him without killing either. As part of this Joe is given a new super heart made of exotic materials."
+        }
+      ],
+      "sequence": 13
+    },
+    {
+      "date_text": "Friday, April 22nd",
+      "in_world_date_iso": "2011-04-22",
+      "events": [
+        {
+          "text": "The duplicates use alchemy fission powered by souls to split Joe and Tetra from each other."
+        },
+        {
+          "text": "Tetra and the divine nanomachines join The Workshop Crew as individuals."
+        },
+        {
+          "text": "Joe finally figures out that his powers are based on fictional universes."
+        },
+        {
+          "text": "Uppercrust visits Director Piggot, asking her to oppose a kill order for Apeiron."
+        },
+        {
+          "text": "Alec takes some supplies to the boxing gym."
+        },
+        {
+          "text": "Tetra takes the form of a Mink."
+        },
+        {
+          "text": "Joe calls Taylor and Weld, promising to take a nap."
+        },
+        {
+          "text": "Lisa learns about Coil's plans and the Somer's Rock summit."
+        },
+        {
+          "text": "Armsmaster and Dragon watch Scion clean up the call bead breach."
+        },
+        {
+          "text": "Garment sends a few early outfits to New York for a charity auction."
+        },
+        {
+          "text": "The Matrix produces food, clothing, and other items for disaster relief."
+        },
+        {
+          "text": "First movie night: Fleet's choice, The Italian Job (1969)"
+        }
+      ],
+      "sequence": 14
+    },
+    {
+      "date_text": "Saturday, April 23rd",
+      "in_world_date_iso": "2011-04-23",
+      "events": [
+        {
+          "text": "Relaxation: Lava surfing and three-on-three giant robot basketball."
+        },
+        {
+          "text": "Lunch meeting with Lisa and Brian, about Somer's Rock and Lisa's watch."
+        },
+        {
+          "text": "Joe becomes the Enigmatic Artificer, and fails to reassure anybody."
+        },
+        {
+          "text": "Flechette and Kid Win visit Garment's shop, followed by Uppercrust."
+        },
+        {
+          "text": "Survey reaches out to Parian as Delphine Mertens."
+        },
+        {
+          "text": "Joe calls Alena back, refusing to spend Easter dinner with his parents."
+        },
+        {
+          "text": "Garment and Joe makes new costumes for the Undersiders."
+        },
+        {
+          "text": "Joe goes to therapy, until the motoroid makes contact from passenger space."
+        },
+        {
+          "text": "Mayor Christner visits Uppercrust at his worksite."
+        },
+        {
+          "text": "Aisha claims the rainbow robot unicorn zoid, naming it Moondance."
+        },
+        {
+          "text": "Second movie night: Garment's choice, Death on the Nile (1978)"
+        },
+        {
+          "text": "Tybalt joins the team, and gets his Aura unlocked."
+        },
+        {
+          "text": "Joe teaches advanced physics, chemistry, and alchemy."
+        },
+        {
+          "text": "Apeiron creates bodies for Fleet and Survey, and an Omega Nanite for the Matrix, including pieces of his own soul."
+        },
+        {
+          "text": "Easter Sunday, April 24th"
+        },
+        {
+          "text": "Poison Apple joins Blasto to shepherd the Lost Garden teens."
+        },
+        {
+          "text": "Aisha convinces Survey to tone down her beauty as a civilian, and learns Alkahestry."
+        },
+        {
+          "text": "Faultline meets Uppercrust for lunch, receiving information on Weld's recovery."
+        },
+        {
+          "text": "Somer's Rock Summit:.\nIntroducing the full Celestial Forge shocks everyone."
+        },
+        {
+          "text": "Joe figures out that Coil is the Undersiders' secret boss."
+        },
+        {
+          "text": "Fleet blocks Victor from entering; Damsel of Distress defuses the situation by asking him to wait outside."
+        },
+        {
+          "text": "Joe figures out that the Dragonslayers and the Travelers are different types of bad news."
+        },
+        {
+          "text": "Uppercrust guides discussion toward a no-man's-land until the dark zone disappears."
+        },
+        {
+          "text": "The Teeth arrive to claim ABB territory, but abide by the truce of the summit."
+        },
+        {
+          "text": "Apeiron asks Quarrel about March's offer, and kind of admits to understanding and messing with powers."
+        },
+        {
+          "text": "Apeiron agrees to avoid involvement in conflicts against the Teeth, provided they do not endanger civilians or recovery efforts."
+        },
+        {
+          "text": "Apeiron offers to allow messages through the local situation website."
+        },
+        {
+          "text": "Kaiser agrees to pay weregild to Faultline and Somer's Rock, leave Elite rogues alone for a full year, stop the dog-fighting rings, allow Coil's mercenaries free travel through Empire territory, and withdraw from one block around the neutral zone."
+        },
+        {
+          "text": "Apeiron gifts a bottle of brand-new seventy-year-old whiskey as thanks for handling Proto Aima's order."
+        },
+        {
+          "text": "Gregor talks with Fleet to confirm that he'd acted on his own initiative, without Apeiron's approval."
+        }
+      ],
+      "sequence": 15
+    },
+    {
+      "date_text": "Monday, April 25th",
+      "in_world_date_iso": "2011-04-25",
+      "events": [
+        {
+          "text": "Bakuda offers to let the PRT remove the bombs from ten hostages."
+        },
+        {
+          "text": "The S-Class response team in Los Angeles is briefed on Apeiron, positing a large cluster trigger."
+        },
+        {
+          "text": "An Ion-class \"Titan\" with integrated AI is produced; Fleet starts training her."
+        },
+        {
+          "text": "Tybalt teaches Aisha how to ride Orudios, while Joe rides the dragon Wish-Zoid, Dekalt."
+        },
+        {
+          "text": "Tybalt starts holodeck combat training with individualized Aura-awakening exercises."
+        },
+        {
+          "text": "Survey and Garment meet with Parian, who proposes the Regency Center for the charity auction event."
+        },
+        {
+          "text": "Aisha makes her first tinker tech with alchemy: a hand-held forcefield emitter."
+        },
+        {
+          "text": "The PRT delivers a press release including descriptions of Celestial Forge members."
+        },
+        {
+          "text": "Apeiron's entire body becomes cybernetic theotech, and immediately gets upgraded."
+        },
+        {
+          "text": "Joe visits the gym, and gets invited to help with the charity auction event."
+        },
+        {
+          "text": "Apeiron teleports around Brockton Bay to set exit points for the Warehouse door."
+        },
+        {
+          "text": "Joe and Tybalt meet Spekkio, the Master of War and the Keeper of Magic, at the end of time."
+        },
+        {
+          "text": "Joe calls Alena and doesn't back down, gaining Mental Fortress."
+        },
+        {
+          "text": "Blasto meets with Skidmark, promising super-weed to pay for Lost Garden's partying."
+        },
+        {
+          "text": "Lightstar patrols with Flashbang."
+        },
+        {
+          "text": "Lisa calls Joe, who unlocks her scanner so she can scan Noelle."
+        },
+        {
+          "text": "Uppercrust offers an appointment and the assistance of specialized thinkers."
+        },
+        {
+          "text": "Fourth movie night: Survey's choice, Det sjunde inseglet, or The Seventh Seal (1957), in Swedish"
+        },
+        {
+          "text": "Victor successfully displays alchemy skills stolen from Lethe."
+        },
+        {
+          "text": "Cherish reports that Apeiron is emotionally vulnerable underneath the style powers, and the Nine consider candidates in Brockton Bay."
+        },
+        {
+          "text": "Taylor destroys a historic building from a distance with a defensive enchantment, accidentally slowing recovery efforts."
+        }
+      ],
+      "sequence": 16
+    },
+    {
+      "date_text": "Tuesday, April 26th",
+      "in_world_date_iso": "2011-04-26",
+      "events": [
+        {
+          "text": "Joe commits to destroy the Nine as a concept, whatever it takes."
+        },
+        {
+          "text": "Joe launches the CFS Final Frontier in passenger space, via the spiritron computer and the QEC link."
+        },
+        {
+          "text": "Titan Tone joins the team, with Ion taking the role of squad leader."
+        },
+        {
+          "text": "Ren accidentally absorbs some Apocyan, so Aisha decides to research the memory-related Neathbow colors."
+        },
+        {
+          "text": "Everyone, even the Titans and Wish-Zoids, spend a year (two hours) in the spiritron computer learning compression technology, among other things."
+        },
+        {
+          "text": "The Wish-Zoids get upgraded with organic, vehicle, and travel modes."
+        },
+        {
+          "text": "Tybalt's training awakens Aura in Tetra, Survey, Fleet, the Matrix, Garment, Aisha, and the Wish-Zoids."
+        },
+        {
+          "text": "Apeiron and Survey meet with Uppercrust, who discloses that Leet has stolen Dodge tech, and offers \"everything\" in exchange for healing."
+        },
+        {
+          "text": "Alec calls Apeiron with his concerns about team stability."
+        },
+        {
+          "text": "Rachel sets up a riding date with Fleet, interrupting Lisa's request to control communications."
+        },
+        {
+          "text": "Joe heads to the gym primarily to recover spiritual energy, taking Vince and Theo to the event preparations."
+        },
+        {
+          "text": "Aisha pretends to mess with Joe, and meets Theo, who can't keep his eyes off her."
+        },
+        {
+          "text": "An Elite employee checks Joe's electronics setup, and offers him a job."
+        },
+        {
+          "text": "Joe melds with his duplicates in the omni-sphere for the first time."
+        },
+        {
+          "text": "Dionysus grants Apeiron the blessing of Libation, launching a massive Olympian bender."
+        },
+        {
+          "text": "Joe manifests a copy of March's alleged sword with a version of her striker power, and starts studying it."
+        },
+        {
+          "text": "The Glove of the East gets a third upgrade from itself, making it easier to upgrade anything else."
+        },
+        {
+          "text": "Joe goes to therapy, starting with family drama again, and moving on to helpful powers."
+        },
+        {
+          "text": "Alma manifests, scaring Dr. Campbell more than Joe, and departs sadly."
+        },
+        {
+          "text": "Aisha discusses going to Arcadia with Brian and their father, and encourages Brian to go back to the gym."
+        },
+        {
+          "text": "Survey finds the Slaughterhouse Nine; Joe decides to use human replica droids to prevent further deaths."
+        },
+        {
+          "text": "The Titan's Blood connection to the Earth lets Joe identify the system of passengers as a threat to the planet."
+        },
+        {
+          "text": "New Wave has a meeting, after Sarah blows up about Carol secretly liasing with the PRT, and Carol goes full conspiracy nut."
+        },
+        {
+          "text": "Joe calls Taylor to ask about his partner's reaction to the name of Emma Barnes, and describes her ABB encounter."
+        },
+        {
+          "text": "Joe becomes a titan primordial werewolf dragon cyborg transformer elemental shadow in a transwarp conduit to weave, forge, and sing Tetra into a permanently connected mechashift transwarp bone-steel Kamui Teigu robot girl with spiral energy."
+        },
+        {
+          "text": "Fifth movie night: Aisha's choice, Maggie Holt (2009)"
+        },
+        {
+          "text": "Crystal Pelham visits Amy in offsite lockdown and describes Apieron's public actions."
+        },
+        {
+          "text": "A YouTube show evaluates the gifted whiskey along with a distillery, finding the bottle bigger on the inside."
+        },
+        {
+          "text": "Fleet and Kataklyzein visit the Palanquin at Gregor's invitation."
+        },
+        {
+          "text": "Fleet reveals his other form to Gregor, and that the passengers are more powerful still, and asks him to share his patience with other Case 53s."
+        },
+        {
+          "text": "Aisha learns ki control, cultivation, ninjutsu, and civic awareness in the spiritron computer."
+        }
+      ],
+      "sequence": 17
+    },
+    {
+      "date_text": "Wednesday, April 27th",
+      "in_world_date_iso": "2011-04-27",
+      "events": [
+        {
+          "text": "Apeiron sends shikigami to the hospitals to keep people alive until after the Nine attack, and five to keep the Nine isolated."
+        },
+        {
+          "text": "Dauntless finds Apeiron and Proto Aima on patrol, while they wait for the dawn to honor the dead, and gets the Arclance upgraded."
+        },
+        {
+          "text": "Jack Slash insists on an early departure, but runs afoul of Aperion's malediction on their truck."
+        },
+        {
+          "text": "Apeiron, Survey, and Proto Aima meet with Blasto in his lab, handing over dossiers on a few civilian ABB leaders likely to walk free."
+        },
+        {
+          "text": "Titan Monarch joins Ion's squad, and claims Aisha as her pilot."
+        },
+        {
+          "text": "Twenty Kerbal engineers and four Kerbal pilots set up an embassy and space research station on the south coast of the Workshop."
+        },
+        {
+          "text": "Aisha undergoes Psionic Operative conditioning and Valkyrur Augmentation (rejecting Kaiju Chimera rebuilding, Star Trek genetic augments, eezo bionics, and cybernetic implants), and was more excited by the snow-white hair and purple eyes than by the new powers."
+        },
+        {
+          "text": "Aisha enters the Prismatic Laboratory, offering new insights on some of the colors."
+        },
+        {
+          "text": "The Spiritron Computer fully decodes Bakuda's detonation and failsafe signals."
+        },
+        {
+          "text": "Apeiron asks Uppercrust for advice on Bakuda's hostages, who promises to obstruct the negotiations for three days and suggests letting Director Armstrong restart the process of moving them out of Brockton Bay."
+        },
+        {
+          "text": "Sarah sends Carol to New York to be with Vicky while getting up to speed with the PRT."
+        },
+        {
+          "text": "Apeiron creates a curse against seeking or releasing his identity, and asks Tattletale whether it would affect Coil."
+        },
+        {
+          "text": "Joe attents the charity event prep, where Aisha complains about getting invited to go yachting."
+        },
+        {
+          "text": "Sabah confronts Joe, who meekly apologizes; Crystal Pelham ends up watching, and invites Joe to coffee with her friends in the morning."
+        },
+        {
+          "text": "Taylor responds to Emma's taunts with quiet confidence and a mention of the ABB event; Emma responds by clawing at her face.\nJoe calls Taylor in the aftermath, makes a 911 call pretending to be from a payphone, and gets a classmate's video emailed to her father."
+        },
+        {
+          "text": "Danny decides to press charges, so the police arrest Emma; he also confronts Principal Blackwell about the PRT overreach."
+        },
+        {
+          "text": "Joe gets the ability to speed up time in the Workshop, as long as he's not inside."
+        },
+        {
+          "text": "Delphine takes the first barely reasonable opportunity to tell Parian that Emma won't be coming, so Parian invites Tetra to take her place."
+        },
+        {
+          "text": "Tecton tries to talk Gully out of taking a huge risk for the sake of a normal life, and invites her to dinner tomorrow."
+        },
+        {
+          "text": "The final dress sells for over a hundred thousand, and is considered a bargain for that much embroidery."
+        },
+        {
+          "text": "Purity, Damsel of Distress, Rune, and Othala end up chasing a group of minor Teeth capes toward the city."
+        },
+        {
+          "text": "Survey intervenes just in time to shield a convenience store from being destroyed by one of the Teeth."
+        },
+        {
+          "text": "Kataklyzein has fun destroying all resistance from the remaining Teeth capes."
+        },
+        {
+          "text": "Purity's gratitude is rebuffed; Survey violently grounds the Empire capes with a gesture and rebukes them for poor tactical decisions."
+        },
+        {
+          "text": "Damsel of Distress threatens to unload at Survey, who responds in kind, until Crusader drags her away."
+        },
+        {
+          "text": "Crusader's ghosts attack Kataklyzein, who uses one to choke of them until Assault and Battery show up; he keeps the ghostly spear, permanently removing Crusader's ability to manifest weapons."
+        },
+        {
+          "text": "Assault nearly manages to request a collaboration with Survey and Kataklyzein, but Piggot's directives get in the way."
+        },
+        {
+          "text": "The Empire capes disengage while Assault and Battery formally detain the defeated Teeth."
+        },
+        {
+          "text": "The flood of arrests accidentally slows down Emma's arraignment."
+        },
+        {
+          "text": "The Butcher launches attacks against the Empire, and the Merchants launch their party platform to join in."
+        },
+        {
+          "text": "Rachel and Fleet get a closer look, and discuss the battle before Fleet prevents Scrub from killing the Butcher."
+        },
+        {
+          "text": "Fleet asks Rachel about her future, and promises to talk about getting help during the next lesson, when things calm down."
+        }
+      ],
+      "sequence": 18
+    },
+    {
+      "date_text": "Thursday, April 28th",
+      "in_world_date_iso": "2011-04-28",
+      "events": [
+        {
+          "text": "The Matrix gets spiritually upgraded with the Glove of the East, with mental and emotional effects that Aisha likens to puberty."
+        },
+        {
+          "text": "Joe spends a few years in the Spiritron Computer training and developing his Aspect and occasionally interacting with Alma."
+        },
+        {
+          "text": "Titan Ronin joins the team, and Tybalt chooses to be its pilot."
+        },
+        {
+          "text": "Prayers to Apeiron start manifesting religious visions in some cases."
+        },
+        {
+          "text": "The Forge grants unnatural skill with healing just in time for the medical immortality nanite creation."
+        },
+        {
+          "text": "Tybalt and Aisha absorb their nanites and almost immediately start using the new new abilities."
+        },
+        {
+          "text": "Aisha's armor gets a new workshop world in the form of a gem fitted into the crescent of the amulet, disconnecting her passenger from the network."
+        },
+        {
+          "text": "On being told that the Nine are coming, and about Jack's subtle power, Aisha realizes that the idea of stabbing him had been pushed from her mind."
+        },
+        {
+          "text": "Aisha asks what it would take to reproduce that protection for every parahuman on the planet.  The \"easy\" way requires a superweapon built on either Taylor's passenger or Eidolon's, to completely subvert the network."
+        },
+        {
+          "text": "Joe impresses Crystal's friends, partly with an impromptu lecture, and asks her to dinner before Saturday's concert."
+        },
+        {
+          "text": "Neathbow color focus items get distributed: Pelegin to Fleet, Violant to Tetra, Apocyan to Joe (or his duplicates), Viric to Survey, Cosmogone to the Matrix, and Gant to Tybalt; Aisha doubles down on Irrigo."
+        },
+        {
+          "text": "Apeiron, Proto Aima, and the Matrix go to camp Danvers to remove bombs from Bakuda's hostages, gifting universal translators as a signing bonus for a supply contract, which turns out to be the sale of a Garden of Eden Creation Kit."
+        },
+        {
+          "text": "Alena calls to say that their Dad wants to meet for lunch on Saturday."
+        },
+        {
+          "text": "Apeiron meets with Weld and Flechette.  Weld asks that other Case 53s in the city to get treated first, but still gets some Mithril to replace the heavier iron in his body.  Flechette gets immortality and an origami weapon."
+        },
+        {
+          "text": "Lisa calls, exhausted due to Wednesday's revelations, and reiterates that Noelle is contained."
+        },
+        {
+          "text": "Gully gets an opportunity to reset her trigger, partly to analyze the effects from the passenger's side with Xenoarchaeology."
+        },
+        {
+          "text": "Weld and Flechette visit Garment's studio, getting another stack of capes."
+        },
+        {
+          "text": "Brian sees Aisha talking with Joe at the gym, immediately wants to rescue her, and refuses to believe her at first.  While explaining things, she takes him to her castle and upgrades his watch."
+        },
+        {
+          "text": "Joe gets the ability to make eight duplicates while visiting Taylor about her school situation and the immortality nanites.  She accepts the nanites, which may accidentally be able to restore bugs that stay in range long enough."
+        },
+        {
+          "text": "Apeiron and Alma scare Alan Barnes away from defaming the Heberts, partly by rejoining him with a copy who reacted poorly to an equivalent transgression against his own daughter."
+        },
+        {
+          "text": "Apeiron tells Armstrong about Accord's theft, the related murder of a PRT agent, and knowledge of every skeleton in the PRT's closet, threatening to expose those secrets to avoid future compromises."
+        },
+        {
+          "text": "Joe talks through the Madness Place with his therapist."
+        },
+        {
+          "text": "Amy accepts the healing nanites before understanding the implications, and figures out that Khepri is one of the parahumans involved in the backup plan.  Apeiron philosophizes about the exploitation of her power, warns her that one of Vicky's victims was making a full statement to the police, shows her a recording of Vicky's emotional manipulation, and explains that the technology for making such memory recordings will be released to the world.  Along with medical tech.  In a week or two."
+        },
+        {
+          "text": "Lightstar heads to New York to tell Brandish in person about Vicky's indiscretions and the related revelations."
+        },
+        {
+          "text": "Joe's duplicates create spiritual Fleet drones in the Immaterium to act as psycopomps, collecting souls of the dead into spiritron cores."
+        },
+        {
+          "text": "Haunted vending machines get created out of alloyed psionic energy, allowing random people to purchase exactly what they need."
+        },
+        {
+          "text": "Big Rho comes online, and decides not to fully activate without a good reason.* Survey sets a goal to become competent at handling the Orrery, a starscape of every failed prediction."
+        },
+        {
+          "text": "Seventh movie night: The Matrix's choice, Apollo 13 (our version, for scientific accuracy)"
+        },
+        {
+          "text": "Apeiron bribes Chen to come back to Brockton Bay."
+        },
+        {
+          "text": "Clockblocker offers a scan of his power in exchange for a cancer-healing hypospray."
+        },
+        {
+          "text": "The Matrix provides top-shelf whiskey to the Palanquin in exchange for market research."
+        },
+        {
+          "text": "The Matrix provides hologram disguise watches to Gregor for distribution to antsy Case 53s."
+        },
+        {
+          "text": "Proto Aima follows Alma into one of Labyrinth's internal worlds, and they invite Apeiron in."
+        },
+        {
+          "text": "Apeiron takes off his shirt to make Labyrinth a puzzle box."
+        },
+        {
+          "text": "Survey and the Matrix open diplomatic relations with piglins in the Nether."
+        }
+      ],
+      "sequence": 19
+    }
+  ]
+}

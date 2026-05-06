@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/timeline_manual.schema.json",
+  "title": "Manually-curated timeline entries",
+  "description": "Hand-edited in-world timeline entries that flow into the canonical data/derived/timeline.json on the next build. Each entry is atomic (one event); use this file for chapter-anchored events that aren't derivable from the xlsx, wiki, or TUI annotations. chapter_num here is the only place a human-vetted explicit chapter linkage can live (besides TUI spans).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "_note":          { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "in_world_date_iso", "event_text"],
+      "properties": {
+        "id": {
+          "description": "Stable, human-chosen slug. Lowercase alphanumeric + hyphen + colon (for namespacing). Will be prefixed with 'manual:' in the canonical timeline.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9:\\-]*$"
+        },
+        "in_world_date_iso": {
+          "description": "ISO date (day-precision). Entries dated before the in-narration cutoff defined in scripts/derive_timeline.py are dropped at merge time.",
+          "type": "string",
+          "format": "date"
+        },
+        "event_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chapter_num": {
+          "description": "Optional explicit chapter linkage. Set only when you've verified it from the source text. Omit (or set to null) when uncertain.",
+          "type": ["string", "null"]
+        },
+        "time_of_day": {
+          "description": "Optional coarse diurnal anchor (morning / afternoon / evening / night). Set only when the source text attests it; otherwise omit or null.",
+          "enum": [null, "morning", "afternoon", "evening", "night"]
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "uniqueItems": true,
+          "default": []
+        },
+        "note": {
+          "description": "Optional internal note for the curator (NOT propagated to the canonical timeline). Use this to record why an entry was added or what source you used.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

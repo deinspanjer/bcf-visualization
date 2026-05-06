@@ -84,15 +84,31 @@ def _chapter_word_index(
     """Return a list of char offsets, one per CP-earning word in the
     chapter, in order. Index N gives the start char of the (N+1)-th
     CP-earning word in this chapter's HTML.
+
+    Sections whose span starts before the opening <body> tag (i.e. the
+    XML declaration, DOCTYPE, and <head> preamble) are clamped to start
+    at the first byte after <body>.  This prevents the chapter title
+    inside <title>...</title> from being counted as CP-earning prose
+    words when a section's html_start == 0.
     """
+    # Locate the end of the <body...> opening tag so we never count words
+    # in the XML/DOCTYPE/head preamble.  If somehow the file has no <body>
+    # tag, fall back to 0 (no clamping).
+    body_m = re.search(r"<body[^>]*>", chapter_html)
+    body_content_start = body_m.end() if body_m else 0
+
     out: list[int] = []
     for section_index, (_header, s_start, s_end) in enumerate(_split_sections(chapter_html)):
         cls = section_classifications.get(f"{chapter_num}@{section_index}")
         if not cls or not cls.get("counts_for_cp"):
             continue
-        spaced = _strip_to_spaces(chapter_html[s_start:s_end])
+        # Clamp: skip any bytes that fall inside the XML/HTML preamble.
+        effective_start = max(s_start, body_content_start)
+        if effective_start >= s_end:
+            continue
+        spaced = _strip_to_spaces(chapter_html[effective_start:s_end])
         for m in re.finditer(r"\S+", spaced):
-            out.append(s_start + m.start())
+            out.append(effective_start + m.start())
     return out
 
 
@@ -179,11 +195,32 @@ def main() -> None:
 
     # Build cumulative-CP-words per chapter so we can convert
     # predicted.word_position (EPUB-cumulative) to within-chapter index.
+    #
+    # BUG FIX: previously this used sections_by_chap[cn]["cp_earning_word_count"],
+    # which is the pre-computed value written by extract_chapter_sections.py using
+    # its automated POV heuristic.  predict_rolls.py uses the MANUAL overrides in
+    # section_classifications.json (same `classifications` dict we already loaded)
+    # to decide which sections earn CP.  Those two can differ — e.g. chapter 1
+    # section 0 is auto-classified as MC but manually overridden to
+    # counts_for_cp=False.  Using the pre-computed field causes cum_cp_before to
+    # diverge from predict_rolls.py's cumulative word totals, so
+    # target_word_in_chapter = word_position - cum_cp_before[ch] can be wildly
+    # negative, causing the offset to clamp to 0 and land in the EPUB XML preamble.
+    # Fix: mirror predict_rolls.py exactly — sum only the sections whose
+    # manual classification says counts_for_cp=True (default True when absent,
+    # matching predict_rolls._load_cp_words_per_chapter).
     cum_cp_before: dict[str, int] = {}
     running = 0
     for c in chapters:
-        cum_cp_before[c["chapter_num"]] = running
-        running += sections_by_chap[c["chapter_num"]]["cp_earning_word_count"]
+        cn = c["chapter_num"]
+        cum_cp_before[cn] = running
+        c_secs = sections_by_chap[cn]["sections"]
+        chapter_cp_words = sum(
+            s["word_count"]
+            for i, s in enumerate(c_secs)
+            if classifications.get(f"{cn}@{i}", {}).get("counts_for_cp", True)
+        )
+        running += chapter_cp_words
 
     # Precompute chapter word indexes only for chapters that have any
     # predicted rolls (avoids parsing all 194 chapters every run).
@@ -263,6 +300,35 @@ def main() -> None:
             WORD_RADIUS, in_window,
         ) if word_idx else ("", 0, 0)
 
+        # anchor_string: last ~15 whitespace-separated words of raw prose
+        # immediately before predicted_char_offset, verbatim (no markers).
+        if center_char > 0 and chapter_html:
+            before = chapter_html[:center_char]
+            words = before.split()
+            if words:
+                tail_words = words[-15:]
+                # Reconstruct verbatim: find the start of the first tail word
+                # in the original slice so we preserve inter-word whitespace.
+                first_tail_word = tail_words[0]
+                # Search backwards from center_char for the first tail word.
+                # Use rfind on the prefix to locate its last occurrence.
+                start_of_anchor = before.rfind(first_tail_word)
+                if start_of_anchor == -1:
+                    anchor_string = " ".join(tail_words)
+                else:
+                    anchor_string = before[start_of_anchor:].rstrip()
+                    # Trim to at most 15 words in case rfind landed earlier.
+                    anchor_words = anchor_string.split()
+                    if len(anchor_words) > 15:
+                        # Re-locate using the last 15 words of the verbatim slice.
+                        last15_first = anchor_words[-15]
+                        idx = anchor_string.rfind(last15_first)
+                        anchor_string = anchor_string[idx:].rstrip()
+            else:
+                anchor_string = ""
+        else:
+            anchor_string = ""
+
         out_rolls.append({
             "roll_number": p["roll_number"],
             "chapter_num": ch,
@@ -271,6 +337,7 @@ def main() -> None:
             "predicted_word_position_epub": p["word_position"],
             "predicted_word_in_chapter": target_word_in_chapter,
             "predicted_char_offset": center_char,
+            "anchor_string": anchor_string,
             "window_char_start": window_char_lo,
             "window_char_end": window_char_hi,
             "evidence_kind": kind,

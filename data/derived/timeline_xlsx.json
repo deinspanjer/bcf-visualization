@@ -1,0 +1,192 @@
+{
+  "_source": "data/raw/Brocktons_Celestial_Forge_Reference.xlsx#Timeline of Events",
+  "_attribution": "Pre-story dates (through April 7, 2011) provided by the author (LordRoustabout). Story-period dates (April 8, 2011 onward) compiled by Whamodyne. Each entry is tagged in the `attribution` field.",
+  "_count": 26,
+  "_first_in_world_date": "2007-06-01",
+  "_last_in_world_date": "2011-04-25",
+  "_note": "in_world_date_iso is best-effort: ISO date for fully-specified rows, first-of-month for range rows like 'January-March, 2009', or null if no year. in_world_date_text preserves the original cell value.",
+  "entries": [
+    {
+      "sequence": 1,
+      "in_world_date_iso": "2007-06-01",
+      "in_world_date_text": "2007-06-01",
+      "events": "Joe graduates from high school",
+      "attribution": "author"
+    },
+    {
+      "sequence": 2,
+      "in_world_date_iso": "2007-09-01",
+      "in_world_date_text": "2007-09-01",
+      "events": "Joe begins studying engineering at Brockton University",
+      "attribution": "author"
+    },
+    {
+      "sequence": 3,
+      "in_world_date_iso": "2008-11-01",
+      "in_world_date_text": "2008-11-01",
+      "events": "Joe’s faculty advisor dies and is replaced by an associate professor. The combined effect of the sudden death and bad advice causes his academics and personal life to suffer.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 4,
+      "in_world_date_iso": "2009-01-01",
+      "in_world_date_text": "January-March, 2009",
+      "events": "Joe’s relationship with Sabah deteriorates, including a public blow up, six-week absence, and her ultimate apology and return.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 5,
+      "in_world_date_iso": "2009-04-01",
+      "in_world_date_text": "2009-04-01",
+      "events": "Sabah’s father dies, causing her to trigger. She transfers from Engineering to Fashion and begins operating as Parian",
+      "attribution": "author"
+    },
+    {
+      "sequence": 6,
+      "in_world_date_iso": "2009-06-01",
+      "in_world_date_text": "June, 2009-August 2010",
+      "events": "Joe attempts treatment for his depression, but makes little progress. Multiple medications are tried before a stable combination is eventually found, though it badly affects his sleep. He meets with several different therapists and attempts to make up courses he previously failed, but has to formally file for a medical withdrawal in the spring of 2010.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 7,
+      "in_world_date_iso": "2010-09-01",
+      "in_world_date_text": "2010-09-01",
+      "events": "Joe begins seeing Dr. Campbell and making progress on strategies for dealing with his depression. Joe also moves into the city and starts working part-time.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 8,
+      "in_world_date_iso": "2011-02-01",
+      "in_world_date_text": "2011-02-01",
+      "events": "Joe’s mother learns about potential changes to his medication after speaking with his psychiatrist and begins heavily advocating for the idea.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 9,
+      "in_world_date_iso": "2011-03-04",
+      "in_world_date_text": "2011-03-04",
+      "events": "Joe has the final therapy session that will Dr. Campbell that will be covered by his Q1 insurance with the next session booked for the 16th of April.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 10,
+      "in_world_date_iso": "2011-03-01",
+      "in_world_date_text": "Mid-March, 2011",
+      "events": "Joe is convinced to change to a new antidepressant.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 11,
+      "in_world_date_iso": "2011-04-01",
+      "in_world_date_text": "2011-04-01",
+      "events": "Joe begins his new medication and attends a family dinner with his parents and one of his sisters. He triggers, leaves the house, and walks home.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 12,
+      "in_world_date_iso": "2011-04-02",
+      "in_world_date_text": "April 2-7, 2011",
+      "events": "Joe cuts off contact with his family and begins planning and training to begin work as a cape.",
+      "attribution": "author"
+    },
+    {
+      "sequence": 13,
+      "in_world_date_iso": "2011-04-08",
+      "in_world_date_text": "2011-04-08",
+      "events": "Story Begins",
+      "attribution": "author"
+    },
+    {
+      "sequence": 14,
+      "in_world_date_iso": "2011-04-10",
+      "in_world_date_text": "2011-04-10",
+      "events": "Joe goes out as a cape for the first time, encounters Oni Lee and then the Undersiders. Joe's first fight.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 15,
+      "in_world_date_iso": "2011-04-14",
+      "in_world_date_text": "2011-04-14",
+      "events": "Joe delivers the knives to the Undersiders in the morning, they rob the bank at noon, Joe has a chat with Amy and heals her in the afternoon. The PRT learns of Joe for the first time.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 16,
+      "in_world_date_iso": "2011-04-15",
+      "in_world_date_text": "2011-04-15",
+      "events": "Joe gets Garment Gloves while out on his morning run. Passes his motorcycle DMV test and gets a motorcycle that afternoon.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 17,
+      "in_world_date_iso": "2011-04-16",
+      "in_world_date_text": "2011-04-16",
+      "events": "Joe has an appointment with Dr Campbell, ABB starts the bombing spree, Joe has the fight with Bakuda, Uber and Leet while rescuing and healing the Undersiders at the storage facility. Joe's second fight and his first public appearance. Garment Gloves patrols around the Docks neighborhood and meets Flechette and Shadow Stalker.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 18,
+      "in_world_date_iso": "2011-04-17",
+      "in_world_date_text": "2011-04-17",
+      "events": "Joe rescues Weld from the bottom of Brockton Bay, has a chat with Director Armstrong. Aisha Laborn follows Joe home into his workshop.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 19,
+      "in_world_date_iso": "2011-04-18",
+      "in_world_date_text": "2011-04-18",
+      "events": "Garment Gloves has meet and greet with Protectorate at the gym in the morning. Afterwards Joe chats with Lisa then gets a call from Aisha in trouble at ABB financial center. Joe for the first time has a serious loadout prepared and ready, busts into ABB financial center, rescues Aisha, messes up ABB finances, fights Uber and Leet and displays ability to repair, upgrade and integrate other tinker's work into his own during combat. Joe's third fight. Joe acquires a volcano. Joe briefs Aisha on his powers. Finds out March is the ABB thinker, and she has an annihilator ability. Has a call with his sister that causes emotional stress. With Aisha's help, makes Lethe water and Celestial Bronze. Makes Ren, his first named object, to help Aisha control her power. Gives Aisha omnitool watch.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 20,
+      "in_world_date_iso": "2011-04-19",
+      "in_world_date_text": "2011-04-19",
+      "events": "Acquires Veritech VF-2SS Valkyrie II main variable space fighter. Joe surfs the volcano. Joe trains against the duplicates. Meets Taylor in the library, discovers she is the daughter of his old faculty advisor. Goes to Taylor's home, meets and is questioned by Danny Hebert. Amy learns of her family backstory. Joe acquires his first 600 point perk, Master Craftsman. Has thirty four more 600 point perks left in the Celestial Forge to go. Joe goes online, chats with Weld and then meets Dragon. Starts tinker confab with Dragon which ends when emergency is formally declared in BB. Joe attempts to bribe Dragon with reproducible fusion power to continue confab, pushes idea that she is Mastered. This triggers Dragon to attack Joe. He fights in retreat, finally tapping into the Labratorium ability to fight against hostile AIs and defeats Dragon. She considers him a scoundrel. After Dragon fight, Joe goes out and puts out docks wide fire set by Lung rampaging earlier that night. Both Dragon and Dragonslayers decide to head to Brockton Bay.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 21,
+      "in_world_date_iso": "2011-04-20",
+      "in_world_date_text": "2011-04-20",
+      "events": "Joe talks with the Undersiders about their debt to him and what he is looking for. Gives them scaled down omnitool watches. Makes wrong assumption over the source of his \"I am Iron Man\" perk. Garment Gloves visits the bank to get a business loan, choses retail location a block from the gym. Joe researches Natural Alchemy potions and starts producing nanotech which may allow Master Craftsman to apply to extremely high precision crafting.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 22,
+      "in_world_date_iso": "2011-04-21",
+      "in_world_date_text": "2011-04-21",
+      "events": "Joe and Garment work together to make new boots and combat uniforms for each other. Joe builds a mantic energy circuit throughout the entire volcano base. Joe's duplicates turn Trauma the lantern shield into a soul bound wristband that anchors a subspace inventory. Joe upgrades his cerebral implant to be Shatterbird proof. Spars with Fleet driving the Motoroid, gets a feel for Boots of Kickass. Survey creates ID of \"Delphine Mertens\", lawyer for Garment. Garment signs lease, starts to move into her new shop. Aisha introduces her father to Garment in new shop, they discuss Aisha working there. Joe gives Aisha her power armor. Joe patrols into ABB territory, triggers tripwire set by March. Joe, Bakuda and March banter on video call as he traces connection to their location. Fight between Joe and ABB spreads across the city. Joe acquires two Gundam robots and related perks. A duplicate heals Chen and gives him a magic sword, armor and unlocks his Aura. Joe makes public his city wide scans of ABB forces and bomb effects. A duplicate gets info on the dead man's switch, allowing them to trace all implanted bombs. Joe is ambushed by a swarm of Oni Lee's using March's sting attack, almost killing Joe and causing severe damage. March and Lung setup a televised execution. The life fibers embed inside Joe's body and around his organs, giving him enough power to fight back. March takes a serious blow and flies into a shipping container with a broken body. Oni Lee finally takes a serious hit and retreats. Lung ramps up even more. Joe gets the beast roar perk and turns into a half human, half Inostrancevia. Were-Joe fights Lung over the Bay. The duplicate shows up in a Gundam and takes over the fight. Dragon enters the fight against Lung in one of her powered suits. Joe and the Gundam kick Lung up into the sky so Lung can get hit by Fleet driving the motoroid at FTL speeds, killing Lung. Aisha shows up in armor, stealth flies Joe back to Garment's Shop and she and duplicate get him on the medical table to be worked on.\nThat night multiple sets of duplicates work on Joe, trying to figure out how to separate Tetra from him without killing either. As part of this Joe is given a new super heart made of exotic materials. While this is going on the Undersiders with their watches are sent into the \"Dark Zone\" as sensor platforms to send back into to Survey who reports it on the Apeiron info website. The duplicates use alchemy fission powered by souls to split Joe and Tetra from each other. Tetra and the divine nanomachines join The Workshop Crew as individuals. Joe finally figures out that his powers are based on fictional universes. Joe is looking forward to his session with Dr. Campbell.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 23,
+      "in_world_date_iso": "2011-04-22",
+      "in_world_date_text": "2011-04-22",
+      "events": "Joe and the workshop crew talk over his powers and what known fictional universes some of them come from. Taylor once again makes wrong assumptions about her self assigned mission. Uppercrust has come to town, looking for some sweet, sweet healing. Joe calls Weld on his WardPhone(tm), lets him know that he is recovered and that he plans on taking a nap.\nWhile Joe gets some much needed sleep Scion visits the site of the shardspace breach and fixes some dimensional damage and removes the Minovsky particles in the area.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 24,
+      "in_world_date_iso": "2011-04-23",
+      "in_world_date_text": "2011-04-23",
+      "events": "Joe, Tetra and Garment surf the volcano at dawn. Joe and the Workshop Crew put together relief supplies for Brockton Bay and distribute them anonymously across town, including a quarter ton of baking supplies to the gym. Mrs. Gartenberg declares challenge accepted. Joe receives texts from his sister which are exactly as you would expect, deflects the insults and promises to call when he can. Joe and the Duplicates face off in a three on three giant robot basketball tourney against the Workshop Crew of Tetra, Matrix and Fleet. All players are in their version of a giant mech, real or projected.\nJoe goes out in the morning to visit the gym which is doing double duty as the neighborhood food bank with lots of baked goods. Doug offers Joe multiple opportunities to work as a mechanic which Joe politely turns down. Joe, using his newly acquired admin skills, helps organize the gym and the logistics of food distribution. Joe introduces himself to Theo Anders to thank him for helping out.\nJoe meets Lisa and Brian for lunch. They want to talk about Somer's Rock which Joe knows as a dive bar he visited a few times from his college days. Joe is informed that Somer's Rock is neutral ground for Villains to meet and there is a summit the next night to talk about him. Joe agrees to show up in order to cool things down in town, and promises to deliver replacement costumes for the Undersiders to their lair that evening.\nJust after leaving the lunch meeting Joe gains the Avid Glove which as a side effect triggers a global master effect of everyone knowing him as The Enigmatic Artificer. Joe tries to cut off the confusion but people are still kinda freaking out a bit.\nJoe gets back to his workshop inside a closet at Garment's Studio just in time for Flechette and Kid Win to visit.\nIn the Workshop Joe knows that the best healing he can offer others is fully programmed nanite arrays. He pushes the Workshop Crew to start developing them with the EVO program. They transmute Elerium from XCOM to help with the nanites and psionics. Tetra shows Joe she can do Harry Potter magic. They find that Tetra can \"feed\" off Joe via the Avid Glove remotely, so she can always have a power source and recharge. Flechette has a serious thirst for Garment which Garment and Joe are both missing. Uppercrust choses now to visit the shop, introduce himself, and leave a card. Flechette is upset he interrupted her hitting on Garment and that she considers the Elite a threat to her love interest. Joe sees Flechette flare up some Sting power and starts to understand her importance to his passenger. Kid Win gets samples of Garment's more exotic fabrics and an awesome scarf. The Wards leave to report Uppercrust coming to visit.\nEveryone in the Workshop is telling Joe it's time to call his sister in Chicago, the only family member he doesn't block. Joe then gains Thaumaturgical Focus: Alchemy which he uses as an excuse to put off the call. After talking it over with the duplicates, Joe decides to delay the sister call by first calling Taylor to talk about improved armor plates for her. These will also include reinforcement spells that will give her overall costume a defensive boost.\nJoe calls his sister who refuses to take anything he says seriously, that he doesn't understand the situation around him, and treats him like a moron who should listen to his betters. This is the good sister. Joe explains about staying in town to care for a friend and the city and is not leaving and has commitments for the next evening (Somer's Rock) instead of Easter Dinner at the parents. Finally promises to stay safe and call after Sunday. To blow off steam, Joe and the Duplicates have an elemental weapon fight.\nFor the fourth time that day Joe has a short call with Aisha and promises for her to attend Movie Night that evening. Joe mentions that he now has the power of teaching and can teach her Ninja Moves and Alchemy. Aisha is interested but understands there is work involved.\nJoe drops off the costumes to the Undersiders, chats with Alec. Tells Alec he is now healed and his coping mechanisms have been removed. Joe is informed again that the watch is making a big difference for Rachael in a good way. Joe visits the Hebert home, says hello to Danny and drops off Taylor's armor plates under some clothes in a bag of holding. Taylor now has some original Garment outfits and four cubic meters of room in a standard canvas tote bag for All The Bees.\nJoe heads for his appointment with Dr. Campbell, the only human besides Aisha that knows he is Apeiron.\nJoe has a therapy session with Dr Campbell, gives him an \"ignore me\" tie pin as protection.\nThe Motoroid in shardspace autorepairs and phones home and the team starts to turn it into a space station.\nJoe gets Tybalt the Feline as a companion, and everyone is issued anti-precog gear.\nJoe unlocks Tybalt's Aura and then builds bodies for Survey, Fleet and The Matrix including parts of his own soul in the process.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 25,
+      "in_world_date_iso": "2011-04-24",
+      "in_world_date_text": "2011-04-24",
+      "events": "Joe tells the summit he wants peace and no civilian or recovery work to be interfered with.\nJoe talks to the Butcher about powers and what March promised her.\nJoe implies publicly that he can mess with parahuman powers themselves.\nJoe puts up a text box on his website as a way to contact him.\nJoe gets the E88 to retreat fully from one block on the edge of the Dead Zone.\nAs appreciation for their going out of the way to get Tetra her order of Blood, Joe gives the bartender a bottle of 70 year of Whiskey that was made that morning.\nAfter the summit, Joe and the team figure out that Aura users have a semblance and that Joe's is \"Avoidance\" and Tybalt's is \"War Games\".\nJoe calls Chen to give him a heads up about having a semblance.",
+      "attribution": "Whamodyne"
+    },
+    {
+      "sequence": 26,
+      "in_world_date_iso": "2011-04-25",
+      "in_world_date_text": "2011-04-25",
+      "events": "Joe introduces Aisha to the Laboriatorium.\nJoe gets Titan robots with AI who he introduces to Fleet and starts to train and integrate them into the team.\nJoe, Aisha and Tybalt train on riding the Wish-Zoid AI robots.\nThe team starts Aura training under Tybalt\nGarment and Aisha train for their state driver's licence in the Pilot Simulator.\nGarment, Survey (as Delphine Mertens) and Fleet (as Jake Clark) go out of the workshop to meet Parain at her studio.\nGarment and Survey meet Parain to warn of Elite recruitment. Parain suggests moving Garment's public showing on Weds from her shop to a larger venue. The team starts to put this plan into action.\nTetra and Aisha get Striker Units and magical familiar spirt forms, Mink for Tetra and Tapir for Aisha.\nJoe realizes he has a unique \"third eye\" ability which allows him to sense mana flow around him.\nJoe is able to pull some cultural information about the RWBY universe via the \"Bigger on the Inside\" technical manual.\nJoe and the team watch as news of the existence of the Celestial Forge is released to the public by the PRT.\nThe workshop gets the \"Key Link\" upgrade where they can close the door and reopen it at any previously used location.\nJoe follows the other members of the Forge on PHO.\nJoe promises Tetra that tomorrow they will work with Garment to turn her into a Kamui.\nJoe demonstrates a Vortex Grenade in the Shooting Range to show how random it is, even if it can kill an Endbringer.\nJoe goes for a walk, placing door locations all around Brockton Bay and the surrounding area.\nJoe stops by the gym. Doug points him towards a collection of electric appliances damaged by the Minovsky Particles and asks Joe to do what he can to repair them for the families from the area. Doug also gives him a heads up about volunteering for Garment's charity event on Wednesday.\nJoe has a phone call with his sister at the end of which he achieves Mental Fortress.\nJoe has a call with Lisa and he unlocks the sensors in her watch so they can get an idea of what Coil's contingency is\nJoe tells Lisa he can see through manipulation\nJoe receives an invitation to meet Uppercrust the next day\nJoe can now fly and lock himself in 3D space from the Incredibly Craftsmanship perk\nJoe has The Matrix repair two kitchen ranges and a Fridge for Doug at the Gym\nThe team prepares for Garment's Charity Event on Wednesday night\nJoe becomes a level two Kardashev Civilization",
+      "attribution": "Whamodyne"
+    }
+  ]
+}

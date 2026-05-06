@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": [
     "_source", "_method", "_count", "_grain", "_deferred",
-    "shadow_periods", "chapters"
+    "shadow_periods", "in_world_timeline", "chapters"
   ],
   "properties": {
     "_source": { "type": "string" },
@@ -18,6 +18,29 @@
     "shadow_periods": {
       "type": "array",
       "items": { "$ref": "#/$defs/shadow_period" }
+    },
+    "in_world_timeline": {
+      "description": "Embedded canonical timeline merged from all sources (xlsx + wiki + TUI annotations + manual). Mirrors the entry shape from data/derived/timeline.json. The visualization loads chapter_facts.json and reads this directly — there is no separate fetch.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "_sources_used", "_count",
+        "_first_in_world_date", "_last_in_world_date", "entries"
+      ],
+      "properties": {
+        "_sources_used": {
+          "type": "array",
+          "items": { "enum": ["xlsx", "wiki", "tui", "manual"] },
+          "uniqueItems": true
+        },
+        "_count":               { "type": "integer", "minimum": 0 },
+        "_first_in_world_date": { "type": ["string", "null"], "format": "date" },
+        "_last_in_world_date":  { "type": ["string", "null"], "format": "date" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/timeline_entry" }
+        }
+      }
     },
     "chapters": {
       "type": "array",
@@ -47,6 +70,29 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "shadow_end_chapter_num":        { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+      }
+    },
+    "timeline_entry": {
+      "description": "Mirror of one entry from data/derived/timeline.json. Kept structurally identical so the canonical schema is the source of truth.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "in_world_date_iso", "time_of_day", "event_text",
+        "source", "source_ref", "chapter_num", "tags"
+      ],
+      "properties": {
+        "id":                { "type": "string", "pattern": "^(xlsx|wiki|tui|manual):[A-Za-z0-9_:.\\-]+$" },
+        "in_world_date_iso": { "type": "string", "format": "date" },
+        "time_of_day":       { "enum": [null, "morning", "afternoon", "evening", "night"] },
+        "event_text":        { "type": "string", "minLength": 1 },
+        "source":            { "enum": ["xlsx", "wiki", "tui", "manual"] },
+        "source_ref":        { "type": "string" },
+        "chapter_num":       { "type": ["string", "null"] },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "uniqueItems": true
+        }
       }
     },
     "in_world": {

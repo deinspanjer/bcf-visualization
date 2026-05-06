@@ -3,16 +3,17 @@
 Source:  data/raw/Brocktons_Celestial_Forge_Reference.xlsx
 
 Outputs:
-  data/derived/obtained_perks.json   - full-story chronological acquisitions
-  data/derived/timeline.json         - in-world timeline (replaces the
-                                       previous Whamodyne-only version;
-                                       this sheet also includes Whamodyne
-                                       data plus pre-story dates from
-                                       the author)
+  data/derived/obtained_perks.json     - full-story chronological acquisitions
+  data/derived/timeline_xlsx.json      - in-world timeline rows from the xlsx
+                                         "Timeline of Events" sheet. This is
+                                         one of several inputs to the canonical
+                                         data/derived/timeline.json; merge with
+                                         the wiki, TUI annotations, and manual
+                                         entries via scripts/derive_timeline.py.
 
 Sheets used:
   - "Obtained Perks"      -> obtained_perks.json
-  - "Timeline of Events"  -> timeline.json
+  - "Timeline of Events"  -> timeline_xlsx.json
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Reference.xlsx"
 PERKS_CATALOG_JSON = ROOT / "data" / "derived" / "perks_catalog.json"
 OVERRIDES_JSON = ROOT / "data" / "manual" / "perk_constellation_overrides.json"
 OUT_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
-OUT_TIMELINE = ROOT / "data" / "derived" / "timeline.json"
+OUT_TIMELINE = ROOT / "data" / "derived" / "timeline_xlsx.json"
 
 
 # ---------- obtained perks --------------------------------------------------
@@ -438,7 +439,7 @@ def main() -> None:
             ),
             "entries": [asdict(e) for e in entries],
         },
-        "timeline",
+        "timeline_xlsx",
     )
 
     print(f"wrote {OUT_PERKS.relative_to(ROOT)}: {len(perks)} perks "

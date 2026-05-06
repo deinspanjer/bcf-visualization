@@ -67,7 +67,8 @@
       "required": [
         "roll_number", "chapter_num", "regime", "cp_threshold",
         "predicted_word_position_epub", "predicted_word_in_chapter",
-        "predicted_char_offset", "window_char_start", "window_char_end",
+        "predicted_char_offset", "anchor_string",
+        "window_char_start", "window_char_end",
         "evidence_kind", "matching_anchor_kinds", "matching_event_count",
         "matching_events", "next_specific_event_offset", "prose_window"
       ],
@@ -79,6 +80,7 @@
         "predicted_word_position_epub": { "type": "integer", "minimum": 0 },
         "predicted_word_in_chapter":   { "type": "integer", "minimum": 0 },
         "predicted_char_offset":       { "type": "integer", "minimum": 0 },
+        "anchor_string":               { "type": "string" },
         "window_char_start":           { "type": "integer", "minimum": 0 },
         "window_char_end":             { "type": "integer", "minimum": 0 },
         "evidence_kind": {

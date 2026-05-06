@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "_note": "Hand-curated in-world timeline entries. This file is the only place (besides TUI annotations) where chapter_num may be explicitly attested for a timeline event. Edits here flow into data/derived/timeline.json on the next build via scripts/derive_timeline.py. Schema: data/derived/_schemas/timeline_manual.schema.json. Add entries as objects in the `entries` array; ids must be unique, lowercase alphanumeric + hyphen + colon. Examples: 'joe-trigger', 'first-cape-fight', 'arc-2:bakuda-bombing-spree'. Set chapter_num only when you've verified it from the source text. Entries dated before the in-narration cutoff in scripts/derive_timeline.py are silently dropped at merge time.",
+  "entries": []
+}

@@ -49,6 +49,7 @@ EVIDENCE = ROOT / "data" / "derived" / "roll_text_evidence.json"
 OBTAINED = ROOT / "data" / "derived" / "obtained_perks.json"
 DIRECTORY = ROOT / "data" / "derived" / "perk_directory.json"
 LAST_EDITED = ROOT / "data" / "derived" / "chapter_last_edited.json"
+TIMELINE = ROOT / "data" / "derived" / "timeline.json"
 OUT = ROOT / "data" / "derived" / "chapter_facts.json"
 
 
@@ -145,6 +146,23 @@ def main() -> None:
     directory = json.loads(DIRECTORY.read_text())["perks"]
     last_edited = json.loads(LAST_EDITED.read_text())["chapters"]
     last_edited_by_chap = {r["chapter_num"]: r for r in last_edited}
+
+    # Canonical in-world timeline: built upstream by scripts/derive_timeline.py
+    # by merging xlsx + wiki + TUI annotations + manual entries. We embed it
+    # verbatim into chapter_facts so the visualization loads a single file.
+    if not TIMELINE.exists():
+        raise SystemExit(
+            f"missing {TIMELINE.relative_to(ROOT)} — "
+            "run `python scripts/derive_timeline.py` first"
+        )
+    timeline_doc = json.loads(TIMELINE.read_text())
+    in_world_timeline = {
+        "_sources_used":         timeline_doc["_sources_used"],
+        "_count":                timeline_doc["_count"],
+        "_first_in_world_date":  timeline_doc["_first_in_world_date"],
+        "_last_in_world_date":   timeline_doc["_last_in_world_date"],
+        "entries":               timeline_doc["entries"],
+    }
 
     # perk_directory id lookup: (perk_name, jump) → id (and constellation)
     perk_id_by_name_jump: dict[tuple[str, str], dict] = {}
@@ -556,6 +574,7 @@ def main() -> None:
             "shadow_periods.shadow_end_chapter_num approximate (uses total-word boundaries vs cp-word boundaries)",
         ],
         "shadow_periods": shadow_periods,
+        "in_world_timeline": in_world_timeline,
         "chapters": out_chapters,
     }
 
@@ -571,6 +590,10 @@ def main() -> None:
     print(f"  rolls: {total_rolls} ({total_hits} hit, {total_unknowns} unknown)")
     print(f"  perks: {total_paid} paid + {total_free} free = {total_paid + total_free}")
     print(f"  shadow_periods: {len(shadow_periods)}")
+    print(f"  in_world_timeline: {in_world_timeline['_count']} entries "
+          f"from sources {in_world_timeline['_sources_used']} "
+          f"({in_world_timeline['_first_in_world_date']} .. "
+          f"{in_world_timeline['_last_in_world_date']})")
     pov_set = set()
     for c in out_chapters:
         pov_set.update(c["pov_characters"])
