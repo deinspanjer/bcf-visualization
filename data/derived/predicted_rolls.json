@@ -1,7 +1,7 @@
 {
   "_source": "Simulated from chapters.json + obtained_perks.json + per-section CP-earning word counts (chapter_sections.json) using the documented three-regime model.",
   "_count": 626,
-  "_total_words_epub_exact": 1546772,
+  "_total_words_epub_exact": 1546704,
   "_regime_summary": {
     "1": "ch 1-91: 100 CP / 2000 words, roll every 100 CP",
     "2": "ch 92-96: 100 CP / 2000 words, roll every 200 CP",
@@ -3675,721 +3675,721 @@
     },
     {
       "roll_number": 524,
-      "word_position": 1049339,
+      "word_position": 1049331,
       "chapter_num": "83",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 525,
-      "word_position": 1052311,
+      "word_position": 1052287,
       "chapter_num": "83",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 526,
-      "word_position": 1052311,
+      "word_position": 1052287,
       "chapter_num": "83",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 527,
-      "word_position": 1054534,
+      "word_position": 1054501,
       "chapter_num": "83.1",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 528,
-      "word_position": 1058555,
+      "word_position": 1058505,
       "chapter_num": "84",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 529,
-      "word_position": 1058555,
+      "word_position": 1058505,
       "chapter_num": "84",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 530,
-      "word_position": 1061841,
+      "word_position": 1061773,
       "chapter_num": "84",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 531,
-      "word_position": 1064163,
+      "word_position": 1064095,
       "chapter_num": "85",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 532,
-      "word_position": 1064163,
+      "word_position": 1064095,
       "chapter_num": "85",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 533,
-      "word_position": 1068809,
+      "word_position": 1068741,
       "chapter_num": "85",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 534,
-      "word_position": 1068809,
+      "word_position": 1068741,
       "chapter_num": "85",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 535,
-      "word_position": 1071132,
+      "word_position": 1071064,
       "chapter_num": "85",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 536,
-      "word_position": 1072426,
+      "word_position": 1072358,
       "chapter_num": "86",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 537,
-      "word_position": 1075015,
+      "word_position": 1074947,
       "chapter_num": "86",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 538,
-      "word_position": 1076310,
+      "word_position": 1076242,
       "chapter_num": "86",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 539,
-      "word_position": 1082900,
+      "word_position": 1082832,
       "chapter_num": "87",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 540,
-      "word_position": 1082900,
+      "word_position": 1082832,
       "chapter_num": "87",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 541,
-      "word_position": 1082900,
+      "word_position": 1082832,
       "chapter_num": "87",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 542,
-      "word_position": 1089490,
+      "word_position": 1089422,
       "chapter_num": "87",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 543,
-      "word_position": 1089490,
+      "word_position": 1089422,
       "chapter_num": "87",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 544,
-      "word_position": 1089490,
+      "word_position": 1089422,
       "chapter_num": "87",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 545,
-      "word_position": 1091808,
+      "word_position": 1091740,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 546,
-      "word_position": 1096446,
+      "word_position": 1096378,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 547,
-      "word_position": 1096446,
+      "word_position": 1096378,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 548,
-      "word_position": 1096446,
+      "word_position": 1096378,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 549,
-      "word_position": 1101084,
+      "word_position": 1101016,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 550,
-      "word_position": 1101084,
+      "word_position": 1101016,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 551,
-      "word_position": 1105722,
+      "word_position": 1105654,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 552,
-      "word_position": 1105722,
+      "word_position": 1105654,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 553,
-      "word_position": 1110360,
+      "word_position": 1110292,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 554,
-      "word_position": 1110360,
+      "word_position": 1110292,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 555,
-      "word_position": 1110360,
+      "word_position": 1110292,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 556,
-      "word_position": 1112679,
+      "word_position": 1112611,
       "chapter_num": "88",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 557,
-      "word_position": 1116119,
+      "word_position": 1116051,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 558,
-      "word_position": 1116119,
+      "word_position": 1116051,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 559,
-      "word_position": 1123000,
+      "word_position": 1122932,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 560,
-      "word_position": 1123000,
+      "word_position": 1122932,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 561,
-      "word_position": 1123000,
+      "word_position": 1122932,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 562,
-      "word_position": 1126441,
+      "word_position": 1126373,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 563,
-      "word_position": 1126441,
+      "word_position": 1126373,
       "chapter_num": "89",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 564,
-      "word_position": 1128692,
+      "word_position": 1128624,
       "chapter_num": "90",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 565,
-      "word_position": 1133194,
+      "word_position": 1133126,
       "chapter_num": "90",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 566,
-      "word_position": 1133194,
+      "word_position": 1133126,
       "chapter_num": "90",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 567,
-      "word_position": 1135445,
+      "word_position": 1135377,
       "chapter_num": "90",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 568,
-      "word_position": 1138455,
+      "word_position": 1138387,
       "chapter_num": "91",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 569,
-      "word_position": 1138455,
+      "word_position": 1138387,
       "chapter_num": "91",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 570,
-      "word_position": 1141466,
+      "word_position": 1141398,
       "chapter_num": "91",
       "regime": 1,
       "cp_threshold": 100
     },
     {
       "roll_number": 571,
-      "word_position": 1146953,
+      "word_position": 1146885,
       "chapter_num": "92",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 572,
-      "word_position": 1152441,
+      "word_position": 1152373,
       "chapter_num": "92",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 573,
-      "word_position": 1152441,
+      "word_position": 1152373,
       "chapter_num": "92",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 574,
-      "word_position": 1157324,
+      "word_position": 1157256,
       "chapter_num": "93",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 575,
-      "word_position": 1160255,
+      "word_position": 1160187,
       "chapter_num": "93",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 576,
-      "word_position": 1167091,
+      "word_position": 1167023,
       "chapter_num": "94",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 577,
-      "word_position": 1168860,
+      "word_position": 1168792,
       "chapter_num": "95",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 578,
-      "word_position": 1172398,
+      "word_position": 1172330,
       "chapter_num": "95",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 579,
-      "word_position": 1177706,
+      "word_position": 1177638,
       "chapter_num": "95",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 580,
-      "word_position": 1184133,
+      "word_position": 1184065,
       "chapter_num": "96",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 581,
-      "word_position": 1184133,
+      "word_position": 1184065,
       "chapter_num": "96",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 582,
-      "word_position": 1188417,
+      "word_position": 1188349,
       "chapter_num": "96",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 583,
-      "word_position": 1192702,
+      "word_position": 1192634,
       "chapter_num": "96",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 584,
-      "word_position": 1196987,
+      "word_position": 1196919,
       "chapter_num": "96",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 585,
-      "word_position": 1201271,
+      "word_position": 1201203,
       "chapter_num": "96",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 586,
-      "word_position": 1204367,
+      "word_position": 1204299,
       "chapter_num": "96.1",
       "regime": 2,
       "cp_threshold": 200
     },
     {
       "roll_number": 587,
-      "word_position": 1213725,
+      "word_position": 1213657,
       "chapter_num": "97",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 588,
-      "word_position": 1219964,
+      "word_position": 1219896,
       "chapter_num": "97",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 589,
-      "word_position": 1244635,
+      "word_position": 1244567,
       "chapter_num": "99",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 590,
-      "word_position": 1250868,
+      "word_position": 1250800,
       "chapter_num": "99",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 591,
-      "word_position": 1252887,
+      "word_position": 1252819,
       "chapter_num": "99.3",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 592,
-      "word_position": 1260709,
+      "word_position": 1260641,
       "chapter_num": "100",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 593,
-      "word_position": 1265923,
+      "word_position": 1265855,
       "chapter_num": "100",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 594,
-      "word_position": 1271138,
+      "word_position": 1271070,
       "chapter_num": "100",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 595,
-      "word_position": 1280853,
+      "word_position": 1280785,
       "chapter_num": "101",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 596,
-      "word_position": 1287960,
+      "word_position": 1287892,
       "chapter_num": "101",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 597,
-      "word_position": 1287960,
+      "word_position": 1287892,
       "chapter_num": "101",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 598,
-      "word_position": 1295947,
+      "word_position": 1295879,
       "chapter_num": "102",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 599,
-      "word_position": 1317282,
+      "word_position": 1317214,
       "chapter_num": "103",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 600,
-      "word_position": 1317282,
+      "word_position": 1317214,
       "chapter_num": "103",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 601,
-      "word_position": 1321732,
+      "word_position": 1321664,
       "chapter_num": "103",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 602,
-      "word_position": 1327192,
+      "word_position": 1327124,
       "chapter_num": "104",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 603,
-      "word_position": 1333433,
+      "word_position": 1333365,
       "chapter_num": "104",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 604,
-      "word_position": 1348972,
+      "word_position": 1348904,
       "chapter_num": "105",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 605,
-      "word_position": 1357972,
+      "word_position": 1357904,
       "chapter_num": "106",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 606,
-      "word_position": 1360973,
+      "word_position": 1360905,
       "chapter_num": "106",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 607,
-      "word_position": 1370488,
+      "word_position": 1370420,
       "chapter_num": "107",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 608,
-      "word_position": 1380004,
+      "word_position": 1379936,
       "chapter_num": "107",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 609,
-      "word_position": 1380004,
+      "word_position": 1379936,
       "chapter_num": "107",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 610,
-      "word_position": 1387001,
+      "word_position": 1386933,
       "chapter_num": "108",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 611,
-      "word_position": 1393999,
+      "word_position": 1393931,
       "chapter_num": "108",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 612,
-      "word_position": 1405378,
+      "word_position": 1405310,
       "chapter_num": "109",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 613,
-      "word_position": 1414345,
+      "word_position": 1414277,
       "chapter_num": "110",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 614,
-      "word_position": 1433888,
+      "word_position": 1433820,
       "chapter_num": "111",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 615,
-      "word_position": 1433888,
+      "word_position": 1433820,
       "chapter_num": "111",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 616,
-      "word_position": 1441951,
+      "word_position": 1441883,
       "chapter_num": "112",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 617,
-      "word_position": 1444639,
+      "word_position": 1444571,
       "chapter_num": "112",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 618,
-      "word_position": 1456320,
+      "word_position": 1456252,
       "chapter_num": "113",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 619,
-      "word_position": 1456320,
+      "word_position": 1456252,
       "chapter_num": "113",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 620,
-      "word_position": 1471778,
+      "word_position": 1471710,
       "chapter_num": "114",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 621,
-      "word_position": 1479805,
+      "word_position": 1479737,
       "chapter_num": "115",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 622,
-      "word_position": 1501399,
+      "word_position": 1501331,
       "chapter_num": "116",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 623,
-      "word_position": 1501399,
+      "word_position": 1501331,
       "chapter_num": "116",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 624,
-      "word_position": 1516767,
+      "word_position": 1516699,
       "chapter_num": "117",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 625,
-      "word_position": 1523602,
+      "word_position": 1523534,
       "chapter_num": "118",
       "regime": 3,
       "cp_threshold": 200
     },
     {
       "roll_number": 626,
-      "word_position": 1538084,
+      "word_position": 1538016,
       "chapter_num": "119",
       "regime": 3,
       "cp_threshold": 200

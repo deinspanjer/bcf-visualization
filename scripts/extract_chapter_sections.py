@@ -134,6 +134,65 @@ def _structural_markers(text: str) -> list[str]:
 _AN_RE = re.compile(r"\(\s*Author'?s?\s+Note", re.IGNORECASE)
 
 
+# Trigger patterns for parenthetical author-to-reader asides. Each
+# variant is matched at the position of the opening "(", followed by an
+# unambiguously author-voiced lead-in. The matcher then walks forward
+# tracking parenthesis depth so nested parens inside the AN don't end
+# the range early.
+#
+# Matched forms (case-insensitive, dot includes newline so multi-line
+# ANs work):
+#   (Author's note: ...)        / (Authors note ...) / (Author Note: ...)
+#   (A/N: ...) / (A / N : ...)
+#   (Note from <name>: ...)
+_AN_TRIGGER_RE = re.compile(
+    r"\(\s*(?:"
+    r"Author'?s?\s+Note"
+    r"|A\s*/\s*N"
+    r"|Note\s+from\s+[A-Za-z][A-Za-z0-9 ._'\-]{0,60}?"
+    r")\s*[:\.–—\-]",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def find_author_note_ranges(text: str) -> list[tuple[int, int]]:
+    """Return char-offset (start, end) ranges for author-to-reader asides.
+
+    Each returned (start, end) covers the full parenthetical, from the
+    leading ``(`` through the matching ``)``. The detector is
+    deterministic and conservative: it only fires on explicit
+    author-voiced lead-ins (Author's note / A/N / Note from <name>),
+    so parenthesized in-character thoughts are not matched. Multi-line
+    ANs are supported (the regex is DOTALL); nested parens are handled
+    by walking depth.
+    """
+    out: list[tuple[int, int]] = []
+    consumed_to = 0
+    for m in _AN_TRIGGER_RE.finditer(text):
+        start = m.start()
+        if start < consumed_to:
+            continue  # already inside a previously-detected AN
+        depth = 0
+        end: int | None = None
+        for i in range(start, len(text)):
+            ch = text[i]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        if end is not None:
+            out.append((start, end))
+            consumed_to = end
+    return out
+
+
+def _words_in_ranges(text: str, ranges: list[tuple[int, int]]) -> int:
+    return sum(_word_count(text[s:e]) for s, e in ranges)
+
+
 # ---------- section data structures ----------------------------------------
 
 
@@ -149,6 +208,8 @@ class Section:
     tp_count: int
     structural_markers: list[str] = field(default_factory=list)
     sample: str = ""             # first ~200 chars of prose (for review)
+    author_note_ranges: list[tuple[int, int]] = field(default_factory=list)
+    author_note_word_count: int = 0
 
 
 @dataclass
@@ -274,6 +335,8 @@ def _classify_section(header: str | None, text: str) -> Section:
 
     counts_for_cp = classification == "mc"
     sample = text[:600].replace("\n", " ").strip()
+    an_ranges = find_author_note_ranges(text)
+    an_words = _words_in_ranges(text, an_ranges)
     return Section(
         header=header,
         word_count=_word_count(text),
@@ -285,6 +348,8 @@ def _classify_section(header: str | None, text: str) -> Section:
         tp_count=evidence["tp_count"],
         structural_markers=evidence["structural_markers"],
         sample=sample,
+        author_note_ranges=[list(r) for r in an_ranges],
+        author_note_word_count=an_words,
     )
 
 
@@ -422,7 +487,9 @@ def main() -> None:
                 sections.append(section)
                 total_words += section.word_count
                 if section.counts_for_cp:
-                    cp_words += section.word_count
+                    # Subtract author-note words from MC sections so the
+                    # cp-earning total reflects only Joe-POV story prose.
+                    cp_words += section.word_count - section.author_note_word_count
                 if section.confidence == "low":
                     low_confidence_count += 1
                     flagged.append((c["chapter_num"], header or "(implicit)",

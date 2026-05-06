@@ -46,6 +46,7 @@ OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
 ROLLS_JSON = ROOT / "data" / "derived" / "rolls.json"
 SECTIONS_JSON = ROOT / "data" / "derived" / "chapter_sections.json"
 CLASSIFICATIONS_JSON = ROOT / "data" / "manual" / "section_classifications.json"
+LABELED_SPANS_DIR = ROOT / "data" / "labeled" / "spans"
 OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
 
 
@@ -82,13 +83,55 @@ def shadow_words(perk_cost: int, regime: int) -> int:
 # ---------- per-chapter CP-earning word counts ------------------------------
 
 
+def _load_labeled_an_words() -> dict[tuple[str, int], int]:
+    """Sum AUTHOR_NOTE-labeled span words per (chapter_num, section_index).
+
+    These are human-curated additions on top of whatever the regex
+    detector already wrote into chapter_sections.json. Currently the
+    spans dataset is empty in the repo; this loader is a no-op until
+    `data/labeled/spans/*.jsonl` is populated. We trust labeled spans
+    to be disjoint from regex-detected ranges (the labeler curates
+    "what regex missed"), so we sum without overlap reconciliation.
+    """
+    if not LABELED_SPANS_DIR.exists():
+        return {}
+    out: dict[tuple[str, int], int] = {}
+    for path in sorted(LABELED_SPANS_DIR.glob("*.jsonl")):
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            text = rec.get("text", "")
+            cn = rec.get("chapter_num")
+            si = rec.get("section_index")
+            if cn is None or si is None:
+                continue
+            for span in rec.get("spans", []):
+                if span.get("label") != "AUTHOR_NOTE":
+                    continue
+                s, e = int(span["start"]), int(span["end"])
+                snippet = text[s:e]
+                wc = len(snippet.split())
+                if wc:
+                    out[(cn, int(si))] = out.get((cn, int(si)), 0) + wc
+    return out
+
+
 def _load_cp_words_per_chapter() -> dict[str, int]:
     """Read chapter_sections.json + manual section_classifications.json
     and return cp-earning word count keyed by chapter full_title.
 
     The manual classifications file contains a per-section
     counts_for_cp boolean (one per (chapter_num, section_index) pair).
-    For each chapter, we sum the word counts of just the MC sections.
+    For each chapter, sum the word counts of just the CP-eligible
+    sections, then subtract author-note words: both the regex-detected
+    ranges recorded in chapter_sections.json (`author_note_word_count`)
+    and any human-labeled AUTHOR_NOTE spans from
+    `data/labeled/spans/*.jsonl`.
     """
     if not SECTIONS_JSON.exists():
         raise SystemExit(
@@ -102,6 +145,7 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
         )
     sections_data = json.loads(SECTIONS_JSON.read_text())
     cls_data = json.loads(CLASSIFICATIONS_JSON.read_text())["classifications"]
+    labeled_an = _load_labeled_an_words()
 
     out: dict[str, int] = {}
     for c in sections_data["chapters"]:
@@ -109,7 +153,12 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
         for i, s in enumerate(c["sections"]):
             key = f"{c['chapter_num']}@{i}"
             if cls_data.get(key, {}).get("counts_for_cp", True):
-                total += s["word_count"]
+                eligible = s["word_count"]
+                eligible -= s.get("author_note_word_count", 0)
+                eligible -= labeled_an.get((c["chapter_num"], i), 0)
+                if eligible < 0:
+                    eligible = 0
+                total += eligible
         out[c["full_title"]] = total
     return out
 
