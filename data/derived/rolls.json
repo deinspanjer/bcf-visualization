@@ -1,7 +1,7 @@
 {
   "_source": "data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx#List of Rolls & Perk Order",
   "_count": 546,
-  "_coverage": "chapters 1-75 (curator stopped maintaining beyond ch 75)",
+  "_coverage": "chapters 1-75 (curator stopped maintaining beyond ch 75) | Curated: rolls 61/207/319 promoted from annotation→roll/miss; roll 98 constellation Tollkits→Toolkits (raw preserved)",
   "_kinds": "roll | miss | trigger | annotation",
   "rolls": [
     {
@@ -946,14 +946,27 @@
       "raw": "Roll 60 (300): Magitech → Miss → (300)"
     },
     {
-      "roll_number": null,
+      "roll_number": 61,
       "chapter_num": "15",
-      "kind": "annotation",
-      "banked_before": null,
-      "banked_after": null,
-      "constellation": null,
+      "kind": "roll",
+      "banked_before": 400,
+      "banked_after": 200,
+      "constellation": "Alchemy",
       "constellation_revealed": false,
-      "perks": [],
+      "perks": [
+        {
+          "name": "Innate Talent: Alchemist",
+          "source": "Overlord",
+          "cost": 200,
+          "free": false
+        },
+        {
+          "name": "Alchemist's Laboratory",
+          "source": "Overlord",
+          "cost": 0,
+          "free": true
+        }
+      ],
       "raw": "Roll 61 (400): Innate Talent: Alchemist (Overlord) (400-200) + Alchemist's Laboratory (Overlord) (Free) → (200)"
     },
     {
@@ -1505,7 +1518,7 @@
       "kind": "roll",
       "banked_before": 300,
       "banked_after": 0,
-      "constellation": "Tollkits",
+      "constellation": "Toolkits",
       "constellation_revealed": false,
       "perks": [
         {
@@ -3322,11 +3335,11 @@
       "raw": "Roll ? (<=400): Knowledge → I Am Iron Man (Marvel Cinematic Universe) (<=400-400) → (<=0)"
     },
     {
-      "roll_number": null,
+      "roll_number": 207,
       "chapter_num": "35.1",
-      "kind": "annotation",
-      "banked_before": null,
-      "banked_after": null,
+      "kind": "miss",
+      "banked_before": 200,
+      "banked_after": 200,
       "constellation": null,
       "constellation_revealed": false,
       "perks": [],
@@ -5135,12 +5148,12 @@
       "raw": "Roll 318 (100): Magic → Miss → (100)"
     },
     {
-      "roll_number": null,
+      "roll_number": 319,
       "chapter_num": "47",
-      "kind": "annotation",
-      "banked_before": null,
-      "banked_after": null,
-      "constellation": null,
+      "kind": "miss",
+      "banked_before": 200,
+      "banked_after": 200,
+      "constellation": "Vehicles",
       "constellation_revealed": false,
       "perks": [],
       "raw": "Roll 319 (200): Vehicles → Miss (200)"
