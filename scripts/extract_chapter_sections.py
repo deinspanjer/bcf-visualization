@@ -134,6 +134,58 @@ def _structural_markers(text: str) -> list[str]:
 _AN_RE = re.compile(r"\(\s*Author'?s?\s+Note", re.IGNORECASE)
 
 
+# ---------- author-note ranges (curated) -----------------------------------
+
+
+AUTHOR_NOTES_JSON = ROOT / "data" / "manual" / "author_notes.json"
+
+
+def _load_curated_author_notes() -> dict[tuple[str, int], list[str]]:
+    """Read data/manual/author_notes.json and return verbatim AN texts
+    keyed by (chapter_num, section_index).
+
+    The curated file is the single source of truth for author-to-reader
+    asides. It was built by a one-time human-supervised scan of every
+    chapter (see file's `_source` field). Adding or removing an AN is a
+    manual edit to that file — the extractor never guesses.
+    """
+    if not AUTHOR_NOTES_JSON.exists():
+        return {}
+    data = json.loads(AUTHOR_NOTES_JSON.read_text())
+    out: dict[tuple[str, int], list[str]] = {}
+    for entry in data.get("author_notes", []):
+        key = (entry["chapter_num"], int(entry["section_index"]))
+        out.setdefault(key, []).append(entry["an_text"])
+    return out
+
+
+def _resolve_author_note_ranges(
+    section_text: str, an_texts: list[str], chapter_num: str, section_index: int
+) -> list[tuple[int, int]]:
+    """Locate each curated AN string in the section text and return
+    (start, end) char offsets. Errors loudly if an AN cannot be found —
+    that means the curated file has drifted from the source and a
+    human needs to reconcile it.
+    """
+    ranges: list[tuple[int, int]] = []
+    for an in an_texts:
+        idx = section_text.find(an)
+        if idx < 0:
+            raise SystemExit(
+                f"curated author-note text for chapter {chapter_num} "
+                f"section {section_index} not found in source text. "
+                f"data/manual/author_notes.json is stale; reconcile it "
+                f"before re-running. AN starts: {an[:80]!r}"
+            )
+        ranges.append((idx, idx + len(an)))
+    ranges.sort()
+    return ranges
+
+
+def _words_in_ranges(text: str, ranges: list[tuple[int, int]]) -> int:
+    return sum(_word_count(text[s:e]) for s, e in ranges)
+
+
 # ---------- section data structures ----------------------------------------
 
 
@@ -149,6 +201,8 @@ class Section:
     tp_count: int
     structural_markers: list[str] = field(default_factory=list)
     sample: str = ""             # first ~200 chars of prose (for review)
+    author_note_ranges: list[tuple[int, int]] = field(default_factory=list)
+    author_note_word_count: int = 0
 
 
 @dataclass
@@ -226,7 +280,13 @@ def _classify_by_content(text: str) -> tuple[str | None, str, dict]:
 # ---------- combine ---------------------------------------------------------
 
 
-def _classify_section(header: str | None, text: str) -> Section:
+def _classify_section(
+    header: str | None,
+    text: str,
+    an_ranges: list[tuple[int, int]] | None = None,
+) -> Section:
+    if an_ranges is None:
+        an_ranges = []
     header_class, header_reason = _classify_by_header(header)
     content_class, content_reason, evidence = _classify_by_content(text)
 
@@ -274,6 +334,7 @@ def _classify_section(header: str | None, text: str) -> Section:
 
     counts_for_cp = classification == "mc"
     sample = text[:600].replace("\n", " ").strip()
+    an_words = _words_in_ranges(text, an_ranges)
     return Section(
         header=header,
         word_count=_word_count(text),
@@ -285,6 +346,8 @@ def _classify_section(header: str | None, text: str) -> Section:
         tp_count=evidence["tp_count"],
         structural_markers=evidence["structural_markers"],
         sample=sample,
+        author_note_ranges=[list(r) for r in an_ranges],
+        author_note_word_count=an_words,
     )
 
 
@@ -402,6 +465,8 @@ def main() -> None:
     perk_records: list[dict] = []
     low_confidence_count = 0
     flagged: list[tuple[str, str, str]] = []
+    curated_an = _load_curated_author_notes()
+    consumed_an_keys: set[tuple[str, int]] = set()
 
     with zipfile.ZipFile(EPUB) as zf:
         title_to_href = _build_chapter_index(zf)
@@ -415,14 +480,22 @@ def main() -> None:
             sections: list[Section] = []
             cp_words = 0
             total_words = 0
-            for header, s, e in sections_html:
+            for idx, (header, s, e) in enumerate(sections_html):
                 section_html = html[s:e]
                 section_text = _text(section_html)
-                section = _classify_section(header, section_text)
+                an_texts = curated_an.get((c["chapter_num"], idx), [])
+                an_ranges = _resolve_author_note_ranges(
+                    section_text, an_texts, c["chapter_num"], idx
+                )
+                if an_texts:
+                    consumed_an_keys.add((c["chapter_num"], idx))
+                section = _classify_section(header, section_text, an_ranges)
                 sections.append(section)
                 total_words += section.word_count
                 if section.counts_for_cp:
-                    cp_words += section.word_count
+                    # Subtract author-note words from MC sections so the
+                    # cp-earning total reflects only Joe-POV story prose.
+                    cp_words += section.word_count - section.author_note_word_count
                 if section.confidence == "low":
                     low_confidence_count += 1
                     flagged.append((c["chapter_num"], header or "(implicit)",
@@ -447,6 +520,14 @@ def main() -> None:
                 cp_earning_word_count=cp_words,
                 sections=sections,
             ))
+
+    orphan_an = sorted(set(curated_an.keys()) - consumed_an_keys)
+    if orphan_an:
+        raise SystemExit(
+            "data/manual/author_notes.json references chapter/section "
+            f"keys not seen during extraction: {orphan_an}. The curated "
+            "file is stale; remove or relocate those entries."
+        )
 
     # Aggregate stats
     total_sections = sum(len(r.sections) for r in section_records)

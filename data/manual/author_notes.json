@@ -1,0 +1,385 @@
+{
+  "_source": "Curated list of author-to-reader asides. Bootstrapped by parallel subagent scan of section 0 + section 1 prefix across all 194 chapters, then exhaustively cross-checked by scanning every section of every chapter for any 'Author's note' / 'Author Note' lead-in. Each entry's `an_text` is verbatim from data/raw/Brocktons_Celestial_Forge.epub (validated by extract_chapter_sections.py at extraction time — drift fails the build).",
+  "_count": 63,
+  "_total_chapters_scanned": 194,
+  "author_notes": [
+    {
+      "chapter_num": "23",
+      "section_index": 0,
+      "an_text": "(Author's Note: To cover more of what's happening in the setting I'm planning to start including addendums to chapters going forward. Some of these will be short interludes that couldn't fill a chapter on their own. Some might be PHO threads, or other in-universe media. It will provide a chance to look outside the main character's perspective and see the changes to the setting as butterflies start building up. Interludes will still be part of the story, but this will allow shorter looks into the lives of other characters.)",
+      "reason": "Explicit '(Author's Note:' lead-in; author addresses readers directly about upcoming structural changes to chapter format (adding addendums/interludes)"
+    },
+    {
+      "chapter_num": "32",
+      "section_index": 0,
+      "an_text": "(Author's Note: I have a busy time coming up so I will be taking next week off my update schedule. The next chapter will be out in two weeks.)",
+      "reason": "Schedule notice — author informing readers of update hiatus"
+    },
+    {
+      "chapter_num": "41.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: This interlude was originally intended to be the addendum for chapter 41. I didn't have time to finish it for that chapter, and decided to expand it to a full interlude. Unfortunately, other commitments had impacted my writing time and I was only able to cover half the content I intended. As such the second half of this interlude will be included next week, and will cover a lot of the points raised regarding chapter 41. Regrettably, this interlude stops just before that point is reached, but those details will be addressed next time.)",
+      "reason": "Chapter organization & schedule — explaining split interlude structure and writing delays"
+    },
+    {
+      "chapter_num": "41.2",
+      "section_index": 0,
+      "an_text": "(Author's note: Once again, I ran into a shortage of writing time thanks to a busy week at work and various social commitments. As such, rather than delay the chapter, I've decided to split it again. I would have preferred not to have this interlude stretch over three weeks, but I want to hold to my weekly schedule, and feel the stopping points work within the story. The interlude will conclude next week, with possibly some addendums that will let us wrap things up and get back to Joe.)",
+      "reason": "Writing delays & chapter structure — explaining multi-week split and schedule management"
+    },
+    {
+      "chapter_num": "42.1",
+      "section_index": 0,
+      "an_text": "Author's Note: Interlude this week, so no points gained. We'll get back to the perspective around Joe next chapter and will see more perk gains then. Also, I feel I should say I really do not like writing from the perspective of the E88. This will probably be the last chapter involving their point of view for quite a while.",
+      "reason": "Bare 'Author's Note:' paragraph (no parens/quotes); reader-address aside about interlude points and POV preferences"
+    },
+    {
+      "chapter_num": "43.1",
+      "section_index": 0,
+      "an_text": "(Author's note: I had hoped to finish the recover arc this week but I didn't have enough time to finish the full chapter. I decided to spilt off the planned preamble to its own interlude rather than introduce another week's delay. Next chapter will see the final recovery segment and Joe getting back into the action.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "45.1",
+      "section_index": 0,
+      "an_text": "(Author's note: Short interlude this week as I didn't have enough writing time for a full chapter, but was able to expand upon one of the preambles I had planned for this week. We'll get back to Joe and rolls next chapter.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "46",
+      "section_index": 0,
+      "an_text": "(Author's Note: Firstly, I would like to congratulate Sterlyn, long time reader and supporter of this story and, on his graduation. This is a big step and a major achievement that I wanted to recognize.\nSecondly, a few notes in relation to this chapter. I ended up needing to cut an addendum, which was intended to allow this day of the story to be closed out. It will be moved to the next chapter, possibly as a preamble, or possibly as another interlude. If it is an interlude Joe will be earning points through at least a portion of the chapter. In its truncated form this feels like something of a housekeeping chapter, but I felt it was necessary to review the current state of Joe's abilities, options, workshop, and allies.\nFinally, with regards to the abilities of this chapter, I made an alternation to my usual purchasing strategy for The World Ends With You. That jump came with a free psych, but most options required the purchase of a brand to function. I debated my decision, which was mostly driven by the fact that My Fashion Sense is Tingling was an odd 50-point perk. The decision came down to either selecting a random psychic ability, or making an additional purchase for one that aligned with the creation nature of the Forge. I decided to take the second option.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "47",
+      "section_index": 0,
+      "an_text": "(Author's Note: I've been fielding criticism about the pace of the story for some time now, and I wasn't until this chapter that I realized how much it had been wearing on me. The structure and style of this story makes a fast-paced narrative very difficult. That wasn't what I started out with the intention of producing, and trying to reconcile the way I had been writing the story with pushes for an advancing plot was causing problems in my writing process. I wasn't enjoying the time I spent on the story because I was too concerned with the amount of ground that would be covered in a chapter. It made me realize how close to burn out I had become.\nBecause of that, and because I very much do not want this story to end prematurely, I'm going back to writing the way I used to. I know there are people who think the pacing is intolerable, and you are of course free to voice your opinion on that matter, but I will not be interacting with comments on that topic in the future.\nThis was written very much as a breather chapter and was probably the first chapter in quite a while where I enjoyed writing it from start to finish. It's shorter than I would have liked, doesn't cover much time, and could probably have used extra revisions, but the important thing is that I finally feel like I am getting more out of writing the story than it is taking out of me. For me that is more important than any other concerns.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "48",
+      "section_index": 0,
+      "an_text": "(Author note: Would have liked to close out the workshop portion in this chapter, but it didn't work out. We'll be getting out to Brockton Bay next chapter, including dealing with the gym, Undersiders, and Flechette while heading into Joe's next therapy session. Still enjoying getting back to my old pace of writing and not stressing over inter-chapter pacing. Also thank to everyone who offered their support and encounagement after my last author's note.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "56",
+      "section_index": 0,
+      "an_text": "(Author's note: This chapter is an example of a power roll than ended up taking over. As you can probably guess, a serious power came up early in the chapter and I needed to spend most of the chapter dealing with it. This has had some impact on the progression I had mapped out, including alternate perspectives and my hope to get to Somer's Rock next chapter, but that's the nature of this kind of writing. I tried to button up everything in this chapter and can hopefully skip over some of the details of Joe's preparation for the summit. The main reason for this note is to clarify the wordcount of this chapter. The last portion of the chapter is devoted to documentation related to one of the powers. The actual body of the chapter is only about 13,000 words.)",
+      "reason": "Explicit author's note addressing chapter structure, power mechanics, and word count clarification"
+    },
+    {
+      "chapter_num": "57.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: I understand the pacing of the story has been a point of annoyance for some readers. I have already commented on this in an earlier note, but feel it is best to be upfront about the situation.\nSomer's Rock is not this chapter. I had hoped to reach at least the start of the summit, but I was limited to what I could write in the time I could spare and in the style I could maintain. I understand people have been waiting for that meeting to start and are becoming frustrated, but the only alternative would have been to delay for a week to be able to include additional sections of the chapter.\nI have already spoken about my attempts to change my writing style and schedule and how that impacted me. I do not plan to make any further attempts, but I will be open about the progress of the story. It will be very clear when the summit begins, so anyone specifically reading for that event will be informed when we reach it. Until then, as I have stated, I will be approaching the story at the pace that I know I can sustain.)",
+      "reason": "Explicit author's note addressing story pacing, reader expectations, and chapter scheduling"
+    },
+    {
+      "chapter_num": "58",
+      "section_index": 0,
+      "an_text": "(Author's note: Despite the extra week of time, I wasn't able to cover as much as I had hoped in this chapter. An addendum covering the start of the summit needed to be dropped, and will be incorporated into the next chapter. This chapter covers the last of the perpetrations leading to Somer's Rock, with the meeting to begin in full next chapter.)",
+      "reason": "Explicit author's note about chapter scope and scheduling decisions"
+    },
+    {
+      "chapter_num": "58.2",
+      "section_index": 0,
+      "an_text": "(Author's Note: This is an example of what happens when a preamble takes over a chapter. This was meant to be a brief check in, but ended up being much more comprehensive than I originally planned. As such it stands as a point-earning interlude. I may return to this format to cover alternate perspectives over the course of the Summit, though most chapter should cover a greater window of time than this one.)",
+      "reason": "Explicit author's note about unplanned chapter expansion and format decisions"
+    },
+    {
+      "chapter_num": "60",
+      "section_index": 0,
+      "an_text": "(Author's Note: I had hoped to be able to get a longer chapter out this week, particularly after the last delay. Unfortunately, the holidays seem to be the worst season for finding time to write. Between various commitments and other issues, I was only able to get an abbreviated chapter out, and it was down to wire. Hopefully things will calm down after Christmas, but I wanted to wish everyone happy holidays and thank them for the support of the story over this year.)",
+      "reason": "Explicit author's note addressing scheduling issues and personal circumstances"
+    },
+    {
+      "chapter_num": "62",
+      "section_index": 0,
+      "an_text": "(Author's Note: Short chapter this week, with the summit being fully closed out next week. As an important announcement, I would like to issue a warning anyone who uses the Celestial Forge Discord server. The server's owner had his account compromised and lost control of the server. As a consequence, I would ask everyone to avoid the server until the matter is resolved. I was not involved in the creation or operation of the server beyond announcing chapter updates there, but I do not want anyone to be taken advantage of by the people who have compromised the server. A new server has been created in response to this incident and, while it is not possible to post links on all fanfiction sites, invite links for the server will be available on this story's Sufficient Velocity thread and in the comments on Archive of Our Own.)",
+      "reason": "Explicit author's note with chapter status and important security warning about Discord server compromise"
+    },
+    {
+      "chapter_num": "63.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: I was planning to release a group of interludes following the summit, but didn't have enough time to get the series ready for this release. Instead of delaying the chapter, I've decided to release the first of them as a stand-alone interlude, essentially a half-length chapter in the place of a delay. This isn't going to be the standard going forward, but I would prefer to maintain my schedule if at all possible. Longer chapter coming next week, with additional perspectives, as well as getting back to Joe.)",
+      "reason": "Explicit author's note about publication strategy and schedule maintenance"
+    },
+    {
+      "chapter_num": "65",
+      "section_index": 0,
+      "an_text": "(Author's note: Shorter chapter this week. I needed to cut a planned preamble due to limited writing time. The preamble will be included in next weeks chapter, a long awaited interlude set outside of Brockton Bay.)",
+      "reason": "Explicit author's note about chapter length and deferred content"
+    },
+    {
+      "chapter_num": "65.1",
+      "section_index": 0,
+      "an_text": "\"Author's note: The main interlude I planned took longer than expected, so I'm posting the preamble as a mini-interlude for this week, basically a half chapter. As I've said, these short chapters aren't going to become a habit, but I prefer shorter posts to missing weeks. The promised longer interlude is still coming for next week.\"",
+      "reason": "Author addressing readers directly about chapter delays and scheduling, explicitly labeled as Author's Note"
+    },
+    {
+      "chapter_num": "65.2",
+      "section_index": 0,
+      "an_text": "(Due to time constraints I had to cut this chapter short, so we have another interlude at half its intended length. The rest of the interlude will be coming next week, after which we'll finally get back to Joe.)",
+      "reason": "Author explaining chapter length constraint and future schedule to readers"
+    },
+    {
+      "chapter_num": "65.3",
+      "section_index": 0,
+      "an_text": "(Author's note: Fair warning, once again I ran out of writing time. While I managed a longer chapter, I wasn't able to finish what I had planned for this interlude. As such, we will have the conclusion of the chapter next week, regrettably another sudden cliffhanger at the end of this chapter.)",
+      "reason": "Author addressing readers about time constraints and posting incomplete work"
+    },
+    {
+      "chapter_num": "65.4",
+      "section_index": 0,
+      "an_text": "(Author's note: Final part of the interlude. We'll be returning to Joe next week, meaning rolls will resume once more. In the future I'm hoping to include more addendums in place of longer interlude sections such as this.)",
+      "reason": "Author communicating schedule and future content structure to readers"
+    },
+    {
+      "chapter_num": "66",
+      "section_index": 0,
+      "an_text": "(Author's Note: This is something of a bridging chapter as we get back into the swing of things. Shorter than I would have liked, and confined to the Workshop. We'll be pushing out into the city in the next chapter)",
+      "reason": "Author explaining chapter purpose, scope, and next chapter's direction to readers"
+    },
+    {
+      "chapter_num": "68.1",
+      "section_index": 0,
+      "an_text": "(Author's note: I had a bad week for writing, so I have expanded the addendum that was cut from the previous chapter into a mini-interlude to tide things over. I'm hoping to get back to my usual chapter length next time.)",
+      "reason": "Author addressing readers about writing difficulties and posting adapted content"
+    },
+    {
+      "chapter_num": "68.2",
+      "section_index": 0,
+      "an_text": "(Author's Note: This was originally going to be the preamble for the next chapter. Unfortunately, I had another difficult week and the next chapter proved to be more demanding than I anticipated. As such I'm posting this as another half-chapter, hopefully getting back to full length work next week.)",
+      "reason": "Author explaining chapter length reduction and writing challenges to readers"
+    },
+    {
+      "chapter_num": "74.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: This was originally intended to be a preamble to chapter 75, but time constraints have delayed that chapter further. I have decided to post this section as its own mini-interlude to tide things over until the next full chapter.)",
+      "reason": "Author explaining chapter structure change and schedule delay to readers"
+    },
+    {
+      "chapter_num": "74.2",
+      "section_index": 0,
+      "an_text": "(Author's Note: This interlude counted for points towards additional abilities, but there were no successful rolls during this chapter. For those who are interested, there were failed rolls for the Time, Knowledge, Capstone, Magic, and Resources and Durability constellations. 500 points are currently banked, meaning the first roll of the next chapter will have 600 points available.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "76",
+      "section_index": 0,
+      "an_text": "(Author's Note: No successful rolls this chapter, but 400 points banked. A shorter chapter to close out the night. There will be an interlude next week, followed by picking things up with Joe the next morning in-story.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "76.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: The planned interlude took longer than I intended, so I decided to post the chapter's preamble as a stand-alone half-interlude this week. Full interlude to come next week, returning to Joe after that.)",
+      "reason": "Explicit author's note addressing reader about scheduling and content planning"
+    },
+    {
+      "chapter_num": "79",
+      "section_index": 0,
+      "an_text": "(Author's Note: We'll pick up next week with a jump to the end of the training, leading into the meeting with Uppercrust. Details and impact of the training will be referenced, but we won't be covering more than is necessary for the story.)",
+      "reason": "Explicit author's note addressing pacing and narrative approach"
+    },
+    {
+      "chapter_num": "80",
+      "section_index": 0,
+      "an_text": "(Author's note: Limited writing time has pushed the meeting with Uppercrust to the next chapter. Additionally, I did not expect to end up clearing every perk from Binbougami Ga! in a single chapter. The full implications of these powers will be covered in the next chapter, along with Joe's meeting with Uppercrust.)",
+      "reason": "Explicit author's note addressing scheduling and narrative developments"
+    },
+    {
+      "chapter_num": "81",
+      "section_index": 0,
+      "an_text": "(Author's Note: This turned into something of a housekeeping chapter, finishing at the start of the meeting with Uppercrust, as I didn't have time to close it out and didn't want to split it between chapters. The next chapter will be opening with the meeting between Apeiron and Uppercrust.)",
+      "reason": "Explicit author's note addressing chapter purpose and pacing"
+    },
+    {
+      "chapter_num": "82",
+      "section_index": 1,
+      "an_text": "(Author's note: The addendum for this chapter needed to be cut short and will be concluded in the preamble of the next chapter. For those interested, points were earned during the addendum, with a single failed roll on the Magitech constellation. There are currently 200 points banked, with the next roll being at 300.)",
+      "reason": "Author's note lead-in addressing readers (mid- or post-chapter aside)"
+    },
+    {
+      "chapter_num": "82.1",
+      "section_index": 0,
+      "an_text": "(Author's note: Planned preamble ended up as its own interlude. Points were earned, so for those interested the rolls were Capstone, Magitech, Size, Vehicles, Time, Personal Reality.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "83",
+      "section_index": 0,
+      "an_text": "(Author's Note: Half-length chapter this week due to time constraints. It's not as long as I would have liked, but serves as a bit of a bridging chapter for the upcoming story beats.)",
+      "reason": "Explicit author's note addressing chapter length and narrative function"
+    },
+    {
+      "chapter_num": "83.1",
+      "section_index": 1,
+      "an_text": "(Author's note: Points were earned during both the interlude and Joe's section. For those interested, the rolls were Alchemy, Alchemy, Alchemy, Resources and Durability (Armsthrift), and Magitech.)",
+      "reason": "Author's note lead-in addressing readers (mid- or post-chapter aside)"
+    },
+    {
+      "chapter_num": "84",
+      "section_index": 0,
+      "an_text": "(Author's note: Only a half-chapter this week due to a rough period with limited writing time. I wanted to get something out and avoid a longer delay, even if it ended up a bit abbreviated.)",
+      "reason": "Explicit author's note addressing scheduling and chapter length"
+    },
+    {
+      "chapter_num": "86",
+      "section_index": 0,
+      "an_text": "(Author's note: Half chapter this week, once again due to limited writing time. I had enough to post an abbreviated chapter and wanted to avoid missing a week after the recent gaps in my schedule. Hoping for a longer chapter next week, but I have a busy period next month, independent of the holiday season, so I'm not sure how much writing time I'll have. At worst we'll be looking at shorter chapters for a few weeks until things settle down.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "87.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: A half chapter this week due to limited writing time. The chapter is expanded from a planned preamble that I've been meaning to write for a while. No points earned this chapter, but we'll be getting back to Joe next chapter.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "88.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: This started as an intended preamble that grew beyond what I had planned and ended up as its own interlude. As such we'll be getting back to Joe in the next chapter.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "89.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: Half-chapter this week, due to limited writing time. This was going to be the preamble for the next chapter, but I decided to post it as a short interlude, rather than miss a week.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "91",
+      "section_index": 0,
+      "an_text": "(Author's note: Half chapter this week, due to limited free time. Should be wrapped up next week with another Joe-focused chapter.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "91",
+      "section_index": 1,
+      "an_text": "(Author's Note: With the perk from this chapter, all non-repeatable 100 point perks in the tables have been obtained. As there are no longer any unique powers that can be gained for 100 points, I will be changing the methodology and rolling for powers every 200 points, meaning rolls will occur every 4,000 words. The rate of point gain will remain the same, but the lower number of rolls will mean fewer rolls will occur where there is no chance of any power being obtained.)",
+      "reason": "Author's note lead-in addressing readers (mid- or post-chapter aside)"
+    },
+    {
+      "chapter_num": "92",
+      "section_index": 0,
+      "an_text": "(Author's note: I had hoped to close out the evening for Joe with this week's chapter, but I wasn't able to cover as much as I hoped. As such, we're looking at another chapter for Joe, then a few interludes to finish the in-story day)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "93",
+      "section_index": 0,
+      "an_text": "(Author's note: A last minute situation prevented me from closing out the chapter like I had planned. I needed to split the chapter in two and will be wrapping things up next week. Not quite a half chapter, but less than I was hoping to cover. )",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "94",
+      "section_index": 0,
+      "an_text": "(Author's Note: I've been dealing with a lot over the past few weeks and haven't had much time to write, but I didn't want to leave this scene hanging any longer than it's already been drawn out. As such, things are limited to a half chapter this week. I'm hoping to be able to get back on my usual schedule soon, but I can't make any promises due to other commitments.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "94.1",
+      "section_index": 0,
+      "an_text": "(Author's note: I had to end the chapter earlier than intended due to time constraints. My apologies for the half chapter and the fact that it will take one more chapter to close out Joe's portion of the day. For those interested, points were earned during the chapter, with a single failed roll on the Toolkits constellation. The chapter finished with 600 points banked, making the first roll next chapter for 800 points. As such, it's probably for the best that we're revisiting Joe's perspective for the upcoming roll)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "95.2",
+      "section_index": 0,
+      "an_text": "(Author's Note: This was intended to be a preamble, but the amount that needed to be covered and my limited writing time turned it into a half-interlude. I had to cut the chapter short, with the conclusion in the next preamble. To avoid these types of truncated chapters, I have made a decision regarding my posting schedule.\nUnfortunately, I don't have as much time to devote to the story as I did when I started writing it three years ago. Over that time, I have done my best to maintain a weekly schedule, but recently it's become clear that maintaining that pace has required compromises in the length and quality of chapters. After a great deal of consideration, I have decided to switch to bi-weekly chapters, at least for the time being. I would like to be able to move back to a weekly schedule at some point, I'm unlikely to be able to do so for some time.\nWhile I regret not being able to keep providing weekly chapters, I believe this will be for the best for both the story and my workload. I am hoping that the new schedule will allow me to minimize any further delays and give me more time to devote to each chapter. I want to thank everyone who has followed and supported the story over the past three years and assure you all that I will be continuing this work, just at a pace I can sustain.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "95.2",
+      "section_index": 1,
+      "an_text": "(Author's Note: As mentioned above, next chapter in two weeks. With the third anniversary of the story coming up on May 1, I'd like to thank everyone who has supported me and this work over the past three years. This story wouldn't be the same without the amazing community of readers that have provided me with their encouragement and feedback. To both long time readers and those who had found the story recently, you have my deepest gratitude.)",
+      "reason": "Author's note lead-in addressing readers (mid- or post-chapter aside)"
+    },
+    {
+      "chapter_num": "97",
+      "section_index": 1,
+      "an_text": "Author's Note: As this chapter featured the clearing of a constellation, I have taken the opportunity to institute some overdue changes in the manner in which points are gained in this story. As many readers have pointed out, perks and items have been arriving at an accelerated rate. It had been necessary to devote a significant portion of the story to address the nature of new abilities, leaving limited time for other elements before the next power arrives. These changes are intended to address these issues. They will reduce the rate at which points are gained, but will hopefully address some of the issues with pacing and technical description of abilities.\nThere are two changes that are being implemented. First, the rate at which points are acquired is being reduced from 100 every 2,000 words to 100 every 3,000 words. As rolls are performed every 200 points, they will now happen every after 6,000 words rather than 4,000. Secondly, I am instituting a recovery period following major rolls. Any 600 or 800 point perks will introduce a delay before rolls resume equal to half the cost of the perk. This means that for a 600 point ability points will not start being banked until 300 are earned, requiring 9,000 words. This will allow time to address and implement major powers without overly impacting the pace of the story. The hope is to prevent situations where the points earned from addressing one ability result in the acquisition of another ability.\nThere may be additional modifications to the point system as more constellations are cleared, but I'm hoping they will lead to an improvement of the story overall. I know there are readers who have been eagerly waiting for specific abilities and I'm sorry that this system will further delay them, but I believe it will be an overall improvement for the story. Additionally, when anticipated perks do arrive there will now be sufficient time for them to be fully explored without another ability overshadowing them.",
+      "reason": "Bare 'Author's Note:' paragraph announcing regime change (rate from 100/2000 -> 100/3000 words; shadow words for 600/800 perks)"
+    },
+    {
+      "chapter_num": "99.1",
+      "section_index": 0,
+      "an_text": "(Author's note: This was intended to be the preamble to a longer chapter, but my schedule didn't allow me to complete as much writing as I had hoped. As such, I'm posting this as a half-chapter, with the main chapter pushed back until next time.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "99.3",
+      "section_index": 0,
+      "an_text": "(Author's note: This was intended to be the preamble for chapter 100, but after rewriting it the scope expanded to its own interlude. As such chapter 100 was pushed back to avoid splitting focus.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "100.1",
+      "section_index": 0,
+      "an_text": "(Author's note: In late November SJ-Chan, the author of the Personal Reality Supplement, passed away. I was contacted and asked to write a dedication in my next chapter. Given what I have been personally dealing with over the past month I was happy to do what I could to commemorate SJ-Chan's passing.\nI never had the chance to interact with SJ-Chan, but her work has served as a foundational element of my story from the very first chapter. My story and so many other works in the Jumpchain community only exist thanks to the contribution of the time and talents of so many skilled authors. The Personal Reality Supplement was a document that I always particularly admired. In addition to providing a common utility for everyone in the community, the document was written with great precision and a thorough understanding of how each aspect of it would be used and what was needed to support the kinds of adventures that were featured in the Jumpchain community.\nThe loss of SJ-Chan was tragic both for those close to her and those who missed their chance to get to know her. I can only express my gratitude for her work and express my regret at the passing of such a talented author and member of the community.)",
+      "reason": "Author's note acknowledging the passing of SJ-Chan and dedicating the chapter to her"
+    },
+    {
+      "chapter_num": "101",
+      "section_index": 0,
+      "an_text": "(Author's Note: The final roll of this week will act as the opening roll of the next chapter.)",
+      "reason": "Author's note about chapter structure and roll scheduling"
+    },
+    {
+      "chapter_num": "104",
+      "section_index": 0,
+      "an_text": "(Author's Note: The last reduction in the rate at which points were gained has undoubtedly had a positive impact on the story, though it's clear that things can still get out of hand even with the reduced point gain and break period after major perks. As such, with the clearing of another constellation, I have taken the opportunity for another reduction. Points will now be gained at a rate of 200 points for every 8,000 words, with any 600-point perks now introducing a delay of 12,000 words before points will begin accumulating again.\nThis change will allow more time to be spent on the use and development of Joe's current abilities and the advancement of the story's plot, rather than the constant introduction of new powers. The previous modification has been a considerable help with the problems that had built up, and I am hoping this change to the point system will yield similar improvements. I'm not sure if the clearing of additional constellations will result in similar reductions, but I'm keeping the option open.\nThis does mean that powers will become less frequent and some of the abilities that people have been looking forward to seeing will take longer to arrive. It may mean that we see chapters without successful rolls, but believe that will be good for the story overall and allow the proper respect and attention to be paid to the abilities when they do arrive.)",
+      "reason": "Author's note lead-in addressing readers about scheduling, pacing, or story production"
+    },
+    {
+      "chapter_num": "105",
+      "section_index": 0,
+      "an_text": "(Author's note: This is a shorter bridging chapter to cover the last of the events from the previous night and open up the current day. We will be diving into the major events of the day in the next chapter, but I wanted to announce that next week I will be releasing another chapter of the sidestory Brockton's Celestial Forge AU – Europa's Celestial Forge to commemorate the anniversary of the release of this story. I had hoped to release more content for that work in the past year, but things were far too hectic to allow me the time. I can't make any commitments, and this work will remain my priority, but I hope to have more time to devote to that and possibly other projects in the coming year.\nAs the story's anniversary falls between chapters I would like to take this opportunity to thank everyone who has supported this story over the past four years as it grew from a small writing project into the massive work that it has become. This would not have been possible without the supportive community that embraced this story and I can only express my sincere gratitude for all the support and encouragement that I have received.)",
+      "reason": "Author-to-reader aside about chapter scheduling, story pacing, and posting cadence"
+    },
+    {
+      "chapter_num": "108.1",
+      "section_index": 0,
+      "an_text": "(Author's Note: Due to a fairly stressful few weeks I've been behind on my writing schedule and ended up having to cut this interlude in half to avoid further delays. I didn't want to put off the chapter any longer, so I decided a half-chapter serving as a preamble to the larger interaction would be better than completely losing momentum. Apologies for the short chapter and hopefully I will be able to get back to my usual schedule for the next chapter.)",
+      "reason": "Author-to-reader aside apologizing for delays and explaining chapter division due to authorial stress"
+    },
+    {
+      "chapter_num": "111.1",
+      "section_index": 0,
+      "an_text": "(Author's note: Between the busy holiday season and some recent poor health I haven't had as much time to devote to this story as I would have liked. I had hoped to cover these events in a single chapter, but had to cut the previous one down for time. Unfortunately, I've found myself in a similar situation, and was only able to cover about half of what I was aiming for in this chapter. The rest will be closed out after the holidays, but I wanted to give a heads up for anyone who would prefer to wait and avoid additional cliffhangers.\nEvery December I hope to be able to get some extra writing done as a gift to my readers, but just as consistently life managed to get in the way of my intentions. Even if I am unable to provide extra content for the holiday season, I would like to take the opportunity to thank everyone who has followed and supported the story over the past year. That incredible community has made this story what it is and I am extremely grateful for everyone's support. My thanks and best wishes to everyone, in the spirit of the season.)",
+      "reason": "Direct author-to-reader aside explaining publication delays due to holiday season, illness, and health impacts on writing speed. Clearly parenthesized and addresses scheduling expectations."
+    },
+    {
+      "chapter_num": "111.3",
+      "section_index": 0,
+      "an_text": "(Author's note: After the event that caused the last delay I came down with the flu and have been out for most of the last week. I am recovering and was able to get some writing done, but as a result the planned preamble became its own interlude. Still, I wanted to avoid another delay so decided to post what I had rather than push things off by another week. As such, this chapter doesn't cover as much as I had hoped, but at least closes out current events with respect to Brian.)",
+      "reason": "Author note explaining flu recovery delay, unplanned interlude publication, and scheduling/planning intentions. Directly addresses real-world impact on chapter releases."
+    },
+    {
+      "chapter_num": "116.2",
+      "section_index": 0,
+      "an_text": "(Author's note: This is effectively a double chapter due to not being able to find a good way to break it into two parts. Effectively it is two chapters worth of writing released at once, which is the reason for the long delay from the previous chapter.)",
+      "reason": "Direct author note explaining double chapter release and the cause of the publication delay. Addresses scheduling and writing process decisions."
+    },
+    {
+      "chapter_num": "116.2",
+      "section_index": 2,
+      "an_text": "(Author's note: The first two rolls in this chapter were for 500 and 700 points, both failing due to landing on 800 point items. The final roll was for 900 points and landed on 100 points of items from the Personal Reality constellation. This means that despite the length of the chapter there are only 100 points of items, and that the next chapter will be starting with a 1000 point roll.)",
+      "reason": "Author's note lead-in addressing readers (mid- or post-chapter aside)"
+    },
+    {
+      "chapter_num": "119",
+      "section_index": 0,
+      "an_text": "(Author's Note: Half-chapter this week. This was originally supposed to be a preamble for an interlude, but it ran long and the interlude itself ended up needing more work than I anticipated. As such I'm publishing the first section as a half-length chapter to avoid having to take a longer delay. I know many readers are eager to get to the Slaughterhouse Nine, but there will still be about four chapters before we get to them. I'm doing my best to maintain a consistent pace, but given how hectic this time of year can be I wanted to make sure there was a reasonable expectation for the upcoming chapters of the story.)",
+      "reason": "Author note explaining half-chapter release, content restructuring decisions, and setting expectations for upcoming arc timeline. Directly addresses reader anticipation and publishing schedule."
+    },
+    {
+      "chapter_num": "119.4",
+      "section_index": 0,
+      "an_text": "(Author's note: The second half of this chapter needed more work, so I decided to split the chapter in two and fold the second half into the next chapter. This does mean this chapter stops more abruptly than I would have liked, so fair warning about the cliffhanger.)",
+      "reason": "Author apologizes for split chapter and cliffhanger; explains editorial decision"
+    }
+  ]
+}

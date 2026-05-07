@@ -86,9 +86,10 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
     """Read chapter_sections.json + manual section_classifications.json
     and return cp-earning word count keyed by chapter full_title.
 
-    The manual classifications file contains a per-section
-    counts_for_cp boolean (one per (chapter_num, section_index) pair).
-    For each chapter, we sum the word counts of just the MC sections.
+    Each section's `author_note_word_count` is subtracted from CP-eligible
+    sections so meta-content doesn't inflate predicted roll positions.
+    AN ranges originate from data/manual/author_notes.json and are
+    written into chapter_sections.json by extract_chapter_sections.py.
     """
     if not SECTIONS_JSON.exists():
         raise SystemExit(
@@ -109,7 +110,7 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
         for i, s in enumerate(c["sections"]):
             key = f"{c['chapter_num']}@{i}"
             if cls_data.get(key, {}).get("counts_for_cp", True):
-                total += s["word_count"]
+                total += s["word_count"] - s.get("author_note_word_count", 0)
         out[c["full_title"]] = total
     return out
 
