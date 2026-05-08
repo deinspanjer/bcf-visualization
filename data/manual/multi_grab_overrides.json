@@ -1,0 +1,27 @@
+{
+  "_purpose": "Hand-curated per-chapter paid roll structure. When a chapter has an entry here, it FULLY determines the chapter's paid roll list — both grouping (multi-grab) and order. Each inner array is one roll containing one or more perks (paid or free). Without an entry, default behavior: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "chapter_roll_overrides": {
+    "65": {
+      "rolls": [
+        ["Fueling Station", "Garage"],
+        ["Workshop: Electronics"]
+      ],
+      "narrative_evidence": "Two of the motes were secured (PR multi-grab); Workshop: Electronics is a separate Toolkits roll. Order verified against curator rolls.json (PR multi-grab roll_number 444, Workshop: Electronics 448). (ch 65)"
+    },
+    "67": {
+      "rolls": [
+        ["The Meaning of Life", "Natural Lighting", "The Pond-Expansion", "Neutral Lighting"],
+        ["The Pond"],
+        ["Pilot Simulator"]
+      ],
+      "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections; then The Pond; then Pilot Simulator. Ch 67's curator-listed order (Pilot Simulator first) disagrees with narrative."
+    },
+    "97": {
+      "rolls": [
+        ["Additional Space - Starting Area", "Additional Space – Lofty Loft"],
+        ["Nano-Forge"]
+      ],
+      "narrative_evidence": "secured two connections (PR multi-grab); then Nano-Forge. (ch 97)"
+    }
+  }
+}

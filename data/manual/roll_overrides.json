@@ -1,0 +1,5 @@
+{
+  "_purpose": "Hand-curated overrides applied after solver, before validation. See plans/roll_sequence_validation.md.",
+  "roll_overrides": {},
+  "chapter_overrides": {}
+}

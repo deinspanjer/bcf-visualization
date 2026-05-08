@@ -1,0 +1,14 @@
+{
+  "_purpose": "Hand-curated mid-chapter regime transitions. Applied during simulation. See plans/roll_sequence_validation.md.",
+  "transitions": [
+    {
+      "chapter_num": "97",
+      "after_event": {
+        "kind": "perk_acquired",
+        "perk_name": "Nano-Forge"
+      },
+      "new_regime": 3,
+      "note": "AN at end of ch 97 announces rate change post-Nano-Forge. Regime 2 applies until Nano-Forge acquisition; regime 3 thereafter."
+    }
+  ]
+}

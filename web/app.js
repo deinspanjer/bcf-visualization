@@ -27,6 +27,22 @@
 const DATA_BASE = "../data/derived";
 const DATA_VERSION = "cpfix1";
 
+/* Multi-grab schema helpers: rolls now carry `purchased_perks: [...]`
+ * (and `purchased_perk_cost_total`) instead of singular fields.
+ */
+function rollPrincipalName(r) {
+  const arr = r.purchased_perks || [];
+  if (arr.length === 0) return null;
+  const paid = arr.filter(p => !p.free);
+  return (paid[0] || arr[0]).name;
+}
+function rollTotalCost(r) {
+  if (r.purchased_perk_cost_total != null) return r.purchased_perk_cost_total;
+  return (r.purchased_perks || [])
+    .filter(p => !p.free)
+    .reduce((s, p) => s + Number(p.cost || 0), 0);
+}
+
 const CONSTELLATION_ORDER = [
   "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
   "Clothing", "Magic", "Quality", "Size",
@@ -228,8 +244,9 @@ function shadowWordRange(model, facts, sp) {
     const triggerRoll = triggerChapter.rolls.find(r =>
       sp.trigger_perk_id && r.purchased_perk_id === sp.trigger_perk_id) ||
       triggerChapter.rolls.find(r =>
-        r.purchased_perk_name === sp.trigger_perk_name &&
-        Number(r.purchased_perk_cost) === Number(sp.trigger_perk_cost));
+        (r.purchased_perks || []).some(p =>
+          p.name === sp.trigger_perk_name &&
+          Number(p.cost) === Number(sp.trigger_perk_cost)));
     if (triggerRoll) {
       triggerWord = purchaseWord(triggerChapter, triggerRoll);
     }
@@ -572,8 +589,8 @@ function renderFreePerkCluster(track, model, roll, chapter, wordPos, leftPct) {
     dot._roll = {
       outcome: "hit",
       constellation: freePerk.constellation || roll.constellation,
-      purchased_perk_name: freePerk.name,
-      purchased_perk_cost: 0,
+      purchased_perks: [{ name: freePerk.name, cost: 0, free: true }],
+      purchased_perk_cost_total: 0,
       purchased_perk_jump: freePerk.jump,
       free_perks: [],
       evidence_kind: "free_sibling",

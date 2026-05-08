@@ -256,20 +256,34 @@ def main() -> None:
             return None
 
         def _append_shadow_if_needed(roll: dict) -> None:
-            cost = roll["purchased_perk_cost"]
-            if (cost not in SHADOW_TRIGGER_COSTS
+            # Shadow is triggered by the largest single paid perk cost in
+            # the multi-grab — not the total. Only 600/800 trigger shadows.
+            paid = roll.get("purchased_perks") or []
+            principal_cost = max(
+                (int(p.get("cost") or 0) for p in paid if not p.get("free", False)),
+                default=0,
+            )
+            if (principal_cost not in SHADOW_TRIGGER_COSTS
                     or int(cn.split(".")[0]) < SHADOW_TRIGGER_MIN_CHAPTER):
                 return
+            principal_name = (
+                next(
+                    (p.get("name") for p in paid
+                     if int(p.get("cost") or 0) == principal_cost),
+                    None,
+                )
+                if paid else None
+            )
             start_pos = (
                 roll["display_word_position_epub"]
                 if roll["display_word_position_epub"] is not None
                 else roll["predicted_word_position_epub"]
             )
-            shadow_words = (cost // 2) * (REGIME_3_WORDS_PER_100_CP // 100)
+            shadow_words = (principal_cost // 2) * (REGIME_3_WORDS_PER_100_CP // 100)
             shadow_periods.append({
                 "trigger_perk_id": roll["purchased_perk_id"],
-                "trigger_perk_name": roll["purchased_perk_name"],
-                "trigger_perk_cost": cost,
+                "trigger_perk_name": principal_name,
+                "trigger_perk_cost": principal_cost,
                 "trigger_chapter_num": cn,
                 "trigger_word_position_epub": start_pos,
                 "shadow_word_length": shadow_words,
@@ -290,8 +304,8 @@ def main() -> None:
                 "outcome": roll["outcome"],
                 "constellation": roll["constellation"],
                 "purchased_perk_id": roll["purchased_perk_id"],
-                "purchased_perk_name": roll["purchased_perk_name"],
-                "purchased_perk_cost": roll["purchased_perk_cost"],
+                "purchased_perks": roll.get("purchased_perks") or [],
+                "purchased_perk_cost_total": roll.get("purchased_perk_cost_total"),
                 "purchased_perk_jump": roll["purchased_perk_jump"],
                 "free_perks": roll["free_perks"],
                 "predicted_word_position_epub": roll["predicted_word_position_epub"],

@@ -35,10 +35,25 @@ roll counts for chapters 76+ where the curator stopped maintaining.
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 
 from _common import write_validated_json
+from multi_grab import (
+    load_overrides as load_multi_grab_overrides,
+    merge_paid_units,
+    unit_principal_cost,
+    unit_total_cost,
+)
+from regime_simulator import (
+    REGIMES,
+    SHADOW_CP_RATIO,
+    PredictedRoll,
+    load_regime_transitions,
+    regime_for_chapter,
+    shadow_words,
+    simulate_story,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 CHAPTERS_JSON = ROOT / "data" / "derived" / "chapters.json"
@@ -49,34 +64,7 @@ CLASSIFICATIONS_JSON = ROOT / "data" / "manual" / "section_classifications.json"
 OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
 
 
-# ---------- regime model ----------------------------------------------------
-
-
-# (words_per_100_cp, cp_per_roll). The author's notes for ch91 and ch97
-# define these; see the project README "Mechanics" section.
-REGIMES = {
-    1: {"words_per_100_cp": 2000, "cp_per_roll": 100},
-    2: {"words_per_100_cp": 2000, "cp_per_roll": 200},
-    3: {"words_per_100_cp": 3000, "cp_per_roll": 200},
-}
-SHADOW_CP_RATIO = 0.5    # half the perk's cost worth of CP is the shadow
-
-
-def regime_for_chapter(chapter_num: str) -> int:
-    major = int(chapter_num.split(".")[0])
-    if major <= 91:
-        return 1
-    if major <= 96:
-        return 2
-    return 3
-
-
-def shadow_words(perk_cost: int, regime: int) -> int:
-    """Words of zero-CP-banking after a 600/800-CP perk in regime 3."""
-    if regime != 3 or perk_cost not in (600, 800):
-        return 0
-    shadow_cp = int(perk_cost * SHADOW_CP_RATIO)
-    return shadow_cp * REGIMES[3]["words_per_100_cp"] // 100
+# Regime model lives in scripts/regime_simulator.py; re-exported above.
 
 
 # ---------- per-chapter CP-earning word counts ------------------------------
@@ -118,113 +106,16 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
 # ---------- simulation ------------------------------------------------------
 
 
-@dataclass
-class PredictedRoll:
-    roll_number: int
-    word_position: int          # cumulative word offset where the roll fires
-    chapter_num: str            # chapter containing that word position
-    regime: int                 # 1, 2, or 3
-    cp_threshold: int           # 100 or 200 (the per-roll requirement)
-
-
-@dataclass
-class _Event:
-    word: int                   # cumulative word offset of this event
-    kind: str                   # "chapter_start" | "acquisition"
-    chapter_num: str
-    perk_cost: int = 0          # for acquisitions only
-
-
 def _sort_key(num: str) -> tuple[int, int]:
     parts = num.split(".", 1)
     return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
 
 
-def _simulate(chapters_in_order, paid_by_chapter, exact_words):
-    """Walk events in word order, simulating CP accumulation and shadows.
-
-    Returns (predicted_rolls, summary_per_chapter). Rolls are recorded
-    at the precise cumulative-word offset where they fire.
-    """
-    events: list[_Event] = []
-    cumulative = 0
-    chapter_word_start: dict[str, int] = {}
-    chapter_word_end: dict[str, int] = {}
-
-    for c in chapters_in_order:
-        cn = c["chapter_num"]
-        chapter_word_start[cn] = cumulative
-        events.append(_Event(word=cumulative, kind="chapter_start", chapter_num=cn))
-        # Slot acquisitions evenly within the chapter
-        words = exact_words[c["full_title"]]
-        chap_acqs = paid_by_chapter.get(cn, [])
-        if chap_acqs:
-            slot = words / len(chap_acqs)
-            for i, a in enumerate(chap_acqs):
-                offset_in_chap = (i + 0.5) * slot
-                events.append(_Event(
-                    word=cumulative + int(offset_in_chap),
-                    kind="acquisition",
-                    chapter_num=cn,
-                    perk_cost=a["cost"],
-                ))
-        cumulative += words
-        chapter_word_end[cn] = cumulative
-    total_words = cumulative
-
-    # Sort: chapter_start at a position must come BEFORE acquisitions in
-    # that chapter (which share or follow that word offset).
-    events.sort(key=lambda e: (e.word, 0 if e.kind == "chapter_start" else 1))
-
-    predicted: list[PredictedRoll] = []
-    banked_cp_x100 = 0          # banked CP * 100 to avoid float drift
-    shadow_remaining = 0
-    current_chapter = chapters_in_order[0]["chapter_num"]
-    current_regime = regime_for_chapter(current_chapter)
-    last_word = 0
-
-    def fire_rolls(now_word: int) -> None:
-        """Fire any rolls allowed by the current banked CP."""
-        nonlocal banked_cp_x100
-        threshold_x100 = REGIMES[current_regime]["cp_per_roll"] * 100
-        while banked_cp_x100 >= threshold_x100:
-            predicted.append(PredictedRoll(
-                roll_number=len(predicted) + 1,
-                word_position=now_word,
-                chapter_num=current_chapter,
-                regime=current_regime,
-                cp_threshold=REGIMES[current_regime]["cp_per_roll"],
-            ))
-            banked_cp_x100 -= threshold_x100
-
-    for event in events:
-        # Words elapsed since the last event under the current regime
-        elapsed = event.word - last_word
-        if elapsed > 0:
-            # First, burn off any active shadow
-            if shadow_remaining > 0:
-                consumed = min(shadow_remaining, elapsed)
-                shadow_remaining -= consumed
-                elapsed -= consumed
-            # Whatever's left earns CP at the current regime's rate
-            words_per_100 = REGIMES[current_regime]["words_per_100_cp"]
-            cp_x100 = elapsed * 10000 // words_per_100   # 100 * (elapsed*100/words_per_100)
-            banked_cp_x100 += cp_x100
-            fire_rolls(event.word)
-        last_word = event.word
-
-        if event.kind == "chapter_start":
-            current_chapter = event.chapter_num
-            current_regime = regime_for_chapter(current_chapter)
-        elif event.kind == "acquisition":
-            sw = shadow_words(event.perk_cost, current_regime)
-            if sw:
-                shadow_remaining += sw
-
-    # Drain remaining banked at end-of-story (final partial roll if any)
-    fire_rolls(total_words)
-
-    return predicted, chapter_word_start, chapter_word_end, total_words
+def _simulate(chapters_in_order, paid_by_chapter, exact_words, transitions=None):
+    """Thin shim around `regime_simulator.simulate_story`."""
+    return simulate_story(
+        chapters_in_order, paid_by_chapter, exact_words, transitions,
+    )
 
 
 # ---------- main ------------------------------------------------------------
@@ -244,14 +135,36 @@ def main() -> None:
             "Re-run scripts/extract_chapter_sections.py."
         )
 
+    obtained_sorted = sorted(obtained, key=lambda p: p.get("epub_sequence", 0))
+    multi_overrides = load_multi_grab_overrides()
+    units, _ = merge_paid_units(obtained_sorted, multi_overrides)
+
+    # For the simulator we treat each merged unit as ONE acquisition event.
+    # We pass the unit's TOTAL cost as the perk_cost so any shadow logic
+    # for 600/800 CP triggers correctly when the unit's largest paid cost
+    # crosses the threshold; total cost matches what the Forge actually
+    # debits in a multi-grab.
     paid_by_chapter: dict[str, list[dict]] = {}
-    for p in obtained:
-        if p["free"]:
-            continue
-        paid_by_chapter.setdefault(p["chapter_num"], []).append(p)
+    for unit in units:
+        cn = unit["chapter_num"]
+        # The largest-cost perk drives shadow (only 600/800 trigger shadows).
+        # But total cost matches the actual debit. Use total cost for `cost`
+        # since simulate_story uses it to debit banked CP; shadow is keyed on
+        # the cost passed in. To preserve shadow correctness, use principal
+        # for shadow lookup *and* total for debit, simulate_story uses cost
+        # for both — pass the principal cost when it triggers a shadow, else
+        # total. (The total != principal case is rare and only matters for
+        # ch 97 where Nano-Forge 600 sits with 200+200 multi-grab.)
+        cost = unit_total_cost(unit)
+        paid_by_chapter.setdefault(cn, []).append({
+            "cost": cost,
+            "principal_cost": unit_principal_cost(unit),
+        })
+
+    transitions = load_regime_transitions()
 
     predicted, chap_start, chap_end, total_words = _simulate(
-        chapters, paid_by_chapter, cp_words,
+        chapters, paid_by_chapter, cp_words, transitions,
     )
 
     # Cross-validate per-chapter roll counts against rolls.json (ch 1-75).

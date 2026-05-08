@@ -55,13 +55,14 @@
         "chapter_attribution_disagreement", "source", "source_kind",
         "outcome", "constellation", "constellation_revealed",
         "available_cp", "banked_cp_after_roll",
-        "purchased_perk_id", "purchased_perk_name",
-        "purchased_perk_cost", "purchased_perk_jump", "free_perks",
+        "purchased_perks", "purchased_perk_cost_total",
+        "purchased_perk_id", "purchased_perk_jump", "free_perks",
         "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
         "predicted_word_position_epub", "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
         "raw", "source_row_index", "roll_sequence_in_chapter",
-        "rolls_in_chapter"
+        "rolls_in_chapter", "slot_source",
+        "word_position", "cumulative_word_offset"
       ],
       "properties": {
         "roll_key": { "type": "string", "minLength": 1 },
@@ -86,8 +87,20 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "purchased_perk_id": { "type": ["string", "null"] },
-        "purchased_perk_name": { "type": ["string", "null"] },
-        "purchased_perk_cost": {
+        "purchased_perks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "cost"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "cost": { "type": "integer", "minimum": 0 },
+              "free": { "type": "boolean" }
+            }
+          }
+        },
+        "purchased_perk_cost_total": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "purchased_perk_jump": { "type": ["string", "null"] },
@@ -120,7 +133,18 @@
         "raw": { "type": ["string", "null"] },
         "source_row_index": { "type": "integer", "minimum": 0 },
         "roll_sequence_in_chapter": { "type": "integer", "minimum": 1 },
-        "rolls_in_chapter": { "type": "integer", "minimum": 1 }
+        "rolls_in_chapter": { "type": "integer", "minimum": 1 },
+        "slot_source": {
+          "enum": [
+            "curator", "curator+override", "solver", "interpolated", "override"
+          ]
+        },
+        "word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        }
       }
     }
   }

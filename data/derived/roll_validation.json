@@ -1,0 +1,2266 @@
+{
+  "_generated": "2026-05-07T23:47:17+00:00",
+  "_source": "scripts/derive_roll_facts.py",
+  "summary": {
+    "chapters_total": 194,
+    "feasible": 184,
+    "infeasible": 7,
+    "curator_divergences": 76,
+    "ambiguous": 96,
+    "overrides_applied": 0
+  },
+  "infeasible": [
+    {
+      "chapter_num": "83.1",
+      "banked_cp_in": 276,
+      "predicted_slots": [
+        {
+          "word_position": 722,
+          "cp_threshold": 100,
+          "source": "synthetic"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "Armsthrift"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 312, but largest hit costs 400. Predicted earnings short by ~88."
+    },
+    {
+      "chapter_num": "84",
+      "banked_cp_in": 36,
+      "predicted_slots": [
+        {
+          "word_position": 3268,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 3268,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6536,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6536,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "One-Man Assembly Line"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 362, but largest hit costs 600. Predicted earnings short by ~238."
+    },
+    {
+      "chapter_num": "98",
+      "banked_cp_in": 168,
+      "predicted_slots": [
+        {
+          "word_position": 7659,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 7659,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Trigram Knowledge and Manipulation"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 423, but largest hit costs 600. Predicted earnings short by ~177."
+    },
+    {
+      "chapter_num": "110.3",
+      "banked_cp_in": 44,
+      "predicted_slots": [
+        {
+          "word_position": 1159,
+          "cp_threshold": 200,
+          "source": "synthetic"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 500,
+          "names": [
+            "The Pleician Tome"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 44, but largest hit costs 500. Predicted earnings short by ~456."
+    },
+    {
+      "chapter_num": "113",
+      "banked_cp_in": 409,
+      "predicted_slots": [
+        {
+          "word_position": 11681,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 11681,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 200,
+          "names": [
+            "Mixing Mixtures"
+          ]
+        },
+        {
+          "cost": 600,
+          "names": [
+            "Strong Spark"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 200 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "114",
+      "banked_cp_in": 0,
+      "predicted_slots": [
+        {
+          "word_position": 4625,
+          "cp_threshold": 200,
+          "source": "synthetic"
+        },
+        {
+          "word_position": 9251,
+          "cp_threshold": 200,
+          "source": "synthetic"
+        },
+        {
+          "word_position": 11564,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Esoteric Collection - Magic"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Expanded Collection - Mysticism"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Starting Collection"
+          ]
+        }
+      ],
+      "diagnostic": "general_infeasible",
+      "explanation": "No feasible assignment under any permutation or single-hit cost adjustment (n=3, k=3, banked_in=0)."
+    },
+    {
+      "chapter_num": "115",
+      "banked_cp_in": 192,
+      "predicted_slots": [
+        {
+          "word_position": 5714,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Magitech"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 382, but largest hit costs 600. Predicted earnings short by ~218."
+    }
+  ],
+  "curator_solver_divergences": [
+    {
+      "chapter_num": "1",
+      "curator_outcomes": [
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 116
+    },
+    {
+      "chapter_num": "2",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 255
+    },
+    {
+      "chapter_num": "3",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 367
+    },
+    {
+      "chapter_num": "4",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 361
+    },
+    {
+      "chapter_num": "5",
+      "curator_outcomes": [
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 272
+    },
+    {
+      "chapter_num": "6",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1335
+    },
+    {
+      "chapter_num": "6.1",
+      "curator_outcomes": [
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss"
+      ],
+      "solver_slack": 0
+    },
+    {
+      "chapter_num": "7",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 965
+    },
+    {
+      "chapter_num": "8",
+      "curator_outcomes": [
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1286
+    },
+    {
+      "chapter_num": "8.1",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss"
+      ],
+      "solver_slack": 0
+    },
+    {
+      "chapter_num": "9",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3581
+    },
+    {
+      "chapter_num": "10",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3157
+    },
+    {
+      "chapter_num": "11",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3065
+    },
+    {
+      "chapter_num": "12",
+      "curator_outcomes": [
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 768
+    },
+    {
+      "chapter_num": "13",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2866
+    },
+    {
+      "chapter_num": "14",
+      "curator_outcomes": [
+        "hit",
+        "hit",
+        "miss",
+        "hit",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3426
+    },
+    {
+      "chapter_num": "15",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2701
+    },
+    {
+      "chapter_num": "16",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 1020
+    },
+    {
+      "chapter_num": "17",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3618
+    },
+    {
+      "chapter_num": "18",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3407
+    },
+    {
+      "chapter_num": "19",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3986
+    },
+    {
+      "chapter_num": "20",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1968
+    },
+    {
+      "chapter_num": "21",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4777
+    },
+    {
+      "chapter_num": "22",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2280
+    },
+    {
+      "chapter_num": "23",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4125
+    },
+    {
+      "chapter_num": "24",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4975
+    },
+    {
+      "chapter_num": "25",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2096
+    },
+    {
+      "chapter_num": "26",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2934
+    },
+    {
+      "chapter_num": "27",
+      "curator_outcomes": [
+        "hit",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4528
+    },
+    {
+      "chapter_num": "28",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2660
+    },
+    {
+      "chapter_num": "29",
+      "curator_outcomes": [
+        "hit",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4515
+    },
+    {
+      "chapter_num": "30",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 11148
+    },
+    {
+      "chapter_num": "31",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4724
+    },
+    {
+      "chapter_num": "32",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3741
+    },
+    {
+      "chapter_num": "33",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2006
+    },
+    {
+      "chapter_num": "34",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3810
+    },
+    {
+      "chapter_num": "35",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3588
+    },
+    {
+      "chapter_num": "35.1",
+      "curator_outcomes": [
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2490
+    },
+    {
+      "chapter_num": "36",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3908
+    },
+    {
+      "chapter_num": "37",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2766
+    },
+    {
+      "chapter_num": "38",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 7693
+    },
+    {
+      "chapter_num": "39",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 5880
+    },
+    {
+      "chapter_num": "40",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3807
+    },
+    {
+      "chapter_num": "41",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 11608
+    },
+    {
+      "chapter_num": "42",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3989
+    },
+    {
+      "chapter_num": "43",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1701
+    },
+    {
+      "chapter_num": "43.1",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 818
+    },
+    {
+      "chapter_num": "44",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1675
+    },
+    {
+      "chapter_num": "45",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1604
+    },
+    {
+      "chapter_num": "46",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4345
+    },
+    {
+      "chapter_num": "46.1",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2499
+    },
+    {
+      "chapter_num": "47",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3174
+    },
+    {
+      "chapter_num": "48",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3929
+    },
+    {
+      "chapter_num": "49",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1916
+    },
+    {
+      "chapter_num": "50",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2601
+    },
+    {
+      "chapter_num": "51",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2584
+    },
+    {
+      "chapter_num": "52",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1872
+    },
+    {
+      "chapter_num": "53",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1579
+    },
+    {
+      "chapter_num": "54",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2532
+    },
+    {
+      "chapter_num": "55",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2584
+    },
+    {
+      "chapter_num": "55.1",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 4124
+    },
+    {
+      "chapter_num": "56",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2059
+    },
+    {
+      "chapter_num": "57",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 3630
+    },
+    {
+      "chapter_num": "58",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "hit"
+      ],
+      "solver_slack": 152
+    },
+    {
+      "chapter_num": "61",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 484
+    },
+    {
+      "chapter_num": "62",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 413
+    },
+    {
+      "chapter_num": "63",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1656
+    },
+    {
+      "chapter_num": "65",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 586
+    },
+    {
+      "chapter_num": "67",
+      "curator_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 749
+    },
+    {
+      "chapter_num": "69",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 871
+    },
+    {
+      "chapter_num": "70",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 900
+    },
+    {
+      "chapter_num": "71",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "miss",
+        "hit",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 2329
+    },
+    {
+      "chapter_num": "72",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1337
+    },
+    {
+      "chapter_num": "73",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1231
+    },
+    {
+      "chapter_num": "74.2",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "miss"
+      ],
+      "solver_slack": 0
+    },
+    {
+      "chapter_num": "75",
+      "curator_outcomes": [
+        "hit",
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit",
+        "hit",
+        "hit"
+      ],
+      "solver_slack": 1340
+    }
+  ],
+  "ambiguous_chapters": [
+    {
+      "chapter_num": "1",
+      "feasible_assignment_count": 2,
+      "slack": 116
+    },
+    {
+      "chapter_num": "2",
+      "feasible_assignment_count": 3,
+      "slack": 255
+    },
+    {
+      "chapter_num": "3",
+      "feasible_assignment_count": 3,
+      "slack": 367
+    },
+    {
+      "chapter_num": "4",
+      "feasible_assignment_count": 4,
+      "slack": 361
+    },
+    {
+      "chapter_num": "5",
+      "feasible_assignment_count": 3,
+      "slack": 272
+    },
+    {
+      "chapter_num": "6",
+      "feasible_assignment_count": 10,
+      "slack": 1335
+    },
+    {
+      "chapter_num": "7",
+      "feasible_assignment_count": 3,
+      "slack": 965
+    },
+    {
+      "chapter_num": "8",
+      "feasible_assignment_count": 10,
+      "slack": 1286
+    },
+    {
+      "chapter_num": "9",
+      "feasible_assignment_count": 10,
+      "slack": 3581
+    },
+    {
+      "chapter_num": "10",
+      "feasible_assignment_count": 4,
+      "slack": 3157
+    },
+    {
+      "chapter_num": "11",
+      "feasible_assignment_count": 10,
+      "slack": 3065
+    },
+    {
+      "chapter_num": "12",
+      "feasible_assignment_count": 4,
+      "slack": 768
+    },
+    {
+      "chapter_num": "13",
+      "feasible_assignment_count": 20,
+      "slack": 2866
+    },
+    {
+      "chapter_num": "14",
+      "feasible_assignment_count": 5,
+      "slack": 3426
+    },
+    {
+      "chapter_num": "15",
+      "feasible_assignment_count": 20,
+      "slack": 2701
+    },
+    {
+      "chapter_num": "16",
+      "feasible_assignment_count": 5,
+      "slack": 1020
+    },
+    {
+      "chapter_num": "17",
+      "feasible_assignment_count": 20,
+      "slack": 3618
+    },
+    {
+      "chapter_num": "18",
+      "feasible_assignment_count": 10,
+      "slack": 3407
+    },
+    {
+      "chapter_num": "19",
+      "feasible_assignment_count": 50,
+      "slack": 3986
+    },
+    {
+      "chapter_num": "20",
+      "feasible_assignment_count": 15,
+      "slack": 1968
+    },
+    {
+      "chapter_num": "21",
+      "feasible_assignment_count": 21,
+      "slack": 4777
+    },
+    {
+      "chapter_num": "22",
+      "feasible_assignment_count": 15,
+      "slack": 2280
+    },
+    {
+      "chapter_num": "23",
+      "feasible_assignment_count": 15,
+      "slack": 4125
+    },
+    {
+      "chapter_num": "24",
+      "feasible_assignment_count": 50,
+      "slack": 4975
+    },
+    {
+      "chapter_num": "25",
+      "feasible_assignment_count": 15,
+      "slack": 2096
+    },
+    {
+      "chapter_num": "26",
+      "feasible_assignment_count": 20,
+      "slack": 2934
+    },
+    {
+      "chapter_num": "27",
+      "feasible_assignment_count": 50,
+      "slack": 4528
+    },
+    {
+      "chapter_num": "28",
+      "feasible_assignment_count": 36,
+      "slack": 2660
+    },
+    {
+      "chapter_num": "29",
+      "feasible_assignment_count": 50,
+      "slack": 4515
+    },
+    {
+      "chapter_num": "30",
+      "feasible_assignment_count": 50,
+      "slack": 11148
+    },
+    {
+      "chapter_num": "31",
+      "feasible_assignment_count": 50,
+      "slack": 4724
+    },
+    {
+      "chapter_num": "32",
+      "feasible_assignment_count": 50,
+      "slack": 3741
+    },
+    {
+      "chapter_num": "33",
+      "feasible_assignment_count": 15,
+      "slack": 2006
+    },
+    {
+      "chapter_num": "34",
+      "feasible_assignment_count": 20,
+      "slack": 3810
+    },
+    {
+      "chapter_num": "35",
+      "feasible_assignment_count": 50,
+      "slack": 3588
+    },
+    {
+      "chapter_num": "35.1",
+      "feasible_assignment_count": 28,
+      "slack": 2490
+    },
+    {
+      "chapter_num": "36",
+      "feasible_assignment_count": 50,
+      "slack": 3908
+    },
+    {
+      "chapter_num": "37",
+      "feasible_assignment_count": 21,
+      "slack": 2766
+    },
+    {
+      "chapter_num": "38",
+      "feasible_assignment_count": 50,
+      "slack": 7693
+    },
+    {
+      "chapter_num": "39",
+      "feasible_assignment_count": 50,
+      "slack": 5880
+    },
+    {
+      "chapter_num": "40",
+      "feasible_assignment_count": 50,
+      "slack": 3807
+    },
+    {
+      "chapter_num": "41",
+      "feasible_assignment_count": 50,
+      "slack": 11608
+    },
+    {
+      "chapter_num": "42",
+      "feasible_assignment_count": 20,
+      "slack": 3989
+    },
+    {
+      "chapter_num": "43.1",
+      "feasible_assignment_count": 6,
+      "slack": 818
+    },
+    {
+      "chapter_num": "44",
+      "feasible_assignment_count": 15,
+      "slack": 1675
+    },
+    {
+      "chapter_num": "45",
+      "feasible_assignment_count": 28,
+      "slack": 1604
+    },
+    {
+      "chapter_num": "46",
+      "feasible_assignment_count": 50,
+      "slack": 4345
+    },
+    {
+      "chapter_num": "46.1",
+      "feasible_assignment_count": 35,
+      "slack": 2499
+    },
+    {
+      "chapter_num": "47",
+      "feasible_assignment_count": 35,
+      "slack": 3174
+    },
+    {
+      "chapter_num": "48",
+      "feasible_assignment_count": 50,
+      "slack": 3929
+    },
+    {
+      "chapter_num": "49",
+      "feasible_assignment_count": 21,
+      "slack": 1916
+    },
+    {
+      "chapter_num": "50",
+      "feasible_assignment_count": 35,
+      "slack": 2601
+    },
+    {
+      "chapter_num": "51",
+      "feasible_assignment_count": 20,
+      "slack": 2584
+    },
+    {
+      "chapter_num": "52",
+      "feasible_assignment_count": 28,
+      "slack": 1872
+    },
+    {
+      "chapter_num": "53",
+      "feasible_assignment_count": 10,
+      "slack": 1579
+    },
+    {
+      "chapter_num": "54",
+      "feasible_assignment_count": 20,
+      "slack": 2532
+    },
+    {
+      "chapter_num": "55",
+      "feasible_assignment_count": 45,
+      "slack": 2584
+    },
+    {
+      "chapter_num": "55.1",
+      "feasible_assignment_count": 6,
+      "slack": 4124
+    },
+    {
+      "chapter_num": "56",
+      "feasible_assignment_count": 15,
+      "slack": 2059
+    },
+    {
+      "chapter_num": "57",
+      "feasible_assignment_count": 50,
+      "slack": 3630
+    },
+    {
+      "chapter_num": "60",
+      "feasible_assignment_count": 5,
+      "slack": 252
+    },
+    {
+      "chapter_num": "61",
+      "feasible_assignment_count": 6,
+      "slack": 484
+    },
+    {
+      "chapter_num": "62",
+      "feasible_assignment_count": 4,
+      "slack": 413
+    },
+    {
+      "chapter_num": "65",
+      "feasible_assignment_count": 10,
+      "slack": 586
+    },
+    {
+      "chapter_num": "66",
+      "feasible_assignment_count": 6,
+      "slack": 460
+    },
+    {
+      "chapter_num": "67",
+      "feasible_assignment_count": 9,
+      "slack": 749
+    },
+    {
+      "chapter_num": "68",
+      "feasible_assignment_count": 3,
+      "slack": 188
+    },
+    {
+      "chapter_num": "69",
+      "feasible_assignment_count": 10,
+      "slack": 871
+    },
+    {
+      "chapter_num": "70",
+      "feasible_assignment_count": 3,
+      "slack": 900
+    },
+    {
+      "chapter_num": "71",
+      "feasible_assignment_count": 35,
+      "slack": 2329
+    },
+    {
+      "chapter_num": "72",
+      "feasible_assignment_count": 3,
+      "slack": 1337
+    },
+    {
+      "chapter_num": "73",
+      "feasible_assignment_count": 6,
+      "slack": 1231
+    },
+    {
+      "chapter_num": "75",
+      "feasible_assignment_count": 19,
+      "slack": 1340
+    },
+    {
+      "chapter_num": "77",
+      "feasible_assignment_count": 4,
+      "slack": 392
+    },
+    {
+      "chapter_num": "78",
+      "feasible_assignment_count": 10,
+      "slack": 1352
+    },
+    {
+      "chapter_num": "79",
+      "feasible_assignment_count": 10,
+      "slack": 2133
+    },
+    {
+      "chapter_num": "80",
+      "feasible_assignment_count": 6,
+      "slack": 1041
+    },
+    {
+      "chapter_num": "81",
+      "feasible_assignment_count": 50,
+      "slack": 3500
+    },
+    {
+      "chapter_num": "82",
+      "feasible_assignment_count": 50,
+      "slack": 4157
+    },
+    {
+      "chapter_num": "82.1",
+      "feasible_assignment_count": 14,
+      "slack": 1009
+    },
+    {
+      "chapter_num": "83",
+      "feasible_assignment_count": 3,
+      "slack": 526
+    },
+    {
+      "chapter_num": "85",
+      "feasible_assignment_count": 6,
+      "slack": 538
+    },
+    {
+      "chapter_num": "86",
+      "feasible_assignment_count": 3,
+      "slack": 506
+    },
+    {
+      "chapter_num": "87",
+      "feasible_assignment_count": 7,
+      "slack": 745
+    },
+    {
+      "chapter_num": "88",
+      "feasible_assignment_count": 50,
+      "slack": 5192
+    },
+    {
+      "chapter_num": "89",
+      "feasible_assignment_count": 20,
+      "slack": 986
+    },
+    {
+      "chapter_num": "90",
+      "feasible_assignment_count": 10,
+      "slack": 786
+    },
+    {
+      "chapter_num": "91",
+      "feasible_assignment_count": 3,
+      "slack": 439
+    },
+    {
+      "chapter_num": "92",
+      "feasible_assignment_count": 2,
+      "slack": 388
+    },
+    {
+      "chapter_num": "97",
+      "feasible_assignment_count": 6,
+      "slack": 781
+    },
+    {
+      "chapter_num": "101",
+      "feasible_assignment_count": 2,
+      "slack": 782
+    },
+    {
+      "chapter_num": "103",
+      "feasible_assignment_count": 3,
+      "slack": 1466
+    },
+    {
+      "chapter_num": "107",
+      "feasible_assignment_count": 3,
+      "slack": 642
+    },
+    {
+      "chapter_num": "108",
+      "feasible_assignment_count": 3,
+      "slack": 1008
+    },
+    {
+      "chapter_num": "116.2",
+      "feasible_assignment_count": 21,
+      "slack": 3208
+    },
+    {
+      "chapter_num": "119.5",
+      "feasible_assignment_count": 3,
+      "slack": 2240
+    }
+  ]
+}

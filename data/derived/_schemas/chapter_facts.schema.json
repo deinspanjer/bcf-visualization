@@ -150,8 +150,8 @@
       "additionalProperties": false,
       "required": [
         "roll_number", "section_index", "outcome", "constellation",
-        "purchased_perk_id", "purchased_perk_name",
-        "purchased_perk_cost", "purchased_perk_jump", "free_perks",
+        "purchased_perk_id", "purchased_perks", "purchased_perk_cost_total",
+        "purchased_perk_jump", "free_perks",
         "predicted_word_position_epub", "display_word_position_epub",
         "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
@@ -170,8 +170,20 @@
         "outcome":                      { "enum": ["hit", "miss", "unknown"] },
         "constellation":                { "type": ["string", "null"] },
         "purchased_perk_id":            { "type": ["string", "null"] },
-        "purchased_perk_name":          { "type": ["string", "null"] },
-        "purchased_perk_cost": {
+        "purchased_perks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "cost"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "cost": { "type": "integer", "minimum": 0 },
+              "free": { "type": "boolean" }
+            }
+          }
+        },
+        "purchased_perk_cost_total": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "purchased_perk_jump":          { "type": ["string", "null"] },
