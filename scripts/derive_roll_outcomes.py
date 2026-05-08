@@ -305,6 +305,61 @@ def _build_chapter_slots(
     return slots, banked_x100 // 100, state
 
 
+def derive_chapter_outcomes(
+    chapter_num: str,
+    predicted_rolls: list[dict],
+    obtained_perks: list[dict],
+    *,
+    chapter_words: int,
+    chapter_word_start: int = 0,
+    cp_words: int | None = None,
+    banked_cp_in: int = 0,
+    shadow_state: "ShadowState | None" = None,
+    transitions: list[dict] | None = None,
+    multi_overrides: dict | None = None,
+) -> tuple[list[dict], int, "ShadowState"]:
+    """Derive interpolated hit/miss slots for a single chapter.
+
+    Phase 0 scaffold for Forge Curator's per-chapter recompute (Phase 3).
+    Wraps ``_build_chapter_slots`` with all the bookkeeping the
+    whole-pipeline ``main()`` does for one chapter:
+
+      * filters predicted rolls to this chapter,
+      * builds acquisition units from chapter-scoped obtained_perks,
+      * applies multi-grab overrides via ``merge_paid_units``,
+      * walks the regime simulator forward.
+
+    Returns ``(slots, banked_cp_out, shadow_state_out)``.
+    """
+    if multi_overrides is None:
+        multi_overrides = load_multi_grab_overrides()
+    if transitions is None:
+        transitions = load_regime_transitions()
+    if shadow_state is None:
+        shadow_state = ShadowState()
+    cn = str(chapter_num)
+    chapter_perks = [
+        p for p in obtained_perks if str(p.get("chapter_num")) == cn
+    ]
+    chapter_perks_sorted = sorted(
+        chapter_perks, key=lambda p: p.get("epub_sequence", 0)
+    )
+    units, _ = merge_paid_units(chapter_perks_sorted, multi_overrides)
+    chapter_units = [u for u in units if str(u["chapter_num"]) == cn]
+    chapter_preds = [r for r in predicted_rolls if str(r["chapter_num"]) == cn]
+    return _build_chapter_slots(
+        cn,
+        chapter_preds,
+        chapter_units,
+        chapter_words,
+        chapter_word_start=chapter_word_start,
+        cp_words=cp_words,
+        banked_cp_in=banked_cp_in,
+        shadow_state=shadow_state,
+        transitions=transitions,
+    )
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--predicted", type=Path, default=DEFAULT_PREDICTED)

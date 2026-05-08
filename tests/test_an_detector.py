@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from extract_chapter_sections import (  # noqa: E402
+    _detect_auto_header_words,
+    _text,
     _resolve_author_note_ranges,
     _word_count,
     _words_in_ranges,
@@ -90,6 +92,22 @@ def test_words_in_ranges_counts_via_substring():
     assert _words_in_ranges(text, ranges) == _word_count(an)
 
 
+# --- header / markup exclusion -------------------------------------------
+
+
+def test_strip_skips_head_title_markup() -> None:
+    html = (
+        "<html><head><title>2 Preparation</title></head>"
+        "<body><h2>2 Preparation</h2><p>My watch beeped.</p></body></html>"
+    )
+    assert _text(html).split() == ["2", "Preparation", "My", "watch", "beeped."]
+
+
+def test_implicit_repeated_chapter_title_words_are_auto_header() -> None:
+    text = "2 Preparation\n\n2 Preparation\n\nMy watch alarm began to chime."
+    assert _detect_auto_header_words(text, None, implicit_header="2 Preparation") == 4
+
+
 # --- simulator: CP subtraction -------------------------------------------
 
 
@@ -113,6 +131,9 @@ def test_predict_rolls_subtracts_an_words(tmp_path, monkeypatch):
                 "epub_href": "x.xhtml",
                 "total_word_count": 1000,
                 "cp_earning_word_count": 900,
+                # Canonical exclusion ranges: a 100-word AN at the start
+                # of the chapter (chapter-local word offsets 0..100).
+                "excluded_word_ranges": [[0, 100]],
                 "sections": [
                     {
                         "header": None,
@@ -143,6 +164,10 @@ def test_predict_rolls_subtracts_an_words(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pr, "SECTIONS_JSON", sections_path)
     monkeypatch.setattr(pr, "CLASSIFICATIONS_JSON", cls_path)
+    # Isolate the test from any real header_corrections.json on disk.
+    empty_hdr = tmp_path / "header_corrections.json"
+    empty_hdr.write_text(json.dumps({"corrections": []}))
+    monkeypatch.setattr(pr, "_HEADER_CORRECTIONS_JSON", empty_hdr)
 
     cp = pr._load_cp_words_per_chapter()
     assert cp["Test Chapter"] == 900
@@ -200,6 +225,10 @@ def test_predict_rolls_skips_non_cp_sections(tmp_path, monkeypatch):
 
     monkeypatch.setattr(pr, "SECTIONS_JSON", sections_path)
     monkeypatch.setattr(pr, "CLASSIFICATIONS_JSON", cls_path)
+    # Isolate the test from any real header_corrections.json on disk.
+    empty_hdr = tmp_path / "header_corrections.json"
+    empty_hdr.write_text(json.dumps({"corrections": []}))
+    monkeypatch.setattr(pr, "_HEADER_CORRECTIONS_JSON", empty_hdr)
 
     cp = pr._load_cp_words_per_chapter()
     assert cp["Test Chapter"] == 1000

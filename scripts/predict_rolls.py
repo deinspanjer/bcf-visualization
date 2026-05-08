@@ -70,14 +70,73 @@ OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
 # ---------- per-chapter CP-earning word counts ------------------------------
 
 
-def _load_cp_words_per_chapter() -> dict[str, int]:
-    """Read chapter_sections.json + manual section_classifications.json
-    and return cp-earning word count keyed by chapter full_title.
+_HEADER_CORRECTIONS_JSON = ROOT / "data" / "manual" / "header_corrections.json"
 
-    Each section's `author_note_word_count` is subtracted from CP-eligible
-    sections so meta-content doesn't inflate predicted roll positions.
-    AN ranges originate from data/manual/author_notes.json and are
-    written into chapter_sections.json by extract_chapter_sections.py.
+
+def _load_header_correction_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:
+    """Per-chapter list of (word_start, word_end) header-correction
+    ranges, in chapter-local word coords.
+
+    Read from ``data/manual/header_corrections.json``; the TUI writes
+    chapter-local word offsets there.
+    """
+    if not _HEADER_CORRECTIONS_JSON.exists():
+        return {}
+    doc = json.loads(_HEADER_CORRECTIONS_JSON.read_text())
+    out: dict[str, list[tuple[int, int]]] = {}
+    for c in (doc.get("corrections") or []):
+        cn = str(c.get("chapter_num"))
+        ws = c.get("word_offset_start")
+        we = c.get("word_offset_end")
+        if ws is None or we is None or int(we) <= int(ws):
+            continue
+        out.setdefault(cn, []).append((int(ws), int(we)))
+    return out
+
+
+def _merge_word_ranges(
+    ranges: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    """Sort + merge overlapping/adjacent ranges. Mirrors
+    ``extract_chapter_sections._merge_word_ranges``; kept here too so
+    the consumer doesn't have to import from another script."""
+    out: list[list[int]] = []
+    for s, e in sorted(ranges):
+        if e <= s:
+            continue
+        if out and s <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], e)
+        else:
+            out.append([s, e])
+    return [(s, e) for s, e in out]
+
+
+def _intersect_section_with_excluded(
+    section_word_start: int,
+    section_word_end: int,
+    excluded: list[tuple[int, int]],
+) -> int:
+    """Total words in ``[section_word_start, section_word_end)`` that
+    are also in any of the merged ``excluded`` ranges.
+    """
+    total = 0
+    for ws, we in excluded:
+        lo = max(ws, section_word_start)
+        hi = min(we, section_word_end)
+        if hi > lo:
+            total += hi - lo
+    return total
+
+
+def _load_cp_words_per_chapter() -> dict[str, int]:
+    """Canonical CP-eligible word count per chapter, keyed by full_title.
+
+    Walks each chapter's CP-eligible sections (``counts_for_cp=True``
+    AND ``cls_data`` doesn't override to False) and subtracts the union
+    of CP-exclusion word ranges (AN + auto-header from
+    ``chapter_sections.json:excluded_word_ranges`` + manual
+    header_corrections from ``data/manual/header_corrections.json``).
+    Range-merging guarantees overlapping exclusions are counted once.
     """
     if not SECTIONS_JSON.exists():
         raise SystemExit(
@@ -91,15 +150,35 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
         )
     sections_data = json.loads(SECTIONS_JSON.read_text())
     cls_data = json.loads(CLASSIFICATIONS_JSON.read_text())["classifications"]
+    manual_header_by_chapter = _load_header_correction_ranges_by_chapter()
 
     out: dict[str, int] = {}
     for c in sections_data["chapters"]:
+        cn = str(c["chapter_num"])
+        # Build per-chapter union of excluded word ranges (chapter-local).
+        chapter_excl = list(c.get("excluded_word_ranges") or [])
+        chapter_excl_tuples = [(int(s), int(e)) for s, e in chapter_excl]
+        chapter_excl_tuples.extend(manual_header_by_chapter.get(cn, []))
+        merged = _merge_word_ranges(chapter_excl_tuples)
+        # Walk sections in order, accumulating eligible words.
         total = 0
+        word_cursor = 0
         for i, s in enumerate(c["sections"]):
-            key = f"{c['chapter_num']}@{i}"
-            if cls_data.get(key, {}).get("counts_for_cp", True):
-                total += s["word_count"] - s.get("author_note_word_count", 0)
-        out[c["full_title"]] = total
+            wc = int(s["word_count"])
+            sec_start = word_cursor
+            sec_end = word_cursor + wc
+            key = f"{cn}@{i}"
+            section_eligible = (
+                bool(s.get("counts_for_cp", True))
+                and cls_data.get(key, {}).get("counts_for_cp", True)
+            )
+            if section_eligible:
+                excluded_in_section = _intersect_section_with_excluded(
+                    sec_start, sec_end, merged,
+                )
+                total += max(0, wc - excluded_in_section)
+            word_cursor = sec_end
+        out[c["full_title"]] = max(0, total)
     return out
 
 
@@ -116,6 +195,71 @@ def _simulate(chapters_in_order, paid_by_chapter, exact_words, transitions=None)
     return simulate_story(
         chapters_in_order, paid_by_chapter, exact_words, transitions,
     )
+
+
+# ---------- per-chapter prediction ------------------------------------------
+
+
+def predict_chapter(
+    chapter_num: str,
+    chapters: list[dict] | None = None,
+    obtained_perks: list[dict] | None = None,
+    cp_words: dict[str, int] | None = None,
+    transitions: list[dict] | None = None,
+    multi_overrides: dict | None = None,
+) -> dict:
+    """Predict rolls for a single chapter, in isolation.
+
+    This is a Phase 0 scaffold for the Forge Curator's per-chapter
+    in-memory recompute (Phase 3). It re-runs the whole-story
+    simulation but slices the output to the requested chapter; the
+    cost is negligible at story scale and avoids reimplementing the
+    cumulative banked-CP / shadow walk.
+
+    All arguments are optional and default to disk-loaded values, so
+    callers can do ``predict_chapter("97")`` for a quick lookup.
+
+    Returns ``{
+        "chapter_num": str,
+        "predicted": [asdict(PredictedRoll), ...],
+        "chapter_word_start": int,
+        "chapter_word_end": int,
+    }``.
+    """
+    if chapters is None:
+        chapters = sorted(
+            json.loads(CHAPTERS_JSON.read_text())["chapters"],
+            key=lambda c: tuple(c["sort_key"]),
+        )
+    if obtained_perks is None:
+        obtained_perks = json.loads(OBTAINED_JSON.read_text())["perks"]
+    if cp_words is None:
+        cp_words = _load_cp_words_per_chapter()
+    if transitions is None:
+        transitions = load_regime_transitions()
+    if multi_overrides is None:
+        multi_overrides = load_multi_grab_overrides()
+
+    obtained_sorted = sorted(obtained_perks, key=lambda p: p.get("epub_sequence", 0))
+    units, _ = merge_paid_units(obtained_sorted, multi_overrides)
+    paid_by_chapter: dict[str, list[dict]] = {}
+    for unit in units:
+        paid_by_chapter.setdefault(unit["chapter_num"], []).append({
+            "cost": unit_total_cost(unit),
+            "principal_cost": unit_principal_cost(unit),
+        })
+
+    predicted, chap_start, chap_end, _ = simulate_story(
+        chapters, paid_by_chapter, cp_words, transitions,
+    )
+    return {
+        "chapter_num": str(chapter_num),
+        "predicted": [
+            asdict(p) for p in predicted if str(p.chapter_num) == str(chapter_num)
+        ],
+        "chapter_word_start": chap_start.get(str(chapter_num)),
+        "chapter_word_end": chap_end.get(str(chapter_num)),
+    }
 
 
 # ---------- main ------------------------------------------------------------

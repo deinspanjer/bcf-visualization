@@ -5,16 +5,37 @@ The Forge sometimes grabs multiple paid perks in a single roll
 shared (chapter, jump, epub_sequence) merely means perks ended up on the
 same chapter-end list slot, not that they were a single mechanical roll.
 We therefore use a CURATED-ONLY detection model: every multi-grab must
-be hand-listed in ``data/manual/multi_grab_overrides.json``.
+be hand-listed in ``data/manual/chapter_roll_overrides.json``.
 
-Override schema::
+Override schema (current, per-roll metadata)::
 
     {
       "chapter_roll_overrides": {
         "<chapter_num>": {
           "rolls": [
-            ["Perk A", "Perk B"],   # one roll, two paid perks
-            ["Perk C"]              # one roll, one paid perk
+            {
+              "perks": ["Perk A", "Perk B"],
+              "outcome": "hit"|"miss",
+              "constellation": "...",
+              "word_position": int|null,
+              "narrative_evidence": "..."
+            },
+            ...
+          ],
+          "narrative_evidence": "..."
+        }
+      }
+    }
+
+Legacy schema (still accepted; bare list is treated as a hit with no
+metadata)::
+
+    {
+      "chapter_roll_overrides": {
+        "<chapter_num>": {
+          "rolls": [
+            ["Perk A", "Perk B"],
+            ["Perk C"]
           ],
           "narrative_evidence": "..."
         }
@@ -56,18 +77,75 @@ from pathlib import Path
 
 _OVERRIDES_PATH = (
     Path(__file__).resolve().parent.parent
+    / "data" / "manual" / "chapter_roll_overrides.json"
+)
+_LEGACY_OVERRIDES_PATH = (
+    Path(__file__).resolve().parent.parent
     / "data" / "manual" / "multi_grab_overrides.json"
 )
 
 
+def _normalise_roll_entry(entry) -> dict:
+    """Coerce one roll-spec entry into the canonical dict shape.
+
+    Accepted inputs:
+      * ``["Perk A", "Perk B"]`` (legacy bare list) →
+        ``{"perks": [...], "outcome": "hit", ...}``
+      * ``{"perks": [...], "outcome": ..., ...}`` (canonical) → as-is.
+
+    Returns dict with keys: ``perks`` (list[str]),
+    ``outcome`` (str | None), ``constellation`` (str | None),
+    ``word_position`` (int | None),
+    ``narrative_evidence`` (str | None).
+    """
+    if isinstance(entry, list):
+        return {
+            "perks": list(entry),
+            "outcome": "hit",
+            "constellation": None,
+            "word_position": None,
+            "narrative_evidence": None,
+        }
+    if isinstance(entry, dict):
+        perks = entry.get("perks") or []
+        return {
+            "perks": list(perks),
+            "outcome": entry.get("outcome"),
+            "constellation": entry.get("constellation"),
+            "word_position": entry.get("word_position"),
+            "narrative_evidence": entry.get("narrative_evidence"),
+        }
+    raise ValueError(
+        f"chapter_roll_overrides roll entry must be list or dict, "
+        f"got {type(entry).__name__}: {entry!r}"
+    )
+
+
 def load_overrides(path: Path | None = None) -> dict:
-    """Load the multi-grab overrides document.
+    """Load the chapter-roll overrides document.
 
     Returns a dict with key ``chapter_roll_overrides`` mapping
-    ``chapter_num`` (str) to ``{"rolls": [[name, ...], ...],
-    "narrative_evidence": str}``. Missing file -> empty dict.
+    ``chapter_num`` (str) to::
+
+        {
+          "rolls": [
+            {"perks": [...], "outcome": ..., "constellation": ...,
+             "word_position": ..., "narrative_evidence": ...},
+            ...
+          ],
+          "narrative_evidence": str | None,
+        }
+
+    The on-disk schema may use either the canonical per-roll dict or
+    the legacy bare-list-of-names form; both are normalised here.
+
+    Missing file -> empty dict. Falls back to the legacy filename
+    (``multi_grab_overrides.json``) only if the new file is absent and
+    the legacy one is present, to ease migrations.
     """
     p = path or _OVERRIDES_PATH
+    if not p.exists() and _LEGACY_OVERRIDES_PATH.exists():
+        p = _LEGACY_OVERRIDES_PATH
     if not p.exists():
         return {"chapter_roll_overrides": {}}
     doc = json.loads(p.read_text())
@@ -78,7 +156,7 @@ def load_overrides(path: Path | None = None) -> dict:
             continue
         rolls = entry.get("rolls") or []
         normalised[str(cn)] = {
-            "rolls": [list(r) for r in rolls],
+            "rolls": [_normalise_roll_entry(r) for r in rolls],
             "narrative_evidence": entry.get("narrative_evidence", ""),
         }
     return {"chapter_roll_overrides": normalised}
@@ -142,7 +220,8 @@ def group_chapter_paid_perks(
         used_paid: set[str] = set()
         used_free: set[str] = set()
         rolls: list[dict] = []
-        for roll_idx, name_list in enumerate(rolls_spec):
+        for roll_idx, roll_entry in enumerate(rolls_spec):
+            name_list = roll_entry["perks"] if isinstance(roll_entry, dict) else roll_entry
             purchased: list[dict] = []
             for nm in name_list:
                 key = _norm(nm)
@@ -307,7 +386,8 @@ def merge_paid_units(
             used_paid: set[str] = set()
             used_free: set[str] = set()
 
-            for roll_idx, name_list in enumerate(override["rolls"]):
+            for roll_idx, roll_entry in enumerate(override["rolls"]):
+                name_list = roll_entry["perks"] if isinstance(roll_entry, dict) else roll_entry
                 paid_in_roll: list[dict] = []
                 free_in_roll: list[dict] = []
                 for nm in name_list:

@@ -16,14 +16,28 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from regime_simulator import (
-    REGIMES,
-    RegimeSegment,
-    ShadowState,
-    _accumulate_x100,
-    regime_for_chapter,
-    shadow_words,
-)
+# Import the regime simulator. When this module is imported via the
+# package path (``scripts.roll_scheduler``), use the package-qualified
+# import. When run as a script with ``scripts/`` on sys.path, use the
+# bare import. Both forms exist in the repo.
+try:
+    from scripts.regime_simulator import (
+        REGIMES,
+        RegimeSegment,
+        ShadowState,
+        _accumulate_x100,
+        regime_for_chapter,
+        shadow_words,
+    )
+except ImportError:  # pragma: no cover - fallback for script-mode runs
+    from regime_simulator import (  # type: ignore[no-redef]
+        REGIMES,
+        RegimeSegment,
+        ShadowState,
+        _accumulate_x100,
+        regime_for_chapter,
+        shadow_words,
+    )
 
 
 @dataclass
@@ -288,6 +302,94 @@ def schedule_chapter(
         slack=slack,
         ambiguity=feasible_count[0],
     )
+
+
+def infer_chapter_outcomes(
+    predicted_rolls: list[dict],
+    paid_perks: list[dict],
+    free_perks: list[dict] | None = None,
+    override_outcomes: dict[int, str] | None = None,
+) -> list[dict]:
+    """Apply the paid-perk-count constraint to assign hit/miss outcomes
+    to a chapter's predicted rolls.
+
+    Canonical helper for both the pipeline (when applying overrides
+    during ``derive_roll_facts``) and the TUI (live display after a
+    curation action). The TUI must NOT re-implement this logic locally.
+
+    Inputs (chapter-local):
+      - ``predicted_rolls``: list of predicted-roll dicts in
+        word_position order. Must carry ``word_position``.
+      - ``paid_perks``: paid-perk dicts (free=False) for this chapter,
+        in epub_sequence order. Each should carry ``cost`` and
+        optionally ``constellation``, ``perk_name`` / ``name``.
+      - ``free_perks``: free-perk dicts. Attached to the first inferred
+        hit (typical bundling: e.g. ch 1's Access Key / Entrance Hall
+        ride along with Workshop).
+      - ``override_outcomes``: ``{1-based roll index: "hit" | "miss"}``
+        — pinned outcomes the inference must respect.
+
+    Returns one dict per predicted roll, in sequence order:
+      ``{index, word_position, outcome, constellation,
+        purchased_perks, purchased_perk_cost_total, source}``
+
+    ``source`` ∈ {``"override"``, ``"inferred"``, ``"unknown"``}.
+
+    Constraint: ``count(hits) == len(paid_perks)``. Misses fill the
+    rest. When uniquely determined (e.g. one unknown slot, one hit
+    remaining) the inference fills it.
+    """
+    if free_perks is None:
+        free_perks = []
+    if override_outcomes is None:
+        override_outcomes = {}
+    target_hits = len(paid_perks)
+    n_total = len(predicted_rolls)
+    result: list[dict] = []
+    for k, pred in enumerate(predicted_rolls, start=1):
+        outcome = override_outcomes.get(k, "unknown")
+        result.append({
+            "index": k,
+            "word_position": int(pred["word_position"]),
+            "outcome": outcome,
+            "constellation": None,
+            "purchased_perks": [],
+            "purchased_perk_cost_total": 0,
+            "source": "override" if outcome != "unknown" else "unknown",
+        })
+    confirmed_hits = sum(1 for r in result if r["outcome"] == "hit")
+    confirmed_misses = sum(1 for r in result if r["outcome"] == "miss")
+    unknowns = [r for r in result if r["outcome"] == "unknown"]
+    hits_remaining = max(0, target_hits - confirmed_hits)
+    misses_remaining = max(0, (n_total - target_hits) - confirmed_misses)
+    if unknowns and hits_remaining + misses_remaining == len(unknowns):
+        if hits_remaining == 0:
+            for u in unknowns:
+                u["outcome"] = "miss"
+                u["source"] = "inferred"
+        elif misses_remaining == 0:
+            for u in unknowns:
+                u["outcome"] = "hit"
+                u["source"] = "inferred"
+    paid_queue = list(paid_perks)
+    free_queue = list(free_perks)
+    for r in result:
+        if r["outcome"] != "hit":
+            continue
+        if not paid_queue:
+            break
+        paid = paid_queue.pop(0)
+        name = paid.get("perk_name") or paid.get("name", "?")
+        cost = int(paid.get("cost") or 0)
+        r["purchased_perks"] = [{"name": name, "cost": cost, "free": False}]
+        r["purchased_perk_cost_total"] = cost
+        if paid.get("constellation"):
+            r["constellation"] = paid["constellation"]
+        for fp in free_queue:
+            fp_name = fp.get("perk_name") or fp.get("name", "?")
+            r["purchased_perks"].append({"name": fp_name, "cost": 0, "free": True})
+        free_queue = []
+    return result
 
 
 def diagnose_infeasible(

@@ -46,7 +46,9 @@ EPUB = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge.epub"
 CHAPTERS = ROOT / "data" / "derived" / "chapters.json"
 SECTIONS = ROOT / "data" / "derived" / "chapter_sections.json"
 CLASSIFICATIONS = ROOT / "data" / "manual" / "section_classifications.json"
+HEADER_CORRECTIONS = ROOT / "data" / "manual" / "header_corrections.json"
 ROLL_FACTS = ROOT / "data" / "derived" / "roll_facts.json"
+ROLL_VALIDATION = ROOT / "data" / "derived" / "roll_validation.json"
 LAST_EDITED = ROOT / "data" / "derived" / "chapter_last_edited.json"
 TIMELINE = ROOT / "data" / "derived" / "timeline.json"
 OUT = ROOT / "data" / "derived" / "chapter_facts.json"
@@ -125,6 +127,32 @@ def parse_pov_character(header: str | None, full_title: str) -> str | None:
     return None
 
 
+def _range_overlap_len(
+    ranges: list[tuple[int, int]], start: int, end: int
+) -> int:
+    return sum(max(0, min(r_end, end) - max(r_start, start)) for r_start, r_end in ranges)
+
+
+def _manual_header_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:
+    """Load manual header corrections as chapter-local word ranges.
+
+    Existing entries are already stored in chapter-local word offsets by
+    the TUI. They are kept separate from extractor-generated exclusions
+    so the derived builder can consume both consistently.
+    """
+    if not HEADER_CORRECTIONS.exists():
+        return {}
+    data = json.loads(HEADER_CORRECTIONS.read_text())
+    out: dict[str, list[tuple[int, int]]] = {}
+    for c in data.get("corrections", []):
+        ws = c.get("word_offset_start")
+        we = c.get("word_offset_end")
+        if ws is None or we is None or int(we) <= int(ws):
+            continue
+        out.setdefault(str(c.get("chapter_num")), []).append((int(ws), int(we)))
+    return out
+
+
 # ---------- main builder ---------------------------------------------------
 
 def main() -> None:
@@ -138,7 +166,13 @@ def main() -> None:
     sections_by_chap = {c["chapter_num"]: c for c in sections_data["chapters"]}
 
     classifications = json.loads(CLASSIFICATIONS.read_text())["classifications"]
+    manual_header_ranges = _manual_header_ranges_by_chapter()
     roll_facts_doc = json.loads(ROLL_FACTS.read_text())
+    roll_validation_doc = json.loads(ROLL_VALIDATION.read_text())
+    model_checks_by_chapter = {
+        str(row["chapter_num"]): row
+        for row in roll_validation_doc.get("chapter_checks", [])
+    }
     last_edited = json.loads(LAST_EDITED.read_text())["chapters"]
     last_edited_by_chap = {r["chapter_num"]: r for r in last_edited}
 
@@ -198,9 +232,27 @@ def main() -> None:
         pov_set: set[str] = set()
         marker_kinds_seen: list[str] = []
         struct_markers_aggregate: set[str] = set()
+        excluded_ranges = [
+            (int(r[0]), int(r[1]))
+            for r in sec_meta.get("excluded_word_ranges", [])
+            if len(r) == 2 and int(r[1]) > int(r[0])
+        ]
+        excluded_ranges.extend(manual_header_ranges.get(cn, []))
+        sec_word_start = 0
         for i, s in enumerate(sec_meta["sections"]):
             cls = classifications.get(f"{cn}@{i}", {})
             counts_for_cp = bool(cls.get("counts_for_cp", False))
+            word_count = int(s["word_count"])
+            sec_word_end = sec_word_start + word_count
+            excluded_in_section = _range_overlap_len(
+                excluded_ranges,
+                sec_word_start,
+                sec_word_end,
+            )
+            cp_word_count = (
+                max(0, word_count - excluded_in_section)
+                if counts_for_cp else 0
+            )
             mk = parse_marker_kind(s.get("header"), c["full_title"])
             pov = parse_pov_character(s.get("header"), c["full_title"])
             if pov:
@@ -215,8 +267,8 @@ def main() -> None:
                 "header": s.get("header"),
                 "marker_kind": mk,
                 "pov_character": pov,
-                "word_count": s["word_count"],
-                "cp_earning_word_count": s["word_count"] if counts_for_cp else 0,
+                "word_count": word_count,
+                "cp_earning_word_count": cp_word_count,
                 "counts_for_cp": counts_for_cp,
                 "classification": s.get("classification"),
                 "classification_confidence": s.get("confidence"),
@@ -226,6 +278,7 @@ def main() -> None:
                 "in_world_start_time_of_day": None,    # stubbed
                 "in_world_end_time_of_day": None,      # stubbed
             })
+            sec_word_start = sec_word_end
 
         # ---------- rolls + attribution ----------
         chapter_cp_start = cum_cp_words
@@ -297,7 +350,7 @@ def main() -> None:
             if idx == 0:
                 banked_cp_at_start = roll.get("available_cp")
             banked_cp_at_end = roll.get("banked_cp_after_roll")
-            display_pos = _display_cp_position(idx, len(chap_roll_facts))
+            display_pos = roll.get("cumulative_word_offset")
             roll_record = {
                 "roll_number": roll["roll_number"],
                 "section_index": _section_index_for_roll(roll),
@@ -308,6 +361,8 @@ def main() -> None:
                 "purchased_perk_cost_total": roll.get("purchased_perk_cost_total"),
                 "purchased_perk_jump": roll["purchased_perk_jump"],
                 "free_perks": roll["free_perks"],
+                "word_position": roll.get("word_position"),
+                "cumulative_word_offset": roll.get("cumulative_word_offset"),
                 "predicted_word_position_epub": roll["predicted_word_position_epub"],
                 "display_word_position_epub": display_pos,
                 "predicted_char_offset_in_chapter": roll["predicted_char_offset_in_chapter"],
@@ -333,6 +388,20 @@ def main() -> None:
                 misses += 1
             else:
                 unknowns += 1
+
+        model_check = model_checks_by_chapter.get(cn, {
+            "status": "unknown",
+            "has_discrepancy": False,
+            "source_priority": "none",
+            "predicted_roll_count": 0,
+            "required_paid_roll_count": 0,
+            "known_attempt_count": 0,
+            "paid_roll_capacity_ok": True,
+            "known_attempt_capacity_ok": True,
+            "cost_schedule_ok": True,
+            "synthetic_slot_count": 0,
+            "issues": [],
+        })
 
         # ---------- chapter row ----------
         last_ed = last_edited_by_chap.get(cn, {})
@@ -379,6 +448,21 @@ def main() -> None:
             "cumulative_perks_through_chapter": cum_perks,
             "banked_cp_at_start": banked_cp_at_start,
             "banked_cp_at_end": banked_cp_at_end,
+            "model_validation": {
+                "status": model_check["status"],
+                "current_discrepancy": bool(model_check["has_discrepancy"]),
+                "prior_discrepancy": False,
+                "first_discrepancy_chapter_num": None,
+                "source_priority": model_check["source_priority"],
+                "predicted_roll_count": model_check["predicted_roll_count"],
+                "required_paid_roll_count": model_check["required_paid_roll_count"],
+                "known_attempt_count": model_check["known_attempt_count"],
+                "paid_roll_capacity_ok": model_check["paid_roll_capacity_ok"],
+                "known_attempt_capacity_ok": model_check["known_attempt_capacity_ok"],
+                "cost_schedule_ok": model_check["cost_schedule_ok"],
+                "synthetic_slot_count": model_check["synthetic_slot_count"],
+                "issues": model_check["issues"],
+            },
 
             "pov_characters": sorted(pov_set),
             "structural_markers": sorted(struct_markers_aggregate),
@@ -386,6 +470,17 @@ def main() -> None:
             "sections": sections_out,
             "rolls": rolls_out,
         })
+
+    first_discrepancy_chapter_num: str | None = None
+    prior_discrepancy = False
+    for chapter in out_chapters:
+        model_validation = chapter["model_validation"]
+        model_validation["prior_discrepancy"] = prior_discrepancy
+        model_validation["first_discrepancy_chapter_num"] = first_discrepancy_chapter_num
+        if model_validation["current_discrepancy"]:
+            if first_discrepancy_chapter_num is None:
+                first_discrepancy_chapter_num = chapter["chapter_num"]
+            prior_discrepancy = True
 
     # Resolve shadow_periods.shadow_end_chapter_num. predicted_rolls'
     # word_position is cumulative CP-earning words across the EPUB, so

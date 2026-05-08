@@ -403,8 +403,12 @@ def _build_scheduler_inputs() -> dict[str, dict]:
         words = chapter_words[cn]
         ws_global = chapter_word_start[cn]
         preds = pred_by_chapter.get(cn, [])
-        # Slot list (chapter-local word_position).
-        slots = [
+        preds.sort(key=lambda r: int(r["word_position"]))
+        # Predicted slot list (chapter-local word_position). This is the
+        # model truth used for validation. The generation scheduler may
+        # synthesize fallback slots below so roll_facts can still carry
+        # source-derived rows, but validation keeps these counts separate.
+        predicted_slots = [
             SlotInput(
                 word_position=max(0, int(r["word_position"]) - ws_global),
                 cp_threshold=int(r.get("cp_threshold", REGIMES[regime_for_chapter(cn)]["cp_per_roll"])),
@@ -412,6 +416,7 @@ def _build_scheduler_inputs() -> dict[str, dict]:
             )
             for r in preds
         ]
+        slots = list(predicted_slots)
         # Hits = merged paid units in narrative order.
         ch_units = units_by_chapter.get(cn, [])
         hits = [
@@ -444,12 +449,15 @@ def _build_scheduler_inputs() -> dict[str, dict]:
             slots.sort(key=lambda s: s.word_position)
         out[cn] = {
             "slots": slots,
+            "predicted_slots": predicted_slots,
+            "synthetic_slot_count": len(slots) - len(predicted_slots),
             "hits": hits,
             "chapter_words": words,
             "chapter_word_start": ws_global,
             "banked_cp_in": banked_in_per_chapter.get(cn, 0),
             "shadow_in": shadow_in_per_chapter.get(cn, ShadowState()),
             "segments": segments_per_chapter.get(cn),
+            "predicted_rolls": preds,
         }
     return out
 
@@ -485,7 +493,69 @@ def _restructure_curator_rows(
          (last curator hit row that maps to a tail override-roll).
          Mismatch -> warn.
     """
-    override_rolls = override.get("rolls") or []
+    override_rolls_raw = override.get("rolls") or []
+    # Normalise each override-roll entry to a bare list of perk names so
+    # the rest of this function can stay agnostic to the on-disk schema.
+    # Both the legacy ``["A", "B"]`` form and the canonical
+    # ``{"perks": ["A", "B"], ...}`` form are accepted.
+    def _names_of(entry):
+        if isinstance(entry, dict):
+            return list(entry.get("perks") or [])
+        return list(entry)
+    override_rolls = [_names_of(r) for r in override_rolls_raw]
+
+    def _explicit_outcome(entry) -> str | None:
+        if isinstance(entry, dict) and entry.get("outcome") in ("hit", "miss"):
+            return entry.get("outcome")
+        return None
+
+    # Explicit miss-only overrides, such as Chapter 1's "both predicted
+    # rolls are misses", should not be matched to a trigger or converted
+    # into zero-cost hit rows. Preserve any curator trigger rows, then
+    # emit the requested miss rows in override order.
+    if override_rolls_raw and all(
+        _explicit_outcome(entry) == "miss" and not _names_of(entry)
+        for entry in override_rolls_raw
+    ):
+        out_rows: list[dict] = []
+        miss_templates = [
+            (source_idx, row)
+            for source_idx, row in curator_rows
+            if row.get("kind") == "miss"
+        ]
+        for source_idx, row in curator_rows:
+            if row.get("kind") != "trigger":
+                continue
+            out_rows.append({
+                "_source_idx": source_idx,
+                "_override_origin": None,
+                "kind": "trigger",
+                "perks": list(row.get("perks") or []),
+                "banked_before": row.get("banked_before"),
+                "banked_after": row.get("banked_after"),
+                "constellation": row.get("constellation"),
+                "constellation_revealed": row.get("constellation_revealed", False),
+                "roll_number": row.get("roll_number"),
+                "raw": row.get("raw"),
+            })
+        for idx, _entry in enumerate(override_rolls_raw):
+            source_idx, template = (
+                miss_templates[min(idx, len(miss_templates) - 1)]
+                if miss_templates else (-1, {})
+            )
+            out_rows.append({
+                "_source_idx": source_idx,
+                "_override_origin": idx,
+                "kind": "miss",
+                "perks": [],
+                "banked_before": template.get("banked_before"),
+                "banked_after": template.get("banked_after"),
+                "constellation": None,
+                "constellation_revealed": False,
+                "roll_number": template.get("roll_number"),
+                "raw": template.get("raw"),
+            })
+        return out_rows
     # Normalize override rolls to (paid_names_set, all_names_in_order_with_meta)
     # We need cost info, but at this point we don't have it -- the caller
     # passes in curator perks (which carry cost). For each override roll,
@@ -521,14 +591,14 @@ def _restructure_curator_rows(
         ov_set = {_norm_name(n) for n in ov_names}
         # First pass: full superset.
         for i, (_, row) in enumerate(curator_rows):
-            if row.get("kind") == "miss":
+            if row.get("kind") in ("miss", "trigger"):
                 continue
             row_set = {_norm_name((p.get("name") or "")) for p in row.get("perks") or []}
             if ov_set.issubset(row_set):
                 return i
         # Fallback: any overlap.
         for i, (_, row) in enumerate(curator_rows):
-            if row.get("kind") == "miss":
+            if row.get("kind") in ("miss", "trigger"):
                 continue
             row_set = {_norm_name((p.get("name") or "")) for p in row.get("perks") or []}
             if ov_set & row_set:
@@ -552,7 +622,7 @@ def _restructure_curator_rows(
     # Sanity: every curator hit row should be hosted by at least one
     # override-roll. (If not, the override silently drops perks; warn.)
     for i, (_, row) in enumerate(curator_rows):
-        if row.get("kind") == "miss":
+        if row.get("kind") in ("miss", "trigger"):
             continue
         if i not in host_to_overrides:
             print(
@@ -566,13 +636,13 @@ def _restructure_curator_rows(
     # the curator hit row's banked_before as the entry CP.
     out_rows: list[dict] = []
     for i, (source_idx, row) in enumerate(curator_rows):
-        if row.get("kind") == "miss":
+        if row.get("kind") in ("miss", "trigger"):
             # Pass through (preserve curator banked_before/after).
             out_rows.append({
                 "_source_idx": source_idx,
                 "_override_origin": None,
-                "kind": "miss",
-                "perks": [],
+                "kind": row.get("kind"),
+                "perks": list(row.get("perks") or []),
                 "banked_before": row.get("banked_before"),
                 "banked_after": row.get("banked_after"),
                 "constellation": row.get("constellation"),
@@ -701,6 +771,8 @@ def main() -> None:
         cn: inp["chapter_word_start"] for cn, inp in scheduler_inputs.items()
     }
     scheduler_results: dict = {}
+    strict_scheduler_results: dict = {}
+    strict_infeasible_by_chapter: dict[str, dict] = {}
     infeasible_records: list[dict] = []
     for cn, inp in scheduler_inputs.items():
         # Apply chapter-level overrides (e.g., banked_cp_in nudge).
@@ -710,6 +782,49 @@ def main() -> None:
             if "banked_cp_in" in ch_override
             else inp["banked_cp_in"]
         )
+        strict_result = schedule_chapter(
+            cn,
+            inp["predicted_slots"],
+            inp["hits"],
+            banked_cp_in=banked_in,
+            shadow_in=inp["shadow_in"],
+            chapter_words=inp["chapter_words"],
+            segments=inp.get("segments"),
+        )
+        if not strict_result.feasible:
+            diag, expl = diagnose_infeasible(
+                cn, inp["predicted_slots"], inp["hits"],
+                banked_cp_in=banked_in,
+                shadow_in=inp["shadow_in"],
+                chapter_words=inp["chapter_words"],
+                segments=inp.get("segments"),
+            )
+            strict_result.diagnostic = diag
+            strict_result.explanation = expl
+            strict_infeasible_by_chapter[cn] = {
+                "chapter_num": cn,
+                "banked_cp_in": banked_in,
+                "predicted_slots": [
+                    {"word_position": s.word_position,
+                     "cp_threshold": s.cp_threshold,
+                     "source": s.source}
+                    for s in inp["predicted_slots"]
+                ],
+                "recorded_hits": [
+                    {
+                        "cost": h.cost,
+                        "names": [
+                            (p.get("perk_name") or p.get("name"))
+                            for p in (h.paid_perks or ([h.perk] if h.perk else []))
+                        ],
+                    }
+                    for h in inp["hits"]
+                ],
+                "diagnostic": diag,
+                "explanation": expl,
+            }
+        strict_scheduler_results[cn] = strict_result
+
         result = schedule_chapter(
             cn,
             inp["slots"],
@@ -810,6 +925,18 @@ def main() -> None:
             else:
                 rows = rows_raw
             total = len(rows)
+            sched_inp = scheduler_inputs.get(chapter_num)
+            pred_slot_by_local = {}
+            if sched_inp is not None:
+                pred_slot_by_local = {
+                    max(
+                        0,
+                        int(pred["word_position"])
+                        - int(sched_inp["chapter_word_start"]),
+                    ): pred
+                    for pred in sched_inp["predicted_rolls"]
+                }
+            non_trigger_seq = 0
             # Cross-check: compare curator outcomes vs scheduler decision.
             if sched and sched.feasible:
                 curator_outcomes = [
@@ -875,9 +1002,28 @@ def main() -> None:
                     roll_key = f"curator:{source_idx:04d}.{ov_origin}"
                 else:
                     roll_key = f"curator:{source_idx:04d}"
+
+                slot = None
+                pred_slot = None
+                if row["kind"] != "trigger":
+                    slot_idx = non_trigger_seq
+                    non_trigger_seq += 1
+                    if sched_inp is not None and slot_idx < len(sched_inp["slots"]):
+                        slot = sched_inp["slots"][slot_idx]
+                    if slot is not None and slot.source == "predicted":
+                        pred_slot = pred_slot_by_local.get(int(slot.word_position))
+                canonical_roll_number = (
+                    pred_slot.get("roll_number") if pred_slot is not None
+                    else (roll_number if row["kind"] == "trigger" else None)
+                )
+                ev = (
+                    evidence_by_roll.get(canonical_roll_number)
+                    if canonical_roll_number is not None else None
+                )
+                predicted_chapter_num = ev.get("chapter_num") if ev else None
                 record = roll_base(
                     roll_key=roll_key,
-                    roll_number=roll_number,
+                    roll_number=canonical_roll_number,
                     chapter_num=chapter_num,
                     predicted_chapter_num=predicted_chapter_num,
                     source="curator_rolls",
@@ -886,13 +1032,13 @@ def main() -> None:
                     source_row_index=source_idx,
                     ev=ev,
                 )
-                # Curator's predicted_word_position_epub is in EPUB-words,
-                # whereas the simulator's chapter_word_start is in
-                # CP-earning words; these aren't directly subtractable.
-                # Leave both None for curator rows; ordering uses
-                # roll_sequence_in_chapter.
-                word_position_local = None
-                cum_word = None
+                if pred_slot is not None:
+                    record["predicted_word_position_epub"] = int(pred_slot["word_position"])
+                word_position_local = int(slot.word_position) if slot is not None else None
+                cum_word = (
+                    chapter_word_start_global.get(chapter_num, 0) + word_position_local
+                    if word_position_local is not None else None
+                )
                 principal_name = paid_meta["name"] if paid_meta else None
                 record.update({
                     "constellation": constellation,
@@ -927,6 +1073,16 @@ def main() -> None:
         rows = outcome_by_chapter.get(chapter_num, [])
         total = len(rows)
         sched_inp = scheduler_inputs.get(chapter_num)
+        pred_slot_by_local = {}
+        if sched_inp is not None:
+            pred_slot_by_local = {
+                max(
+                    0,
+                    int(pred["word_position"])
+                    - int(sched_inp["chapter_word_start"]),
+                ): pred
+                for pred in sched_inp["predicted_rolls"]
+            }
         sched_assignments = (
             sched.assignments if sched and sched.feasible else None
         )
@@ -1049,8 +1205,40 @@ def main() -> None:
             # too if it's clearly small (synthetic) and as cumulative
             # otherwise.
             if sched_inp is not None and seq - 1 < len(sched_inp["slots"]):
-                word_position_local = sched_inp["slots"][seq - 1].word_position
+                slot = sched_inp["slots"][seq - 1]
+                word_position_local = slot.word_position
                 cum_word = ch_start + word_position_local
+                pred_slot = (
+                    pred_slot_by_local.get(int(slot.word_position))
+                    if slot.source == "predicted" else None
+                )
+                if pred_slot is not None:
+                    ev2 = evidence_by_roll.get(int(pred_slot["roll_number"]))
+                    record["roll_number"] = int(pred_slot["roll_number"])
+                    record["predicted_chapter_num"] = (
+                        ev2.get("chapter_num") if ev2 else pred_slot["chapter_num"]
+                    )
+                    record["chapter_attribution_disagreement"] = (
+                        record["predicted_chapter_num"] is not None
+                        and str(record["predicted_chapter_num"]) != str(chapter_num)
+                    )
+                    record["predicted_word_position_epub"] = int(pred_slot["word_position"])
+                    record["predicted_char_offset_in_chapter"] = (
+                        ev2.get("predicted_char_offset") if ev2 else None
+                    )
+                    record["anchor_char_offset_in_chapter"] = anchor_offset(ev2)
+                    record["evidence_kind"] = normalized_evidence_kind(
+                        ev2,
+                        "interpolated",
+                    )
+                else:
+                    record["roll_number"] = None
+                    record["predicted_chapter_num"] = chapter_num
+                    record["chapter_attribution_disagreement"] = False
+                    record["predicted_word_position_epub"] = None
+                    record["predicted_char_offset_in_chapter"] = None
+                    record["anchor_char_offset_in_chapter"] = None
+                    record["evidence_kind"] = "synthetic"
             else:
                 row_wp = row.get("word_position")
                 if row_wp is None:
@@ -1088,6 +1276,15 @@ def main() -> None:
 
     # ---- apply overrides as a final pass ----
     overrides_applied = _apply_overrides(rolls, overrides_doc)
+
+    known_attempt_count_by_chapter: dict[str, int] = {}
+    for roll in rolls:
+        if roll.get("source_kind") == "trigger":
+            continue
+        cn = str(roll.get("chapter_num"))
+        known_attempt_count_by_chapter[cn] = (
+            known_attempt_count_by_chapter.get(cn, 0) + 1
+        )
 
     payload = {
         "schema_version": 1,
@@ -1133,18 +1330,117 @@ def main() -> None:
         for cn, r in scheduler_results.items()
         if r.feasible and r.ambiguity > 1
     ]
+    ambiguous_by_chapter = {
+        row["chapter_num"]: row for row in ambiguous
+    }
+    chapter_order = [
+        c["chapter_num"]
+        for c in sorted(
+            json.loads(CHAPTERS_JSON.read_text())["chapters"],
+            key=lambda c: tuple(c["sort_key"]),
+        )
+    ]
+    chapter_checks: list[dict] = []
+    for cn in chapter_order:
+        inp = scheduler_inputs.get(cn, {})
+        predicted_count = len(inp.get("predicted_slots") or [])
+        required_paid_count = len(inp.get("hits") or [])
+        known_attempt_count = known_attempt_count_by_chapter.get(cn, 0)
+        issues: list[dict] = []
+
+        if required_paid_count > predicted_count:
+            issues.append({
+                "code": "paid_rolls_exceed_predicted_slots",
+                "severity": "error",
+                "message": (
+                    f"{required_paid_count} paid roll unit(s) require "
+                    f"more slots than {predicted_count} predicted roll(s)."
+                ),
+            })
+        if known_attempt_count > predicted_count:
+            issues.append({
+                "code": "known_attempts_exceed_predicted_slots",
+                "severity": "error",
+                "message": (
+                    f"{known_attempt_count} known roll attempt(s) require "
+                    f"more slots than {predicted_count} predicted roll(s)."
+                ),
+            })
+
+        strict_result = strict_scheduler_results.get(cn)
+        cost_schedule_ok = True
+        if strict_result is not None and not strict_result.feasible:
+            cost_schedule_ok = False
+            issues.append({
+                "code": "cost_schedule_infeasible",
+                "severity": "error",
+                "message": strict_result.explanation,
+                "diagnostic": strict_result.diagnostic,
+            })
+        if cn in ambiguous_by_chapter:
+            issues.append({
+                "code": "ambiguous_schedule",
+                "severity": "info",
+                "message": (
+                    f"{ambiguous_by_chapter[cn]['feasible_assignment_count']} "
+                    "feasible hit/slot assignments."
+                ),
+            })
+
+        blocking_codes = {
+            "paid_rolls_exceed_predicted_slots",
+            "known_attempts_exceed_predicted_slots",
+            "cost_schedule_infeasible",
+        }
+        has_discrepancy = any(
+            issue["code"] in blocking_codes for issue in issues
+        )
+        if cn in multi_overrides:
+            source_priority = "vetted_curated"
+        elif cn in curator_by_chapter:
+            source_priority = "curator_log"
+        elif required_paid_count:
+            source_priority = "derived_perk_list"
+        else:
+            source_priority = "none"
+
+        chapter_checks.append({
+            "chapter_num": cn,
+            "status": "discrepancy" if has_discrepancy else "ok",
+            "has_discrepancy": has_discrepancy,
+            "source_priority": source_priority,
+            "predicted_roll_count": predicted_count,
+            "required_paid_roll_count": required_paid_count,
+            "known_attempt_count": known_attempt_count,
+            "paid_roll_capacity_ok": required_paid_count <= predicted_count,
+            "known_attempt_capacity_ok": known_attempt_count <= predicted_count,
+            "cost_schedule_ok": cost_schedule_ok,
+            "synthetic_slot_count": int(inp.get("synthetic_slot_count") or 0),
+            "issues": issues,
+        })
+
+    strict_infeasible_records = [
+        strict_infeasible_by_chapter[cn]
+        for cn in chapter_order
+        if cn in strict_infeasible_by_chapter
+    ]
     validation_payload = {
         "_generated": _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds"),
         "_source": "scripts/derive_roll_facts.py",
         "summary": {
             "chapters_total": len(scheduler_results),
-            "feasible": sum(1 for r in scheduler_results.values() if r.feasible),
-            "infeasible": len(infeasible_records),
+            "feasible": sum(1 for r in strict_scheduler_results.values() if r.feasible),
+            "infeasible": len(strict_infeasible_records),
+            "model_discrepancies": sum(
+                1 for row in chapter_checks if row["has_discrepancy"]
+            ),
             "curator_divergences": len(curator_solver_divergences),
             "ambiguous": len(ambiguous),
             "overrides_applied": overrides_applied,
         },
-        "infeasible": infeasible_records,
+        "chapter_checks": chapter_checks,
+        "infeasible": strict_infeasible_records,
+        "generation_infeasible": infeasible_records,
         "curator_solver_divergences": curator_solver_divergences,
         "ambiguous_chapters": ambiguous,
     }
@@ -1164,14 +1460,34 @@ def main() -> None:
         f"free perks: {counts['free_perks']}"
     )
     print(f"wrote {VALIDATION_OUT.relative_to(ROOT)}: "
-          f"infeasible={len(infeasible_records)}, "
+          f"infeasible={len(strict_infeasible_records)}, "
+          f"model_discrepancies={validation_payload['summary']['model_discrepancies']}, "
           f"divergences={len(curator_solver_divergences)}, "
           f"ambiguous={len(ambiguous)}, overrides={overrides_applied}")
-    if infeasible_records:
+    if strict_infeasible_records:
         print("  INFEASIBLE chapters:")
-        for r in infeasible_records:
+        for r in strict_infeasible_records:
             print(f"    ch{r['chapter_num']}: {r['diagnostic']} - {r['explanation']}")
-        raise SystemExit(1)
+
+
+def derive_chapter_facts(chapter_num: str, *, source_path: Path | None = None) -> list[dict]:
+    """Return the list of roll-facts rows for a single chapter.
+
+    Phase 0 scaffold for Forge Curator's per-chapter recompute. The
+    canonical implementation reads the already-derived
+    ``roll_facts.json`` and slices it; Phase 3 will replace this with
+    a true in-memory recompute that runs the predict/outcomes/facts
+    pipeline for the chapter only and merges into the stable upstream
+    state.
+    """
+    p = source_path or OUT
+    if not p.exists():
+        raise FileNotFoundError(
+            f"derive_chapter_facts: {p} missing — run derive_roll_facts.py first"
+        )
+    doc = json.loads(p.read_text())
+    cn = str(chapter_num)
+    return [r for r in doc.get("rolls", []) if str(r.get("chapter_num")) == cn]
 
 
 if __name__ == "__main__":

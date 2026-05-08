@@ -1,23 +1,4088 @@
 {
-  "_generated": "2026-05-07T23:47:17+00:00",
+  "_generated": "2026-05-08T18:36:00+00:00",
   "_source": "scripts/derive_roll_facts.py",
   "summary": {
     "chapters_total": 194,
-    "feasible": 184,
-    "infeasible": 7,
-    "curator_divergences": 76,
-    "ambiguous": 96,
+    "feasible": 163,
+    "infeasible": 31,
+    "model_discrepancies": 41,
+    "curator_divergences": 72,
+    "ambiguous": 86,
     "overrides_applied": 0
   },
-  "infeasible": [
+  "chapter_checks": [
+    {
+      "chapter_num": "1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "vetted_curated",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "3.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "4",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 known roll attempt(s) require more slots than 4 predicted roll(s)."
+        }
+      ]
+    },
+    {
+      "chapter_num": "5",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "6",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "6.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "7",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "4 known roll attempt(s) require more slots than 3 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "8",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "8.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "9",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "10",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 4 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "4 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "11",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "8 known roll attempt(s) require more slots than 5 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "12",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "4 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "12.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "13",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "14",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 5 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "5 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "15",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "16",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "5 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "16.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "17",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "18",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 5 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "19",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 8,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "20",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "21",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "21 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "21.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "22",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "23",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "24",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 9,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "25",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "26",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "27",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 10,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 9,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "28",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 9,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "36 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "29",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 10,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "30",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 14,
+      "required_paid_roll_count": 7,
+      "known_attempt_count": 12,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "31",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 9,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "32",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 8,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "33",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "34",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "7 known roll attempt(s) require more slots than 6 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "35",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 8,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "35.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 9,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "36 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "36",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "35 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "37",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 8,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "28 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "38",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 11,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 10,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "39",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 13,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 12,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "40",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "3 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "8 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 3 recorded paid hits (short by 3 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "41",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 18,
+      "required_paid_roll_count": 7,
+      "known_attempt_count": 18,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "41.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "41.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "41.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "42",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "42.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "43",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 2,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "3 paid roll unit(s) require more slots than 1 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 known roll attempt(s) require more slots than 1 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 1 predicted slots but 3 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "43.1",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "44",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "12 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "45",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 8,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "7 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "45.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "46",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 12,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 12,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "46.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "14 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "46.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "47",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "34 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "48",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 9,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 9,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "49",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "18 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "50",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "34 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "51",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "14 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "52",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 8,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 8,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "53",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 5 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "9 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "54",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "16 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "55",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 10,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 10,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "39 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "55.1",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 5 recorded paid hits (short by 5 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "56",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "20 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "57",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 15,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 14,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "57.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "58",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 known roll attempt(s) require more slots than 1 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 485, but largest hit costs 600. Predicted earnings short by ~115.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "58.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "58.2",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "7 known roll attempt(s) require more slots than 1 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 137, but largest hit costs 400. Predicted earnings short by ~263.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "59",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "6 known roll attempt(s) require more slots than 5 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Hit #0 cost 400 -> 100 would be feasible.",
+          "diagnostic": "cost_typo_suspected"
+        }
+      ]
+    },
+    {
+      "chapter_num": "60",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "61",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "62",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "5 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "63",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 1,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 paid roll unit(s) require more slots than 4 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 known roll attempt(s) require more slots than 4 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 4 predicted slots but 5 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "63.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "64",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "65",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "vetted_curated",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "65.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "65.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "65.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "65.4",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "66",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "6 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "67",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "vetted_curated",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "68",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "5 known roll attempt(s) require more slots than 4 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "68.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "68.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "68.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "69",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "7 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "70",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "6 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "71",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "7 known roll attempt(s) require more slots than 6 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "72",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "6 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "73",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "6 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "74",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "7 known roll attempt(s) require more slots than 5 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Hit #0 cost 200 -> 100 would be feasible.",
+          "diagnostic": "cost_typo_suspected"
+        }
+      ]
+    },
+    {
+      "chapter_num": "74.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "74.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "75",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "curator_log",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "25 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "76",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "76.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "76.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "77",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "4 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "78",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "15 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "79",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "10 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "80",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "6 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "81",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "21 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "82",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 10,
+      "required_paid_roll_count": 6,
+      "known_attempt_count": 10,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "82.1",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Hit #0 cost 300 -> 100 would be feasible.",
+          "diagnostic": "cost_typo_suspected"
+        }
+      ]
+    },
+    {
+      "chapter_num": "83",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
     {
       "chapter_num": "83.1",
-      "banked_cp_in": 276,
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 300, but largest hit costs 400. Predicted earnings short by ~100.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "84",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 291, but largest hit costs 600. Predicted earnings short by ~309.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "85",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "5 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "85.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "86",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "87",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "7 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "87.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "88",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 12,
+      "required_paid_roll_count": 5,
+      "known_attempt_count": 12,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "50 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "88.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "89",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 6,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 6,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "9 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "89.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "90",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "7 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "91",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "92",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "93",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 2,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "4 paid roll unit(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "4 known roll attempt(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 2 predicted slots but 4 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "94",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "94.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "95",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Curator order infeasible, but permutation (1, 0, 2) works.",
+          "diagnostic": "hit_order_inconsistency"
+        }
+      ]
+    },
+    {
+      "chapter_num": "95.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "95.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "95.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "95.4",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "95.5",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 2,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "4 paid roll unit(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "4 known roll attempt(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 2 predicted slots but 4 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "95.6",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "96",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 7,
+      "required_paid_roll_count": 6,
+      "known_attempt_count": 7,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Curator order infeasible, but permutation (1, 0, 2, 3, 4, 5) works.",
+          "diagnostic": "hit_order_inconsistency"
+        }
+      ]
+    },
+    {
+      "chapter_num": "96.1",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 1,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "97",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "vetted_curated",
+      "predicted_roll_count": 5,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 5,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "7 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "98",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 335, but largest hit costs 600. Predicted earnings short by ~265.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "98.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "99",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "99.1",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "99.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "99.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "100",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 4,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "100.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "101",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "102",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "103",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "104",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 9,
+      "known_attempt_count": 9,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 7,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "9 paid roll unit(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "9 known roll attempt(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 2 predicted slots but 9 recorded paid hits (short by 7 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "104.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "104.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "105",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "106",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "107",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "108",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 3,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
+    },
+    {
+      "chapter_num": "108.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "108.2",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 1,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "108.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "109",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 1,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "3 paid roll unit(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "3 known roll attempt(s) require more slots than 2 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 2 predicted slots but 3 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "109.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "110",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 548, but largest hit costs 600. Predicted earnings short by ~52.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "110.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "110.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "110.3",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 1,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "1 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "111",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "111.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "111.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "111.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "112",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "113",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Hit #0 cost 200 -> 100 would be feasible.",
+          "diagnostic": "cost_typo_suspected"
+        }
+      ]
+    },
+    {
+      "chapter_num": "113.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "113.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "113.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "114",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 3,
+      "known_attempt_count": 3,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 2,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "3 paid roll unit(s) require more slots than 1 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "3 known roll attempt(s) require more slots than 1 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 1 predicted slots but 3 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "115",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 247, but largest hit costs 600. Predicted earnings short by ~353.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "116",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 2,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "116.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "116.2",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": false,
+      "known_attempt_capacity_ok": false,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "paid_rolls_exceed_predicted_slots",
+          "severity": "error",
+          "message": "2 paid roll unit(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "known_attempts_exceed_predicted_slots",
+          "severity": "error",
+          "message": "2 known roll attempt(s) require more slots than 0 predicted roll(s)."
+        },
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Chapter has 0 predicted slots but 2 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "116.3",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 465, but largest hit costs 600. Predicted earnings short by ~135.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "117",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "118",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Highest CP achieved in chapter is 196, but largest hit costs 600. Predicted earnings short by ~404.",
+          "diagnostic": "regime_or_section_misclassification"
+        }
+      ]
+    },
+    {
+      "chapter_num": "119",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "119.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "119.2",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "119.3",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "119.4",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "119.5",
+      "status": "discrepancy",
+      "has_discrepancy": true,
+      "source_priority": "derived_perk_list",
+      "predicted_roll_count": 4,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 4,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": false,
+      "synthetic_slot_count": 0,
+      "issues": [
+        {
+          "code": "cost_schedule_infeasible",
+          "severity": "error",
+          "message": "Hit #0 cost 400 -> 100 would be feasible.",
+          "diagnostic": "cost_typo_suspected"
+        }
+      ]
+    },
+    {
+      "chapter_num": "120",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 1,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    },
+    {
+      "chapter_num": "120.1",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "none",
+      "predicted_roll_count": 0,
+      "required_paid_roll_count": 0,
+      "known_attempt_count": 0,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
+    }
+  ],
+  "infeasible": [
+    {
+      "chapter_num": "40",
+      "banked_cp_in": 1013,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 200,
+          "names": [
+            "Anaheim Degree"
+          ]
+        },
+        {
+          "cost": 400,
+          "names": [
+            "Exotic Compatibility"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Talented: Tailoring"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 3 recorded paid hits (short by 3 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "43",
+      "banked_cp_in": 1167,
       "predicted_slots": [
         {
-          "word_position": 722,
+          "word_position": 774,
           "cp_threshold": 100,
-          "source": "synthetic"
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Build Rome"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Talisman Trained"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Talisman Adept"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 1 predicted slots but 3 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "43.1",
+      "banked_cp_in": 322,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 200,
+          "names": [
+            "Material Synthesis Science"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "55.1",
+      "banked_cp_in": 648,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "You Became A Star"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Sky Machinist"
+          ]
+        },
+        {
+          "cost": 2,
+          "names": [
+            "Electron Shield Generators"
+          ]
+        },
+        {
+          "cost": 3,
+          "names": [
+            "Accelerator Equipment"
+          ]
+        },
+        {
+          "cost": 5,
+          "names": [
+            "Doppler Field Generator"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 5 recorded paid hits (short by 5 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "58",
+      "banked_cp_in": 387,
+      "predicted_slots": [
+        {
+          "word_position": 1976,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Nano-technician"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 485, but largest hit costs 600. Predicted earnings short by ~115."
+    },
+    {
+      "chapter_num": "58.2",
+      "banked_cp_in": 60,
+      "predicted_slots": [
+        {
+          "word_position": 1548,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "Parahuman - Tinker - Miniaturization and Efficiency"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 137, but largest hit costs 400. Predicted earnings short by ~263."
+    },
+    {
+      "chapter_num": "59",
+      "banked_cp_in": 49,
+      "predicted_slots": [
+        {
+          "word_position": 1555,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 3555,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 5555,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 7555,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 9555,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "Demigod Atelier"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Minor Blessing Hades - Ferrokinesis"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Unnatural Skill: Music"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 400 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "63",
+      "banked_cp_in": 413,
+      "predicted_slots": [
+        {
+          "word_position": 1900,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 3900,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 5900,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 7900,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Mantra Affinity"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Mantra Training and Techniques"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Resplendent Wardrobe"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Shut Up!"
+          ]
+        },
+        {
+          "cost": 400,
+          "names": [
+            "upgrades! Upgrades!! UPGRADES!!!"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 4 predicted slots but 5 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "74",
+      "banked_cp_in": 155,
+      "predicted_slots": [
+        {
+          "word_position": 1930,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 3930,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 5930,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 7930,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 9930,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 200,
+          "names": [
+            "Force Wall"
+          ]
+        },
+        {
+          "cost": 300,
+          "names": [
+            "Detainment"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Skills: Engineering"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Skills: Robotics"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 200 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "82.1",
+      "banked_cp_in": 292,
+      "predicted_slots": [
+        {
+          "word_position": 148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 2148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 4148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 8148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 10148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 300,
+          "names": [
+            "Divine Weapon"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Dynamic Waterworks"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Pipes Pipes Pipes"
+          ]
+        },
+        {
+          "cost": 300,
+          "names": [
+            "Waterworld"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 300 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "83.1",
+      "banked_cp_in": 272,
+      "predicted_slots": [
+        {
+          "word_position": 563,
+          "cp_threshold": 100,
+          "source": "predicted"
         }
       ],
       "recorded_hits": [
@@ -29,29 +4094,24 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 312, but largest hit costs 400. Predicted earnings short by ~88."
+      "explanation": "Highest CP achieved in chapter is 300, but largest hit costs 400. Predicted earnings short by ~100."
     },
     {
       "chapter_num": "84",
       "banked_cp_in": 36,
       "predicted_slots": [
         {
-          "word_position": 3268,
+          "word_position": 1118,
           "cp_threshold": 100,
           "source": "predicted"
         },
         {
-          "word_position": 3268,
+          "word_position": 3118,
           "cp_threshold": 100,
           "source": "predicted"
         },
         {
-          "word_position": 6536,
-          "cp_threshold": 100,
-          "source": "predicted"
-        },
-        {
-          "word_position": 6536,
+          "word_position": 5118,
           "cp_threshold": 100,
           "source": "predicted"
         }
@@ -65,19 +4125,241 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 362, but largest hit costs 600. Predicted earnings short by ~238."
+      "explanation": "Highest CP achieved in chapter is 291, but largest hit costs 600. Predicted earnings short by ~309."
+    },
+    {
+      "chapter_num": "93",
+      "banked_cp_in": 387,
+      "predicted_slots": [
+        {
+          "word_position": 114,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 4114,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Minor Blessing Ares – Armaments"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Unnatural Skill: Ritual"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Wildlife"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Treeline"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 2 predicted slots but 4 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "95",
+      "banked_cp_in": 519,
+      "predicted_slots": [
+        {
+          "word_position": 1464,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 5464,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 9464,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Erudition"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Minor Blessing Zeus – Lightning"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Unnatural Skill: Curses"
+          ]
+        }
+      ],
+      "diagnostic": "hit_order_inconsistency",
+      "explanation": "Curator order infeasible, but permutation (1, 0, 2) works."
+    },
+    {
+      "chapter_num": "95.5",
+      "banked_cp_in": 149,
+      "predicted_slots": [
+        {
+          "word_position": 2858,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6858,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Central Control"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Gym"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Arena"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Your Robots"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 2 predicted slots but 4 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "96",
+      "banked_cp_in": 297,
+      "predicted_slots": [
+        {
+          "word_position": 379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 4379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 8379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 12379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 16379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 20379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 24379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Superweapons"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Minor Blessing Poseidon – Water"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Unnatural Skill: Stoneworking"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Arsenal"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Basic Accommodations"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Seeds and Seedlings"
+          ]
+        }
+      ],
+      "diagnostic": "hit_order_inconsistency",
+      "explanation": "Curator order infeasible, but permutation (1, 0, 2, 3, 4, 5) works."
+    },
+    {
+      "chapter_num": "96.1",
+      "banked_cp_in": 578,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 300,
+          "names": [
+            "Workshop Artisan"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
     },
     {
       "chapter_num": "98",
       "banked_cp_in": 168,
       "predicted_slots": [
         {
-          "word_position": 7659,
-          "cp_threshold": 200,
-          "source": "predicted"
-        },
-        {
-          "word_position": 7659,
+          "word_position": 5012,
           "cp_threshold": 200,
           "source": "predicted"
         }
@@ -91,18 +4373,175 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 423, but largest hit costs 600. Predicted earnings short by ~177."
+      "explanation": "Highest CP achieved in chapter is 335, but largest hit costs 600. Predicted earnings short by ~265."
+    },
+    {
+      "chapter_num": "99.1",
+      "banked_cp_in": 207,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 300,
+          "names": [
+            "Workshop Equipment"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "104",
+      "banked_cp_in": 768,
+      "predicted_slots": [
+        {
+          "word_position": 2418,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 8418,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall - Espirit de Kerbal"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall - Fleet"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall - Some Old Friends"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall - The Matrix"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall – Aisha"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall – Survey"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall – Tetra"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Entrance Hall – Tybalt"
+          ]
+        },
+        {
+          "cost": 600,
+          "names": [
+            "Firestorm"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 2 predicted slots but 9 recorded paid hits (short by 7 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "108.2",
+      "banked_cp_in": 1068,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Certified Tech"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "109",
+      "banked_cp_in": 646,
+      "predicted_slots": [
+        {
+          "word_position": 3728,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 9728,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Basic Nutrition"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "A Little Less Basic"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "A Lot Less"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 2 predicted slots but 3 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "110",
+      "banked_cp_in": 479,
+      "predicted_slots": [
+        {
+          "word_position": 2080,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Xenoarcheaologist"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 548, but largest hit costs 600. Predicted earnings short by ~52."
     },
     {
       "chapter_num": "110.3",
-      "banked_cp_in": 44,
-      "predicted_slots": [
-        {
-          "word_position": 1159,
-          "cp_threshold": 200,
-          "source": "synthetic"
-        }
-      ],
+      "banked_cp_in": 102,
+      "predicted_slots": [],
       "recorded_hits": [
         {
           "cost": 500,
@@ -112,19 +4551,19 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 44, but largest hit costs 500. Predicted earnings short by ~456."
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
     },
     {
       "chapter_num": "113",
       "banked_cp_in": 409,
       "predicted_slots": [
         {
-          "word_position": 11681,
+          "word_position": 4117,
           "cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 11681,
+          "word_position": 10117,
           "cp_threshold": 200,
           "source": "predicted"
         }
@@ -151,17 +4590,582 @@
       "banked_cp_in": 0,
       "predicted_slots": [
         {
-          "word_position": 4625,
+          "word_position": 9551,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Esoteric Collection - Magic"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Expanded Collection - Mysticism"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Starting Collection"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 1 predicted slots but 3 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "115",
+      "banked_cp_in": 191,
+      "predicted_slots": [
+        {
+          "word_position": 1684,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Magitech"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 247, but largest hit costs 600. Predicted earnings short by ~353."
+    },
+    {
+      "chapter_num": "116.2",
+      "banked_cp_in": 419,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 50,
+          "names": [
+            "Movie & TV Series Collection"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Music Collection"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 2 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "116.3",
+      "banked_cp_in": 419,
+      "predicted_slots": [
+        {
+          "word_position": 1388,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "A New Age of Warfare"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 465, but largest hit costs 600. Predicted earnings short by ~135."
+    },
+    {
+      "chapter_num": "118",
+      "banked_cp_in": 162,
+      "predicted_slots": [
+        {
+          "word_position": 1030,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Blood Artisan Plus"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 196, but largest hit costs 600. Predicted earnings short by ~404."
+    },
+    {
+      "chapter_num": "119.5",
+      "banked_cp_in": 182,
+      "predicted_slots": [
+        {
+          "word_position": 725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 12725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 18725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "Box-tech"
+          ]
+        },
+        {
+          "cost": 600,
+          "names": [
+            "Equivalent Exchange"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 400 -> 100 would be feasible."
+    }
+  ],
+  "generation_infeasible": [
+    {
+      "chapter_num": "82.1",
+      "banked_cp_in": 292,
+      "predicted_slots": [
+        {
+          "word_position": 148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 2148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 4148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 8148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 10148,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 300,
+          "names": [
+            "Divine Weapon"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Dynamic Waterworks"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Pipes Pipes Pipes"
+          ]
+        },
+        {
+          "cost": 300,
+          "names": [
+            "Waterworld"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 300 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "83.1",
+      "banked_cp_in": 272,
+      "predicted_slots": [
+        {
+          "word_position": 563,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "Armsthrift"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 300, but largest hit costs 400. Predicted earnings short by ~100."
+    },
+    {
+      "chapter_num": "84",
+      "banked_cp_in": 36,
+      "predicted_slots": [
+        {
+          "word_position": 1118,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 3118,
+          "cp_threshold": 100,
+          "source": "predicted"
+        },
+        {
+          "word_position": 5118,
+          "cp_threshold": 100,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "One-Man Assembly Line"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 291, but largest hit costs 600. Predicted earnings short by ~309."
+    },
+    {
+      "chapter_num": "95",
+      "banked_cp_in": 519,
+      "predicted_slots": [
+        {
+          "word_position": 1464,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 5464,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 9464,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Erudition"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Minor Blessing Zeus – Lightning"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Unnatural Skill: Curses"
+          ]
+        }
+      ],
+      "diagnostic": "hit_order_inconsistency",
+      "explanation": "Curator order infeasible, but permutation (1, 0, 2) works."
+    },
+    {
+      "chapter_num": "95.5",
+      "banked_cp_in": 149,
+      "predicted_slots": [
+        {
+          "word_position": 2858,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 3521,
           "cp_threshold": 200,
           "source": "synthetic"
         },
         {
-          "word_position": 9251,
+          "word_position": 6858,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 7043,
+          "cp_threshold": 200,
+          "source": "synthetic"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 100,
+          "names": [
+            "Central Control"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Gym"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Arena"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Your Robots"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #2 cost 200 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "96",
+      "banked_cp_in": 297,
+      "predicted_slots": [
+        {
+          "word_position": 379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 4379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 8379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 12379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 16379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 20379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 24379,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Superweapons"
+          ]
+        },
+        {
+          "cost": 100,
+          "names": [
+            "Minor Blessing Poseidon – Water"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Unnatural Skill: Stoneworking"
+          ]
+        },
+        {
+          "cost": 200,
+          "names": [
+            "Arsenal"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Basic Accommodations"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Seeds and Seedlings"
+          ]
+        }
+      ],
+      "diagnostic": "hit_order_inconsistency",
+      "explanation": "Curator order infeasible, but permutation (1, 0, 2, 3, 4, 5) works."
+    },
+    {
+      "chapter_num": "98",
+      "banked_cp_in": 168,
+      "predicted_slots": [
+        {
+          "word_position": 5012,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Trigram Knowledge and Manipulation"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 335, but largest hit costs 600. Predicted earnings short by ~265."
+    },
+    {
+      "chapter_num": "99.1",
+      "banked_cp_in": 207,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 300,
+          "names": [
+            "Workshop Equipment"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "110",
+      "banked_cp_in": 479,
+      "predicted_slots": [
+        {
+          "word_position": 2080,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Xenoarcheaologist"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 548, but largest hit costs 600. Predicted earnings short by ~52."
+    },
+    {
+      "chapter_num": "110.3",
+      "banked_cp_in": 102,
+      "predicted_slots": [
+        {
+          "word_position": 1159,
+          "cp_threshold": 200,
+          "source": "synthetic"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 500,
+          "names": [
+            "The Pleician Tome"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 102, but largest hit costs 500. Predicted earnings short by ~398."
+    },
+    {
+      "chapter_num": "113",
+      "banked_cp_in": 409,
+      "predicted_slots": [
+        {
+          "word_position": 4117,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 10117,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 200,
+          "names": [
+            "Mixing Mixtures"
+          ]
+        },
+        {
+          "cost": 600,
+          "names": [
+            "Strong Spark"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 200 -> 100 would be feasible."
+    },
+    {
+      "chapter_num": "114",
+      "banked_cp_in": 0,
+      "predicted_slots": [
+        {
+          "word_position": 4622,
           "cp_threshold": 200,
           "source": "synthetic"
         },
         {
-          "word_position": 11564,
+          "word_position": 9245,
+          "cp_threshold": 200,
+          "source": "synthetic"
+        },
+        {
+          "word_position": 9551,
           "cp_threshold": 200,
           "source": "predicted"
         }
@@ -191,10 +5195,10 @@
     },
     {
       "chapter_num": "115",
-      "banked_cp_in": 192,
+      "banked_cp_in": 191,
       "predicted_slots": [
         {
-          "word_position": 5714,
+          "word_position": 1684,
           "cp_threshold": 200,
           "source": "predicted"
         }
@@ -208,7 +5212,112 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 382, but largest hit costs 600. Predicted earnings short by ~218."
+      "explanation": "Highest CP achieved in chapter is 247, but largest hit costs 600. Predicted earnings short by ~353."
+    },
+    {
+      "chapter_num": "116.2",
+      "banked_cp_in": 419,
+      "predicted_slots": [],
+      "recorded_hits": [
+        {
+          "cost": 50,
+          "names": [
+            "Movie & TV Series Collection"
+          ]
+        },
+        {
+          "cost": 50,
+          "names": [
+            "Music Collection"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Chapter has 0 predicted slots but 2 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+    },
+    {
+      "chapter_num": "116.3",
+      "banked_cp_in": 419,
+      "predicted_slots": [
+        {
+          "word_position": 1388,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "A New Age of Warfare"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 465, but largest hit costs 600. Predicted earnings short by ~135."
+    },
+    {
+      "chapter_num": "118",
+      "banked_cp_in": 162,
+      "predicted_slots": [
+        {
+          "word_position": 1030,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 600,
+          "names": [
+            "Blood Artisan Plus"
+          ]
+        }
+      ],
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 196, but largest hit costs 600. Predicted earnings short by ~404."
+    },
+    {
+      "chapter_num": "119.5",
+      "banked_cp_in": 182,
+      "predicted_slots": [
+        {
+          "word_position": 725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 6725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 12725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        },
+        {
+          "word_position": 18725,
+          "cp_threshold": 200,
+          "source": "predicted"
+        }
+      ],
+      "recorded_hits": [
+        {
+          "cost": 400,
+          "names": [
+            "Box-tech"
+          ]
+        },
+        {
+          "cost": 600,
+          "names": [
+            "Equivalent Exchange"
+          ]
+        }
+      ],
+      "diagnostic": "cost_typo_suspected",
+      "explanation": "Hit #0 cost 400 -> 100 would be feasible."
     }
   ],
   "curator_solver_divergences": [
@@ -216,13 +5325,14 @@
       "chapter_num": "1",
       "curator_outcomes": [
         "hit",
+        "miss",
         "miss"
       ],
       "solver_outcomes": [
         "miss",
-        "hit"
+        "miss"
       ],
-      "solver_slack": 116
+      "solver_slack": 0
     },
     {
       "chapter_num": "2",
@@ -238,7 +5348,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 255
+      "solver_slack": 497
     },
     {
       "chapter_num": "3",
@@ -252,7 +5362,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 367
+      "solver_slack": 398
     },
     {
       "chapter_num": "4",
@@ -269,7 +5379,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 361
+      "solver_slack": 297
     },
     {
       "chapter_num": "5",
@@ -281,7 +5391,7 @@
         "miss",
         "hit"
       ],
-      "solver_slack": 272
+      "solver_slack": 205
     },
     {
       "chapter_num": "6",
@@ -299,7 +5409,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1335
+      "solver_slack": 1115
     },
     {
       "chapter_num": "6.1",
@@ -325,7 +5435,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 965
+      "solver_slack": 810
     },
     {
       "chapter_num": "8",
@@ -340,7 +5450,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1286
+      "solver_slack": 1212
     },
     {
       "chapter_num": "8.1",
@@ -372,7 +5482,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3581
+      "solver_slack": 3415
     },
     {
       "chapter_num": "10",
@@ -390,7 +5500,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3157
+      "solver_slack": 3018
     },
     {
       "chapter_num": "11",
@@ -411,7 +5521,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3065
+      "solver_slack": 2815
     },
     {
       "chapter_num": "12",
@@ -424,7 +5534,7 @@
         "miss",
         "hit"
       ],
-      "solver_slack": 768
+      "solver_slack": 705
     },
     {
       "chapter_num": "13",
@@ -443,7 +5553,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2866
+      "solver_slack": 2715
     },
     {
       "chapter_num": "14",
@@ -462,7 +5572,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3426
+      "solver_slack": 3224
     },
     {
       "chapter_num": "15",
@@ -482,7 +5592,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2701
+      "solver_slack": 2315
     },
     {
       "chapter_num": "16",
@@ -499,7 +5609,7 @@
         "miss",
         "hit"
       ],
-      "solver_slack": 1020
+      "solver_slack": 1005
     },
     {
       "chapter_num": "17",
@@ -519,7 +5629,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3618
+      "solver_slack": 3415
     },
     {
       "chapter_num": "18",
@@ -538,7 +5648,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3407
+      "solver_slack": 3215
     },
     {
       "chapter_num": "19",
@@ -562,7 +5672,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3986
+      "solver_slack": 3720
     },
     {
       "chapter_num": "20",
@@ -581,7 +5691,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1968
+      "solver_slack": 1810
     },
     {
       "chapter_num": "21",
@@ -602,7 +5712,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4777
+      "solver_slack": 4425
     },
     {
       "chapter_num": "22",
@@ -621,7 +5731,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2280
+      "solver_slack": 2112
     },
     {
       "chapter_num": "23",
@@ -641,7 +5751,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4125
+      "solver_slack": 3824
     },
     {
       "chapter_num": "24",
@@ -665,7 +5775,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4975
+      "solver_slack": 4624
     },
     {
       "chapter_num": "25",
@@ -685,7 +5795,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2096
+      "solver_slack": 2012
     },
     {
       "chapter_num": "26",
@@ -704,7 +5814,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2934
+      "solver_slack": 2615
     },
     {
       "chapter_num": "27",
@@ -731,7 +5841,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4528
+      "solver_slack": 4020
     },
     {
       "chapter_num": "28",
@@ -756,7 +5866,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2660
+      "solver_slack": 2412
     },
     {
       "chapter_num": "29",
@@ -781,7 +5891,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4515
+      "solver_slack": 4315
     },
     {
       "chapter_num": "30",
@@ -815,7 +5925,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 11148
+      "solver_slack": 10642
     },
     {
       "chapter_num": "31",
@@ -840,7 +5950,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4724
+      "solver_slack": 4320
     },
     {
       "chapter_num": "32",
@@ -864,7 +5974,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3741
+      "solver_slack": 3524
     },
     {
       "chapter_num": "33",
@@ -882,7 +5992,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2006
+      "solver_slack": 1812
     },
     {
       "chapter_num": "34",
@@ -903,7 +6013,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3810
+      "solver_slack": 3515
     },
     {
       "chapter_num": "35",
@@ -923,12 +6033,11 @@
         "miss",
         "miss",
         "miss",
-        "miss",
         "hit",
         "hit",
         "hit"
       ],
-      "solver_slack": 3588
+      "solver_slack": 3115
     },
     {
       "chapter_num": "35.1",
@@ -942,10 +6051,11 @@
         "miss",
         "miss",
         "miss",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 2490
+      "solver_slack": 2312
     },
     {
       "chapter_num": "36",
@@ -963,12 +6073,11 @@
         "miss",
         "miss",
         "miss",
-        "miss",
         "hit",
         "hit",
         "hit"
       ],
-      "solver_slack": 3908
+      "solver_slack": 3418
     },
     {
       "chapter_num": "37",
@@ -988,10 +6097,11 @@
         "miss",
         "miss",
         "miss",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 2766
+      "solver_slack": 2510
     },
     {
       "chapter_num": "38",
@@ -1020,7 +6130,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 7693
+      "solver_slack": 7225
     },
     {
       "chapter_num": "39",
@@ -1053,31 +6163,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 5880
-    },
-    {
-      "chapter_num": "40",
-      "curator_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "hit",
-        "hit",
-        "hit",
-        "miss",
-        "miss"
-      ],
-      "solver_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "hit",
-        "hit",
-        "hit"
-      ],
-      "solver_slack": 3807
+      "solver_slack": 5520
     },
     {
       "chapter_num": "41",
@@ -1121,7 +6207,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 11608
+      "solver_slack": 10035
     },
     {
       "chapter_num": "42",
@@ -1141,7 +6227,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3989
+      "solver_slack": 3415
     },
     {
       "chapter_num": "43",
@@ -1157,27 +6243,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1701
-    },
-    {
-      "chapter_num": "43.1",
-      "curator_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "hit",
-        "miss"
-      ],
-      "solver_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "hit"
-      ],
-      "solver_slack": 818
+      "solver_slack": 1393
     },
     {
       "chapter_num": "44",
@@ -1195,7 +6261,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1675
+      "solver_slack": 610
     },
     {
       "chapter_num": "45",
@@ -1217,7 +6283,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1604
+      "solver_slack": 410
     },
     {
       "chapter_num": "46",
@@ -1249,7 +6315,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4345
+      "solver_slack": 2390
     },
     {
       "chapter_num": "46.1",
@@ -1271,7 +6337,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2499
+      "solver_slack": 1158
     },
     {
       "chapter_num": "47",
@@ -1293,7 +6359,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3174
+      "solver_slack": 1440
     },
     {
       "chapter_num": "48",
@@ -1319,7 +6385,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3929
+      "solver_slack": 2040
     },
     {
       "chapter_num": "49",
@@ -1340,7 +6406,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1916
+      "solver_slack": 1072
     },
     {
       "chapter_num": "50",
@@ -1362,7 +6428,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2601
+      "solver_slack": 1358
     },
     {
       "chapter_num": "51",
@@ -1382,7 +6448,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2584
+      "solver_slack": 1158
     },
     {
       "chapter_num": "52",
@@ -1406,7 +6472,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1872
+      "solver_slack": 970
     },
     {
       "chapter_num": "53",
@@ -1425,7 +6491,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1579
+      "solver_slack": 772
     },
     {
       "chapter_num": "54",
@@ -1445,7 +6511,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2532
+      "solver_slack": 1258
     },
     {
       "chapter_num": "55",
@@ -1473,27 +6539,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2584
-    },
-    {
-      "chapter_num": "55.1",
-      "curator_outcomes": [
-        "hit",
-        "miss",
-        "miss",
-        "miss",
-        "hit",
-        "miss"
-      ],
-      "solver_outcomes": [
-        "miss",
-        "hit",
-        "hit",
-        "hit",
-        "hit",
-        "hit"
-      ],
-      "solver_slack": 4124
+      "solver_slack": 1620
     },
     {
       "chapter_num": "56",
@@ -1510,10 +6556,11 @@
         "miss",
         "miss",
         "miss",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 2059
+      "solver_slack": 1470
     },
     {
       "chapter_num": "57",
@@ -1550,21 +6597,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3630
-    },
-    {
-      "chapter_num": "58",
-      "curator_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "hit"
-      ],
-      "solver_outcomes": [
-        "hit"
-      ],
-      "solver_slack": 152
+      "solver_slack": 2658
     },
     {
       "chapter_num": "61",
@@ -1582,7 +6615,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 484
+      "solver_slack": 266
     },
     {
       "chapter_num": "62",
@@ -1596,9 +6629,10 @@
         "miss",
         "miss",
         "miss",
+        "miss",
         "hit"
       ],
-      "solver_slack": 413
+      "solver_slack": 408
     },
     {
       "chapter_num": "63",
@@ -1616,7 +6650,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1656
+      "solver_slack": 1335
     },
     {
       "chapter_num": "65",
@@ -1631,10 +6665,11 @@
         "miss",
         "miss",
         "miss",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 586
+      "solver_slack": 616
     },
     {
       "chapter_num": "67",
@@ -1652,7 +6687,24 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 749
+      "solver_slack": 724
+    },
+    {
+      "chapter_num": "68",
+      "curator_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_outcomes": [
+        "miss",
+        "miss",
+        "miss",
+        "hit"
+      ],
+      "solver_slack": 108
     },
     {
       "chapter_num": "69",
@@ -1670,7 +6722,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 871
+      "solver_slack": 553
     },
     {
       "chapter_num": "70",
@@ -1681,10 +6733,11 @@
       ],
       "solver_outcomes": [
         "miss",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 900
+      "solver_slack": 852
     },
     {
       "chapter_num": "71",
@@ -1700,13 +6753,12 @@
       "solver_outcomes": [
         "miss",
         "miss",
-        "miss",
         "hit",
         "hit",
         "hit",
         "hit"
       ],
-      "solver_slack": 2329
+      "solver_slack": 1854
     },
     {
       "chapter_num": "72",
@@ -1717,10 +6769,11 @@
       ],
       "solver_outcomes": [
         "miss",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 1337
+      "solver_slack": 1302
     },
     {
       "chapter_num": "73",
@@ -1739,26 +6792,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1231
-    },
-    {
-      "chapter_num": "74.2",
-      "curator_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "miss"
-      ],
-      "solver_outcomes": [
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "miss",
-        "miss"
-      ],
-      "solver_slack": 0
+      "solver_slack": 1155
     },
     {
       "chapter_num": "75",
@@ -1774,493 +6808,444 @@
         "miss",
         "miss",
         "miss",
+        "miss",
         "hit",
         "hit",
         "hit"
       ],
-      "solver_slack": 1340
+      "solver_slack": 1197
     }
   ],
   "ambiguous_chapters": [
     {
-      "chapter_num": "1",
-      "feasible_assignment_count": 2,
-      "slack": 116
-    },
-    {
       "chapter_num": "2",
       "feasible_assignment_count": 3,
-      "slack": 255
+      "slack": 497
     },
     {
       "chapter_num": "3",
       "feasible_assignment_count": 3,
-      "slack": 367
-    },
-    {
-      "chapter_num": "4",
-      "feasible_assignment_count": 4,
-      "slack": 361
+      "slack": 398
     },
     {
       "chapter_num": "5",
       "feasible_assignment_count": 3,
-      "slack": 272
+      "slack": 205
     },
     {
       "chapter_num": "6",
       "feasible_assignment_count": 10,
-      "slack": 1335
+      "slack": 1115
     },
     {
       "chapter_num": "7",
       "feasible_assignment_count": 3,
-      "slack": 965
+      "slack": 810
     },
     {
       "chapter_num": "8",
       "feasible_assignment_count": 10,
-      "slack": 1286
+      "slack": 1212
     },
     {
       "chapter_num": "9",
       "feasible_assignment_count": 10,
-      "slack": 3581
+      "slack": 3415
     },
     {
       "chapter_num": "10",
       "feasible_assignment_count": 4,
-      "slack": 3157
+      "slack": 3018
     },
     {
       "chapter_num": "11",
       "feasible_assignment_count": 10,
-      "slack": 3065
+      "slack": 2815
     },
     {
       "chapter_num": "12",
       "feasible_assignment_count": 4,
-      "slack": 768
+      "slack": 705
     },
     {
       "chapter_num": "13",
       "feasible_assignment_count": 20,
-      "slack": 2866
+      "slack": 2715
     },
     {
       "chapter_num": "14",
       "feasible_assignment_count": 5,
-      "slack": 3426
+      "slack": 3224
     },
     {
       "chapter_num": "15",
       "feasible_assignment_count": 20,
-      "slack": 2701
+      "slack": 2315
     },
     {
       "chapter_num": "16",
       "feasible_assignment_count": 5,
-      "slack": 1020
+      "slack": 1005
     },
     {
       "chapter_num": "17",
       "feasible_assignment_count": 20,
-      "slack": 3618
+      "slack": 3415
     },
     {
       "chapter_num": "18",
       "feasible_assignment_count": 10,
-      "slack": 3407
+      "slack": 3215
     },
     {
       "chapter_num": "19",
       "feasible_assignment_count": 50,
-      "slack": 3986
+      "slack": 3720
     },
     {
       "chapter_num": "20",
       "feasible_assignment_count": 15,
-      "slack": 1968
+      "slack": 1810
     },
     {
       "chapter_num": "21",
       "feasible_assignment_count": 21,
-      "slack": 4777
+      "slack": 4425
     },
     {
       "chapter_num": "22",
       "feasible_assignment_count": 15,
-      "slack": 2280
+      "slack": 2112
     },
     {
       "chapter_num": "23",
       "feasible_assignment_count": 15,
-      "slack": 4125
+      "slack": 3824
     },
     {
       "chapter_num": "24",
       "feasible_assignment_count": 50,
-      "slack": 4975
+      "slack": 4624
     },
     {
       "chapter_num": "25",
       "feasible_assignment_count": 15,
-      "slack": 2096
+      "slack": 2012
     },
     {
       "chapter_num": "26",
       "feasible_assignment_count": 20,
-      "slack": 2934
+      "slack": 2615
     },
     {
       "chapter_num": "27",
       "feasible_assignment_count": 50,
-      "slack": 4528
+      "slack": 4020
     },
     {
       "chapter_num": "28",
       "feasible_assignment_count": 36,
-      "slack": 2660
+      "slack": 2412
     },
     {
       "chapter_num": "29",
       "feasible_assignment_count": 50,
-      "slack": 4515
+      "slack": 4315
     },
     {
       "chapter_num": "30",
       "feasible_assignment_count": 50,
-      "slack": 11148
+      "slack": 10642
     },
     {
       "chapter_num": "31",
       "feasible_assignment_count": 50,
-      "slack": 4724
+      "slack": 4320
     },
     {
       "chapter_num": "32",
       "feasible_assignment_count": 50,
-      "slack": 3741
+      "slack": 3524
     },
     {
       "chapter_num": "33",
       "feasible_assignment_count": 15,
-      "slack": 2006
+      "slack": 1812
     },
     {
       "chapter_num": "34",
       "feasible_assignment_count": 20,
-      "slack": 3810
+      "slack": 3515
     },
     {
       "chapter_num": "35",
       "feasible_assignment_count": 50,
-      "slack": 3588
+      "slack": 3115
     },
     {
       "chapter_num": "35.1",
-      "feasible_assignment_count": 28,
-      "slack": 2490
+      "feasible_assignment_count": 36,
+      "slack": 2312
     },
     {
       "chapter_num": "36",
-      "feasible_assignment_count": 50,
-      "slack": 3908
+      "feasible_assignment_count": 35,
+      "slack": 3418
     },
     {
       "chapter_num": "37",
-      "feasible_assignment_count": 21,
-      "slack": 2766
+      "feasible_assignment_count": 28,
+      "slack": 2510
     },
     {
       "chapter_num": "38",
       "feasible_assignment_count": 50,
-      "slack": 7693
+      "slack": 7225
     },
     {
       "chapter_num": "39",
       "feasible_assignment_count": 50,
-      "slack": 5880
-    },
-    {
-      "chapter_num": "40",
-      "feasible_assignment_count": 50,
-      "slack": 3807
+      "slack": 5520
     },
     {
       "chapter_num": "41",
       "feasible_assignment_count": 50,
-      "slack": 11608
+      "slack": 10035
     },
     {
       "chapter_num": "42",
       "feasible_assignment_count": 20,
-      "slack": 3989
-    },
-    {
-      "chapter_num": "43.1",
-      "feasible_assignment_count": 6,
-      "slack": 818
+      "slack": 3415
     },
     {
       "chapter_num": "44",
-      "feasible_assignment_count": 15,
-      "slack": 1675
+      "feasible_assignment_count": 12,
+      "slack": 610
     },
     {
       "chapter_num": "45",
-      "feasible_assignment_count": 28,
-      "slack": 1604
+      "feasible_assignment_count": 7,
+      "slack": 410
     },
     {
       "chapter_num": "46",
       "feasible_assignment_count": 50,
-      "slack": 4345
+      "slack": 2390
     },
     {
       "chapter_num": "46.1",
-      "feasible_assignment_count": 35,
-      "slack": 2499
+      "feasible_assignment_count": 14,
+      "slack": 1158
     },
     {
       "chapter_num": "47",
-      "feasible_assignment_count": 35,
-      "slack": 3174
+      "feasible_assignment_count": 34,
+      "slack": 1440
     },
     {
       "chapter_num": "48",
       "feasible_assignment_count": 50,
-      "slack": 3929
+      "slack": 2040
     },
     {
       "chapter_num": "49",
-      "feasible_assignment_count": 21,
-      "slack": 1916
+      "feasible_assignment_count": 18,
+      "slack": 1072
     },
     {
       "chapter_num": "50",
-      "feasible_assignment_count": 35,
-      "slack": 2601
+      "feasible_assignment_count": 34,
+      "slack": 1358
     },
     {
       "chapter_num": "51",
-      "feasible_assignment_count": 20,
-      "slack": 2584
+      "feasible_assignment_count": 14,
+      "slack": 1158
     },
     {
       "chapter_num": "52",
-      "feasible_assignment_count": 28,
-      "slack": 1872
+      "feasible_assignment_count": 15,
+      "slack": 970
     },
     {
       "chapter_num": "53",
-      "feasible_assignment_count": 10,
-      "slack": 1579
+      "feasible_assignment_count": 9,
+      "slack": 772
     },
     {
       "chapter_num": "54",
-      "feasible_assignment_count": 20,
-      "slack": 2532
+      "feasible_assignment_count": 16,
+      "slack": 1258
     },
     {
       "chapter_num": "55",
-      "feasible_assignment_count": 45,
-      "slack": 2584
-    },
-    {
-      "chapter_num": "55.1",
-      "feasible_assignment_count": 6,
-      "slack": 4124
+      "feasible_assignment_count": 39,
+      "slack": 1620
     },
     {
       "chapter_num": "56",
-      "feasible_assignment_count": 15,
-      "slack": 2059
+      "feasible_assignment_count": 20,
+      "slack": 1470
     },
     {
       "chapter_num": "57",
       "feasible_assignment_count": 50,
-      "slack": 3630
+      "slack": 2658
     },
     {
       "chapter_num": "60",
-      "feasible_assignment_count": 5,
-      "slack": 252
+      "feasible_assignment_count": 2,
+      "slack": 183
     },
     {
       "chapter_num": "61",
-      "feasible_assignment_count": 6,
-      "slack": 484
+      "feasible_assignment_count": 2,
+      "slack": 266
     },
     {
       "chapter_num": "62",
-      "feasible_assignment_count": 4,
-      "slack": 413
+      "feasible_assignment_count": 5,
+      "slack": 408
     },
     {
       "chapter_num": "65",
       "feasible_assignment_count": 10,
-      "slack": 586
+      "slack": 616
     },
     {
       "chapter_num": "66",
       "feasible_assignment_count": 6,
-      "slack": 460
+      "slack": 416
     },
     {
       "chapter_num": "67",
-      "feasible_assignment_count": 9,
-      "slack": 749
+      "feasible_assignment_count": 10,
+      "slack": 724
     },
     {
       "chapter_num": "68",
-      "feasible_assignment_count": 3,
-      "slack": 188
+      "feasible_assignment_count": 2,
+      "slack": 108
     },
     {
       "chapter_num": "69",
-      "feasible_assignment_count": 10,
-      "slack": 871
+      "feasible_assignment_count": 7,
+      "slack": 553
     },
     {
       "chapter_num": "70",
-      "feasible_assignment_count": 3,
-      "slack": 900
+      "feasible_assignment_count": 6,
+      "slack": 852
     },
     {
       "chapter_num": "71",
-      "feasible_assignment_count": 35,
-      "slack": 2329
+      "feasible_assignment_count": 15,
+      "slack": 1854
     },
     {
       "chapter_num": "72",
-      "feasible_assignment_count": 3,
-      "slack": 1337
+      "feasible_assignment_count": 6,
+      "slack": 1302
     },
     {
       "chapter_num": "73",
       "feasible_assignment_count": 6,
-      "slack": 1231
+      "slack": 1155
     },
     {
       "chapter_num": "75",
-      "feasible_assignment_count": 19,
-      "slack": 1340
+      "feasible_assignment_count": 25,
+      "slack": 1197
     },
     {
       "chapter_num": "77",
       "feasible_assignment_count": 4,
-      "slack": 392
+      "slack": 300
     },
     {
       "chapter_num": "78",
-      "feasible_assignment_count": 10,
-      "slack": 1352
+      "feasible_assignment_count": 15,
+      "slack": 1298
     },
     {
       "chapter_num": "79",
       "feasible_assignment_count": 10,
-      "slack": 2133
+      "slack": 2100
     },
     {
       "chapter_num": "80",
       "feasible_assignment_count": 6,
-      "slack": 1041
+      "slack": 1000
     },
     {
       "chapter_num": "81",
-      "feasible_assignment_count": 50,
-      "slack": 3500
+      "feasible_assignment_count": 21,
+      "slack": 2995
     },
     {
       "chapter_num": "82",
       "feasible_assignment_count": 50,
-      "slack": 4157
-    },
-    {
-      "chapter_num": "82.1",
-      "feasible_assignment_count": 14,
-      "slack": 1009
+      "slack": 3350
     },
     {
       "chapter_num": "83",
       "feasible_assignment_count": 3,
-      "slack": 526
+      "slack": 348
     },
     {
       "chapter_num": "85",
-      "feasible_assignment_count": 6,
-      "slack": 538
-    },
-    {
-      "chapter_num": "86",
-      "feasible_assignment_count": 3,
-      "slack": 506
+      "feasible_assignment_count": 5,
+      "slack": 484
     },
     {
       "chapter_num": "87",
       "feasible_assignment_count": 7,
-      "slack": 745
+      "slack": 692
     },
     {
       "chapter_num": "88",
       "feasible_assignment_count": 50,
-      "slack": 5192
+      "slack": 5060
     },
     {
       "chapter_num": "89",
-      "feasible_assignment_count": 20,
-      "slack": 986
+      "feasible_assignment_count": 9,
+      "slack": 682
     },
     {
       "chapter_num": "90",
-      "feasible_assignment_count": 10,
-      "slack": 786
+      "feasible_assignment_count": 7,
+      "slack": 584
     },
     {
       "chapter_num": "91",
       "feasible_assignment_count": 3,
-      "slack": 439
-    },
-    {
-      "chapter_num": "92",
-      "feasible_assignment_count": 2,
-      "slack": 388
+      "slack": 392
     },
     {
       "chapter_num": "97",
-      "feasible_assignment_count": 6,
-      "slack": 781
+      "feasible_assignment_count": 7,
+      "slack": 756
     },
     {
       "chapter_num": "101",
       "feasible_assignment_count": 2,
-      "slack": 782
+      "slack": 748
     },
     {
       "chapter_num": "103",
       "feasible_assignment_count": 3,
-      "slack": 1466
+      "slack": 1296
     },
     {
       "chapter_num": "107",
       "feasible_assignment_count": 3,
-      "slack": 642
+      "slack": 548
     },
     {
       "chapter_num": "108",
       "feasible_assignment_count": 3,
-      "slack": 1008
-    },
-    {
-      "chapter_num": "116.2",
-      "feasible_assignment_count": 21,
-      "slack": 3208
-    },
-    {
-      "chapter_num": "119.5",
-      "feasible_assignment_count": 3,
-      "slack": 2240
+      "slack": 1048
     }
   ]
 }

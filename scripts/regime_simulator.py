@@ -320,18 +320,60 @@ def simulate_story(
     current_regime = regime_for_chapter(current_chapter)
     last_word = 0
 
-    def fire_rolls(now_word: int) -> None:
-        nonlocal banked_cp_x100
+    def advance_to(target_word: int) -> None:
+        """Walk from ``last_word`` to ``target_word`` accumulating CP and
+        firing rolls at the *exact* word offset where banked CP crosses
+        each regime threshold. Shadow words are burned first.
+        """
+        nonlocal banked_cp_x100, last_word
+        if target_word <= last_word:
+            return
+        elapsed = target_word - last_word
+        # Burn shadow first — no CP earned during shadow words.
+        if shadow.remaining > 0:
+            burn = min(shadow.remaining, elapsed)
+            shadow.remaining -= burn
+            last_word += burn
+            elapsed -= burn
+        if elapsed <= 0:
+            last_word = target_word
+            return
+        rate_words = REGIMES[current_regime]["words_per_100_cp"]
         threshold_x100 = REGIMES[current_regime]["cp_per_roll"] * 100
-        while banked_cp_x100 >= threshold_x100:
-            predicted.append(PredictedRoll(
-                roll_number=len(predicted) + 1,
-                word_position=now_word,
-                chapter_num=current_chapter,
-                regime=current_regime,
-                cp_threshold=REGIMES[current_regime]["cp_per_roll"],
-            ))
-            banked_cp_x100 -= threshold_x100
+        while elapsed > 0:
+            deficit_x100 = threshold_x100 - banked_cp_x100
+            if deficit_x100 <= 0:
+                # Already at/over threshold — fire at last_word.
+                predicted.append(PredictedRoll(
+                    roll_number=len(predicted) + 1,
+                    word_position=last_word,
+                    chapter_num=current_chapter,
+                    regime=current_regime,
+                    cp_threshold=REGIMES[current_regime]["cp_per_roll"],
+                ))
+                banked_cp_x100 -= threshold_x100
+                continue
+            # words_to_threshold = ceil(deficit_x100 * rate_words / 10000)
+            words_to_threshold = (deficit_x100 * rate_words + 9999) // 10000
+            if words_to_threshold > elapsed:
+                # Won't reach threshold this window; accumulate the rest.
+                banked_cp_x100 += elapsed * 10000 // rate_words
+                last_word += elapsed
+                elapsed = 0
+                break
+            banked_cp_x100 += words_to_threshold * 10000 // rate_words
+            last_word += words_to_threshold
+            elapsed -= words_to_threshold
+            if banked_cp_x100 >= threshold_x100:
+                predicted.append(PredictedRoll(
+                    roll_number=len(predicted) + 1,
+                    word_position=last_word,
+                    chapter_num=current_chapter,
+                    regime=current_regime,
+                    cp_threshold=REGIMES[current_regime]["cp_per_roll"],
+                ))
+                banked_cp_x100 -= threshold_x100
+        last_word = target_word
 
     # Per-chapter regime transition state: when entering a chapter, set
     # current_regime to the FIRST segment's regime (which may differ
@@ -351,13 +393,7 @@ def simulate_story(
     }
 
     for event in events:
-        elapsed = event.word - last_word
-        if elapsed > 0:
-            banked_cp_x100 = _accumulate_x100(
-                elapsed, current_regime, banked_cp_x100, shadow,
-            )
-            fire_rolls(event.word)
-        last_word = event.word
+        advance_to(event.word)
 
         if event.kind == "chapter_start":
             current_chapter = event.chapter_num
@@ -380,7 +416,7 @@ def simulate_story(
             if sw:
                 shadow.remaining += sw
 
-    fire_rolls(total_words)
+    advance_to(total_words)
     return predicted, chapter_word_start, chapter_word_end, total_words
 
 

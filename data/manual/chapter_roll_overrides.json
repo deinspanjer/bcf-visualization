@@ -1,0 +1,107 @@
+{
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. When a chapter has an entry here, it FULLY determines the chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, narrative_evidence}. The legacy shape (each roll as a bare list of perk names) is still accepted and mapped to outcome='hit', and other fields default to null. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "chapter_roll_overrides": {
+    "65": {
+      "rolls": [
+        {
+          "perks": [
+            "Fueling Station",
+            "Garage"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Two of the motes were secured (PR multi-grab)."
+        },
+        {
+          "perks": [
+            "Workshop: Electronics"
+          ],
+          "outcome": "hit",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "narrative_evidence": "Workshop: Electronics is a separate Toolkits roll."
+        }
+      ],
+      "narrative_evidence": "Two of the motes were secured (PR multi-grab); Workshop: Electronics is a separate Toolkits roll. Order verified against curator rolls.json (PR multi-grab roll_number 444, Workshop: Electronics 448). (ch 65)"
+    },
+    "67": {
+      "rolls": [
+        {
+          "perks": [
+            "The Meaning of Life",
+            "Natural Lighting",
+            "The Pond-Expansion",
+            "Neutral Lighting"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections."
+        },
+        {
+          "perks": [
+            "The Pond"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Then The Pond."
+        },
+        {
+          "perks": [
+            "Pilot Simulator"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Then Pilot Simulator."
+        }
+      ],
+      "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections; then The Pond; then Pilot Simulator. Ch 67's curator-listed order (Pilot Simulator first) disagrees with narrative."
+    },
+    "97": {
+      "rolls": [
+        {
+          "perks": [
+            "Additional Space - Starting Area",
+            "Additional Space – Lofty Loft"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Secured two connections (PR multi-grab)."
+        },
+        {
+          "perks": [
+            "Nano-Forge"
+          ],
+          "outcome": "hit",
+          "constellation": "Size",
+          "word_position": null,
+          "narrative_evidence": "Then Nano-Forge."
+        }
+      ],
+      "narrative_evidence": "secured two connections (PR multi-grab); then Nano-Forge. (ch 97)"
+    },
+    "1": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "narrative_evidence": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach."
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "narrative_evidence": null
+        }
+      ],
+      "narrative_evidence": "Ch 1: Both predicted rolls are misses. Workshop, Access Key, and Entrance Hall were granted at the trigger event (with Joe receiving his power), before any roll fires. Treat as acquired at word 0."
+    }
+  }
+}

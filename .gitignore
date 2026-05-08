@@ -57,3 +57,5 @@ data/labeled/sections/_*.jsonl
 .uv/
 .hf_cache/
 
+data/manual/.session_journals/
+data/manual/.forge_curator_state.json

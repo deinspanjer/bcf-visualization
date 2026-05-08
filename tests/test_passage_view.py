@@ -277,11 +277,14 @@ def test_mouse_drag_selects_range(monkeypatch) -> None:
 
     pv.on_mouse_down(_FakeEvent(11, 0))
     assert pv.cursor == 11
-    assert pv.anchor == 11
+    # Anchor is NOT set on mouse_down anymore; only commits once a real
+    # drag (>= threshold chars) actually moves the cursor.
+    assert pv.anchor is None
 
     pv.on_mouse_move(_FakeEvent(24, 0))
     assert pv.cursor == 24
-    # Inclusive of cursor cell — drag-to-x=24 includes the period.
+    # Drag past threshold committed anchor at the click position; the
+    # selection covers click-start through cursor (inclusive cell).
     assert pv.selection == (11, 25)
     assert pv.selected_text == "Perfect Pitch."
 
@@ -493,3 +496,225 @@ def test_gg_chord_via_on_key() -> None:
     _send(pv, "g")
     assert pv.cursor == 0
     assert pv._pending_g is False
+
+
+# ---------------------------------------------------------------------------
+# Cursor visibility on empty lines and hard-newline boundaries
+# ---------------------------------------------------------------------------
+
+
+def _stripped_lines(rendered) -> list[str]:
+    """Split a rendered ``rich.text.Text`` into per-line plain strings."""
+    return rendered.plain.split("\n")
+
+
+def test_cursor_renders_on_empty_line() -> None:
+    """A cursor that lands on a blank line must be visible (regression)."""
+    text = "hello\n\nworld"
+    pv = _make(text, width=80)
+    # Wrap geometry: [(0,5), (6,6), (7,12)] — the middle is an empty line.
+    pv.cursor = 6
+    rendered = pv.render()
+    lines = _stripped_lines(rendered)
+    assert lines[0] == "hello"
+    # The empty line now contains a single space (the synthetic cursor cell).
+    assert lines[1] == " "
+    assert lines[2] == "world"
+
+
+def test_cursor_renders_on_hard_newline_position() -> None:
+    """Cursor at offset == end-of-line on a hard-newline boundary stays visible."""
+    text = "abc\ndef"
+    pv = _make(text, width=80)
+    # Wrap geometry: [(0,3), (4,7)]. Offset 3 is the newline char itself.
+    pv.cursor = 3
+    rendered = pv.render()
+    lines = _stripped_lines(rendered)
+    # First line gains a trailing synthetic cursor cell after "abc".
+    assert lines[0] == "abc "
+    assert lines[1] == "def"
+
+
+def test_cursor_at_soft_wrap_boundary_renders_on_continuation_line() -> None:
+    """Cursor at a soft-wrap seam should appear on the continuation line, not the prior one."""
+    text = "abcdefghij"
+    pv = _make(text, width=5)
+    # Wrap geometry: [(0,5), (5,10)]. Cursor at offset 5 = first char of line 2.
+    pv.cursor = 5
+    rendered = pv.render()
+    lines = _stripped_lines(rendered)
+    # Cursor should NOT appear as a phantom at the end of line 1.
+    assert lines[0] == "abcde"
+    # Line 2's first character should carry the cursor style (visible inline).
+    assert lines[1] == "fghij"
+    # No double-render — total rendered chars equal text length, not text+1.
+    assert sum(len(line) for line in lines) == len(text)
+
+
+def test_cursor_at_end_of_text_still_renders() -> None:
+    """Existing behaviour: cursor at len(text) renders as trailing block."""
+    text = "hi"
+    pv = _make(text, width=80)
+    pv.cursor = 2  # end of text
+    rendered = pv.render()
+    assert rendered.plain == "hi "  # synthetic trailing block
+
+
+def test_cursor_on_two_consecutive_blank_lines() -> None:
+    """Two adjacent blank lines (the case from the cast file): both must render visibly."""
+    text = "title\n\n\nbody"
+    pv = _make(text, width=80)
+    # Wrap geometry: [(0,5), (6,6), (7,7), (8,12)]
+    pv.cursor = 6
+    lines = _stripped_lines(pv.render())
+    assert lines == ["title", " ", "", "body"]
+    pv.cursor = 7
+    lines = _stripped_lines(pv.render())
+    assert lines == ["title", "", " ", "body"]
+
+
+# ---------------------------------------------------------------------------
+# Motion math agrees with cursor rendering on soft-wrap boundaries
+# ---------------------------------------------------------------------------
+
+
+def test_j_from_soft_wrap_boundary_advances_one_line() -> None:
+    """Cursor at a soft-wrap boundary should treat the continuation line as 'current'.
+
+    Before the fix, ``_line_index`` reported the cursor on the *prior*
+    line for boundary offsets, so j computed column from the prior line
+    and then clamped to the boundary's end — leaving the cursor visually
+    "stuck" jumping to end-of-line instead of advancing one row.
+    """
+    # 240 'a' chars wrapped at width 80 → lines [(0,80), (80,160), (160,240)].
+    text = "a" * 240
+    pv = _make(text, width=80)
+    # Cursor at offset 80 — soft-wrap boundary. Visually rendered on line 1.
+    pv.cursor = 80
+    assert pv._line_index(80) == 1, "boundary offset belongs to continuation line"
+    # j should land on offset 160 (start of line 2), not on synthetic-end of line 1.
+    pv.action_move_down()
+    assert pv.cursor == 160
+    assert pv._line_index(pv.cursor) == 2
+
+
+def test_repeated_j_through_soft_wrapped_paragraph_does_not_stall() -> None:
+    """Repeated j through a wrapped paragraph should advance one visual line each time."""
+    # 320 chars wrapped at width 80 → 4 lines.
+    text = "a" * 320
+    pv = _make(text, width=80)
+    pv.cursor = 0
+    expected = [80, 160, 240, 320]  # 320 = end-of-text clamp
+    for want in expected:
+        pv.action_move_down()
+        assert pv.cursor == want, f"expected cursor at {want}, got {pv.cursor}"
+
+
+def test_j_preserves_column_across_soft_wrap() -> None:
+    """Pressing j with a non-zero column should preserve column on the next line."""
+    text = "a" * 240
+    pv = _make(text, width=80)
+    pv.cursor = 5  # line 0, col 5
+    pv.action_move_down()
+    assert pv.cursor == 85  # line 1, col 5
+    pv.action_move_down()
+    assert pv.cursor == 165  # line 2, col 5
+
+
+def test_k_at_soft_wrap_boundary_goes_back_one_line() -> None:
+    text = "a" * 240
+    pv = _make(text, width=80)
+    pv.cursor = 160  # boundary; rendered on line 2
+    pv.action_move_up()
+    assert pv.cursor == 80
+
+
+def test_dollar_on_continuation_line_goes_to_line_end() -> None:
+    """$ on a soft-wrapped continuation line should target that visual line's end."""
+    text = "a" * 240
+    pv = _make(text, width=80)
+    pv.cursor = 80  # rendered on line 1
+    pv.action_line_end()
+    assert pv.cursor == 160  # end of line 1
+
+
+# ---------------------------------------------------------------------------
+# Text objects (aw / iw / aW / iW / as / is / ap / ip)
+# ---------------------------------------------------------------------------
+
+
+def test_iw_selects_inner_word() -> None:
+    pv = _make("hello world", width=80)
+    pv.cursor = 7  # inside "world"
+    pv.action_toggle_visual()
+    _send(pv, "i")
+    _send(pv, "w")
+    sel = pv.selection
+    assert sel == (6, 11)
+
+
+def test_aw_includes_trailing_whitespace() -> None:
+    pv = _make("foo bar baz", width=80)
+    pv.cursor = 0  # on "foo"
+    pv.action_toggle_visual()
+    _send(pv, "a")
+    _send(pv, "w")
+    sel = pv.selection
+    assert sel == (0, 4)  # foo + trailing space
+
+
+def test_iW_uses_whitespace_word_semantics() -> None:
+    pv = _make("foo-bar baz", width=80)
+    pv.cursor = 1  # inside "foo-bar" (a WORD)
+    pv.action_toggle_visual()
+    _send(pv, "i")
+    _send(pv, "W")
+    sel = pv.selection
+    assert sel == (0, 7)
+
+
+def test_is_selects_inner_sentence() -> None:
+    pv = _make("Hello world. Next one!", width=80)
+    pv.cursor = 4  # inside first sentence
+    pv.action_toggle_visual()
+    _send(pv, "i")
+    _send(pv, "s")
+    sel = pv.selection
+    assert sel is not None
+    assert pv.text[sel[0]:sel[1]].strip().endswith(".")
+
+
+def test_ip_selects_paragraph() -> None:
+    text = "Para one line one.\nLine two.\n\nPara two body.\n\nPara three."
+    pv = _make(text, width=80)
+    pv.cursor = 5  # inside para one
+    pv.action_toggle_visual()
+    _send(pv, "i")
+    _send(pv, "p")
+    sel = pv.selection
+    assert sel is not None
+    assert "Para one" in pv.text[sel[0]:sel[1]]
+    assert "Para two" not in pv.text[sel[0]:sel[1]]
+
+
+def test_ap_includes_trailing_blank_line() -> None:
+    text = "Para one.\n\nPara two."
+    pv = _make(text, width=80)
+    pv.cursor = 0
+    pv.action_toggle_visual()
+    _send(pv, "a")
+    _send(pv, "p")
+    sel = pv.selection
+    assert sel is not None
+    assert pv.text[sel[0]:sel[1]].endswith("\n\n") or pv.text[sel[0]:sel[1]].endswith("\n")
+
+
+def test_text_object_does_not_fire_outside_visual_mode() -> None:
+    """Pressing 'a' or 'i' outside visual mode should be a no-op for the cursor."""
+    pv = _make("hello world", width=80)
+    pv.cursor = 3
+    _send(pv, "a")
+    _send(pv, "w")
+    # Cursor should not have changed; no selection.
+    assert pv.cursor == 3
+    assert pv.selection is None
