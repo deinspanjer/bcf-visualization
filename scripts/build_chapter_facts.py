@@ -539,6 +539,7 @@ def main() -> None:
         )
 
     payload = {
+        "schema_version": 1,
         "_source": (
             "Chapter-grain fact table for the visualization. One row "
             "per published chapter with sections and rolls as nested "

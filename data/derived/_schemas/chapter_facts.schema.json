@@ -6,10 +6,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "_source", "_method", "_count", "_grain", "_deferred",
+    "schema_version", "_source", "_method", "_count", "_grain", "_deferred",
     "shadow_periods", "in_world_timeline", "chapters"
   ],
   "properties": {
+    "schema_version": { "const": 1 },
     "_source": { "type": "string" },
     "_method": { "type": "string" },
     "_count":  { "type": "integer", "minimum": 0 },

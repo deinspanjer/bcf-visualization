@@ -5,8 +5,9 @@
   "description": "2D star-pattern wireframes for the 14 named cluster-constellations and every per-jump sub-constellation. Each cluster shape is themed by the constellation's name (e.g. Toolkits = wrench outline) and its vertices mark where each contained jump's mini-constellation sits. Each per-jump shape is themed by the jump's source media as an abstract star pattern, never a literal logo. Coordinates are normalized to roughly the unit square; the renderer applies 3D sphere positioning. Star size encodes perk cost (small for 100 CP, ~1.0 for 800+ CP).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["_source", "_count", "_jumps_count", "_note", "cluster_constellations", "jump_constellations"],
+  "required": ["schema_version", "_source", "_count", "_jumps_count", "_note", "cluster_constellations", "jump_constellations"],
   "properties": {
+    "schema_version": { "const": 1 },
     "_source": { "type": "string" },
     "_count":  { "type": "integer", "minimum": 0 },
     "_jumps_count": { "type": "integer", "minimum": 0 },

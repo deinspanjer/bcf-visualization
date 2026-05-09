@@ -1,4 +1,5 @@
 {
+  "schema_version": 1,
   "_source": "Chapter-grain fact table for the visualization. One row per published chapter with sections and rolls as nested 1:N dimensions; shadow_periods are top-level because they can span chapters.",
   "_method": "Cross-join of chapters.json + chapter_sections.json + section_classifications.json + roll_facts.json + chapter_last_edited.json. Roll facts are pre-reconciled upstream: curator roll rows win where present, and interpolated rows are provenance-marked fallback. Free perks attach to their paid hit. In-world dates are stubbed (every field null, confidence='stub') pending a separate derivation.",
   "_count": 194,

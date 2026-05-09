@@ -7,7 +7,8 @@ The project is intentionally static:
 - `data/raw/` contains local source material such as MHT exports,
   spreadsheets, and optional EPUBs.
 - `data/manual/` contains curated inputs and overrides.
-- `data/derived/` contains committed JSON outputs and matching schemas.
+- `data/derived/` contains committed JSON outputs, matching schemas, and
+  the Phase 1 runtime data-package manifest.
 - `scripts/` contains parser, enrichment, validation, and chart scripts.
 - `web/` contains the dependency-free visualization.
 
@@ -60,6 +61,53 @@ Typical full regeneration order:
 Each derived JSON file should validate against its schema before being
 written. Structural drift should fail loudly.
 
+## Versioned data packages
+
+Phase 1 keeps top-level `data/derived/*.json` committed, but release and
+Pages tooling now treats runtime data as a versioned contract package.
+The browser loads `data_package.json` before `chapter_facts.json` and
+rejects unsupported contract versions instead of attempting local
+fallback reconciliation.
+
+Refresh the local runtime manifest after regenerating web-consumed data:
+
+```sh
+python3 scripts/data_release.py manifest --date YYYYMMDD --build-number N
+```
+
+Build release assets from the current derived data:
+
+```sh
+python3 scripts/data_release.py package \
+  --date YYYYMMDD \
+  --build-number N \
+  --output-dir dist/data-packages
+```
+
+The package command writes two assets:
+
+- `bcf-pages-runtime-YYYYMMDD.N.tar.gz`: minimal Pages/browser payload.
+- `bcf-dev-derived-YYYYMMDD.N.tar.gz`: full top-level derived JSON set
+  for maintainer bootstrap.
+
+To hydrate a fresh checkout from a maintainer bundle:
+
+```sh
+python3 scripts/data_release.py download-dev \
+  --tag data-vYYYYMMDD.N \
+  --asset bcf-dev-derived-YYYYMMDD.N.tar.gz
+```
+
+To dry-run old data-release cleanup:
+
+```sh
+python3 scripts/data_release.py cleanup --keep-tag data-vYYYYMMDD.N
+```
+
+Add `--yes` only after reviewing the dry-run output. Do not filter
+derived JSON out of git history until a release-backed Pages deployment
+and local bootstrap cycle have both been proven.
+
 Roll data flow is intentionally layered: `predicted_rolls.json` is the
 mechanical threshold-crossing schedule, `chapter_roll_overrides.json`
 is manual curation keyed by mechanical chapter, `roll_facts.json`
@@ -76,6 +124,7 @@ For JavaScript syntax:
 
 ```sh
 node --check web/app.js
+node --check web/data-contract.js
 ```
 
 For whitespace/conflict issues before committing:

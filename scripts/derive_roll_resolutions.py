@@ -29,6 +29,10 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+
+from _common import write_validated_json
 
 # ---------- default paths ---------------------------------------------------
 
@@ -442,9 +446,7 @@ def main() -> None:
         "rolls": out_rolls,
     }
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
-    args.output.write_text(text)
+    write_validated_json(args.output, payload, "roll_resolutions")
 
     # ---------- console summary ----------
     total = len(out_rolls)
