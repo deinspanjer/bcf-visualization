@@ -225,10 +225,10 @@ def validate_package_dir(
         if meta.get("sha256") != digest:
             raise ValueError(f"package file hash mismatch: {rel.as_posix()}")
         doc = _read_json(path)
-        schema_version = doc.get("schema_version")
-        if schema_version is None:
-            raise ValueError(f"package file has no schema_version: {rel.as_posix()}")
-        if meta.get("schema_version") != schema_version:
+        expected_schema_version = meta.get("schema_version")
+        if expected_schema_version is None:
+            continue
+        if expected_schema_version != doc.get("schema_version"):
             raise ValueError(f"package file schema_version mismatch: {rel.as_posix()}")
 
     return manifest

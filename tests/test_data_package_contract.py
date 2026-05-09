@@ -92,6 +92,14 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     assert "roll_text_evidence.json" in dev_names
     assert "_schemas/chapter_facts.schema.json" not in dev_names
 
+    extracted_dev = tmp_path / "extracted-dev"
+    data_release._safe_extract(outputs.dev_tar, extracted_dev)
+    dev_manifest = data_release.validate_package_dir(
+        extracted_dev,
+        expected_bundle_class="dev-derived",
+    )
+    assert dev_manifest["files"]["chapter_last_edited"]["schema_version"] is None
+
 
 def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) -> None:
     from scripts import data_release
