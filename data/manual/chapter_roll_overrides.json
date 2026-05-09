@@ -107,6 +107,152 @@
         }
       ],
       "narrative_evidence": "Ch 1: Workshop, Access Key, and Entrance Hall were granted at the trigger event (with Joe receiving his power), before any roll fires. The first predicted roll is the narrated miss. The second predicted roll fires at the end of chapter 1 but is narrated/listed in chapter 2 as Fashion."
+    },
+    "100": {
+      "rolls": [
+        {
+          "perks": [
+            "Skills: Communications",
+            "Skills: Espionage",
+            "Skills: Piloting",
+            "Skills: Weapons"
+          ],
+          "outcome": "hit",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions into one Knowledge roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "103": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table records this as a Toolkits miss."
+        },
+        {
+          "perks": [
+            "Minor Blessing Demeter - Cultivation",
+            "Unnatural Skill: Naturecraft"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft as one 300 CP Quality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "104": {
+      "rolls": [
+        {
+          "perks": [
+            "Entrance Hall - Espirit de Kerbal",
+            "Entrance Hall - Fleet",
+            "Entrance Hall - Some Old Friends",
+            "Entrance Hall - The Matrix",
+            "Entrance Hall – Aisha",
+            "Entrance Hall – Survey",
+            "Entrance Hall – Tetra",
+            "Entrance Hall – Tybalt"
+          ],
+          "outcome": "hit",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table records the eight Entryway/Entrance Hall acquisitions as a single x8 roll."
+        },
+        {
+          "perks": [
+            "Firestorm"
+          ],
+          "outcome": "hit",
+          "constellation": "Resources and Durability",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table records Firestorm as a Resources and Durability hit."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "106": {
+      "rolls": [
+        {
+          "perks": [
+            "Minor Blessing Apollo - Medicine",
+            "Unnatural Skill: Healing"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing as one Quality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "109": {
+      "rolls": [
+        {
+          "perks": [
+            "Basic Nutrition",
+            "A Little Less Basic",
+            "A Lot Less"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less as one 500 CP roll. The source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality after its perks were exhausted."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "112": {
+      "rolls": [
+        {
+          "perks": [
+            "Minor Blessing Hermes - Invention",
+            "Unnatural Skill: Weaving"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing and Unnatural Skill acquisitions as one Quality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "114": {
+      "rolls": [
+        {
+          "perks": [
+            "Starting Collection",
+            "Expanded Collection - Mysticism",
+            "Esoteric Collection - Magic"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades as one 200 CP Personal Reality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "116.2": {
+      "rolls": [
+        {
+          "perks": [
+            "Music Collection",
+            "Movie & TV Series Collection"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection as one 100 CP Personal Reality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
     }
   }
 }

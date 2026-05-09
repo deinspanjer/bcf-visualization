@@ -303,8 +303,8 @@ class PassageView(Widget, can_focus=True):
         Layer-A and layer-B spans may overlap; layer A wins as a tie-breaker
         because it is the dominant event-tagging layer.
         """
-        a_hit = False
-        b_hit = False
+        best_style: Optional[str] = None
+        best_priority = -1
         for sp in self._spans:
             try:
                 start = int(sp.get("start", 0))
@@ -312,15 +312,22 @@ class PassageView(Widget, can_focus=True):
             except (TypeError, ValueError):
                 continue
             if start <= offset < end:
-                if sp.get("layer", "A") == "A":
-                    a_hit = True
+                style = sp.get("style")
+                if style:
+                    try:
+                        priority = int(sp.get("priority", 30))
+                    except (TypeError, ValueError):
+                        priority = 30
+                elif sp.get("layer", "A") == "A":
+                    style = _LAYER_A_STYLE
+                    priority = 20
                 else:
-                    b_hit = True
-        if a_hit:
-            return _LAYER_A_STYLE
-        if b_hit:
-            return _LAYER_B_STYLE
-        return None
+                    style = _LAYER_B_STYLE
+                    priority = 10
+                if priority > best_priority:
+                    best_style = str(style)
+                    best_priority = priority
+        return best_style
 
     def _cursor_primary_line(self) -> int:
         """Index of the visual line where the cursor should render.

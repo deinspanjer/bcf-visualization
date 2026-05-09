@@ -187,6 +187,14 @@ GLYPH_STYLES: dict[str, str] = {
     "4": "bold white",
 }
 
+ROLL_HIGHLIGHT_STYLE = GLYPH_STYLES["R"]
+REGEX_HIGHLIGHT_STYLES = (
+    GLYPH_STYLES["1"],
+    GLYPH_STYLES["2"],
+    GLYPH_STYLES["3"],
+    GLYPH_STYLES["4"],
+)
+
 ROLL_EVIDENCE_GUTTER_GLYPH = "Q"
 
 LEGEND = [
@@ -553,6 +561,18 @@ class RegexBar(Horizontal):
     RegexBar > Input.active {
         text-style: bold;
     }
+    RegexBar > Input.regex-slot-1 {
+        color: yellow;
+    }
+    RegexBar > Input.regex-slot-2 {
+        color: cyan;
+    }
+    RegexBar > Input.regex-slot-3 {
+        color: magenta;
+    }
+    RegexBar > Input.regex-slot-4 {
+        color: white;
+    }
     RegexBar Static.label {
         height: 1;
         width: auto;
@@ -561,17 +581,37 @@ class RegexBar(Horizontal):
     RegexBar Static.label.active {
         text-style: bold;
     }
+    RegexBar Static.label.regex-slot-1 {
+        color: yellow;
+    }
+    RegexBar Static.label.regex-slot-2 {
+        color: cyan;
+    }
+    RegexBar Static.label.regex-slot-3 {
+        color: magenta;
+    }
+    RegexBar Static.label.regex-slot-4 {
+        color: white;
+    }
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("regex 1:", id="regex_label_1", classes="label")
-        yield Input(id="regex_1", placeholder="(none)", compact=True)
-        yield Static("regex 2:", id="regex_label_2", classes="label")
-        yield Input(id="regex_2", placeholder="(none)", compact=True)
-        yield Static("regex 3:", id="regex_label_3", classes="label")
-        yield Input(id="regex_3", placeholder="(none)", compact=True)
-        yield Static("regex *:", id="regex_label_4", classes="label")
-        yield Input(id="regex_4", placeholder="(none)", compact=True)
+        yield Static("regex 1:", id="regex_label_1", classes="label regex-slot-1")
+        yield Input(
+            id="regex_1", placeholder="(none)", compact=True, classes="regex-slot-1"
+        )
+        yield Static("regex 2:", id="regex_label_2", classes="label regex-slot-2")
+        yield Input(
+            id="regex_2", placeholder="(none)", compact=True, classes="regex-slot-2"
+        )
+        yield Static("regex 3:", id="regex_label_3", classes="label regex-slot-3")
+        yield Input(
+            id="regex_3", placeholder="(none)", compact=True, classes="regex-slot-3"
+        )
+        yield Static("regex *:", id="regex_label_4", classes="label regex-slot-4")
+        yield Input(
+            id="regex_4", placeholder="(none)", compact=True, classes="regex-slot-4"
+        )
 
 
 # ---------- help overlay ----------------------------------------------------
@@ -1110,10 +1150,9 @@ class ForgeCuratorApp(App):
     def _compute_prose_spans(self) -> list[dict]:
         """Inline highlight spans for the prose view.
 
-        Layer B (bold cyan) marks the exact word predicted to trigger
-        each roll. Curated narrator-quote rolls (with
-        ``narrative_evidence``) get layer A (bold green) as a stronger
-        signal.
+        Predicted roll words use the same red as the R gutter indicator.
+        Curated narrator-quote rolls retain the layer-A evidence highlight.
+        Regex matches use the same distinct colors as their gutter markers.
         """
         cs = self.state.chapter
         if cs is None:
@@ -1130,9 +1169,25 @@ class ForgeCuratorApp(App):
             raw = self._raw_word_for_cp_offset(max(0, int(wp) - cp_start))
             if 0 <= raw < len(wo):
                 cs_, ce_ = wo[raw]
-                spans.append({"start": cs_, "end": ce_, "layer": "B"})
+                spans.append({
+                    "start": cs_,
+                    "end": ce_,
+                    "layer": "B",
+                    "style": ROLL_HIGHLIGHT_STYLE,
+                    "priority": 10,
+                })
         for start, end in self._roll_evidence_char_spans(cs):
             spans.append({"start": start, "end": end, "layer": "A"})
+        for slot, hits in enumerate(cs.regex_hits[:4]):
+            style = REGEX_HIGHLIGHT_STYLES[slot]
+            for start, end in hits.char_spans:
+                if 0 <= start < end <= len(cs.prose.text):
+                    spans.append({
+                        "start": start,
+                        "end": end,
+                        "style": style,
+                        "priority": 30 + slot,
+                    })
         return spans
 
     def _roll_evidence_char_spans(self, cs) -> list[tuple[int, int]]:
@@ -2569,16 +2624,11 @@ class ForgeCuratorApp(App):
             return
         if not prose_view._lines:
             prose_view._recompute_lines()
-        # Find which visual line the cursor is on.
-        cur = prose_view.cursor
-        line_idx = 0
-        for i, (s, e) in enumerate(prose_view._lines):
-            if s <= cur <= e:
-                line_idx = i
-                break
-        # Use VerticalScroll's scroll_to to align the cursor's line.
+        line_idx = prose_view._line_index(prose_view.cursor)
+        visible_height = max(1, scroll.size.height or 1)
+        target_y = max(0, line_idx - (visible_height // 2))
         try:
-            scroll.scroll_to(y=max(0, line_idx - 2), animate=False)
+            scroll.scroll_to(y=target_y, animate=False)
         except Exception:
             pass
 

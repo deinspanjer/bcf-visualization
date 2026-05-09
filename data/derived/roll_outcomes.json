@@ -4,13 +4,13 @@
   "_method": "Per chapter, K paid acquisition units distributed proportionally across max(N,K) roll slots using floor((i+0.5)*M/K) for hit-slot index i. Free perks attach to their paid hit and do not consume roll slots. Where K > N, additional slots are synthesized at evenly-spaced word positions using chapters.json words_approx.",
   "_caveat": "PLACEHOLDER until NLP-extracted ground-truth roll outcomes are available. Per-chapter HIT COUNT is canonical; within-chapter hit/miss timing is the predicted-rolls model's guess interpolated by even spacing.",
   "_counts": {
-    "rolls_emitted": 698,
-    "hits": 333,
-    "misses": 365,
-    "synthetic_slots": 32,
+    "rolls_emitted": 687,
+    "hits": 315,
+    "misses": 372,
+    "synthetic_slots": 21,
     "predicted_input_count": 666,
     "obtained_perks_input_count": 504,
-    "paid_acquisitions_input_count": 333,
+    "paid_acquisitions_input_count": 315,
     "free_perks_input_count": 166,
     "chapters_with_predictions": 130,
     "chapters_with_perks": 127,
@@ -16278,6 +16278,38 @@
       "chapter_num": "100",
       "word_position": 1326671,
       "source": "predicted",
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
+      "free_perks": [],
+      "roll_number": 625,
+      "cp_rule_regime": 3,
+      "roll_trigger_cp_threshold": 200,
+      "sequence_in_chapter": 1,
+      "rolls_in_chapter": 4,
+      "available_cp": 140,
+      "banked_cp_after_roll": 140
+    },
+    {
+      "chapter_num": "100",
+      "word_position": 1332671,
+      "source": "predicted",
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
+      "free_perks": [],
+      "roll_number": 626,
+      "cp_rule_regime": 3,
+      "roll_trigger_cp_threshold": 200,
+      "sequence_in_chapter": 2,
+      "rolls_in_chapter": 4,
+      "available_cp": 340,
+      "banked_cp_after_roll": 340
+    },
+    {
+      "chapter_num": "100",
+      "word_position": 1338671,
+      "source": "predicted",
       "outcome": "hit",
       "perk": {
         "name": "Skills: Communications",
@@ -16295,31 +16327,7 @@
           "cost": 100,
           "free": false,
           "epub_sequence": 149
-        }
-      ],
-      "free_perks": [],
-      "roll_number": 625,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 1,
-      "rolls_in_chapter": 4,
-      "available_cp": 140,
-      "banked_cp_after_roll": 40
-    },
-    {
-      "chapter_num": "100",
-      "word_position": 1332672,
-      "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Skills: Espionage",
-        "constellation": "Knowledge",
-        "jump": "Star Trek - TNG+DS9",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 149
-      },
-      "paid_perks": [
+        },
         {
           "name": "Skills: Espionage",
           "constellation": "Knowledge",
@@ -16327,33 +16335,17 @@
           "cost": 100,
           "free": false,
           "epub_sequence": 149
-        }
-      ],
-      "free_perks": [],
-      "roll_number": 626,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 2,
-      "rolls_in_chapter": 4,
-      "available_cp": 240,
-      "banked_cp_after_roll": 140
-    },
-    {
-      "chapter_num": "100",
-      "word_position": 1338672,
-      "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Skills: Piloting",
-        "constellation": "Knowledge",
-        "jump": "Star Trek - TNG+DS9",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 149
-      },
-      "paid_perks": [
+        },
         {
           "name": "Skills: Piloting",
+          "constellation": "Knowledge",
+          "jump": "Star Trek - TNG+DS9",
+          "cost": 100,
+          "free": false,
+          "epub_sequence": 149
+        },
+        {
+          "name": "Skills: Weapons",
           "constellation": "Knowledge",
           "jump": "Star Trek - TNG+DS9",
           "cost": 100,
@@ -16367,44 +16359,28 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 3,
       "rolls_in_chapter": 4,
-      "available_cp": 340,
-      "banked_cp_after_roll": 240
+      "available_cp": 540,
+      "banked_cp_after_roll": 140
     },
     {
       "chapter_num": "100",
-      "word_position": 1344672,
+      "word_position": 1344671,
       "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Skills: Weapons",
-        "constellation": "Knowledge",
-        "jump": "Star Trek - TNG+DS9",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 149
-      },
-      "paid_perks": [
-        {
-          "name": "Skills: Weapons",
-          "constellation": "Knowledge",
-          "jump": "Star Trek - TNG+DS9",
-          "cost": 100,
-          "free": false,
-          "epub_sequence": 149
-        }
-      ],
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
       "free_perks": [],
       "roll_number": 628,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 4,
       "rolls_in_chapter": 4,
-      "available_cp": 440,
+      "available_cp": 340,
       "banked_cp_after_roll": 340
     },
     {
       "chapter_num": "101",
-      "word_position": 1350673,
+      "word_position": 1350672,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -16420,7 +16396,7 @@
     },
     {
       "chapter_num": "101",
-      "word_position": 1356673,
+      "word_position": 1356672,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -16452,7 +16428,7 @@
     },
     {
       "chapter_num": "102",
-      "word_position": 1362673,
+      "word_position": 1362672,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -16528,60 +16504,28 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 1,
       "rolls_in_chapter": 1,
-      "available_cp": 740,
-      "banked_cp_after_roll": 140
+      "available_cp": 739,
+      "banked_cp_after_roll": 139
     },
     {
       "chapter_num": "103",
       "word_position": 1377673,
       "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Minor Blessing Demeter - Cultivation",
-        "constellation": "Quality",
-        "jump": "Percy Jackson",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 153
-      },
-      "paid_perks": [
-        {
-          "name": "Minor Blessing Demeter - Cultivation",
-          "constellation": "Quality",
-          "jump": "Percy Jackson",
-          "cost": 100,
-          "free": false,
-          "epub_sequence": 153
-        }
-      ],
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
       "free_perks": [],
       "roll_number": 632,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 1,
       "rolls_in_chapter": 3,
-      "available_cp": 340,
-      "banked_cp_after_roll": 240
+      "available_cp": 339,
+      "banked_cp_after_roll": 339
     },
     {
       "chapter_num": "103",
       "word_position": 1383673,
-      "source": "predicted",
-      "outcome": "miss",
-      "perk": null,
-      "paid_perks": [],
-      "free_perks": [],
-      "roll_number": 633,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 2,
-      "rolls_in_chapter": 3,
-      "available_cp": 440,
-      "banked_cp_after_roll": 440
-    },
-    {
-      "chapter_num": "103",
-      "word_position": 1389673,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -16594,6 +16538,14 @@
       },
       "paid_perks": [
         {
+          "name": "Minor Blessing Demeter - Cultivation",
+          "constellation": "Quality",
+          "jump": "Percy Jackson",
+          "cost": 100,
+          "free": false,
+          "epub_sequence": 153
+        },
+        {
           "name": "Unnatural Skill: Naturecraft",
           "constellation": "Quality",
           "jump": "Percy Jackson",
@@ -16603,18 +16555,34 @@
         }
       ],
       "free_perks": [],
+      "roll_number": 633,
+      "cp_rule_regime": 3,
+      "roll_trigger_cp_threshold": 200,
+      "sequence_in_chapter": 2,
+      "rolls_in_chapter": 3,
+      "available_cp": 539,
+      "banked_cp_after_roll": 239
+    },
+    {
+      "chapter_num": "103",
+      "word_position": 1389673,
+      "source": "predicted",
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
+      "free_perks": [],
       "roll_number": 634,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 3,
       "rolls_in_chapter": 3,
-      "available_cp": 640,
-      "banked_cp_after_roll": 440
+      "available_cp": 439,
+      "banked_cp_after_roll": 439
     },
     {
       "chapter_num": "104",
-      "word_position": 1750,
-      "source": "synthetic",
+      "word_position": 1395673,
+      "source": "predicted",
       "outcome": "hit",
       "perk": {
         "name": "Entrance Hall - Espirit de Kerbal",
@@ -16632,31 +16600,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 1,
-      "rolls_in_chapter": 9,
-      "available_cp": 560,
-      "banked_cp_after_roll": 510
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 3500,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall - Fleet",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall - Fleet",
           "constellation": "Toolkits",
@@ -16664,31 +16608,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 2,
-      "rolls_in_chapter": 9,
-      "available_cp": 510,
-      "banked_cp_after_roll": 460
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 5250,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall - Some Old Friends",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall - Some Old Friends",
           "constellation": "Toolkits",
@@ -16696,31 +16616,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 3,
-      "rolls_in_chapter": 9,
-      "available_cp": 460,
-      "banked_cp_after_roll": 410
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 7000,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall - The Matrix",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall - The Matrix",
           "constellation": "Toolkits",
@@ -16728,31 +16624,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 4,
-      "rolls_in_chapter": 9,
-      "available_cp": 410,
-      "banked_cp_after_roll": 360
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 8750,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall – Aisha",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall – Aisha",
           "constellation": "Toolkits",
@@ -16760,31 +16632,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 5,
-      "rolls_in_chapter": 9,
-      "available_cp": 360,
-      "banked_cp_after_roll": 310
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 10500,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall – Survey",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall – Survey",
           "constellation": "Toolkits",
@@ -16792,31 +16640,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 6,
-      "rolls_in_chapter": 9,
-      "available_cp": 310,
-      "banked_cp_after_roll": 260
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 12250,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall – Tetra",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall – Tetra",
           "constellation": "Toolkits",
@@ -16824,31 +16648,7 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 154
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 7,
-      "rolls_in_chapter": 9,
-      "available_cp": 260,
-      "banked_cp_after_roll": 210
-    },
-    {
-      "chapter_num": "104",
-      "word_position": 1395673,
-      "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Entrance Hall – Tybalt",
-        "constellation": "Toolkits",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 154
-      },
-      "paid_perks": [
+        },
         {
           "name": "Entrance Hall – Tybalt",
           "constellation": "Toolkits",
@@ -16862,10 +16662,10 @@
       "roll_number": 635,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 8,
-      "rolls_in_chapter": 9,
-      "available_cp": 290,
-      "banked_cp_after_roll": 240
+      "sequence_in_chapter": 1,
+      "rolls_in_chapter": 2,
+      "available_cp": 639,
+      "banked_cp_after_roll": 239
     },
     {
       "chapter_num": "104",
@@ -16894,9 +16694,9 @@
       "roll_number": 636,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 9,
-      "rolls_in_chapter": 9,
-      "available_cp": 440,
+      "sequence_in_chapter": 2,
+      "rolls_in_chapter": 2,
+      "available_cp": 439,
       "banked_cp_after_roll": 0
     },
     {
@@ -16919,25 +16719,9 @@
       "chapter_num": "106",
       "word_position": 1422674,
       "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Minor Blessing Apollo - Medicine",
-        "constellation": "Quality",
-        "jump": "Percy Jackson",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 158
-      },
-      "paid_perks": [
-        {
-          "name": "Minor Blessing Apollo - Medicine",
-          "constellation": "Quality",
-          "jump": "Percy Jackson",
-          "cost": 100,
-          "free": false,
-          "epub_sequence": 158
-        }
-      ],
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
       "free_perks": [],
       "roll_number": 638,
       "cp_rule_regime": 3,
@@ -16945,7 +16729,7 @@
       "sequence_in_chapter": 1,
       "rolls_in_chapter": 2,
       "available_cp": 399,
-      "banked_cp_after_roll": 299
+      "banked_cp_after_roll": 399
     },
     {
       "chapter_num": "106",
@@ -16962,6 +16746,14 @@
       },
       "paid_perks": [
         {
+          "name": "Minor Blessing Apollo - Medicine",
+          "constellation": "Quality",
+          "jump": "Percy Jackson",
+          "cost": 100,
+          "free": false,
+          "epub_sequence": 158
+        },
+        {
           "name": "Unnatural Skill: Healing",
           "constellation": "Quality",
           "jump": "Percy Jackson",
@@ -16976,7 +16768,7 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 2,
       "rolls_in_chapter": 2,
-      "available_cp": 499,
+      "available_cp": 599,
       "banked_cp_after_roll": 299
     },
     {
@@ -17038,7 +16830,7 @@
     },
     {
       "chapter_num": "107",
-      "word_position": 1446675,
+      "word_position": 1446674,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17054,7 +16846,7 @@
     },
     {
       "chapter_num": "108",
-      "word_position": 1452675,
+      "word_position": 1452674,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17070,7 +16862,7 @@
     },
     {
       "chapter_num": "108",
-      "word_position": 1458675,
+      "word_position": 1458674,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17102,7 +16894,7 @@
     },
     {
       "chapter_num": "108",
-      "word_position": 1464675,
+      "word_position": 1464674,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17159,39 +16951,23 @@
     },
     {
       "chapter_num": "109",
-      "word_position": 8500,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Basic Nutrition",
-        "constellation": "Personal Reality",
-        "jump": "Personal Reality",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 164
-      },
-      "paid_perks": [
-        {
-          "name": "Basic Nutrition",
-          "constellation": "Personal Reality",
-          "jump": "Personal Reality",
-          "cost": 100,
-          "free": false,
-          "epub_sequence": 164
-        }
-      ],
+      "word_position": 1479675,
+      "source": "predicted",
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
       "free_perks": [],
-      "roll_number": null,
+      "roll_number": 646,
       "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
+      "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 1,
-      "rolls_in_chapter": 3,
-      "available_cp": 474,
-      "banked_cp_after_roll": 374
+      "rolls_in_chapter": 2,
+      "available_cp": 598,
+      "banked_cp_after_roll": 598
     },
     {
       "chapter_num": "109",
-      "word_position": 1479676,
+      "word_position": 1485675,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17204,37 +16980,21 @@
       },
       "paid_perks": [
         {
+          "name": "Basic Nutrition",
+          "constellation": "Personal Reality",
+          "jump": "Personal Reality",
+          "cost": 100,
+          "free": false,
+          "epub_sequence": 164
+        },
+        {
           "name": "A Little Less Basic",
           "constellation": "Personal Reality",
           "jump": "Personal Reality",
           "cost": 200,
           "free": false,
           "epub_sequence": 164
-        }
-      ],
-      "free_perks": [],
-      "roll_number": 646,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 2,
-      "rolls_in_chapter": 3,
-      "available_cp": 498,
-      "banked_cp_after_roll": 298
-    },
-    {
-      "chapter_num": "109",
-      "word_position": 1485676,
-      "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "A Lot Less",
-        "constellation": "Personal Reality",
-        "jump": "Personal Reality",
-        "cost": 200,
-        "free": false,
-        "epub_sequence": 164
-      },
-      "paid_perks": [
+        },
         {
           "name": "A Lot Less",
           "constellation": "Personal Reality",
@@ -17248,14 +17008,14 @@
       "roll_number": 647,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 3,
-      "rolls_in_chapter": 3,
-      "available_cp": 498,
+      "sequence_in_chapter": 2,
+      "rolls_in_chapter": 2,
+      "available_cp": 798,
       "banked_cp_after_roll": 298
     },
     {
       "chapter_num": "110",
-      "word_position": 1491676,
+      "word_position": 1491675,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17344,7 +17104,7 @@
     },
     {
       "chapter_num": "111",
-      "word_position": 1506677,
+      "word_position": 1506675,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17360,7 +17120,7 @@
     },
     {
       "chapter_num": "111",
-      "word_position": 1512677,
+      "word_position": 1512675,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17376,27 +17136,11 @@
     },
     {
       "chapter_num": "112",
-      "word_position": 1518677,
+      "word_position": 1518675,
       "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Minor Blessing Hermes - Invention",
-        "constellation": "Quality",
-        "jump": "Percy Jackson",
-        "cost": 100,
-        "free": false,
-        "epub_sequence": 174
-      },
-      "paid_perks": [
-        {
-          "name": "Minor Blessing Hermes - Invention",
-          "constellation": "Quality",
-          "jump": "Percy Jackson",
-          "cost": 100,
-          "free": false,
-          "epub_sequence": 174
-        }
-      ],
+      "outcome": "miss",
+      "perk": null,
+      "paid_perks": [],
       "free_perks": [],
       "roll_number": 651,
       "cp_rule_regime": 3,
@@ -17404,11 +17148,11 @@
       "sequence_in_chapter": 1,
       "rolls_in_chapter": 2,
       "available_cp": 522,
-      "banked_cp_after_roll": 422
+      "banked_cp_after_roll": 522
     },
     {
       "chapter_num": "112",
-      "word_position": 1524677,
+      "word_position": 1524676,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17420,6 +17164,14 @@
         "epub_sequence": 174
       },
       "paid_perks": [
+        {
+          "name": "Minor Blessing Hermes - Invention",
+          "constellation": "Quality",
+          "jump": "Percy Jackson",
+          "cost": 100,
+          "free": false,
+          "epub_sequence": 174
+        },
         {
           "name": "Unnatural Skill: Weaving",
           "constellation": "Quality",
@@ -17435,12 +17187,12 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 2,
       "rolls_in_chapter": 2,
-      "available_cp": 622,
+      "available_cp": 722,
       "banked_cp_after_roll": 422
     },
     {
       "chapter_num": "113",
-      "word_position": 1530677,
+      "word_position": 1530676,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17472,7 +17224,7 @@
     },
     {
       "chapter_num": "113",
-      "word_position": 1536677,
+      "word_position": 1536676,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17504,8 +17256,8 @@
     },
     {
       "chapter_num": "114",
-      "word_position": 5000,
-      "source": "synthetic",
+      "word_position": 1551676,
+      "source": "predicted",
       "outcome": "hit",
       "perk": {
         "name": "Esoteric Collection - Magic",
@@ -17517,6 +17269,22 @@
       },
       "paid_perks": [
         {
+          "name": "Starting Collection",
+          "constellation": "Personal Reality",
+          "jump": "Personal Reality",
+          "cost": 50,
+          "free": false,
+          "epub_sequence": 179
+        },
+        {
+          "name": "Expanded Collection - Mysticism",
+          "constellation": "Personal Reality",
+          "jump": "Personal Reality",
+          "cost": 50,
+          "free": false,
+          "epub_sequence": 179
+        },
+        {
           "name": "Esoteric Collection - Magic",
           "constellation": "Personal Reality",
           "jump": "Personal Reality",
@@ -17526,81 +17294,17 @@
         }
       ],
       "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 1,
-      "rolls_in_chapter": 3,
-      "available_cp": 22,
-      "banked_cp_after_roll": 0
-    },
-    {
-      "chapter_num": "114",
-      "word_position": 10000,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Expanded Collection - Mysticism",
-        "constellation": "Personal Reality",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 179
-      },
-      "paid_perks": [
-        {
-          "name": "Expanded Collection - Mysticism",
-          "constellation": "Personal Reality",
-          "jump": "Personal Reality",
-          "cost": 50,
-          "free": false,
-          "epub_sequence": 179
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 2,
-      "rolls_in_chapter": 3,
-      "available_cp": 0,
-      "banked_cp_after_roll": 0
-    },
-    {
-      "chapter_num": "114",
-      "word_position": 1551677,
-      "source": "predicted",
-      "outcome": "hit",
-      "perk": {
-        "name": "Starting Collection",
-        "constellation": "Personal Reality",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 179
-      },
-      "paid_perks": [
-        {
-          "name": "Starting Collection",
-          "constellation": "Personal Reality",
-          "jump": "Personal Reality",
-          "cost": 50,
-          "free": false,
-          "epub_sequence": 179
-        }
-      ],
-      "free_perks": [],
       "roll_number": 655,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": 200,
-      "sequence_in_chapter": 3,
-      "rolls_in_chapter": 3,
-      "available_cp": 200,
-      "banked_cp_after_roll": 150
+      "sequence_in_chapter": 1,
+      "rolls_in_chapter": 1,
+      "available_cp": 222,
+      "banked_cp_after_roll": 22
     },
     {
       "chapter_num": "115",
-      "word_position": 1557678,
+      "word_position": 1557676,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17636,12 +17340,12 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 1,
       "rolls_in_chapter": 1,
-      "available_cp": 349,
+      "available_cp": 221,
       "banked_cp_after_roll": 0
     },
     {
       "chapter_num": "116",
-      "word_position": 1572678,
+      "word_position": 1572676,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17657,7 +17361,7 @@
     },
     {
       "chapter_num": "116",
-      "word_position": 1578678,
+      "word_position": 1578676,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17673,39 +17377,7 @@
     },
     {
       "chapter_num": "116.2",
-      "word_position": 16000,
-      "source": "synthetic",
-      "outcome": "hit",
-      "perk": {
-        "name": "Movie & TV Series Collection",
-        "constellation": "Personal Reality",
-        "jump": "Personal Reality",
-        "cost": 50,
-        "free": false,
-        "epub_sequence": 183
-      },
-      "paid_perks": [
-        {
-          "name": "Movie & TV Series Collection",
-          "constellation": "Personal Reality",
-          "jump": "Personal Reality",
-          "cost": 50,
-          "free": false,
-          "epub_sequence": 183
-        }
-      ],
-      "free_perks": [],
-      "roll_number": null,
-      "cp_rule_regime": 3,
-      "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 1,
-      "rolls_in_chapter": 2,
-      "available_cp": 553,
-      "banked_cp_after_roll": 503
-    },
-    {
-      "chapter_num": "116.2",
-      "word_position": 32000,
+      "word_position": 24000,
       "source": "synthetic",
       "outcome": "hit",
       "perk": {
@@ -17724,20 +17396,28 @@
           "cost": 50,
           "free": false,
           "epub_sequence": 183
+        },
+        {
+          "name": "Movie & TV Series Collection",
+          "constellation": "Personal Reality",
+          "jump": "Personal Reality",
+          "cost": 50,
+          "free": false,
+          "epub_sequence": 183
         }
       ],
       "free_perks": [],
       "roll_number": null,
       "cp_rule_regime": 3,
       "roll_trigger_cp_threshold": null,
-      "sequence_in_chapter": 2,
-      "rolls_in_chapter": 2,
-      "available_cp": 503,
+      "sequence_in_chapter": 1,
+      "rolls_in_chapter": 1,
+      "available_cp": 553,
       "banked_cp_after_roll": 453
     },
     {
       "chapter_num": "116.3",
-      "word_position": 1584678,
+      "word_position": 1584676,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17786,7 +17466,7 @@
     },
     {
       "chapter_num": "118",
-      "word_position": 1599679,
+      "word_position": 1599676,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17827,7 +17507,7 @@
     },
     {
       "chapter_num": "119",
-      "word_position": 1614679,
+      "word_position": 1614676,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17843,7 +17523,7 @@
     },
     {
       "chapter_num": "119.5",
-      "word_position": 1620679,
+      "word_position": 1620677,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17854,12 +17534,12 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 1,
       "rolls_in_chapter": 4,
-      "available_cp": 398,
-      "banked_cp_after_roll": 398
+      "available_cp": 399,
+      "banked_cp_after_roll": 399
     },
     {
       "chapter_num": "119.5",
-      "word_position": 1626679,
+      "word_position": 1626677,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17886,12 +17566,12 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 2,
       "rolls_in_chapter": 4,
-      "available_cp": 598,
-      "banked_cp_after_roll": 198
+      "available_cp": 599,
+      "banked_cp_after_roll": 199
     },
     {
       "chapter_num": "119.5",
-      "word_position": 1632679,
+      "word_position": 1632677,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -17902,12 +17582,12 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 3,
       "rolls_in_chapter": 4,
-      "available_cp": 398,
-      "banked_cp_after_roll": 398
+      "available_cp": 399,
+      "banked_cp_after_roll": 399
     },
     {
       "chapter_num": "119.5",
-      "word_position": 1638679,
+      "word_position": 1638677,
       "source": "predicted",
       "outcome": "hit",
       "perk": {
@@ -17934,12 +17614,12 @@
       "roll_trigger_cp_threshold": 200,
       "sequence_in_chapter": 4,
       "rolls_in_chapter": 4,
-      "available_cp": 598,
+      "available_cp": 599,
       "banked_cp_after_roll": 0
     },
     {
       "chapter_num": "120",
-      "word_position": 1653679,
+      "word_position": 1653677,
       "source": "predicted",
       "outcome": "miss",
       "perk": null,
@@ -19088,12 +18768,12 @@
     {
       "chapter_num": "100",
       "predicted_rolls": 4,
-      "paid_acquisitions": 4,
+      "paid_acquisitions": 1,
       "free_perks": 0,
       "slots_emitted": 4,
       "synthetic_slots": 0,
-      "hits": 4,
-      "misses": 0
+      "hits": 1,
+      "misses": 3
     },
     {
       "chapter_num": "101",
@@ -19118,21 +18798,21 @@
     {
       "chapter_num": "103",
       "predicted_rolls": 3,
-      "paid_acquisitions": 2,
+      "paid_acquisitions": 1,
       "free_perks": 0,
       "slots_emitted": 3,
       "synthetic_slots": 0,
-      "hits": 2,
-      "misses": 1
+      "hits": 1,
+      "misses": 2
     },
     {
       "chapter_num": "104",
       "predicted_rolls": 2,
-      "paid_acquisitions": 9,
+      "paid_acquisitions": 2,
       "free_perks": 0,
-      "slots_emitted": 9,
-      "synthetic_slots": 7,
-      "hits": 9,
+      "slots_emitted": 2,
+      "synthetic_slots": 0,
+      "hits": 2,
       "misses": 0
     },
     {
@@ -19148,12 +18828,12 @@
     {
       "chapter_num": "106",
       "predicted_rolls": 2,
-      "paid_acquisitions": 2,
+      "paid_acquisitions": 1,
       "free_perks": 0,
       "slots_emitted": 2,
       "synthetic_slots": 0,
-      "hits": 2,
-      "misses": 0
+      "hits": 1,
+      "misses": 1
     },
     {
       "chapter_num": "107",
@@ -19188,12 +18868,12 @@
     {
       "chapter_num": "109",
       "predicted_rolls": 2,
-      "paid_acquisitions": 3,
+      "paid_acquisitions": 1,
       "free_perks": 0,
-      "slots_emitted": 3,
-      "synthetic_slots": 1,
-      "hits": 3,
-      "misses": 0
+      "slots_emitted": 2,
+      "synthetic_slots": 0,
+      "hits": 1,
+      "misses": 1
     },
     {
       "chapter_num": "110",
@@ -19228,12 +18908,12 @@
     {
       "chapter_num": "112",
       "predicted_rolls": 2,
-      "paid_acquisitions": 2,
+      "paid_acquisitions": 1,
       "free_perks": 0,
       "slots_emitted": 2,
       "synthetic_slots": 0,
-      "hits": 2,
-      "misses": 0
+      "hits": 1,
+      "misses": 1
     },
     {
       "chapter_num": "113",
@@ -19248,11 +18928,11 @@
     {
       "chapter_num": "114",
       "predicted_rolls": 1,
-      "paid_acquisitions": 3,
+      "paid_acquisitions": 1,
       "free_perks": 0,
-      "slots_emitted": 3,
-      "synthetic_slots": 2,
-      "hits": 3,
+      "slots_emitted": 1,
+      "synthetic_slots": 0,
+      "hits": 1,
       "misses": 0
     },
     {
@@ -19278,11 +18958,11 @@
     {
       "chapter_num": "116.2",
       "predicted_rolls": 0,
-      "paid_acquisitions": 2,
+      "paid_acquisitions": 1,
       "free_perks": 0,
-      "slots_emitted": 2,
-      "synthetic_slots": 2,
-      "hits": 2,
+      "slots_emitted": 1,
+      "synthetic_slots": 1,
+      "hits": 1,
       "misses": 0
     },
     {

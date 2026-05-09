@@ -1,14 +1,14 @@
 {
-  "_generated": "2026-05-09T01:13:51+00:00",
+  "_generated": "2026-05-09T17:37:27+00:00",
   "_source": "scripts/derive_roll_facts.py",
   "summary": {
     "chapters_total": 194,
-    "feasible": 163,
-    "infeasible": 31,
-    "model_discrepancies": 41,
+    "feasible": 165,
+    "infeasible": 29,
+    "model_discrepancies": 39,
     "curator_divergences": 72,
-    "ambiguous": 87,
-    "overrides_applied": 0
+    "ambiguous": 91,
+    "overrides_applied": 41
   },
   "chapter_checks": [
     {
@@ -2878,15 +2878,21 @@
       "chapter_num": "100",
       "status": "ok",
       "has_discrepancy": false,
-      "source_priority": "derived_perk_list",
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 4,
-      "required_paid_roll_count": 4,
+      "required_paid_roll_count": 1,
       "known_attempt_count": 4,
       "paid_roll_capacity_ok": true,
       "known_attempt_capacity_ok": true,
       "cost_schedule_ok": true,
       "synthetic_slot_count": 0,
-      "issues": []
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "3 feasible hit/slot assignments."
+        }
+      ]
     },
     {
       "chapter_num": "100.1",
@@ -2940,9 +2946,9 @@
       "chapter_num": "103",
       "status": "ok",
       "has_discrepancy": false,
-      "source_priority": "derived_perk_list",
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 3,
-      "required_paid_roll_count": 2,
+      "required_paid_roll_count": 1,
       "known_attempt_count": 3,
       "paid_roll_capacity_ok": true,
       "known_attempt_capacity_ok": true,
@@ -2958,34 +2964,17 @@
     },
     {
       "chapter_num": "104",
-      "status": "discrepancy",
-      "has_discrepancy": true,
-      "source_priority": "derived_perk_list",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 2,
-      "required_paid_roll_count": 9,
-      "known_attempt_count": 9,
-      "paid_roll_capacity_ok": false,
-      "known_attempt_capacity_ok": false,
-      "cost_schedule_ok": false,
-      "synthetic_slot_count": 7,
-      "issues": [
-        {
-          "code": "paid_rolls_exceed_predicted_slots",
-          "severity": "error",
-          "message": "9 paid roll unit(s) require more slots than 2 predicted roll(s)."
-        },
-        {
-          "code": "known_attempts_exceed_predicted_slots",
-          "severity": "error",
-          "message": "9 known roll attempt(s) require more slots than 2 predicted roll(s)."
-        },
-        {
-          "code": "cost_schedule_infeasible",
-          "severity": "error",
-          "message": "Chapter has 2 predicted slots but 9 recorded paid hits (short by 7 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
-          "diagnostic": "regime_or_section_misclassification"
-        }
-      ]
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
+      "issues": []
     },
     {
       "chapter_num": "104.1",
@@ -3033,15 +3022,21 @@
       "chapter_num": "106",
       "status": "ok",
       "has_discrepancy": false,
-      "source_priority": "derived_perk_list",
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 2,
-      "required_paid_roll_count": 2,
+      "required_paid_roll_count": 1,
       "known_attempt_count": 2,
       "paid_roll_capacity_ok": true,
       "known_attempt_capacity_ok": true,
       "cost_schedule_ok": true,
       "synthetic_slot_count": 0,
-      "issues": []
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
+        }
+      ]
     },
     {
       "chapter_num": "107",
@@ -3144,32 +3139,21 @@
     },
     {
       "chapter_num": "109",
-      "status": "discrepancy",
-      "has_discrepancy": true,
-      "source_priority": "derived_perk_list",
+      "status": "ok",
+      "has_discrepancy": false,
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 2,
-      "required_paid_roll_count": 3,
-      "known_attempt_count": 3,
-      "paid_roll_capacity_ok": false,
-      "known_attempt_capacity_ok": false,
-      "cost_schedule_ok": false,
-      "synthetic_slot_count": 1,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 2,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
+      "cost_schedule_ok": true,
+      "synthetic_slot_count": 0,
       "issues": [
         {
-          "code": "paid_rolls_exceed_predicted_slots",
-          "severity": "error",
-          "message": "3 paid roll unit(s) require more slots than 2 predicted roll(s)."
-        },
-        {
-          "code": "known_attempts_exceed_predicted_slots",
-          "severity": "error",
-          "message": "3 known roll attempt(s) require more slots than 2 predicted roll(s)."
-        },
-        {
-          "code": "cost_schedule_infeasible",
-          "severity": "error",
-          "message": "Chapter has 2 predicted slots but 3 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
-          "diagnostic": "regime_or_section_misclassification"
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
         }
       ]
     },
@@ -3327,15 +3311,21 @@
       "chapter_num": "112",
       "status": "ok",
       "has_discrepancy": false,
-      "source_priority": "derived_perk_list",
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 2,
-      "required_paid_roll_count": 2,
+      "required_paid_roll_count": 1,
       "known_attempt_count": 2,
       "paid_roll_capacity_ok": true,
       "known_attempt_capacity_ok": true,
       "cost_schedule_ok": true,
       "synthetic_slot_count": 0,
-      "issues": []
+      "issues": [
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "2 feasible hit/slot assignments."
+        }
+      ]
     },
     {
       "chapter_num": "113",
@@ -3404,29 +3394,19 @@
       "chapter_num": "114",
       "status": "discrepancy",
       "has_discrepancy": true,
-      "source_priority": "derived_perk_list",
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 1,
-      "required_paid_roll_count": 3,
-      "known_attempt_count": 3,
-      "paid_roll_capacity_ok": false,
-      "known_attempt_capacity_ok": false,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
+      "paid_roll_capacity_ok": true,
+      "known_attempt_capacity_ok": true,
       "cost_schedule_ok": false,
-      "synthetic_slot_count": 2,
+      "synthetic_slot_count": 0,
       "issues": [
-        {
-          "code": "paid_rolls_exceed_predicted_slots",
-          "severity": "error",
-          "message": "3 paid roll unit(s) require more slots than 1 predicted roll(s)."
-        },
-        {
-          "code": "known_attempts_exceed_predicted_slots",
-          "severity": "error",
-          "message": "3 known roll attempt(s) require more slots than 1 predicted roll(s)."
-        },
         {
           "code": "cost_schedule_infeasible",
           "severity": "error",
-          "message": "Chapter has 1 predicted slots but 3 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "message": "Highest CP achieved in chapter is 148, but largest hit costs 200. Predicted earnings short by ~52.",
           "diagnostic": "regime_or_section_misclassification"
         }
       ]
@@ -3447,7 +3427,7 @@
         {
           "code": "cost_schedule_infeasible",
           "severity": "error",
-          "message": "Highest CP achieved in chapter is 247, but largest hit costs 600. Predicted earnings short by ~353.",
+          "message": "Highest CP achieved in chapter is 287, but largest hit costs 600. Predicted earnings short by ~313.",
           "diagnostic": "regime_or_section_misclassification"
         }
       ]
@@ -3484,10 +3464,10 @@
       "chapter_num": "116.2",
       "status": "discrepancy",
       "has_discrepancy": true,
-      "source_priority": "derived_perk_list",
+      "source_priority": "vetted_curated",
       "predicted_roll_count": 0,
-      "required_paid_roll_count": 2,
-      "known_attempt_count": 2,
+      "required_paid_roll_count": 1,
+      "known_attempt_count": 1,
       "paid_roll_capacity_ok": false,
       "known_attempt_capacity_ok": false,
       "cost_schedule_ok": false,
@@ -3496,17 +3476,17 @@
         {
           "code": "paid_rolls_exceed_predicted_slots",
           "severity": "error",
-          "message": "2 paid roll unit(s) require more slots than 0 predicted roll(s)."
+          "message": "1 paid roll unit(s) require more slots than 0 predicted roll(s)."
         },
         {
           "code": "known_attempts_exceed_predicted_slots",
           "severity": "error",
-          "message": "2 known roll attempt(s) require more slots than 0 predicted roll(s)."
+          "message": "1 known roll attempt(s) require more slots than 0 predicted roll(s)."
         },
         {
           "code": "cost_schedule_infeasible",
           "severity": "error",
-          "message": "Chapter has 0 predicted slots but 2 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
+          "message": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words.",
           "diagnostic": "regime_or_section_misclassification"
         }
       ]
@@ -4396,80 +4376,6 @@
       "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
     },
     {
-      "chapter_num": "104",
-      "banked_cp_in": 768,
-      "predicted_slots": [
-        {
-          "word_position": 2418,
-          "roll_trigger_cp_threshold": 200,
-          "source": "predicted"
-        },
-        {
-          "word_position": 8418,
-          "roll_trigger_cp_threshold": 200,
-          "source": "predicted"
-        }
-      ],
-      "recorded_hits": [
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall - Espirit de Kerbal"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall - Fleet"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall - Some Old Friends"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall - The Matrix"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall – Aisha"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall – Survey"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall – Tetra"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Entrance Hall – Tybalt"
-          ]
-        },
-        {
-          "cost": 600,
-          "names": [
-            "Firestorm"
-          ]
-        }
-      ],
-      "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Chapter has 2 predicted slots but 9 recorded paid hits (short by 7 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
-    },
-    {
       "chapter_num": "108.2",
       "banked_cp_in": 1068,
       "predicted_slots": [],
@@ -4485,49 +4391,11 @@
       "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
     },
     {
-      "chapter_num": "109",
-      "banked_cp_in": 646,
-      "predicted_slots": [
-        {
-          "word_position": 3728,
-          "roll_trigger_cp_threshold": 200,
-          "source": "predicted"
-        },
-        {
-          "word_position": 9728,
-          "roll_trigger_cp_threshold": 200,
-          "source": "predicted"
-        }
-      ],
-      "recorded_hits": [
-        {
-          "cost": 100,
-          "names": [
-            "Basic Nutrition"
-          ]
-        },
-        {
-          "cost": 200,
-          "names": [
-            "A Little Less Basic"
-          ]
-        },
-        {
-          "cost": 200,
-          "names": [
-            "A Lot Less"
-          ]
-        }
-      ],
-      "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Chapter has 2 predicted slots but 3 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
-    },
-    {
       "chapter_num": "110",
       "banked_cp_in": 479,
       "predicted_slots": [
         {
-          "word_position": 2080,
+          "word_position": 2079,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -4563,12 +4431,12 @@
       "banked_cp_in": 409,
       "predicted_slots": [
         {
-          "word_position": 4117,
+          "word_position": 4116,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 10117,
+          "word_position": 10116,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -4595,40 +4463,30 @@
       "banked_cp_in": 0,
       "predicted_slots": [
         {
-          "word_position": 9551,
+          "word_position": 9550,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
       "recorded_hits": [
         {
-          "cost": 100,
+          "cost": 200,
           "names": [
+            "Starting Collection",
+            "Expanded Collection - Mysticism",
             "Esoteric Collection - Magic"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Expanded Collection - Mysticism"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Starting Collection"
           ]
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Chapter has 1 predicted slots but 3 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+      "explanation": "Highest CP achieved in chapter is 148, but largest hit costs 200. Predicted earnings short by ~52."
     },
     {
       "chapter_num": "115",
-      "banked_cp_in": 191,
+      "banked_cp_in": 231,
       "predicted_slots": [
         {
-          "word_position": 1684,
+          "word_position": 1682,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -4642,7 +4500,7 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 247, but largest hit costs 600. Predicted earnings short by ~353."
+      "explanation": "Highest CP achieved in chapter is 287, but largest hit costs 600. Predicted earnings short by ~313."
     },
     {
       "chapter_num": "116.2",
@@ -4650,27 +4508,22 @@
       "predicted_slots": [],
       "recorded_hits": [
         {
-          "cost": 50,
+          "cost": 100,
           "names": [
+            "Music Collection",
             "Movie & TV Series Collection"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Music Collection"
           ]
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Chapter has 0 predicted slots but 2 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
     },
     {
       "chapter_num": "116.3",
       "banked_cp_in": 419,
       "predicted_slots": [
         {
-          "word_position": 1388,
+          "word_position": 1386,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -4691,7 +4544,7 @@
       "banked_cp_in": 162,
       "predicted_slots": [
         {
-          "word_position": 1030,
+          "word_position": 1027,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -4712,22 +4565,22 @@
       "banked_cp_in": 182,
       "predicted_slots": [
         {
-          "word_position": 725,
+          "word_position": 723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 6725,
+          "word_position": 6723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 12725,
+          "word_position": 12723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 18725,
+          "word_position": 18723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -5086,7 +4939,7 @@
       "banked_cp_in": 479,
       "predicted_slots": [
         {
-          "word_position": 2080,
+          "word_position": 2079,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -5128,12 +4981,12 @@
       "banked_cp_in": 409,
       "predicted_slots": [
         {
-          "word_position": 4117,
+          "word_position": 4116,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 10117,
+          "word_position": 10116,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -5160,50 +5013,30 @@
       "banked_cp_in": 0,
       "predicted_slots": [
         {
-          "word_position": 4622,
-          "roll_trigger_cp_threshold": 200,
-          "source": "synthetic"
-        },
-        {
-          "word_position": 9245,
-          "roll_trigger_cp_threshold": 200,
-          "source": "synthetic"
-        },
-        {
-          "word_position": 9551,
+          "word_position": 9550,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
       "recorded_hits": [
         {
-          "cost": 100,
+          "cost": 200,
           "names": [
+            "Starting Collection",
+            "Expanded Collection - Mysticism",
             "Esoteric Collection - Magic"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Expanded Collection - Mysticism"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Starting Collection"
           ]
         }
       ],
-      "diagnostic": "general_infeasible",
-      "explanation": "No feasible assignment under any permutation or single-hit cost adjustment (n=3, k=3, banked_in=0)."
+      "diagnostic": "regime_or_section_misclassification",
+      "explanation": "Highest CP achieved in chapter is 148, but largest hit costs 200. Predicted earnings short by ~52."
     },
     {
       "chapter_num": "115",
-      "banked_cp_in": 191,
+      "banked_cp_in": 231,
       "predicted_slots": [
         {
-          "word_position": 1684,
+          "word_position": 1682,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -5217,7 +5050,7 @@
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Highest CP achieved in chapter is 247, but largest hit costs 600. Predicted earnings short by ~353."
+      "explanation": "Highest CP achieved in chapter is 287, but largest hit costs 600. Predicted earnings short by ~313."
     },
     {
       "chapter_num": "116.2",
@@ -5225,27 +5058,22 @@
       "predicted_slots": [],
       "recorded_hits": [
         {
-          "cost": 50,
+          "cost": 100,
           "names": [
+            "Music Collection",
             "Movie & TV Series Collection"
-          ]
-        },
-        {
-          "cost": 50,
-          "names": [
-            "Music Collection"
           ]
         }
       ],
       "diagnostic": "regime_or_section_misclassification",
-      "explanation": "Chapter has 0 predicted slots but 2 recorded paid hits (short by 2 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
+      "explanation": "Chapter has 0 predicted slots but 1 recorded paid hits (short by 1 slot(s)). Likely section/regime misclassification under-counts CP-earning words."
     },
     {
       "chapter_num": "116.3",
       "banked_cp_in": 419,
       "predicted_slots": [
         {
-          "word_position": 1388,
+          "word_position": 1386,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -5266,7 +5094,7 @@
       "banked_cp_in": 162,
       "predicted_slots": [
         {
-          "word_position": 1030,
+          "word_position": 1027,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -5287,22 +5115,22 @@
       "banked_cp_in": 182,
       "predicted_slots": [
         {
-          "word_position": 725,
+          "word_position": 723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 6725,
+          "word_position": 6723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 12725,
+          "word_position": 12723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
-          "word_position": 18725,
+          "word_position": 18723,
           "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
@@ -7237,6 +7065,11 @@
       "slack": 756
     },
     {
+      "chapter_num": "100",
+      "feasible_assignment_count": 3,
+      "slack": 548
+    },
+    {
       "chapter_num": "101",
       "feasible_assignment_count": 2,
       "slack": 748
@@ -7244,7 +7077,12 @@
     {
       "chapter_num": "103",
       "feasible_assignment_count": 3,
-      "slack": 1296
+      "slack": 648
+    },
+    {
+      "chapter_num": "106",
+      "feasible_assignment_count": 2,
+      "slack": 348
     },
     {
       "chapter_num": "107",
@@ -7255,6 +7093,16 @@
       "chapter_num": "108",
       "feasible_assignment_count": 3,
       "slack": 1048
+    },
+    {
+      "chapter_num": "109",
+      "feasible_assignment_count": 2,
+      "slack": 348
+    },
+    {
+      "chapter_num": "112",
+      "feasible_assignment_count": 2,
+      "slack": 346
     }
   ]
 }

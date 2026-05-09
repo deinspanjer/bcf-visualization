@@ -483,6 +483,35 @@ def _norm_name(s: str | None) -> str:
     return (s or "").strip().lower()
 
 
+def _is_metadata_only_roll_override(entry: dict) -> bool:
+    """True when an index-aligned override only carries non-structural metadata.
+
+    Empty placeholder rows and quote-only rows should not rebuild the roll
+    schedule. They patch the existing roll at the same chapter-local slot.
+    """
+    if not isinstance(entry, dict):
+        return False
+    if entry.get("outcome") in ("hit", "miss"):
+        return False
+    if entry.get("perks"):
+        return False
+    structural_fields = (
+        "constellation",
+        "word_position",
+        "mention_chapter_num",
+        "mention_word_position",
+        "display_position_policy",
+    )
+    return all(entry.get(field) in (None, "", []) for field in structural_fields)
+
+
+def _has_structural_roll_override(override: dict) -> bool:
+    return any(
+        not _is_metadata_only_roll_override(entry)
+        for entry in (override.get("rolls") or [])
+    )
+
+
 def _restructure_curator_rows(
     chapter_num: str,
     curator_rows: list[tuple[int, dict]],
@@ -511,9 +540,55 @@ def _restructure_curator_rows(
          Mismatch -> warn.
     """
     override_rolls_raw = override.get("rolls") or []
+    metadata_only_by_index = {
+        idx: entry
+        for idx, entry in enumerate(override_rolls_raw)
+        if _is_metadata_only_roll_override(entry)
+    }
+    structural_override_indices = [
+        idx for idx, entry in enumerate(override_rolls_raw)
+        if idx not in metadata_only_by_index
+    ]
+
+    def _evidence_for_non_trigger_index(non_trigger_index: int) -> str | None:
+        entry = metadata_only_by_index.get(non_trigger_index)
+        if not entry:
+            return None
+        return entry.get("narrative_evidence")
+
+    def _passthrough_rows() -> list[dict]:
+        out_rows: list[dict] = []
+        non_trigger_index = 0
+        for source_idx, row in curator_rows:
+            payload = {
+                "_source_idx": source_idx,
+                "_override_origin": None,
+                "kind": row.get("kind"),
+                "perks": list(row.get("perks") or []),
+                "banked_before": row.get("banked_before"),
+                "banked_after": row.get("banked_after"),
+                "constellation": row.get("constellation"),
+                "constellation_revealed": row.get("constellation_revealed", False),
+                "roll_number": row.get("roll_number"),
+                "raw": row.get("raw"),
+            }
+            if row.get("kind") != "trigger":
+                evidence = _evidence_for_non_trigger_index(non_trigger_index)
+                if evidence:
+                    payload["_narrative_evidence"] = evidence
+                non_trigger_index += 1
+            out_rows.append(payload)
+        return out_rows
+
+    if override_rolls_raw and not structural_override_indices:
+        return _passthrough_rows()
+
     def _names_of(entry):
         return list(entry.get("perks") or [])
-    override_rolls = [_names_of(r) for r in override_rolls_raw]
+    override_rolls = {
+        idx: _names_of(override_rolls_raw[idx])
+        for idx in structural_override_indices
+    }
 
     def _explicit_outcome(entry) -> str | None:
         if isinstance(entry, dict) and entry.get("outcome") in ("hit", "miss"):
@@ -524,9 +599,9 @@ def _restructure_curator_rows(
     # rolls are misses", should not be matched to a trigger or converted
     # into zero-cost hit rows. Preserve any curator trigger rows, then
     # emit the requested miss rows in override order.
-    if override_rolls_raw and all(
+    if structural_override_indices and all(
         _explicit_outcome(entry) == "miss" and not _names_of(entry)
-        for entry in override_rolls_raw
+        for entry in (override_rolls_raw[idx] for idx in structural_override_indices)
     ):
         out_rows: list[dict] = []
         miss_templates = [
@@ -549,7 +624,8 @@ def _restructure_curator_rows(
                 "roll_number": row.get("roll_number"),
                 "raw": row.get("raw"),
             })
-        for idx, _entry in enumerate(override_rolls_raw):
+        for idx in structural_override_indices:
+            _entry = override_rolls_raw[idx]
             source_idx, template = (
                 miss_templates[min(idx, len(miss_templates) - 1)]
                 if miss_templates else (-1, {})
@@ -565,6 +641,7 @@ def _restructure_curator_rows(
                 "constellation_revealed": False,
                 "roll_number": template.get("roll_number"),
                 "raw": template.get("raw"),
+                "_narrative_evidence": _entry.get("narrative_evidence"),
             })
         return out_rows
     # Normalize override rolls to (paid_names_set, all_names_in_order_with_meta)
@@ -582,7 +659,7 @@ def _restructure_curator_rows(
                 name_to_perk[nm] = p
 
     # Validate every override-roll perk is present in this chapter.
-    for roll_idx, name_list in enumerate(override_rolls):
+    for roll_idx, name_list in override_rolls.items():
         for nm in name_list:
             if _norm_name(nm) not in name_to_perk:
                 raise ValueError(
@@ -620,14 +697,14 @@ def _restructure_curator_rows(
         )
 
     # Map override-roll index -> host curator row index.
-    override_to_host: list[int] = [
-        _curator_hit_index_for_override(name_list, curator_rows)
-        for name_list in override_rolls
-    ]
+    override_to_host: dict[int, int] = {
+        ov_idx: _curator_hit_index_for_override(name_list, curator_rows)
+        for ov_idx, name_list in override_rolls.items()
+    }
 
     # For each curator row, build the list of override-roll indices it hosts.
     host_to_overrides: dict[int, list[int]] = {}
-    for ov_idx, host_idx in enumerate(override_to_host):
+    for ov_idx, host_idx in override_to_host.items():
         host_to_overrides.setdefault(host_idx, []).append(ov_idx)
 
     # Sanity: every curator hit row should be hosted by at least one
@@ -646,10 +723,11 @@ def _restructure_curator_rows(
     # override-rolls it hosts. Walk banked across the override-rolls using
     # the curator hit row's banked_before as the entry CP.
     out_rows: list[dict] = []
+    non_trigger_index = 0
     for i, (source_idx, row) in enumerate(curator_rows):
         if row.get("kind") in ("miss", "trigger"):
             # Pass through (preserve curator banked_before/after).
-            out_rows.append({
+            payload = {
                 "_source_idx": source_idx,
                 "_override_origin": None,
                 "kind": row.get("kind"),
@@ -660,14 +738,20 @@ def _restructure_curator_rows(
                 "constellation_revealed": row.get("constellation_revealed", False),
                 "roll_number": row.get("roll_number"),
                 "raw": row.get("raw"),
-            })
+            }
+            if row.get("kind") != "trigger":
+                evidence = _evidence_for_non_trigger_index(non_trigger_index)
+                if evidence:
+                    payload["_narrative_evidence"] = evidence
+                non_trigger_index += 1
+            out_rows.append(payload)
             continue
 
         ov_indices = host_to_overrides.get(i, [])
         if not ov_indices:
             # Override doesn't cover this curator hit row -- emit it
             # untouched as a fallback.
-            out_rows.append({
+            payload = {
                 "_source_idx": source_idx,
                 "_override_origin": None,
                 "kind": row.get("kind"),
@@ -678,7 +762,12 @@ def _restructure_curator_rows(
                 "constellation_revealed": row.get("constellation_revealed", False),
                 "roll_number": row.get("roll_number"),
                 "raw": row.get("raw"),
-            })
+            }
+            evidence = _evidence_for_non_trigger_index(non_trigger_index)
+            if evidence:
+                payload["_narrative_evidence"] = evidence
+            non_trigger_index += 1
+            out_rows.append(payload)
             continue
 
         host_before = int_or_none(row.get("banked_before"))
@@ -725,7 +814,11 @@ def _restructure_curator_rows(
                     row.get("roll_number") if is_last_for_host else None
                 ),
                 "raw": row.get("raw") if is_last_for_host else None,
+                "_narrative_evidence": (
+                    override_rolls_raw[ov_idx].get("narrative_evidence")
+                ),
             })
+        non_trigger_index += 1
         # Sanity: final running balance should equal host_after for the
         # last override hosted by this curator row.
         if host_after is not None and running != host_after:
@@ -815,6 +908,35 @@ def _direct_override_rows(
 
     last_source_idx = non_trigger_templates[-1][0] if non_trigger_templates else 0
     for override_idx, entry in enumerate(override.get("rolls") or []):
+        template = (
+            non_trigger_templates[override_idx][1]
+            if override_idx < len(non_trigger_templates) else {}
+        )
+        if _is_metadata_only_roll_override(entry):
+            if not template:
+                continue
+            source_idx = (
+                non_trigger_templates[override_idx][0]
+                if override_idx < len(non_trigger_templates) else last_source_idx
+            )
+            payload = {
+                "_source_idx": source_idx,
+                "_override_origin": None,
+                "_override_direct": False,
+                "kind": template.get("kind"),
+                "perks": list(template.get("perks") or []),
+                "banked_before": template.get("banked_before"),
+                "banked_after": template.get("banked_after"),
+                "constellation": template.get("constellation"),
+                "constellation_revealed": template.get("constellation_revealed", False),
+                "roll_number": template.get("roll_number"),
+                "raw": template.get("raw"),
+            }
+            evidence = entry.get("narrative_evidence")
+            if evidence:
+                payload["_narrative_evidence"] = evidence
+            out_rows.append(payload)
+            continue
         template = (
             non_trigger_templates[override_idx][1]
             if override_idx < len(non_trigger_templates) else {}
@@ -1685,7 +1807,7 @@ def main() -> None:
         has_discrepancy = any(
             issue["code"] in blocking_codes for issue in issues
         )
-        if cn in multi_overrides:
+        if cn in multi_overrides and _has_structural_roll_override(multi_overrides[cn]):
             source_priority = "vetted_curated"
         elif cn in curator_by_chapter:
             source_priority = "curator_log"

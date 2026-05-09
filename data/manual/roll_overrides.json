@@ -1,5 +1,299 @@
 {
   "_purpose": "Hand-curated overrides applied after solver, before validation. See plans/roll_sequence_validation.md.",
-  "roll_overrides": {},
+  "roll_overrides": {
+    "interpolated:0638": {
+      "available_cp": 700,
+      "banked_cp_after_roll": 100,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 700 CP, Alchemy, Trigram Knowledge and Manipulation, 600 cost."
+    },
+    "interpolated:0640": {
+      "available_cp": 300,
+      "banked_cp_after_roll": 100,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 300 CP, Personal Reality, Temporal Controls."
+    },
+    "interpolated:0641": {
+      "available_cp": 500,
+      "banked_cp_after_roll": 200,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 500 CP, Workshop Equipment."
+    },
+    "interpolated:0642": {
+      "available_cp": 200,
+      "banked_cp_after_roll": 200,
+      "constellation": "Personal Reality",
+      "miss_cost_estimate": 300,
+      "rolled_perk_cost": 300,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Personal Reality miss."
+    },
+    "interpolated:0643": {
+      "available_cp": 400,
+      "banked_cp_after_roll": 400,
+      "constellation": "Time",
+      "miss_cost_estimate": 500,
+      "rolled_perk_cost": 500,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Time miss."
+    },
+    "interpolated:0644": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 600,
+      "constellation": "Toolkits",
+      "miss_cost_estimate": 700,
+      "rolled_perk_cost": 700,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 600 CP Toolkits miss."
+    },
+    "interpolated:0645": {
+      "available_cp": 400,
+      "banked_cp_after_roll": 0,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions at 400 CP."
+    },
+    "interpolated:0647": {
+      "available_cp": 800,
+      "banked_cp_after_roll": 600,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, VOWP Cellular Service, 200 cost."
+    },
+    "interpolated:0648": {
+      "available_cp": 800,
+      "banked_cp_after_roll": 200,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Chosen of Death."
+    },
+    "interpolated:0649": {
+      "available_cp": 400,
+      "banked_cp_after_roll": 400,
+      "constellation": "Toolkits",
+      "miss_cost_estimate": 500,
+      "rolled_perk_cost": 500,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Toolkits miss."
+    },
+    "interpolated:0650": {
+      "available_cp": 500,
+      "banked_cp_after_roll": 500,
+      "constellation": "Time",
+      "miss_cost_estimate": 600,
+      "rolled_perk_cost": 600,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 500 CP Time/Cultivation miss candidate."
+    },
+    "interpolated:0651": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 300,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft at 600 CP, 300 total cost."
+    },
+    "interpolated:0652": {
+      "available_cp": 900,
+      "banked_cp_after_roll": 500,
+      "constellation": "Personal Reality",
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records Entryway x8 at 900 CP."
+    },
+    "interpolated:0653": {
+      "available_cp": 700,
+      "banked_cp_after_roll": 100,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 700 CP, Resources and Durability, Firestorm, 600 cost."
+    },
+    "interpolated:0654": {
+      "available_cp": 200,
+      "banked_cp_after_roll": 200,
+      "constellation": "Toolkits",
+      "miss_cost_estimate": 300,
+      "rolled_perk_cost": 300,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Toolkits miss."
+    },
+    "interpolated:0655": {
+      "available_cp": 200,
+      "banked_cp_after_roll": 200,
+      "constellation": "Vehicles",
+      "miss_cost_estimate": 300,
+      "rolled_perk_cost": 300,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Vehicles miss."
+    },
+    "interpolated:0656": {
+      "available_cp": 300,
+      "banked_cp_after_roll": 0,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing at 300 CP."
+    },
+    "interpolated:0657": {
+      "available_cp": 400,
+      "banked_cp_after_roll": 400,
+      "constellation": "Time",
+      "miss_cost_estimate": 500,
+      "rolled_perk_cost": 500,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Time miss."
+    },
+    "interpolated:0659": {
+      "available_cp": 400,
+      "banked_cp_after_roll": 0,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 400 CP, Capstone, Bloodied Combat, 400 cost."
+    },
+    "interpolated:0662": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 500,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Maintenance System, 100 cost."
+    },
+    "interpolated:0663": {
+      "available_cp": 700,
+      "banked_cp_after_roll": 100,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 700 CP, Knowledge, Certified Tech, 600 cost."
+    },
+    "interpolated:0664": {
+      "available_cp": 300,
+      "banked_cp_after_roll": 300,
+      "constellation": "Magitech",
+      "miss_cost_estimate": 400,
+      "rolled_perk_cost": 400,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 300 CP Magitech miss."
+    },
+    "interpolated:0665": {
+      "available_cp": 500,
+      "banked_cp_after_roll": 0,
+      "constellation": "Personal Reality",
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less at 500 CP. Source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality."
+    },
+    "interpolated:0666": {
+      "available_cp": 800,
+      "banked_cp_after_roll": 200,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Knowledge, Xenoarchaeologist, 600 cost."
+    },
+    "interpolated:0667": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 100,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Knowledge, The Pleician Tome, 500 cost."
+    },
+    "interpolated:0668": {
+      "available_cp": 300,
+      "banked_cp_after_roll": 300,
+      "constellation": "Vehicles",
+      "miss_cost_estimate": 400,
+      "rolled_perk_cost": 400,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 300 CP Vehicles miss."
+    },
+    "interpolated:0669": {
+      "available_cp": 500,
+      "banked_cp_after_roll": 500,
+      "constellation": "Magitech",
+      "miss_cost_estimate": 600,
+      "rolled_perk_cost": 600,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 500 CP Magitech miss."
+    },
+    "interpolated:0671": {
+      "available_cp": 700,
+      "banked_cp_after_roll": 400,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing/Unnatural Skill row at 700 CP, 300 total cost."
+    },
+    "interpolated:0672": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 400,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Alchemy, Mixing Mixtures, 200 cost."
+    },
+    "interpolated:0673": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 0,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Time, Strong Spark, 600 cost."
+    },
+    "interpolated:0674": {
+      "available_cp": 500,
+      "banked_cp_after_roll": 300,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades at 500 CP, 200 total cost."
+    },
+    "interpolated:0675": {
+      "available_cp": 700,
+      "banked_cp_after_roll": 100,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table includes a 700 CP Magitech/Thundercats row."
+    },
+    "interpolated:0676": {
+      "available_cp": 200,
+      "banked_cp_after_roll": 200,
+      "constellation": "Magitech",
+      "miss_cost_estimate": 600,
+      "rolled_perk_cost": 600,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Magitech/Guru miss candidate."
+    },
+    "interpolated:0677": {
+      "available_cp": 400,
+      "banked_cp_after_roll": 400,
+      "constellation": "Magitech",
+      "miss_cost_estimate": 600,
+      "rolled_perk_cost": 600,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Magitech/Guru miss candidate."
+    },
+    "interpolated:0678": {
+      "available_cp": 900,
+      "banked_cp_after_roll": 800,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection at 900 CP, 100 total cost."
+    },
+    "interpolated:0679": {
+      "available_cp": 1000,
+      "banked_cp_after_roll": 400,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 1000 CP, Vehicles, A New Age of Warfare, 600 cost."
+    },
+    "interpolated:0680": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 0,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Magic, Blood Artisan Plus, 600 cost."
+    },
+    "interpolated:0682": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 600,
+      "constellation": "Knowledge",
+      "miss_cost_estimate": 800,
+      "rolled_perk_cost": 800,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 600 CP Knowledge/The Maddest Science Yet! miss candidate."
+    },
+    "interpolated:0683": {
+      "available_cp": 800,
+      "banked_cp_after_roll": 400,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Capstone, Box-tech, 400 cost."
+    },
+    "interpolated:0684": {
+      "available_cp": 600,
+      "banked_cp_after_roll": 600,
+      "constellation": "Toolkits",
+      "miss_cost_estimate": 800,
+      "rolled_perk_cost": 800,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 600 CP Toolkits/Orb Design Plans miss candidate."
+    },
+    "interpolated:0685": {
+      "available_cp": 800,
+      "banked_cp_after_roll": 200,
+      "slot_source": "override",
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Alchemy, Equivalent Exchange, 600 cost."
+    }
+  },
   "chapter_overrides": {}
 }

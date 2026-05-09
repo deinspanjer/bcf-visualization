@@ -20,6 +20,8 @@ class RegexHits:
     error: str | None = None
     word_indices: list[int] = field(default_factory=list)
     """Word indices into the current chapter's prose where the regex matches."""
+    char_spans: list[tuple[int, int]] = field(default_factory=list)
+    """Character spans for the full regex matches."""
 
 
 DEFAULT_REGEX_PATTERNS = (
@@ -147,9 +149,11 @@ class ForgeCuratorState:
             return hits
         text = self.chapter.prose.text
         word_offsets = self.chapter.prose.word_offsets
-        match_chars = [m.start() for m in rx.finditer(text)]
-        for c in match_chars:
-            wi = _word_index_for_char(word_offsets, c)
+        for match in rx.finditer(text):
+            start, end = match.span()
+            if start < end:
+                hits.char_spans.append((start, end))
+            wi = _word_index_for_char(word_offsets, start)
             if wi is not None and wi not in hits.word_indices:
                 hits.word_indices.append(wi)
         hits.word_indices.sort()
