@@ -5,13 +5,6 @@ from pathlib import Path
 from scripts.forge_curator.app import ForgeCuratorApp, StatsPanel
 from scripts.forge_curator.persistence import CurationPersistence
 
-pytestmark = pytest.mark.skip(
-    reason=(
-        "Temporarily skipped on the versioned data release branch; "
-        "Forge Curator pilot tests need a separate performance pass."
-    )
-)
-
 
 def _loaded_app(chapter_num: str, tmp_path: Path) -> ForgeCuratorApp:
     app = ForgeCuratorApp(

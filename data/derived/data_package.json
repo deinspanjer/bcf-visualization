@@ -19,8 +19,8 @@
       "path": "chapter_facts.json",
       "schema": "chapter_facts",
       "schema_version": 1,
-      "sha256": "edcf51b2f0da3b6e4c98cd7c2e23b4406390f65d05cc8f2b2eb61496ddcd89e8",
-      "size_bytes": 1819034
+      "sha256": "7e8642e158b878a30a84e333fba76b3129ce518b4bb6eedac4f3965c52511a7c",
+      "size_bytes": 1819025
     },
     "constellation_wireframes": {
       "path": "constellation_wireframes.json",
