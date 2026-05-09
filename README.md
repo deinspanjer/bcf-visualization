@@ -22,9 +22,9 @@ This repository is organized for quick exploration first, with deeper technical 
 ## What this project includes
 
 - A static, dependency-light web scrubber timeline in `web/`
-- Derived story datasets in `data/derived/` (schemas in
-  `data/derived/_schemas/`), with a versioned data-package manifest for
-  release and Pages publishing
+- Derived story schemas in `data/derived/_schemas/` and generated
+  story datasets hydrated into `data/derived/` from versioned release
+  bundles for local work and Pages publishing
 - Parsing, validation, and chart scripts in `scripts/`
 - Static output charts in `figures/`
 - A parked overhead sky prototype at `/web/?sky=1` for Phase 4
@@ -45,14 +45,16 @@ This repository is organized for quick exploration first, with deeper technical 
 ```
 
 The app reads `data/derived/data_package.json` first, then loads the
-contracted runtime files such as `chapter_facts.json`. The data version
-shown in the app combines the package build date/ordinal with the latest
-BCF story chapter ordinal and descriptive chapter number.
+contracted runtime files such as `chapter_facts.json`. Hydrate a fresh
+checkout with the maintainer bundle documented in
+[DEVELOPERS.md](DEVELOPERS.md). The data version shown in the app
+combines the package build date/ordinal with the latest BCF story
+chapter ordinal and descriptive chapter number.
 
 ## Data + parser notes
 
 - Parsers are designed to be idempotent and write validated JSON outputs.
-- Most workflows run from committed derived data.
+- Most workflows run from locally hydrated derived data.
 - EPUB-dependent steps are documented in [DEVELOPERS.md](DEVELOPERS.md).
 
 For parser commands, schema validation behavior, and dataset-by-dataset coverage details, use [DEVELOPERS.md](DEVELOPERS.md).

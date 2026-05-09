@@ -53,6 +53,11 @@ data/labeled/.tui_snapshot.json
 data/labeled/spans/_*.jsonl
 data/labeled/sections/_*.jsonl
 
+# High-churn derived data is distributed through versioned GitHub
+# Releases. Hydrate this directory with scripts/data_release.py
+# download-dev when working from a fresh checkout.
+data/derived/*.json
+
 # uv / Hugging Face caches
 .uv/
 .hf_cache/

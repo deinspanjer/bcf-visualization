@@ -29,10 +29,10 @@
 
 ## Documentation and maintenance
 
-- First release-backed Pages deploy and local maintainer bootstrap were
-  validated with
-  `bcf-visualization-data-v20260509.3-ch194-120.1`; decide when to
-  untrack and ignore top-level `data/derived/*.json`.
+- Top-level `data/derived/*.json` is ignored and release-backed Pages
+  deploy plus local maintainer bootstrap were validated with
+  `bcf-visualization-data-v20260509.3-ch194-120.1`; keep monitoring the
+  bootstrap workflow before considering history rewrite.
 - Keep data release tags and asset names aligned with the visible app
   data-version label: build date/ordinal plus latest BCF chapter ordinal
   and descriptive chapter number.

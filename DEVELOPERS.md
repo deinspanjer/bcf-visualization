@@ -63,8 +63,11 @@ written. Structural drift should fail loudly.
 
 ## Versioned data packages
 
-Phase 1 keeps top-level `data/derived/*.json` committed, but release and
-Pages tooling now treats runtime data as a versioned contract package.
+Top-level `data/derived/*.json` files are generated data and are
+distributed through versioned release bundles. The files may exist in a
+local checkout after bootstrap or regeneration, but they are ignored by
+Git. Release and Pages tooling treats runtime data as a versioned
+contract package.
 The browser loads `data_package.json` before `chapter_facts.json` and
 rejects unsupported contract versions instead of attempting local
 fallback reconciliation.
@@ -73,6 +76,15 @@ Refresh the local runtime manifest after regenerating web-consumed data:
 
 ```sh
 python3 scripts/data_release.py manifest --date YYYYMMDD --build-number N
+```
+
+Hydrate a fresh checkout from the validated maintainer bundle before
+running Forge Curator, data-invariant tests, or release packaging:
+
+```sh
+python3 scripts/data_release.py download-dev \
+  --tag bcf-visualization-data-v20260509.3-ch194-120.1 \
+  --asset bcf-visualization-data-v20260509.3-ch194-120.1.tar.gz
 ```
 
 Build release assets from the current derived data:
@@ -122,9 +134,9 @@ python3 scripts/data_release.py cleanup \
   --keep-tag bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER
 ```
 
-Add `--yes` only after reviewing the dry-run output. Do not filter
-derived JSON out of git history until a release-backed Pages deployment
-and local bootstrap cycle have both been proven.
+Add `--yes` only after reviewing the dry-run output. Do not rewrite
+history for derived JSON until this release-backed workflow has been
+stable long enough to justify a coordinated migration.
 
 Roll data flow is intentionally layered: `predicted_rolls.json` is the
 mechanical threshold-crossing schedule, `chapter_roll_overrides.json`

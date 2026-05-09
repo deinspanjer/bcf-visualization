@@ -1,8 +1,8 @@
 """Build and manage versioned derived-data release bundles.
 
-Phase 1 keeps ``data/derived/*.json`` committed, but this script creates
-the same release artifacts that future checkouts and Pages deploys can
-consume once derived JSON is no longer source-controlled.
+Top-level ``data/derived/*.json`` files are generated release data. This
+script builds, validates, downloads, and stages the release artifacts
+that hydrate local checkouts and GitHub Pages deployments.
 """
 
 from __future__ import annotations

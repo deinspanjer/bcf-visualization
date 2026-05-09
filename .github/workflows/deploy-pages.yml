@@ -55,6 +55,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DATA_BUNDLE_TAG: ${{ inputs.data_bundle_tag }}
           DATA_RUNTIME_ASSET: ${{ inputs.data_runtime_asset }}
+          DEFAULT_DATA_BUNDLE_TAG: bcf-visualization-data-v20260509.3-ch194-120.1
+          DEFAULT_DATA_RUNTIME_ASSET: bcf-visualization-runtime-v20260509.3-ch194-120.1.tar.gz
         run: |
           mkdir -p .data-release
           if [ -n "$DATA_BUNDLE_TAG" ]; then
@@ -66,6 +68,11 @@ jobs:
               --pattern "$DATA_RUNTIME_ASSET" \
               --dir .data-release
             RUNTIME_TAR=".data-release/$DATA_RUNTIME_ASSET"
+          elif [ ! -f data/derived/chapter_facts.json ]; then
+            gh release download "$DEFAULT_DATA_BUNDLE_TAG" \
+              --pattern "$DEFAULT_DATA_RUNTIME_ASSET" \
+              --dir .data-release
+            RUNTIME_TAR=".data-release/$DEFAULT_DATA_RUNTIME_ASSET"
           else
             python3 scripts/data_release.py package \
               --output-dir .data-release \
