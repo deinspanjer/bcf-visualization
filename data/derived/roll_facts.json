@@ -38,17 +38,17 @@
       "display_cumulative_word_offset": null,
       "constellation": "Toolkits",
       "constellation_revealed": true,
-      "available_cp": 100,
+      "available_cp": 0,
       "banked_cp_after_roll": 0,
       "purchased_perk_id": null,
       "purchased_perks": [
         {
           "name": "Workshop",
-          "cost": 100,
+          "cost": 0,
           "free": false
         }
       ],
-      "purchased_perk_cost_total": 100,
+      "purchased_perk_cost_total": 0,
       "purchased_perk_jump": "Personal Reality Supplement",
       "free_perks": [
         {
@@ -65,10 +65,10 @@
         }
       ],
       "rolled_perk_name": "Workshop",
-      "rolled_perk_cost": 100,
+      "rolled_perk_cost": 0,
       "miss_cost_estimate": null,
       "narrative_evidence": null,
-      "raw": "Trigger Event (100): Toolkits Constellation Revealed → Workshop (Personal Reality Supplement) (100-100) + Access Key (Personal Reality Supplement) (Free) + Entrance Hall (Personal Reality Supplement) (Free) → (0)",
+      "raw": "Trigger Event (0): Toolkits Constellation Revealed → Workshop (Personal Reality Supplement) (0-0) + Access Key (Personal Reality Supplement) (Free) + Entrance Hall (Personal Reality Supplement) (Free) → (0)",
       "roll_sequence_in_chapter": 1,
       "rolls_in_chapter": 2,
       "slot_source": "curator",

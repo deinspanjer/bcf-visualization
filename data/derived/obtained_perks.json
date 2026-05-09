@@ -12,8 +12,8 @@
       "perk_name": "Workshop: Metalworking",
       "classification": "Facility",
       "jump": "Personal Reality",
-      "cost": 100,
-      "cost_text": "100",
+      "cost": 0,
+      "cost_text": "0",
       "free": false,
       "perk_text": "Each purchase of this adds to your Personal Reality Workshop needed to perform specific type of craft, which is to be specified when purchase is made. It comes with a basic set of tools and supplies. Good for fixing or creating all sorts of things, although any complex parts or nonstandard supplies will have to be brought in from outside. Additional purchases can add different types of Workshops to your Personal Reality or expand existing ones. Anything built in one of those workshops is fiat backed to be restored to its original condition within 48 hours if damaged or destroyed. Repeatable",
       "constellation": "Toolkits"

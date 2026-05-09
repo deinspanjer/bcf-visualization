@@ -472,8 +472,11 @@ def merge_paid_units(
                 for k in paid_lookup
                 if k not in used_paid and id(paid_lookup[k]) not in consumed_paid
             ]
-            if unassigned_paid:
-                names = [_perk_name(p) for p in unassigned_paid]
+            unassigned_costed_paid = [
+                p for p in unassigned_paid if int(p.get("cost") or 0) > 0
+            ]
+            if unassigned_costed_paid:
+                names = [_perk_name(p) for p in unassigned_costed_paid]
                 print(
                     f"  multi_grab: ch {cn} override drops paid "
                     f"perk(s) {names!r} (not listed in any roll)"

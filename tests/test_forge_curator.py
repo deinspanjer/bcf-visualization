@@ -659,8 +659,16 @@ def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
         ("trigger", "hit"),
         ("miss", "miss"),
     ]
-    assert rolls[0]["purchased_perk_cost_total"] == 100
-    assert [p["name"] for p in rolls[0]["purchased_perks"]] == ["Workshop"]
+    assert rolls[0]["available_cp"] == 0
+    assert rolls[0]["banked_cp_after_roll"] == 0
+    assert rolls[0]["purchased_perk_cost_total"] == 0
+    assert rolls[0]["purchased_perks"] == [
+        {"name": "Workshop", "cost": 0, "free": False}
+    ]
+    assert [p["name"] for p in rolls[0]["free_perks"]] == [
+        "Access Key",
+        "Entrance Hall",
+    ]
 
     ch2 = app.data.chapter_derived("2").chapter_facts or {}
     fashion = next(

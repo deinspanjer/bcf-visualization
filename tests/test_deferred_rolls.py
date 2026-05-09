@@ -108,6 +108,33 @@ def test_merge_paid_units_moves_deferred_hit_to_mechanical_chapter() -> None:
     assert [p["perk_name"] for p in unit["free_perks"]] == ["Free Tie"]
 
 
+def test_merge_paid_units_ignores_unassigned_zero_cost_paid_perks() -> None:
+    obtained = [
+        _perk("1", "Discounted Trigger", cost=0, seq=1),
+        _perk("1", "Narrative Hit", cost=100, seq=2),
+    ]
+    overrides = {
+        "chapter_roll_overrides": {
+            "1": {
+                "rolls": [
+                    {
+                        "perks": ["Narrative Hit"],
+                        "outcome": "hit",
+                    },
+                ],
+            },
+        },
+    }
+
+    stdout = io.StringIO()
+    with contextlib.redirect_stdout(stdout):
+        units, _stats = merge_paid_units(obtained, overrides)
+
+    assert stdout.getvalue() == ""
+    assert len(units) == 1
+    assert [p["perk_name"] for p in units[0]["paid"]] == ["Narrative Hit"]
+
+
 def test_chapter_1_fashion_is_deferred_to_chapter_2_roll_facts() -> None:
     rolls = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
     fashion = next(

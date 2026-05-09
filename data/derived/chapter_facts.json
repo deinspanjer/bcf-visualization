@@ -2938,7 +2938,7 @@
       "cumulative_words_through_chapter": 4911,
       "cumulative_cp_earning_words": 4338,
       "cumulative_perks_through_chapter": 3,
-      "banked_cp_at_start": 100,
+      "banked_cp_at_start": 0,
       "banked_cp_at_end": 100,
       "model_validation": {
         "status": "ok",
@@ -3028,11 +3028,11 @@
           "purchased_perks": [
             {
               "name": "Workshop",
-              "cost": 100,
+              "cost": 0,
               "free": false
             }
           ],
-          "purchased_perk_cost_total": 100,
+          "purchased_perk_cost_total": 0,
           "purchased_perk_jump": "Personal Reality Supplement",
           "free_perks": [
             {
@@ -3055,10 +3055,10 @@
           "predicted_char_offset_in_chapter": null,
           "anchor_char_offset_in_chapter": null,
           "evidence_kind": "curator_log",
-          "available_cp": 100,
+          "available_cp": 0,
           "banked_cp_after_roll": 0,
           "rolled_perk_name": "Workshop",
-          "rolled_perk_cost": 100,
+          "rolled_perk_cost": 0,
           "miss_cost_estimate": null,
           "roll_sequence_in_chapter": 1,
           "rolls_in_chapter": 2,

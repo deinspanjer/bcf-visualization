@@ -8,7 +8,7 @@
       "roll_number": null,
       "chapter_num": "1",
       "kind": "trigger",
-      "banked_before": 100,
+      "banked_before": 0,
       "banked_after": 0,
       "constellation": "Toolkits",
       "constellation_revealed": true,
@@ -16,7 +16,7 @@
         {
           "name": "Workshop",
           "source": "Personal Reality Supplement",
-          "cost": 100,
+          "cost": 0,
           "free": false
         },
         {
@@ -32,7 +32,7 @@
           "free": true
         }
       ],
-      "raw": "Trigger Event (100): Toolkits Constellation Revealed → Workshop (Personal Reality Supplement) (100-100) + Access Key (Personal Reality Supplement) (Free) + Entrance Hall (Personal Reality Supplement) (Free) → (0)"
+      "raw": "Trigger Event (0): Toolkits Constellation Revealed → Workshop (Personal Reality Supplement) (0-0) + Access Key (Personal Reality Supplement) (Free) + Entrance Hall (Personal Reality Supplement) (Free) → (0)"
     },
     {
       "roll_number": 1,
