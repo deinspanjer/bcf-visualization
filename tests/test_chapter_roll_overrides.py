@@ -11,8 +11,8 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from scripts.multi_grab import load_overrides
-from scripts.derive_roll_facts import (
+from scripts.multi_grab import load_overrides, merge_paid_units  # noqa: E402
+from scripts.derive_roll_facts import (  # noqa: E402
     _has_structural_roll_override,
     _restructure_curator_rows,
 )
@@ -93,3 +93,55 @@ def test_quote_only_override_is_not_structural() -> None:
             {"outcome": "miss"},
         ],
     })
+    assert not _has_structural_roll_override({
+        "rolls": [
+            {
+                "mention_chapter_num": "2",
+                "display_position_policy": "mechanical",
+                "narrative_evidence": "same-chapter quote",
+            },
+        ],
+    }, "2")
+
+
+def test_quote_only_override_does_not_replace_multi_grab_units() -> None:
+    obtained = [
+        {
+            "chapter_num": "2",
+            "perk_name": "Bling of War",
+            "cost": 100,
+            "free": False,
+            "epub_sequence": 1,
+            "jump": "Macross",
+        },
+        {
+            "chapter_num": "2",
+            "perk_name": "Alchemist",
+            "cost": 200,
+            "free": False,
+            "epub_sequence": 2,
+            "jump": "Secrets of Evermore",
+        },
+    ]
+    overrides = {
+        "chapter_roll_overrides": {
+            "2": {
+                "rolls": [
+                    {
+                        "narrative_evidence": (
+                            "I felt my power try and fail to latch onto a mote "
+                            "from a new constellation."
+                        ),
+                    },
+                ],
+            },
+        },
+    }
+
+    units, stats = merge_paid_units(obtained, overrides)
+
+    assert stats["curated_chapters"] == 0
+    assert [u["paid"][0]["perk_name"] for u in units] == [
+        "Bling of War",
+        "Alchemist",
+    ]

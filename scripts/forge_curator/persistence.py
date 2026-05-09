@@ -257,6 +257,32 @@ class CurationPersistence:
         )
         return updated
 
+    def clear_roll_evidence_at_index(self, chapter_num: str, index: int) -> bool:
+        """Clear curated narrative evidence from an existing override row."""
+        entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(chapter_num))
+        )
+        rolls = (entry or {}).get("rolls") or []
+        if not (1 <= int(index) <= len(rolls)):
+            return False
+        roll = rolls[int(index) - 1]
+        if not roll.get("narrative_evidence"):
+            return False
+        before = deepcopy(self.chapter_roll_overrides)
+        roll["narrative_evidence"] = None
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "clear_roll_evidence_at_index",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"index": int(index)},
+        )
+        return True
+
     def mark_roll_deferred_to_chapter(
         self,
         chapter_num: str,

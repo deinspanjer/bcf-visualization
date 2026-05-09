@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from pathlib import Path
 
 import pytest
 from textual.css.query import NoMatches
@@ -24,7 +25,11 @@ from scripts.forge_curator.app import (
     ActionsPanel,
     RegexBar,
     GutterPanel,
+    GLYPH_STYLES,
     LEGEND,
+    QUOTE_HIGHLIGHT_STYLE,
+    REGEX_HIGHLIGHT_STYLES,
+    ROLL_HIGHLIGHT_STYLE,
     ROLL_EVIDENCE_MARKERS,
     STATS_PANEL_WIDTH,
     STATS_CONTENT_WIDTH,
@@ -95,6 +100,16 @@ def _word_index_for_char(app: ForgeCuratorApp, char: int) -> int:
         if char < end:
             return index
     return max(0, len(cs.prose.word_offsets) - 1)
+
+
+class _FakeMouseEvent:
+    def __init__(self, x: int, y: int, button: int = 1) -> None:
+        self.x = x
+        self.y = y
+        self.button = button
+
+    def stop(self) -> None:
+        pass
 
 
 @pytest.mark.asyncio
@@ -198,6 +213,54 @@ async def test_gutter_minimap_emits_an_and_roll_marks_for_ch97() -> None:
         # Every position should be in [0, 1].
         for prop, _ in items:
             assert 0.0 <= prop <= 1.0, f"minimap proportion out of [0,1]: {prop}"
+
+
+@pytest.mark.asyncio
+async def test_gutter_minimap_renders_quote_and_regex_on_same_row() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        gutter = app.query_one("#gutter", GutterPanel)
+
+        gutter.render_minimap([(0.0, "Q"), (0.0, "*")], 1.0, 1)
+
+        assert str(gutter.render()) == "Q*"
+
+
+@pytest.mark.asyncio
+async def test_gutter_minimap_keeps_regex_only_marks_in_second_column() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        gutter = app.query_one("#gutter", GutterPanel)
+
+        gutter.render_minimap([(0.0, "*")], 1.0, 2)
+
+        assert str(gutter.render()).splitlines()[0] == " *"
+
+
+@pytest.mark.asyncio
+async def test_gutter_minimap_uses_requested_indicator_priority() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        gutter = app.query_one("#gutter", GutterPanel)
+
+        gutter.render_minimap([(0.0, "Q"), (0.0, "A"), (0.0, "1")], 1.0, 1)
+
+        assert str(gutter.render()) == "AQ"
+
+
+def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
+    assert len(set(GLYPH_STYLES.values())) == len(GLYPH_STYLES)
+    assert ROLL_HIGHLIGHT_STYLE == GLYPH_STYLES["R"]
+    assert QUOTE_HIGHLIGHT_STYLE == GLYPH_STYLES["Q"]
+    assert REGEX_HIGHLIGHT_STYLES == (
+        GLYPH_STYLES["1"],
+        GLYPH_STYLES["2"],
+        GLYPH_STYLES["3"],
+        GLYPH_STYLES["*"],
+    )
 
 
 @pytest.mark.parametrize("chapter_num", ["2", "97"])
@@ -491,6 +554,31 @@ async def test_zxc_star_select_active_regex_and_n_uses_it() -> None:
         assert cs.regex_hits[3].pattern.startswith("\\b")
 
 
+@pytest.mark.asyncio
+async def test_mouse_cursor_syncs_app_state_without_drag_refresh(monkeypatch) -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        cs = app.state.chapter
+        assert cs is not None
+        prose = app.query_one("#prose", PassageView)
+        monkeypatch.setattr(prose, "capture_mouse", lambda: None)
+        monkeypatch.setattr(prose, "release_mouse", lambda: None)
+        calls: list[str] = []
+        monkeypatch.setattr(app, "_on_cursor_moved", lambda: calls.append("notify"))
+
+        prose.on_mouse_down(_FakeMouseEvent(12, 3))
+        prose.on_mouse_move(_FakeMouseEvent(40, 3))
+
+        assert cs.cursor_char == prose.cursor
+        assert calls == []
+
+        prose.on_mouse_up(_FakeMouseEvent(40, 3))
+
+        assert cs.cursor_char == prose.cursor
+        assert calls == ["notify"]
+
+
 def test_legend_no_ambiguous_glyph() -> None:
     """B5: ambiguous shouldn't be in the legend."""
     glyphs = [g for g, _, _ in LEGEND]
@@ -550,6 +638,8 @@ async def test_saved_roll_evidence_highlights_exact_quote_span() -> None:
             "start": quote_start,
             "end": quote_start + len(quote),
             "layer": "A",
+            "style": QUOTE_HIGHLIGHT_STYLE,
+            "priority": 20,
         } in spans
 
 
@@ -649,6 +739,82 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     assert rolls[0]["narrative_evidence"] == "same quote"
     assert rolls[1]["narrative_evidence"] is None
     assert rolls[2]["narrative_evidence"] == "same quote"
+
+
+def test_clear_roll_evidence_at_index(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    path = tmp_path / "chapter_roll_overrides.json"
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    persistence.update_roll_at_index("2", 1, narrative_evidence="quote")
+
+    assert persistence.clear_roll_evidence_at_index("2", 1)
+    rolls = persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"]
+    assert rolls[0]["narrative_evidence"] is None
+
+
+@pytest.mark.asyncio
+async def test_save_quote_targets_selection_start_not_visual_cursor_end(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.persistence = CurationPersistence(
+            chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+            journal_dir_path=tmp_path / ".journals",
+        )
+        app._post_curation_refresh = lambda message, *, full=False: None
+        cs = app.state.chapter
+        assert cs is not None
+        rolls = app._unified_rolls(cs)
+        roll_1 = next(r for r in rolls if r["target_chapter_num"] == "2" and r["target_roll_index"] == 1)
+        roll_2 = next(r for r in rolls if r["target_chapter_num"] == "2" and r["target_roll_index"] == 2)
+        start = cs.prose.word_offsets[int(roll_1["raw_word_position"])][0]
+        end = cs.prose.word_offsets[int(roll_2["raw_word_position"])][0]
+        prose = app.query_one("#prose", PassageView)
+        prose.anchor = start
+        prose.cursor = end
+        cs.cursor_char = end
+
+        app._action_save_quote("2")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["2"]["rolls"]
+    assert saved[0]["narrative_evidence"]
+    assert len(saved) == 1
+
+
+@pytest.mark.asyncio
+async def test_chapter_2_miss_quote_coordinates_target_first_roll(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.persistence = CurationPersistence(
+            chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+            journal_dir_path=tmp_path / ".journals",
+        )
+        app._post_curation_refresh = lambda message, *, full=False: None
+        cs = app.state.chapter
+        assert cs is not None
+        prose = app.query_one("#prose", PassageView)
+        prose.anchor = cs.prose.word_offsets[3064][0]
+        prose.cursor = cs.prose.word_offsets[3079][1] - 1
+        cs.cursor_char = prose.cursor
+
+        app._action_save_quote("2")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["2"]["rolls"]
+    assert saved[0]["narrative_evidence"]
+    assert len(saved) == 1
 
 
 def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
@@ -782,6 +948,66 @@ async def test_remove_annotations_action_deletes_author_notes_and_headers_at_cur
 
     assert json.loads(author_notes_path.read_text())["author_notes"] == []
     assert json.loads(header_corrections_path.read_text())["corrections"] == []
+
+
+@pytest.mark.asyncio
+async def test_remove_annotations_action_clears_roll_evidence_under_cursor(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    chapter_roll_overrides_path = tmp_path / "chapter_roll_overrides.json"
+    chapter_roll_overrides_path.write_text(
+        Path("data/manual/chapter_roll_overrides.json").read_text()
+    )
+
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.persistence = CurationPersistence(
+            chapter_roll_overrides_path=chapter_roll_overrides_path,
+            journal_dir_path=tmp_path / ".journals",
+        )
+        app._run_post_curation_derivation = lambda: None
+        app._post_curation_refresh = lambda message, *, full=False: None
+        cs = app.state.chapter
+        assert cs is not None
+        fashion = next(
+            r for r in app._unified_rolls(cs)
+            if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
+        )
+        quote_start = cs.prose.text.find(fashion["narrative_evidence"])
+        assert quote_start >= 0
+        prose = app.query_one("#prose", PassageView)
+        prose.cursor = quote_start
+        cs.cursor_char = quote_start
+
+        app._action_remove_annotations_at_current_word("2")
+
+    rolls = json.loads(chapter_roll_overrides_path.read_text())[
+        "chapter_roll_overrides"
+    ]["1"]["rolls"]
+    assert rolls[1]["narrative_evidence"] is None
+
+
+@pytest.mark.asyncio
+async def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    path = tmp_path / "chapter_roll_overrides.json"
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    persistence.update_roll_at_index("2", 1, narrative_evidence="quote")
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.persistence = persistence
+        calls: list[str] = []
+        app._run_post_curation_derivation = lambda: calls.append("post")
+
+        app.action_undo_last()
+
+        assert calls == ["post"]
 
 
 @pytest.mark.asyncio

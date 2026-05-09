@@ -168,31 +168,50 @@ class PassageView(BasePassageView):
         if notify is not None:
             notify()
 
+    def _sync_app_cursor(self) -> None:
+        state = getattr(self.app, "state", None)
+        cs = getattr(state, "chapter", None)
+        if cs is not None:
+            cs.cursor_char = self.cursor
+
+    def on_mouse_down(self, event: events.MouseDown) -> None:  # type: ignore[override]
+        super().on_mouse_down(event)
+        self._sync_app_cursor()
+
+    def on_mouse_move(self, event: events.MouseMove) -> None:  # type: ignore[override]
+        super().on_mouse_move(event)
+        self._sync_app_cursor()
+
+    def on_mouse_up(self, event: events.MouseUp) -> None:  # type: ignore[override]
+        super().on_mouse_up(event)
+        self._sync_app_cursor()
+        self._notify_cursor()
+
 
 # ---------- gutter widget ---------------------------------------------------
 
 
-# Glyphs used in the gutter. Higher-priority glyphs win when a row has
-# multiple indicators. Each glyph carries a Rich style.
+# Glyphs used in the gutter. Each glyph carries a Rich style.
 GLYPH_STYLES: dict[str, str] = {
-    "═": "bold grey50",
+    "═": "bold grey70",
     "R": "bold red",
     "H": "bold green",
     "M": "bold orange1",
     "A": "bold blue",
-    "Q": "bold green",
+    "Q": "bold spring_green3",
     "1": "bold yellow",
     "2": "bold cyan",
     "3": "bold magenta",
-    "4": "bold white",
+    "*": "bold white",
 }
 
 ROLL_HIGHLIGHT_STYLE = GLYPH_STYLES["R"]
+QUOTE_HIGHLIGHT_STYLE = GLYPH_STYLES["Q"]
 REGEX_HIGHLIGHT_STYLES = (
     GLYPH_STYLES["1"],
     GLYPH_STYLES["2"],
     GLYPH_STYLES["3"],
-    GLYPH_STYLES["4"],
+    GLYPH_STYLES["*"],
 )
 
 ROLL_EVIDENCE_GUTTER_GLYPH = "Q"
@@ -211,7 +230,7 @@ LEGEND = [
     ("1", "regex 1 (z, n/N)", GLYPH_STYLES["1"]),
     ("2", "regex 2", GLYPH_STYLES["2"]),
     ("3", "regex 3", GLYPH_STYLES["3"]),
-    ("4", "regex *", GLYPH_STYLES["4"]),
+    ("*", "regex *", GLYPH_STYLES["*"]),
 ]
 
 ROLL_EVIDENCE_MARKERS = [
@@ -221,19 +240,21 @@ ROLL_EVIDENCE_MARKERS = [
     ("I", "inferred"),
 ]
 
-# Higher-priority glyphs win when multiple indicators overlap on a line.
+# Lower rank values render first. A row can show at most two indicators:
+# the strongest in column 1 and the next strongest in column 2.
 _GLYPH_PRIORITY = {
-    "═": 1,
-    "R": 2,
-    "H": 3,
-    "M": 3,
-    "A": 4,
-    ROLL_EVIDENCE_GUTTER_GLYPH: 5,
-    "1": 6,
-    "2": 6,
-    "3": 6,
-    "4": 6,
+    "H": 1,
+    "M": 2,
+    "R": 3,
+    "═": 4,
+    "A": 5,
+    ROLL_EVIDENCE_GUTTER_GLYPH: 6,
+    "*": 7,
+    "1": 8,
+    "2": 9,
+    "3": 10,
 }
+_REGEX_GLYPHS = {"*", "1", "2", "3"}
 
 
 class GutterPanel(Static):
@@ -242,9 +263,9 @@ class GutterPanel(Static):
     Each renderable row maps to a fixed *proportion* of the chapter's
     word range, not to a visual line of the prose. So a 60-row gutter
     over a 6000-word chapter has each row representing 100 words of
-    chapter progress regardless of scroll position. Indicators are
-    placed at their proportional row; multiple items targeting the same
-    row pick the highest priority.
+    chapter progress regardless of scroll position. Indicators are placed
+    at their proportional row; multiple items targeting the same row render
+    in priority order across the two gutter columns.
 
     The cursor mark moves at chapter scale, not line scale — small
     motions inside one minimap row don't shift the cursor indicator.
@@ -277,33 +298,44 @@ class GutterPanel(Static):
         to render (caller computes from the panel's actual size).
         """
         height = max(1, int(height))
-        # rows[i] = (priority, glyph) for the strongest indicator on row i.
-        rows: list[tuple[int, str]] = [(0, "")] * height
+        rows: list[list[str]] = [[] for _ in range(height)]
 
         def row_for(prop: float) -> int:
             return max(0, min(height - 1, int(round(prop * (height - 1)))))
 
         for prop, glyph in items:
             r = row_for(prop)
-            pri = _GLYPH_PRIORITY.get(glyph, 0)
-            if pri > rows[r][0]:
-                rows[r] = (pri, glyph)
+            if glyph not in _GLYPH_PRIORITY or glyph in rows[r]:
+                continue
+            rows[r].append(glyph)
+            rows[r].sort(key=lambda g: _GLYPH_PRIORITY[g])
+            del rows[r][2:]
 
         cursor_row = row_for(max(0.0, min(1.0, cursor_proportion)))
 
         out = Text()
-        for i, (_pri, glyph) in enumerate(rows):
+        for i, glyphs in enumerate(rows):
             on_cursor = (i == cursor_row)
-            if glyph:
-                style = GLYPH_STYLES.get(glyph, "")
+            non_regex = [g for g in glyphs if g not in _REGEX_GLYPHS]
+            regex = [g for g in glyphs if g in _REGEX_GLYPHS]
+            col1 = non_regex[0] if non_regex else ""
+            col2 = (
+                non_regex[1]
+                if len(non_regex) > 1
+                else regex[0] if regex else ""
+            )
+
+            def append_cell(glyph: str, *, cursor_mark: bool = False) -> None:
+                style = GLYPH_STYLES.get(glyph, "") if glyph else ""
                 if on_cursor:
                     style = (style + " " + self._CURSOR_ROW_STYLE).strip()
-                out.append(glyph, style=style)
-            else:
                 out.append(
-                    "▎" if on_cursor else " ",
-                    style=self._CURSOR_ROW_STYLE if on_cursor else "",
+                    glyph or ("▎" if cursor_mark and on_cursor else " "),
+                    style=style,
                 )
+
+            append_cell(col1, cursor_mark=True)
+            append_cell(col2)
             if i < height - 1:
                 out.append("\n")
         self.update(out)
@@ -685,7 +717,7 @@ class HelpScreen(ModalScreen):
         )
         body.append("\nRegex bar\n", style="bold")
         body.append(
-            "  /     focus regex 1\n"
+            "  /     focus regex *\n"
             "  Tab   cycle regex 1 -> 2 -> 3 -> *\n"
             "  Enter apply regex\n"
         )
@@ -1023,7 +1055,7 @@ class ForgeCuratorApp(App):
     BINDINGS = [
         Binding("question_mark", "show_help", "help", show=True),
         Binding("q", "quit_app", "quit", show=True),
-        Binding("slash", "focus_regex_1", "/regex1"),
+        Binding("slash", "focus_regex_star", "/regex*"),
         Binding("u", "undo_last", "undo last action"),
     ]
 
@@ -1177,7 +1209,13 @@ class ForgeCuratorApp(App):
                     "priority": 10,
                 })
         for start, end in self._roll_evidence_char_spans(cs):
-            spans.append({"start": start, "end": end, "layer": "A"})
+            spans.append({
+                "start": start,
+                "end": end,
+                "layer": "A",
+                "style": QUOTE_HIGHLIGHT_STYLE,
+                "priority": 20,
+            })
         for slot, hits in enumerate(cs.regex_hits[:4]):
             style = REGEX_HIGHLIGHT_STYLES[slot]
             for start, end in hits.char_spans:
@@ -1316,7 +1354,7 @@ class ForgeCuratorApp(App):
         for slot, hits in enumerate(cs.regex_hits, start=1):
             for wi in hits.word_indices:
                 if 0 <= wi < total:
-                    _add(int(wi), str(slot))
+                    _add(int(wi), "*" if slot == 4 else str(slot))
 
         return items
 
@@ -1915,8 +1953,13 @@ class ForgeCuratorApp(App):
             self._flash("nothing to undo")
             return
         action, chapter = result
+        full = action in {
+            "mark_an_span",
+            "mark_header_span",
+            "remove_annotations_at_word",
+        }
         ch_part = f" (ch {chapter})" if chapter else ""
-        self._flash(f"undid: {action}{ch_part}")
+        self._post_curation_refresh(f"undid: {action}{ch_part}", full=full)
 
     def action_quit_app(self) -> None:
         self.exit()
@@ -1933,8 +1976,9 @@ class ForgeCuratorApp(App):
             self._load_chapter(prv)
             self.refresh_all_panels()
 
-    def action_focus_regex_1(self) -> None:
-        inp = self.query_one("#regex_1", Input)
+    def action_focus_regex_star(self) -> None:
+        self._set_active_regex_slot(3)
+        inp = self.query_one("#regex_4", Input)
         inp.focus()
 
     # ----- chord-state hooks called by ``PassageView`` -----
@@ -2276,26 +2320,83 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return
+        roll_targets = self._roll_evidence_targets_at_selection_or_cursor()
+        removed_roll_evidence = 0
+        for target_chapter, target_index in roll_targets:
+            if self.persistence.clear_roll_evidence_at_index(
+                target_chapter,
+                target_index,
+            ):
+                removed_roll_evidence += 1
         word_idx = cs.cursor_word_index
         result = self.persistence.remove_annotations_at_word(
             chapter_num,
             word_idx,
             author_note_keys=self._manual_author_note_keys_at_word(chapter_num, word_idx),
         )
-        total = result["author_notes"] + result["header_corrections"]
+        total = (
+            result["author_notes"]
+            + result["header_corrections"]
+            + removed_roll_evidence
+        )
         if not total:
             self._flash("annotation delete: none at current word")
             return
+        full = bool(result["author_notes"] or result["header_corrections"])
         self._post_curation_refresh(
             (
                 "annotation delete: "
                 f"{result['author_notes']} AN, "
-                f"{result['header_corrections']} header"
+                f"{result['header_corrections']} header, "
+                f"{removed_roll_evidence} roll evidence"
             ),
-            full=True,
+            full=full,
         )
 
-    def _current_roll_target(self) -> dict | None:
+    def _selection_or_cursor_char_range(self) -> tuple[int, int] | None:
+        cs = self.state.chapter
+        if cs is None:
+            return None
+        prose_view = self.query_one("#prose", PassageView)
+        if prose_view.selection is not None:
+            lo, hi = prose_view.selection
+            return min(lo, hi), max(lo, hi)
+        word_idx = cs.cursor_word_index
+        if not (0 <= word_idx < len(cs.prose.word_offsets)):
+            return None
+        return cs.prose.word_offsets[word_idx]
+
+    def _roll_evidence_targets_at_selection_or_cursor(self) -> list[tuple[str, int]]:
+        cs = self.state.chapter
+        target_range = self._selection_or_cursor_char_range()
+        if cs is None or target_range is None:
+            return []
+        lo, hi = target_range
+        targets: list[tuple[str, int]] = []
+        seen: set[tuple[str, int]] = set()
+        for roll in self._unified_rolls(cs):
+            quote = roll.get("narrative_evidence")
+            target_index = roll.get("target_roll_index")
+            if not quote or target_index is None:
+                continue
+            quote_text = str(quote)
+            start = cs.prose.text.find(quote_text)
+            if start >= 0:
+                span = (start, start + len(quote_text))
+            else:
+                raw = self._evidence_fallback_word_index(cs, roll)
+                if raw is None or not (0 <= raw < len(cs.prose.word_offsets)):
+                    continue
+                span = cs.prose.word_offsets[raw]
+            if max(lo, span[0]) >= min(hi, span[1]):
+                continue
+            key = (str(roll.get("target_chapter_num") or cs.meta.chapter_num), int(target_index))
+            if key not in seen:
+                seen.add(key)
+                targets.append(key)
+        return targets
+
+    def _current_roll_target(self, *, word_idx: int | None = None) -> dict | None:
         """Action target for the displayed roll at or before the cursor.
 
         This is the "target" roll for `<space>h/m/c/p/q` actions. If
@@ -2304,7 +2405,9 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return None
-        cp_word_idx = self._cp_earning_word_offset(cs.cursor_word_index)
+        cp_word_idx = self._cp_earning_word_offset(
+            cs.cursor_word_index if word_idx is None else word_idx
+        )
         target: dict | None = None
         for roll in self._unified_rolls(cs):
             if roll["word_position"] <= cp_word_idx:
@@ -2376,7 +2479,8 @@ class ForgeCuratorApp(App):
         quote = self._selected_quote("save quote")
         if quote is None:
             return
-        target = self._current_roll_target()
+        target_word = self._selected_quote_start_word_index()
+        target = self._current_roll_target(word_idx=target_word)
         if target is None or target.get("target_roll_index") is None:
             self._flash("save quote: no predicted roll at/before cursor")
             return
@@ -2386,6 +2490,17 @@ class ForgeCuratorApp(App):
             target_chapter, idx, narrative_evidence=quote,
         )
         self._post_curation_refresh(f"roll #{idx} quote saved ({len(quote)} chars)")
+
+    def _selected_quote_start_word_index(self) -> int | None:
+        cs = self.state.chapter
+        if cs is None:
+            return None
+        prose_view = self.query_one("#prose", PassageView)
+        sel = prose_view.selection
+        if sel is None:
+            return cs.cursor_word_index
+        lo, _hi = sel
+        return _word_index_for_char_offset(cs.prose.word_offsets, lo)
 
     def _action_save_quote_multi(self, chapter_num: str) -> None:
         quote = self._selected_quote("save quote")

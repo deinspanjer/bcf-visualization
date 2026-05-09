@@ -27,8 +27,6 @@ from _common import write_validated_json
 from multi_grab import (
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
-    unit_principal_cost,
-    unit_total_cost,
 )
 from predict_rolls import _load_cp_words_per_chapter
 from regime_simulator import (
@@ -301,7 +299,6 @@ def _build_scheduler_inputs() -> dict[str, dict]:
     multi_overrides = load_multi_grab_overrides()
 
     chapters = sorted(chapters_doc["chapters"], key=lambda c: tuple(c["sort_key"]))
-    full_titles = {c["chapter_num"]: c["full_title"] for c in chapters}
     cp_words_by_title = _load_cp_words_per_chapter()
     chapter_words: dict[str, int] = {
         c["chapter_num"]: int(cp_words_by_title.get(c["full_title"], 0))
@@ -483,7 +480,9 @@ def _norm_name(s: str | None) -> str:
     return (s or "").strip().lower()
 
 
-def _is_metadata_only_roll_override(entry: dict) -> bool:
+def _is_metadata_only_roll_override(
+    entry: dict, chapter_num: str | None = None
+) -> bool:
     """True when an index-aligned override only carries non-structural metadata.
 
     Empty placeholder rows and quote-only rows should not rebuild the roll
@@ -495,19 +494,28 @@ def _is_metadata_only_roll_override(entry: dict) -> bool:
         return False
     if entry.get("perks"):
         return False
+    mention_chapter = entry.get("mention_chapter_num")
+    if (
+        chapter_num is not None
+        and mention_chapter is not None
+        and str(mention_chapter) != str(chapter_num)
+    ):
+        return False
     structural_fields = (
         "constellation",
         "word_position",
-        "mention_chapter_num",
         "mention_word_position",
-        "display_position_policy",
     )
-    return all(entry.get(field) in (None, "", []) for field in structural_fields)
+    if any(entry.get(field) not in (None, "", []) for field in structural_fields):
+        return False
+    return entry.get("display_position_policy") in (None, "", "mechanical")
 
 
-def _has_structural_roll_override(override: dict) -> bool:
+def _has_structural_roll_override(
+    override: dict, chapter_num: str | None = None
+) -> bool:
     return any(
-        not _is_metadata_only_roll_override(entry)
+        not _is_metadata_only_roll_override(entry, chapter_num)
         for entry in (override.get("rolls") or [])
     )
 
@@ -543,7 +551,7 @@ def _restructure_curator_rows(
     metadata_only_by_index = {
         idx: entry
         for idx, entry in enumerate(override_rolls_raw)
-        if _is_metadata_only_roll_override(entry)
+        if _is_metadata_only_roll_override(entry, chapter_num)
     }
     structural_override_indices = [
         idx for idx, entry in enumerate(override_rolls_raw)
@@ -912,7 +920,7 @@ def _direct_override_rows(
             non_trigger_templates[override_idx][1]
             if override_idx < len(non_trigger_templates) else {}
         )
-        if _is_metadata_only_roll_override(entry):
+        if _is_metadata_only_roll_override(entry, chapter_num):
             if not template:
                 continue
             source_idx = (

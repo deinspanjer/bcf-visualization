@@ -152,6 +152,37 @@ def _perk_name(perk: dict) -> str | None:
     return perk.get("perk_name") or perk.get("name")
 
 
+def _is_metadata_only_roll_entry(entry: dict, chapter_num: str) -> bool:
+    if not isinstance(entry, dict):
+        return False
+    if entry.get("outcome") in ("hit", "miss"):
+        return False
+    if entry.get("perks"):
+        return False
+    mention_chapter = entry.get("mention_chapter_num")
+    if mention_chapter is not None and str(mention_chapter) != str(chapter_num):
+        return False
+    structural_fields = (
+        "constellation",
+        "word_position",
+        "mention_word_position",
+    )
+    if any(entry.get(field) not in (None, "", []) for field in structural_fields):
+        return False
+    return entry.get("display_position_policy") in (None, "", "mechanical")
+
+
+def _structural_override(override: dict | None, chapter_num: str) -> dict | None:
+    if override is None:
+        return None
+    if any(
+        not _is_metadata_only_roll_entry(entry, chapter_num)
+        for entry in (override.get("rolls") or [])
+    ):
+        return override
+    return None
+
+
 def group_chapter_paid_perks(
     chapter_num: str,
     paid_perks: list[dict],
@@ -196,7 +227,9 @@ def group_chapter_paid_perks(
         if nm:
             free_by_norm[_norm(nm)] = p
 
-    override = chapter_roll_overrides.get(chapter_num)
+    override = _structural_override(
+        chapter_roll_overrides.get(chapter_num), chapter_num
+    )
     if override is not None:
         rolls_spec = override.get("rolls") or []
         used_paid: set[str] = set()
@@ -400,7 +433,7 @@ def merge_paid_units(
         primary_count += sum(1 for p in chapter_perks if not p.get("free", False))
         paid_perks = [p for p in chapter_perks if not p.get("free", False)]
         free_perks = [p for p in chapter_perks if p.get("free", False)]
-        override = chapter_roll_overrides.get(cn)
+        override = _structural_override(chapter_roll_overrides.get(cn), cn)
 
         if override is not None:
             curated_chapters += 1

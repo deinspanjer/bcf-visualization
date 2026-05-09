@@ -161,6 +161,7 @@
         "predicted_word_position_epub", "display_word_position_epub",
         "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
+        "narrative_evidence",
         "available_cp", "banked_cp_after_roll",
         "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
         "roll_sequence_in_chapter", "rolls_in_chapter",
@@ -265,6 +266,7 @@
             "synthetic"
           ]
         },
+        "narrative_evidence": { "type": ["string", "null"] },
         "available_cp": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
