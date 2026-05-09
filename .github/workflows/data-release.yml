@@ -19,12 +19,12 @@ on:
       source_data_tag:
         description: 'Published maintainer data release to hydrate data/derived when generated JSON is not committed.'
         required: false
-        default: 'bcf-visualization-data-v20260509.3-ch194-120.1'
+        default: 'bcf-visualization-data-v20260509.4-ch194-120.1'
         type: string
       source_data_asset:
         description: 'Maintainer data asset from source_data_tag.'
         required: false
-        default: 'bcf-visualization-data-v20260509.3-ch194-120.1.tar.gz'
+        default: 'bcf-visualization-data-v20260509.4-ch194-120.1.tar.gz'
         type: string
       regenerate:
         description: 'Regenerate release data from committed manual inputs after hydrating source_data_asset.'

@@ -83,9 +83,14 @@ running Forge Curator, data-invariant tests, or release packaging:
 
 ```sh
 python3 scripts/data_release.py download-dev \
-  --tag bcf-visualization-data-v20260509.3-ch194-120.1 \
-  --asset bcf-visualization-data-v20260509.3-ch194-120.1.tar.gz
+  --tag bcf-visualization-data-v20260509.4-ch194-120.1 \
+  --asset bcf-visualization-data-v20260509.4-ch194-120.1.tar.gz
 ```
+
+Codex app environments hydrate data during setup. The local environment
+copies top-level generated JSON from another registered worktree, while
+the cloud environment downloads the deployed default Pages package into
+`data/derived/`.
 
 Build release assets from the current derived data:
 
@@ -140,9 +145,11 @@ python3 scripts/data_release.py cleanup \
   --keep-tag bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER
 ```
 
-Add `--yes` only after reviewing the dry-run output. Do not rewrite
-history for derived JSON until this release-backed workflow has been
-stable long enough to justify a coordinated migration.
+Cleanup protects release tags referenced by workflow defaults and the
+deployed Pages `data/packages.json` by default. Add `--delete` only
+after reviewing the dry-run output; release assets are immutable and
+should be replaced by publishing a new release, not by editing an
+existing one.
 
 Roll data flow is intentionally layered: `predicted_rolls.json` is the
 mechanical threshold-crossing schedule, `chapter_roll_overrides.json`

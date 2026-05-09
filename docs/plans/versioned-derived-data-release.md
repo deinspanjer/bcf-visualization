@@ -11,8 +11,6 @@ served by GitHub-native artifacts.
 - GitHub Releases are the archival package surface. Pages deploys pin
   explicit release tags and unpack runtime bundles into the Pages
   artifact.
-- `git-filter-repo` is a separate coordinated history rewrite, not part
-  of the first migration.
 - Derived JSON remains the runtime and Forge Curator source of truth.
   Removing it from source commits must not make local bootstrap,
   testing, or Pages deployment ambiguous.
@@ -100,14 +98,26 @@ Goal: make long-lived release operations explicit and safe.
   selector only when `packages.json` contains more than one package.
 - Keep Pages deploys pinned to explicit version tags, never `latest`.
 
-## Phase 4: Optional History Rewrite
+Status: complete. Release cleanup now protects workflow defaults and
+deployed Pages package tags, remains dry-run by default, and only
+deletes unprotected candidates with an explicit delete flag. Pages
+packaging supports multiple runtime bundles, and the web header only
+renders a data package dropdown when more than one package is present.
 
-Goal: reduce historical repository size only if the operational benefit
-justifies the coordination cost.
+## Phase 4: Codex Environment Data Hydration
 
-- Treat `git-filter-repo` as a migration event with a write freeze.
-- Prepare branch, fork, and reclone guidance before rewriting history.
-- Avoid history rewriting merely to reduce review noise; generated-file
-  diff collapse and Phase 2 untracking address that separately.
-- Ensure no active branch can recontaminate rewritten history with the
-  removed derived blobs.
+Goal: make fresh Codex app environments usable without committed
+top-level derived JSON.
+
+- Local Codex environments should copy the local hydrated
+  `data/derived/*.json` files from another registered worktree, matching
+  the existing local EPUB copy behavior.
+- Cloud Codex environments should download the current deployed default
+  Pages data package from `data/packages.json` into `data/derived/`.
+- Environment setup should hydrate data before running package contract,
+  web contract, or spot-check validation.
+
+Status: complete. `.codex/environments/environment.toml` hydrates local
+generated data via `scripts/copy_bcf_data_from_worktree.py`, while
+`.codex/environments/cloud.toml` hydrates from deployed Pages data via
+`scripts/download_deployed_data_package.py`.

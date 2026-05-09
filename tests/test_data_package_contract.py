@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 import tarfile
 from pathlib import Path
 import pytest
@@ -131,6 +132,139 @@ def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) ->
     assert package["story_chapter_ordinal"] == 194
     assert package["story_chapter_num"] == "120.1"
     assert package["version_label"] == "BCF data 20260509.10, story ch 194 / 120.1"
+
+
+def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    outputs_a = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist-a",
+        package_date="20260509",
+        build_number=10,
+        source_commit="test-commit-a",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+    outputs_b = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist-b",
+        package_date="20260509",
+        build_number=11,
+        source_commit="test-commit-b",
+        generated_at="2026-05-09T13:00:00Z",
+    )
+
+    index_path = data_release.prepare_pages(
+        runtime_tars=[outputs_a.runtime_tar, outputs_b.runtime_tar],
+        site_dir=tmp_path / "site",
+        default_package_id="bcf-visualization-runtime-v20260509.11-ch194-120.1",
+    )
+
+    index = _load_json(index_path)
+    assert index["default_package_id"] == (
+        "bcf-visualization-runtime-v20260509.11-ch194-120.1"
+    )
+    assert [pkg["package_id"] for pkg in index["packages"]] == [
+        "bcf-visualization-runtime-v20260509.10-ch194-120.1",
+        "bcf-visualization-runtime-v20260509.11-ch194-120.1",
+    ]
+    assert (tmp_path / "site" / "data" / "default" / "data_package.json").is_file()
+    assert (
+        tmp_path
+        / "site"
+        / "data"
+        / "packages"
+        / "bcf-visualization-runtime-v20260509.10-ch194-120.1"
+        / "data_package.json"
+    ).is_file()
+
+
+def test_cleanup_release_dry_run_protects_workflow_and_deployed_tags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import data_release
+
+    releases = [
+        {
+            "tagName": "bcf-visualization-data-v20260509.4-ch194-120.1",
+            "isDraft": False,
+            "name": "protected deployed",
+        },
+        {
+            "tagName": "bcf-visualization-data-v20260509.5-ch194-120.1",
+            "isDraft": False,
+            "name": "candidate",
+        },
+    ]
+    deleted: list[str] = []
+
+    def fake_check_output(cmd: list[str], **_: object) -> str:
+        assert cmd[:3] == ["gh", "release", "list"]
+        return json.dumps(releases)
+
+    def fake_run(cmd: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        deleted.append(cmd[3])
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(data_release.subprocess, "check_output", fake_check_output)
+    monkeypatch.setattr(data_release.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        data_release,
+        "_deployed_packages_tags",
+        lambda url: {
+            "bcf-visualization-data-v20260509.4-ch194-120.1": ["deployed Pages"],
+        },
+    )
+
+    plan = data_release.cleanup_releases(
+        keep_tags=set(),
+        limit=100,
+        delete=False,
+        protect_workflow_defaults=True,
+        deployed_packages_url="https://example.test/packages.json",
+    )
+
+    assert plan.delete_candidates == [
+        "bcf-visualization-data-v20260509.5-ch194-120.1"
+    ]
+    assert "bcf-visualization-data-v20260509.4-ch194-120.1" in plan.protected_tags
+    assert deleted == []
+
+
+def test_cleanup_release_delete_requires_explicit_delete(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import data_release
+
+    releases = [
+        {
+            "tagName": "bcf-visualization-data-v20260509.5-ch194-120.1",
+            "isDraft": False,
+            "name": "candidate",
+        },
+    ]
+    deleted: list[str] = []
+
+    monkeypatch.setattr(
+        data_release.subprocess,
+        "check_output",
+        lambda *args, **kwargs: json.dumps(releases),
+    )
+    monkeypatch.setattr(
+        data_release.subprocess,
+        "run",
+        lambda cmd, **kwargs: deleted.append(cmd[3]) or subprocess.CompletedProcess(cmd, 0),
+    )
+
+    data_release.cleanup_releases(
+        keep_tags=set(),
+        limit=100,
+        delete=True,
+        protect_workflow_defaults=False,
+        deployed_packages_url=None,
+    )
+
+    assert deleted == ["bcf-visualization-data-v20260509.5-ch194-120.1"]
 
 
 def test_safe_extract_rejects_symlink_members(tmp_path: Path) -> None:

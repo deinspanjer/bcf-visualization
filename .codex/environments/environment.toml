@@ -13,6 +13,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -e '.[dev]'
 python scripts/copy_bcf_epub_from_worktree.py
+python scripts/copy_bcf_data_from_worktree.py
 
 node --check web/app.js
 node --check web/data-contract.js

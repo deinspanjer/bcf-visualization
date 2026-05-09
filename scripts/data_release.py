@@ -17,6 +17,8 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -37,6 +39,12 @@ PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(
     r"^(?:data-v\d{8}\.\d+|bcf-visualization-data-v\d{8}\.\d+-ch\d+-[A-Za-z0-9_.-]+)$"
 )
+WORKFLOW_DEFAULT_TAG_RE = re.compile(
+    r"\b(?:DEFAULT_DATA_BUNDLE_TAG|default):\s*['\"]?([^'\"\s]+)"
+)
+DEFAULT_DEPLOYED_PACKAGES_URL = (
+    "https://deinspanjer.github.io/bcf-visualization/data/packages.json"
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +60,12 @@ class StoryFreshness:
     chapter_ordinal: int
     chapter_num: str
     chapter_title: str
+
+
+@dataclass(frozen=True)
+class CleanupPlan:
+    delete_candidates: list[str]
+    protected_tags: dict[str, list[str]]
 
 
 def _utc_now() -> str:
@@ -585,23 +599,104 @@ def download_dev_bundle(*, tag: str, asset: str, output_dir: Path = DERIVED) -> 
                     shutil.copy2(path, dest)
 
 
-def cleanup_releases(*, keep_tags: set[str], limit: int, yes: bool) -> list[str]:
+def _add_protected_tag(protected: dict[str, list[str]], tag: str | None, reason: str) -> None:
+    if tag and DATA_RELEASE_RE.match(tag):
+        protected.setdefault(tag, []).append(reason)
+
+
+def _workflow_default_tags(paths: Iterable[Path]) -> dict[str, list[str]]:
+    protected: dict[str, list[str]] = {}
+    for path in paths:
+        if not path.exists():
+            continue
+        for match in WORKFLOW_DEFAULT_TAG_RE.finditer(path.read_text()):
+            _add_protected_tag(
+                protected,
+                match.group(1),
+                f"workflow default in {path.relative_to(ROOT).as_posix()}",
+            )
+    return protected
+
+
+def _packages_index_tags(index: dict, reason: str) -> dict[str, list[str]]:
+    protected: dict[str, list[str]] = {}
+    packages = index.get("packages")
+    if not isinstance(packages, list):
+        return protected
+    default_package_id = index.get("default_package_id")
+    for package in packages:
+        if not isinstance(package, dict):
+            continue
+        tag = package.get("release_tag")
+        package_id = package.get("package_id")
+        package_reason = reason
+        if package_id == default_package_id:
+            package_reason = f"{reason} default package"
+        _add_protected_tag(protected, tag, package_reason)
+    return protected
+
+
+def _deployed_packages_tags(url: str) -> dict[str, list[str]]:
+    try:
+        with urllib.request.urlopen(url, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+        print(f"WARNING: could not read deployed packages index {url}: {exc}")
+        return {}
+    return _packages_index_tags(payload, f"deployed Pages packages index {url}")
+
+
+def _merge_protected(
+    target: dict[str, list[str]],
+    source: dict[str, list[str]],
+) -> None:
+    for tag, reasons in source.items():
+        target.setdefault(tag, []).extend(reasons)
+
+
+def cleanup_releases(
+    *,
+    keep_tags: set[str],
+    limit: int,
+    delete: bool,
+    protect_workflow_defaults: bool = True,
+    deployed_packages_url: str | None = DEFAULT_DEPLOYED_PACKAGES_URL,
+) -> CleanupPlan:
+    protected: dict[str, list[str]] = {}
+    for tag in sorted(keep_tags):
+        _add_protected_tag(protected, tag, "--keep-tag")
+    if protect_workflow_defaults:
+        _merge_protected(protected, _workflow_default_tags([
+            ROOT / ".github" / "workflows" / "deploy-pages.yml",
+            ROOT / ".github" / "workflows" / "data-release.yml",
+        ]))
+    if deployed_packages_url:
+        _merge_protected(protected, _deployed_packages_tags(deployed_packages_url))
+
     raw = subprocess.check_output(
         ["gh", "release", "list", "--limit", str(limit), "--json", "tagName,isDraft,name"],
         cwd=ROOT,
         text=True,
     )
     releases = json.loads(raw)
-    candidates = [
-        rel["tagName"] for rel in releases
-        if DATA_RELEASE_RE.match(rel["tagName"]) and rel["tagName"] not in keep_tags
-    ]
+    candidates: list[str] = []
+    for rel in releases:
+        tag = rel["tagName"]
+        if not DATA_RELEASE_RE.match(tag):
+            continue
+        if tag in protected:
+            reasons = "; ".join(protected[tag])
+            print(f"protected {tag}: {reasons}")
+            continue
+        candidates.append(tag)
+
     for tag in candidates:
-        if yes:
+        if delete:
             subprocess.run(["gh", "release", "delete", tag, "--yes"], cwd=ROOT, check=True)
+            print(f"deleted {tag}")
         else:
             print(f"would delete {tag}")
-    return candidates
+    return CleanupPlan(delete_candidates=candidates, protected_tags=protected)
 
 
 def _path(value: str) -> Path:
@@ -650,7 +745,31 @@ def main() -> None:
     p_cleanup = sub.add_parser("cleanup", help="dry-run or delete old data releases")
     p_cleanup.add_argument("--keep-tag", action="append", default=[])
     p_cleanup.add_argument("--limit", type=int, default=100)
-    p_cleanup.add_argument("--yes", action="store_true")
+    p_cleanup.add_argument(
+        "--delete",
+        action="store_true",
+        help="actually delete unprotected candidate releases; omit for dry-run",
+    )
+    p_cleanup.add_argument(
+        "--yes",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    p_cleanup.add_argument(
+        "--deployed-packages-url",
+        default=DEFAULT_DEPLOYED_PACKAGES_URL,
+        help="packages.json URL whose release tags must be protected",
+    )
+    p_cleanup.add_argument(
+        "--no-protect-workflow-defaults",
+        action="store_true",
+        help="do not protect release tags referenced by workflow defaults",
+    )
+    p_cleanup.add_argument(
+        "--no-protect-deployed-pages",
+        action="store_true",
+        help="do not protect release tags referenced by deployed packages.json",
+    )
 
     args = parser.parse_args()
     if args.cmd == "manifest":
@@ -691,7 +810,16 @@ def main() -> None:
     elif args.cmd == "download-dev":
         download_dev_bundle(tag=args.tag, asset=args.asset, output_dir=args.output_dir)
     elif args.cmd == "cleanup":
-        cleanup_releases(keep_tags=set(args.keep_tag), limit=args.limit, yes=args.yes)
+        cleanup_releases(
+            keep_tags=set(args.keep_tag),
+            limit=args.limit,
+            delete=args.delete or args.yes,
+            protect_workflow_defaults=not args.no_protect_workflow_defaults,
+            deployed_packages_url=(
+                None if args.no_protect_deployed_pages
+                else args.deployed_packages_url
+            ),
+        )
 
 
 if __name__ == "__main__":
