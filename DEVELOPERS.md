@@ -66,6 +66,9 @@ is manual curation keyed by mechanical chapter, `roll_facts.json`
 resolves outcome/accounting/deferral/display fields, and
 `chapter_facts.json` is the runtime backbone. Fix disagreements in
 that derivation path, not in the web app or Forge Curator display code.
+Forge Curator may write manual inputs, but its stats, roll navigation,
+CP accounting, and hit/miss/perk/evidence display must render from
+regenerated derived JSON rather than overlaying manual edits directly.
 
 ## Web app checks
 

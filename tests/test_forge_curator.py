@@ -208,6 +208,7 @@ async def test_gutter_marks_match_canonical_roll_fact_positions(
                 roll.get("source_kind") == "trigger"
                 or roll.get("outcome") not in {"hit", "miss"}
                 or roll.get("word_position") is None
+                or str(roll.get("mechanical_chapter_num")) != chapter_num
             ):
                 continue
             raw = app._raw_word_for_cp_offset(roll["word_position"])
@@ -507,8 +508,9 @@ async def test_chapter_2_header_eligibility_and_roll_stats() -> None:
         assert "Text: CP ineligible - header" in text
         assert "Total content:" in text
         assert "CP eligible:" in text
-        assert "#1 (global #2)" in text
-        assert "#2 (global #3)" in text
+        assert "deferred from ch 1 #2 (global #2)" in text
+        assert "#1 (global #3)" in text
+        assert "#2 (global #4)" in text
         assert "hit" in text
         assert "Clothing - Fashion (200)" in text
         assert "Quality - Bling of War (100)" in text
@@ -586,6 +588,77 @@ def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
     )
     assert fashion["mechanical_chapter_num"] == "1"
     assert fashion["roll_number"] == 2
+
+
+@pytest.mark.asyncio
+async def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        from scripts.forge_curator.persistence import CurationPersistence
+        app.persistence = CurationPersistence(
+            chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+            journal_dir_path=tmp_path / ".journals",
+        )
+        app._run_post_curation_derivation = lambda: None
+
+        app._action_set_last_outcome("2", "miss")
+
+        ch1_rolls = (
+            app.persistence.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get("1", {})
+            .get("rolls", [])
+        )
+        assert ch1_rolls[1]["outcome"] == "miss"
+        ch2_rolls = (
+            app.persistence.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get("2", {})
+            .get("rolls", [])
+        )
+        assert not ch2_rolls
+
+
+@pytest.mark.asyncio
+async def test_post_curation_refresh_reloads_derived_documents() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.data.roll_facts
+        app.data.chapter_facts
+        old_roll_facts = app.data._roll_facts_doc
+        old_chapter_facts = app.data._chapter_facts_doc
+        app.data._derived_cache["sentinel"] = object()
+
+        calls = []
+        app._run_post_curation_derivation = lambda: calls.append("ran")
+
+        app._post_curation_refresh("changed roll")
+
+        assert calls == ["ran"]
+        assert app.data._roll_facts_doc is not old_roll_facts
+        assert app.data._chapter_facts_doc is not old_chapter_facts
+        assert "sentinel" not in app.data._derived_cache
+
+
+@pytest.mark.asyncio
+async def test_failed_post_curation_derivation_reports_error_without_reload() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.data.roll_facts
+        app.data.chapter_facts
+
+        def fail() -> None:
+            raise RuntimeError("derive failed")
+
+        app._run_post_curation_derivation = fail
+        app._post_curation_refresh("changed roll")
+
+        assert app._last_curation_error == "derive failed"
+        assert app.data._roll_facts_doc is not None
+        assert app.data._chapter_facts_doc is not None
 
 
 @pytest.mark.asyncio

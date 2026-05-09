@@ -196,6 +196,25 @@ class ForgeCuratorData:
         self._meta_by_chapter: dict[str, ChapterMeta] | None = None
         self._chapter_order: list[str] | None = None
 
+    def reload_from_disk(self) -> None:
+        """Clear loaded JSON/prose slices so future reads use disk state."""
+        self._chapter_sections_doc = None
+        self._chapters_doc = None
+        self._roll_facts_doc = None
+        self._predicted_doc = None
+        self._chapter_facts_doc = None
+        self._roll_validation_doc = None
+        self._obtained_doc = None
+        self._roll_outcomes_doc = None
+        self._chapter_roll_overrides_doc = None
+        self._author_notes_doc = None
+        self._regime_transitions_doc = None
+        self._header_corrections_doc = None
+        self._derived_cache = {}
+        self._prose_cache = {}
+        self._meta_by_chapter = None
+        self._chapter_order = None
+
     # ----- top-level loaders -----
 
     @property

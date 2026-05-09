@@ -53,6 +53,26 @@ replaying.
 
 The legend panel repeats these encodings and can be collapsed.
 
+## Forge Curator TUI
+
+Launch the curator from the repository root with:
+
+```sh
+.venv/bin/python -m scripts.forge_curator --chapter 2
+```
+
+The left stats panel's Rolls heading reports predicted slots for the
+current chapter. When a prior chapter's mechanical roll is narrated or
+listed in the current chapter, the heading adds a deferred count, for
+example `4 predicted +1 deferred`.
+
+Deferred rolls appear at the top of the Rolls list before the current
+chapter's `#1` roll. Their row names the mechanical source chapter and
+roll index, and shows the CP that was available at the original roll
+slot. Roll actions such as hit/miss, quote evidence, constellation, and
+perk selection target that original mechanical roll while still letting
+you work from the chapter where the evidence appears.
+
 ## Persistence
 
 The page stores the current word position, zoom, and playback speed in
