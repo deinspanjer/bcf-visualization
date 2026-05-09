@@ -680,6 +680,18 @@ def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
 
 
 @pytest.mark.asyncio
+async def test_chapter_1_stats_marks_fashion_as_narrative_deferred() -> None:
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+
+        text = _stats_text(app)
+        assert "#2 (global #2) hit Q" in text
+        assert "narrative deferred to ch 2" in text
+        assert "Clothing - Fashion (200)" in text
+
+
+@pytest.mark.asyncio
 async def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
     app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:

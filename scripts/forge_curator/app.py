@@ -1824,6 +1824,14 @@ class ForgeCuratorApp(App):
                 ),
                 *detail_lines,
             ])
+        mechanical_chapter = roll.get("mechanical_chapter_num")
+        mention_chapter = roll.get("mention_chapter_num")
+        if (
+            mechanical_chapter is not None
+            and mention_chapter is not None
+            and str(mention_chapter) != str(mechanical_chapter)
+        ):
+            detail_lines.insert(0, f"    narrative deferred to ch {mention_chapter}")
         chapter_idx = int(roll.get("index") or roll.get("roll_sequence_in_chapter") or 0)
         return "\n".join([
             f"  {marker} #{chapter_idx} ({global_part}) {outcome} {evidence}",
