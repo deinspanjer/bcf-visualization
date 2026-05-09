@@ -86,22 +86,40 @@ python3 scripts/data_release.py package \
 
 The package command writes two assets:
 
-- `bcf-pages-runtime-YYYYMMDD.N.tar.gz`: minimal Pages/browser payload.
-- `bcf-dev-derived-YYYYMMDD.N.tar.gz`: full top-level derived JSON set
-  for maintainer bootstrap.
+- `bcf-visualization-runtime-vYYYYMMDD.N-chORDINAL-CHAPTER.tar.gz`:
+  minimal browser payload.
+- `bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER.tar.gz`:
+  full top-level derived JSON set for maintainer bootstrap.
+
+The matching GitHub Release tag uses the shared data-package identity:
+
+```text
+bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER
+```
+
+`YYYYMMDD.N` is the build date and build ordinal. `ORDINAL` is the
+current BCF fiction chapter count in `chapter_facts.json`; `CHAPTER` is
+the latest descriptive chapter number, such as `120.1`. The same fields
+are stored in `data_package.json`, copied into `data/packages.json`, and
+shown by the web app as the visible data version.
+
+Draft releases are useful for inspecting assets but are not deployable
+through the Pages workflow's normal `GITHUB_TOKEN` release download.
+Publish the release before using it as a pinned Pages bundle.
 
 To hydrate a fresh checkout from a maintainer bundle:
 
 ```sh
 python3 scripts/data_release.py download-dev \
-  --tag data-vYYYYMMDD.N \
-  --asset bcf-dev-derived-YYYYMMDD.N.tar.gz
+  --tag bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER \
+  --asset bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER.tar.gz
 ```
 
 To dry-run old data-release cleanup:
 
 ```sh
-python3 scripts/data_release.py cleanup --keep-tag data-vYYYYMMDD.N
+python3 scripts/data_release.py cleanup \
+  --keep-tag bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER
 ```
 
 Add `--yes` only after reviewing the dry-run output. Do not filter

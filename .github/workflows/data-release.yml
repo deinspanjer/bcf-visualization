@@ -12,9 +12,9 @@ on:
         required: false
         type: string
       draft:
-        description: 'Create the GitHub Release as a draft.'
+        description: 'Create a draft release. Draft releases are not usable by the Pages deploy workflow until published.'
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
@@ -42,7 +42,10 @@ jobs:
             --date "$DATE" \
             --build-number "$BUILD" \
             --source-commit "$GITHUB_SHA"
-          echo "tag=data-v$DATE.$BUILD" >> "$GITHUB_OUTPUT"
+          TAG="$(python3 scripts/data_release.py version-tag \
+            --date "$DATE" \
+            --build-number "$BUILD")"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub Release
         env:
@@ -57,6 +60,6 @@ jobs:
           gh release create "$TAG" \
             .data-release/*.tar.gz \
             .data-release/SHA256SUMS \
-            --title "BCF data ${TAG#data-v}" \
+            --title "BCF data ${TAG#bcf-visualization-data-v}" \
             --notes "Versioned BCF derived data bundle ${TAG}." \
             $DRAFT_FLAG

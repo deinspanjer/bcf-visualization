@@ -37,8 +37,16 @@
       "size_bytes": 8170090
     }
   },
-  "generated_at": "2026-05-09T19:56:36Z",
-  "package_id": "bcf-pages-runtime-20260509.1",
+  "generated_at": "2026-05-09T21:01:49Z",
+  "package_date": "20260509",
+  "package_id": "bcf-visualization-runtime-v20260509.1-ch194-120.1",
+  "package_kind": "runtime",
+  "package_prefix": "bcf-visualization",
+  "release_tag": "bcf-visualization-data-v20260509.1-ch194-120.1",
   "schema_version": 1,
-  "source_commit": "phase1-committed-derived-data"
+  "source_commit": "phase1-committed-derived-data",
+  "story_chapter_num": "120.1",
+  "story_chapter_ordinal": 194,
+  "story_chapter_title": "120.1 Interlude Kurt - Preamble Legend",
+  "version_label": "BCF data 20260509.1, story ch 194 / 120.1"
 }

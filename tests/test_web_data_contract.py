@@ -85,3 +85,27 @@ def test_web_contract_helpers_allow_bad_optional_document_to_disable_feature() -
         "ok": False,
         "reason": "Unsupported roll_resolutions schema_version: expected 1, found 2",
     }
+
+
+def test_web_contract_helper_formats_data_version_label() -> None:
+    source = """
+      import { dataVersionLabel } from './web/data-contract.js';
+      console.log(dataVersionLabel({
+        version_label: 'BCF data 20260509.7, story ch 194 / 120.1',
+        package_id: 'bcf-visualization-runtime-v20260509.7-ch194-120.1',
+      }));
+    """
+    assert _node_eval(source) == "BCF data 20260509.7, story ch 194 / 120.1"
+
+
+def test_web_contract_helper_falls_back_to_story_metadata_label() -> None:
+    source = """
+      import { dataVersionLabel } from './web/data-contract.js';
+      console.log(dataVersionLabel({
+        package_date: '20260509',
+        build_number: 7,
+        story_chapter_ordinal: 194,
+        story_chapter_num: '120.1',
+      }));
+    """
+    assert _node_eval(source) == "BCF data 20260509.7, story ch 194 / 120.1"

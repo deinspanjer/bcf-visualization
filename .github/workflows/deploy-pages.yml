@@ -17,11 +17,11 @@ on:
   workflow_dispatch:
     inputs:
       data_bundle_tag:
-        description: 'Pinned data release tag to deploy, e.g. data-v20260509.1. Leave blank to package committed data/derived for Phase 1.'
+        description: 'Pinned published data release tag, e.g. bcf-visualization-data-v20260509.1-ch194-120.1. Leave blank to package committed data/derived.'
         required: false
         type: string
       data_runtime_asset:
-        description: 'Runtime asset name to download from data_bundle_tag.'
+        description: 'Runtime asset from data_bundle_tag, e.g. bcf-visualization-runtime-v20260509.1-ch194-120.1.tar.gz.'
         required: false
         type: string
 
@@ -72,7 +72,7 @@ jobs:
               --date "$(date -u +%Y%m%d)" \
               --build-number "$GITHUB_RUN_NUMBER" \
               --source-commit "$GITHUB_SHA"
-            RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-pages-runtime-*.tar.gz' -print -quit)"
+            RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
           fi
           python3 scripts/data_release.py prepare-pages \
             --site-dir _site \

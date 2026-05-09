@@ -29,18 +29,29 @@ DIST = ROOT / "dist" / "data-packages"
 CONTRACT = "bcf-visualization-data"
 CONTRACT_VERSION = 1
 MANIFEST_SCHEMA_VERSION = 1
+PACKAGE_PREFIX = "bcf-visualization"
 
 RUNTIME_REQUIRED = ["chapter_facts"]
 RUNTIME_OPTIONAL = ["constellation_wireframes", "roll_resolutions"]
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
-DATA_RELEASE_RE = re.compile(r"^data-v\d{8}\.\d+$")
+DATA_RELEASE_RE = re.compile(
+    r"^(?:data-v\d{8}\.\d+|bcf-visualization-data-v\d{8}\.\d+-ch\d+-[A-Za-z0-9_.-]+)$"
+)
 
 
 @dataclass(frozen=True)
 class PackageOutputs:
+    release_tag: str
     runtime_tar: Path
     dev_tar: Path
     checksums_path: Path
+
+
+@dataclass(frozen=True)
+class StoryFreshness:
+    chapter_ordinal: int
+    chapter_num: str
+    chapter_title: str
 
 
 def _utc_now() -> str:
@@ -97,6 +108,63 @@ def _file_meta(source_dir: Path, path: Path) -> dict:
         "size_bytes": path.stat().st_size,
         "sha256": _sha256(path),
     }
+
+
+def _safe_id_token(value: str) -> str:
+    token = re.sub(r"[^A-Za-z0-9_.-]+", "-", value.strip())
+    token = token.strip(".-")
+    if not token:
+        raise ValueError(f"could not build safe id token from {value!r}")
+    return token
+
+
+def _story_freshness(source_dir: Path) -> StoryFreshness:
+    chapter_facts = _read_json(source_dir / "chapter_facts.json")
+    chapters = chapter_facts.get("chapters") or []
+    if not chapters:
+        raise ValueError("chapter_facts.json has no chapters")
+    last = chapters[-1]
+    chapter_num = str(last.get("chapter_num") or "").strip()
+    if not chapter_num:
+        raise ValueError("latest chapter has no chapter_num")
+    return StoryFreshness(
+        chapter_ordinal=len(chapters),
+        chapter_num=chapter_num,
+        chapter_title=str(last.get("full_title") or chapter_num),
+    )
+
+
+def _version_slug(
+    *,
+    package_date: str,
+    build_number: int,
+    story: StoryFreshness,
+) -> str:
+    return (
+        f"v{package_date}.{build_number}"
+        f"-ch{story.chapter_ordinal}-{_safe_id_token(story.chapter_num)}"
+    )
+
+
+def _release_tag(*, package_date: str, build_number: int, story: StoryFreshness) -> str:
+    return f"{PACKAGE_PREFIX}-data-{_version_slug(package_date=package_date, build_number=build_number, story=story)}"
+
+
+def _package_id(
+    *,
+    package_kind: str,
+    package_date: str,
+    build_number: int,
+    story: StoryFreshness,
+) -> str:
+    return f"{PACKAGE_PREFIX}-{package_kind}-{_version_slug(package_date=package_date, build_number=build_number, story=story)}"
+
+
+def _version_label(*, package_date: str, build_number: int, story: StoryFreshness) -> str:
+    return (
+        f"BCF data {package_date}.{build_number}, "
+        f"story ch {story.chapter_ordinal} / {story.chapter_num}"
+    )
 
 
 def _safe_manifest_path(path: str) -> Path:
@@ -171,7 +239,11 @@ def build_manifest(
     source_dir: Path = DERIVED,
     bundle_class: str,
     package_id: str,
+    package_kind: str,
+    package_date: str,
     build_number: int,
+    release_tag: str,
+    story: StoryFreshness,
     source_commit: str | None = None,
     generated_at: str | None = None,
 ) -> dict:
@@ -206,9 +278,21 @@ def build_manifest(
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "package_id": package_id,
+        "package_prefix": PACKAGE_PREFIX,
+        "package_kind": package_kind,
+        "package_date": package_date,
         "build_number": build_number,
         "generated_at": generated_at,
         "source_commit": source_commit,
+        "release_tag": release_tag,
+        "story_chapter_ordinal": story.chapter_ordinal,
+        "story_chapter_num": story.chapter_num,
+        "story_chapter_title": story.chapter_title,
+        "version_label": _version_label(
+            package_date=package_date,
+            build_number=build_number,
+            story=story,
+        ),
         "contract": CONTRACT,
         "contract_version": CONTRACT_VERSION,
         "bundle_class": bundle_class,
@@ -234,12 +318,27 @@ def write_current_runtime_manifest(
     generated_at: str | None = None,
 ) -> Path:
     package_date = package_date or _today()
-    package_id = f"bcf-pages-runtime-{package_date}.{build_number}"
+    story = _story_freshness(source_dir)
+    release_tag = _release_tag(
+        package_date=package_date,
+        build_number=build_number,
+        story=story,
+    )
+    package_id = _package_id(
+        package_kind="runtime",
+        package_date=package_date,
+        build_number=build_number,
+        story=story,
+    )
     manifest = build_manifest(
         source_dir=source_dir,
         bundle_class="pages-runtime",
         package_id=package_id,
+        package_kind="runtime",
+        package_date=package_date,
         build_number=build_number,
+        release_tag=release_tag,
+        story=story,
         source_commit=source_commit or "phase1-committed-derived-data",
         generated_at=generated_at,
     )
@@ -285,13 +384,33 @@ def build_packages(
     source_dir = source_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    runtime_id = f"bcf-pages-runtime-{package_date}.{build_number}"
-    dev_id = f"bcf-dev-derived-{package_date}.{build_number}"
+    story = _story_freshness(source_dir)
+    release_tag = _release_tag(
+        package_date=package_date,
+        build_number=build_number,
+        story=story,
+    )
+    runtime_id = _package_id(
+        package_kind="runtime",
+        package_date=package_date,
+        build_number=build_number,
+        story=story,
+    )
+    dev_id = _package_id(
+        package_kind="data",
+        package_date=package_date,
+        build_number=build_number,
+        story=story,
+    )
     runtime_manifest = build_manifest(
         source_dir=source_dir,
         bundle_class="pages-runtime",
         package_id=runtime_id,
+        package_kind="runtime",
+        package_date=package_date,
         build_number=build_number,
+        release_tag=release_tag,
+        story=story,
         source_commit=source_commit,
         generated_at=generated_at,
     )
@@ -299,7 +418,11 @@ def build_packages(
         source_dir=source_dir,
         bundle_class="dev-derived",
         package_id=dev_id,
+        package_kind="data",
+        package_date=package_date,
         build_number=build_number,
+        release_tag=release_tag,
+        story=story,
         source_commit=source_commit,
         generated_at=generated_at,
     )
@@ -316,7 +439,27 @@ def build_packages(
         _tar_directory(runtime_stage, runtime_tar)
         _tar_directory(dev_stage, dev_tar)
     _write_checksums([runtime_tar, dev_tar], checksums)
-    return PackageOutputs(runtime_tar=runtime_tar, dev_tar=dev_tar, checksums_path=checksums)
+    return PackageOutputs(
+        release_tag=release_tag,
+        runtime_tar=runtime_tar,
+        dev_tar=dev_tar,
+        checksums_path=checksums,
+    )
+
+
+def build_release_tag(
+    *,
+    source_dir: Path = DERIVED,
+    package_date: str | None = None,
+    build_number: int = 1,
+) -> str:
+    package_date = package_date or _today()
+    story = _story_freshness(source_dir.resolve())
+    return _release_tag(
+        package_date=package_date,
+        build_number=build_number,
+        story=story,
+    )
 
 
 def _safe_extract(tar_path: Path, dest: Path) -> None:
@@ -361,10 +504,19 @@ def prepare_pages(
             shutil.copytree(tmp_dir, package_dir)
             packages.append({
                 "package_id": package_id,
+                "package_prefix": manifest.get("package_prefix"),
+                "package_kind": manifest.get("package_kind"),
+                "package_date": manifest.get("package_date"),
+                "build_number": manifest.get("build_number"),
                 "bundle_class": manifest["bundle_class"],
                 "contract_version": manifest["contract_version"],
                 "generated_at": manifest["generated_at"],
                 "source_commit": manifest["source_commit"],
+                "release_tag": manifest.get("release_tag"),
+                "story_chapter_ordinal": manifest.get("story_chapter_ordinal"),
+                "story_chapter_num": manifest.get("story_chapter_num"),
+                "story_chapter_title": manifest.get("story_chapter_title"),
+                "version_label": manifest.get("version_label", package_id),
                 "path": f"data/packages/{package_id}",
             })
 
@@ -473,6 +625,11 @@ def main() -> None:
     p_package.add_argument("--build-number", type=int, default=int(os.environ.get("GITHUB_RUN_NUMBER", "1")))
     p_package.add_argument("--source-commit")
 
+    p_version = sub.add_parser("version-tag", help="print the release tag for current data")
+    p_version.add_argument("--source-dir", type=_path, default=DERIVED)
+    p_version.add_argument("--date", default=_today())
+    p_version.add_argument("--build-number", type=int, default=int(os.environ.get("GITHUB_RUN_NUMBER", "1")))
+
     p_pages = sub.add_parser("prepare-pages", help="inject runtime bundles into a Pages artifact")
     p_pages.add_argument("--site-dir", type=_path, required=True)
     p_pages.add_argument("--runtime-tar", type=_path, action="append", required=True)
@@ -515,6 +672,12 @@ def main() -> None:
         print(outputs.runtime_tar)
         print(outputs.dev_tar)
         print(outputs.checksums_path)
+    elif args.cmd == "version-tag":
+        print(build_release_tag(
+            source_dir=args.source_dir,
+            package_date=args.date,
+            build_number=args.build_number,
+        ))
     elif args.cmd == "prepare-pages":
         out = prepare_pages(
             runtime_tars=args.runtime_tar,

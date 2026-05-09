@@ -1,4 +1,5 @@
 import {
+  dataVersionLabel,
   validateDataDocument,
   validateDataPackageManifest,
 } from "./data-contract.js";
@@ -220,30 +221,37 @@ async function loadContractJSON(dataPackage, name, { optional = false } = {}) {
   }
 }
 
-function attachDataPackageSelector(packageIndex, activePackageId) {
+function attachDataPackageSelector(packageIndex, activePackageId, activeManifest) {
   const packages = Array.isArray(packageIndex?.packages) ? packageIndex.packages : [];
-  if (packages.length <= 1) return;
+  const activePackage = packages.find(pkg => pkg.package_id === activePackageId) || activeManifest;
 
   const selector = el("label", { id: "data-package-selector" },
-    el("span", { text: "Data version" }),
-    el("select", { id: "data-package-select", "aria-label": "Data version" }));
-  const select = selector.querySelector("select");
-  const defaultId = packageIndex.default_package_id;
-  for (const pkg of packages) {
-    const label = pkg.package_id === defaultId ? `${pkg.package_id} (default)` : pkg.package_id;
-    select.appendChild(el("option", {
-      value: pkg.package_id,
-      text: label,
-      selected: pkg.package_id === activePackageId,
+    el("span", { text: "Data version" }));
+  const defaultId = packageIndex?.default_package_id;
+  if (packages.length <= 1) {
+    selector.appendChild(el("span", {
+      class: "data-package-static",
+      text: dataVersionLabel(activePackage),
     }));
+  } else {
+    const select = el("select", { id: "data-package-select", "aria-label": "Data version" });
+    for (const pkg of packages) {
+      const label = pkg.package_id === defaultId ? `${dataVersionLabel(pkg)} (default)` : dataVersionLabel(pkg);
+      select.appendChild(el("option", {
+        value: pkg.package_id,
+        text: label,
+        selected: pkg.package_id === activePackageId,
+      }));
+    }
+    select.addEventListener("change", () => {
+      const params = new URLSearchParams(window.location.search);
+      if (select.value === defaultId) params.delete(DATA_PACKAGE_PARAM);
+      else params.set(DATA_PACKAGE_PARAM, select.value);
+      const qs = params.toString();
+      window.location.href = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+    });
+    selector.appendChild(select);
   }
-  select.addEventListener("change", () => {
-    const params = new URLSearchParams(window.location.search);
-    if (select.value === defaultId) params.delete(DATA_PACKAGE_PARAM);
-    else params.set(DATA_PACKAGE_PARAM, select.value);
-    const qs = params.toString();
-    window.location.href = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
-  });
   document.body.appendChild(selector);
 }
 
@@ -2612,7 +2620,11 @@ function attachIntroToggle() {
     renderTracks(model, facts);
     applyTimelineZoom(state, { center: true });
     if (skyEnabled && wireframes) initSkyView(state, wireframes, rollResolutions);
-    attachDataPackageSelector(packageIndex, packageSelection.packageId || dataPackage.manifest.package_id);
+    attachDataPackageSelector(
+      packageIndex,
+      packageSelection.packageId || dataPackage.manifest.package_id,
+      dataPackage.manifest,
+    );
     attachRollTooltip();
     attachScrubber(state);
     attachChapterSelection(state);

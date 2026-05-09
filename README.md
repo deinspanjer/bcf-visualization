@@ -45,7 +45,9 @@ This repository is organized for quick exploration first, with deeper technical 
 ```
 
 The app reads `data/derived/data_package.json` first, then loads the
-contracted runtime files such as `chapter_facts.json`.
+contracted runtime files such as `chapter_facts.json`. The data version
+shown in the app combines the package build date/ordinal with the latest
+BCF story chapter ordinal and descriptive chapter number.
 
 ## Data + parser notes
 

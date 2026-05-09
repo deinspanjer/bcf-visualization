@@ -42,3 +42,18 @@ export function validateDataDocument(name, doc, meta, options = {}) {
   }
   return { ok: true };
 }
+
+export function dataVersionLabel(pkg) {
+  if (!pkg || typeof pkg !== "object") return "Data version unknown";
+  if (pkg.version_label) return String(pkg.version_label);
+
+  const date = pkg.package_date;
+  const build = pkg.build_number;
+  const ordinal = pkg.story_chapter_ordinal;
+  const chapterNum = pkg.story_chapter_num;
+  if (date && build != null && ordinal != null && chapterNum) {
+    return `BCF data ${date}.${build}, story ch ${ordinal} / ${chapterNum}`;
+  }
+
+  return pkg.package_id || "Data version unknown";
+}

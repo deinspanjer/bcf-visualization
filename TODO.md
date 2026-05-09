@@ -31,6 +31,9 @@
 
 - After the first release-backed Pages deploy succeeds, decide when to
   untrack and ignore top-level `data/derived/*.json`.
+- Keep data release tags and asset names aligned with the visible app
+  data-version label: build date/ordinal plus latest BCF chapter ordinal
+  and descriptive chapter number.
 - Treat any future `git-filter-repo` cleanup as a coordinated migration
   with a write freeze, branch guidance, and reclone instructions.
 - Decide whether the long mechanics and analytics sections in

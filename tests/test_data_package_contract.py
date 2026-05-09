@@ -19,6 +19,12 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     manifest = _load_json(DERIVED / "data_package.json")
 
     assert manifest["schema_version"] == 1
+    assert manifest["package_prefix"] == "bcf-visualization"
+    assert manifest["package_kind"] == "runtime"
+    assert manifest["package_date"] == "20260509"
+    assert manifest["story_chapter_ordinal"] == 194
+    assert manifest["story_chapter_num"] == "120.1"
+    assert manifest["version_label"] == "BCF data 20260509.1, story ch 194 / 120.1"
     assert manifest["contract"] == "bcf-visualization-data"
     assert manifest["contract_version"] == 1
     assert manifest["bundle_class"] == "pages-runtime"
@@ -57,8 +63,13 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         generated_at="2026-05-09T12:00:00Z",
     )
 
-    assert outputs.runtime_tar.name == "bcf-pages-runtime-20260509.7.tar.gz"
-    assert outputs.dev_tar.name == "bcf-dev-derived-20260509.7.tar.gz"
+    assert outputs.release_tag == "bcf-visualization-data-v20260509.7-ch194-120.1"
+    assert outputs.runtime_tar.name == (
+        "bcf-visualization-runtime-v20260509.7-ch194-120.1.tar.gz"
+    )
+    assert outputs.dev_tar.name == (
+        "bcf-visualization-data-v20260509.7-ch194-120.1.tar.gz"
+    )
     assert outputs.checksums_path.name == "SHA256SUMS"
 
     with tarfile.open(outputs.runtime_tar, "r:gz") as tf:
@@ -67,11 +78,51 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     assert "chapter_facts.json" in runtime_names
     assert "roll_text_evidence.json" not in runtime_names
 
+    with tarfile.open(outputs.runtime_tar, "r:gz") as tf:
+        manifest = json.loads(tf.extractfile("data_package.json").read())
+    assert manifest["package_id"] == "bcf-visualization-runtime-v20260509.7-ch194-120.1"
+    assert manifest["release_tag"] == outputs.release_tag
+    assert manifest["story_chapter_ordinal"] == 194
+    assert manifest["story_chapter_num"] == "120.1"
+    assert manifest["version_label"] == "BCF data 20260509.7, story ch 194 / 120.1"
+
     with tarfile.open(outputs.dev_tar, "r:gz") as tf:
         dev_names = set(tf.getnames())
     assert "data_package.json" in dev_names
     assert "roll_text_evidence.json" in dev_names
     assert "_schemas/chapter_facts.schema.json" not in dev_names
+
+
+def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    outputs = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist",
+        package_date="20260509",
+        build_number=10,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    index_path = data_release.prepare_pages(
+        runtime_tars=[outputs.runtime_tar],
+        site_dir=tmp_path / "site",
+    )
+
+    index = _load_json(index_path)
+    package = index["packages"][0]
+    assert index["default_package_id"] == (
+        "bcf-visualization-runtime-v20260509.10-ch194-120.1"
+    )
+    assert package["package_prefix"] == "bcf-visualization"
+    assert package["package_kind"] == "runtime"
+    assert package["release_tag"] == (
+        "bcf-visualization-data-v20260509.10-ch194-120.1"
+    )
+    assert package["story_chapter_ordinal"] == 194
+    assert package["story_chapter_num"] == "120.1"
+    assert package["version_label"] == "BCF data 20260509.10, story ch 194 / 120.1"
 
 
 def test_safe_extract_rejects_symlink_members(tmp_path: Path) -> None:
