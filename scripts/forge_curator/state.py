@@ -22,6 +22,12 @@ class RegexHits:
     """Word indices into the current chapter's prose where the regex matches."""
 
 
+DEFAULT_REGEX_PATTERNS = (
+    "mote|reach|constellation",
+    "the Forge|my power",
+)
+
+
 @dataclass
 class ChapterState:
     meta: ChapterMeta
@@ -74,6 +80,8 @@ class ForgeCuratorState:
         prose = self.data.chapter_prose(cn)
         cs = ChapterState(meta=meta, derived=derived, prose=prose)
         self.chapter = cs
+        for slot, pattern in enumerate(DEFAULT_REGEX_PATTERNS):
+            self.set_regex(slot, pattern)
         return cs
 
     # --- navigation helpers ---

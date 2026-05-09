@@ -508,7 +508,7 @@ class ActionsPanel(Static):
             "  v / V    select char / line\n"
             "  ⎵a       AN = selection\n"
             "  ⎵H       header = selection\n"
-            "  ⎵q       quote = selection\n\n"
+            "  ⎵q       quote = selection\n"
             "  ⎵Q       quote = selection, multiple rolls\n\n"
             "[bold]Roll metadata[/bold]\n"
             "  ⎵h  Last roll = hit\n"
