@@ -827,6 +827,8 @@ class ConstellationPicker(ModalScreen):
     """
 
     BINDINGS = [
+        Binding("space", "toggle_focused_perk", "toggle", show=False, priority=True),
+        Binding("enter", "confirm_selection", "confirm", show=False, priority=True),
         Binding("escape", "dismiss_picker", "cancel"),
         Binding("q", "dismiss_picker", "cancel"),
     ]
@@ -927,6 +929,8 @@ class PerkPicker(ModalScreen):
     """
 
     BINDINGS = [
+        Binding("space", "toggle_focused_perk", "toggle", show=False, priority=True),
+        Binding("enter", "confirm_selection", "confirm", show=False, priority=True),
         Binding("escape", "dismiss_picker", "cancel"),
         Binding("q", "dismiss_picker", "cancel"),
     ]
@@ -951,18 +955,28 @@ class PerkPicker(ModalScreen):
     @on(Button.Pressed)
     def _on_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "confirm":
-            self.app.pop_screen()
-            self._on_confirm(sorted(self._selected))
+            self.action_confirm_selection()
             return
-        name = event.button.name
+        self._toggle_button(event.button)
+
+    def _toggle_button(self, button: Button) -> None:
+        name = button.name
         if not name:
             return
         if name in self._selected:
             self._selected.discard(name)
-            event.button.remove_class("selected")
+            button.remove_class("selected")
         else:
             self._selected.add(name)
-            event.button.add_class("selected")
+            button.add_class("selected")
+
+    def action_toggle_focused_perk(self) -> None:
+        if isinstance(self.focused, Button) and self.focused.id != "confirm":
+            self._toggle_button(self.focused)
+
+    def action_confirm_selection(self) -> None:
+        self.app.pop_screen()
+        self._on_confirm(sorted(self._selected))
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -998,6 +1012,8 @@ class RollEvidencePicker(ModalScreen):
     """
 
     BINDINGS = [
+        Binding("space", "toggle_focused_roll", "toggle", show=False, priority=True),
+        Binding("enter", "confirm_selection", "confirm", show=False, priority=True),
         Binding("escape", "dismiss_picker", "cancel"),
         Binding("q", "dismiss_picker", "cancel"),
     ]
@@ -1008,36 +1024,57 @@ class RollEvidencePicker(ModalScreen):
         self._on_confirm = on_confirm
         self._selected: set[int] = set()
 
+    def _roll_button_label(self, index: int, roll: dict) -> str:
+        marker = "(x)" if index in self._selected else "( )"
+        global_num = roll.get("roll_number")
+        global_part = f"global #{global_num}" if global_num is not None else "global #?"
+        outcome = roll.get("outcome") or "unknown"
+        if roll.get("display_kind") == "deferred_in":
+            return (
+                f"{marker} deferred from ch {roll.get('target_chapter_num')} "
+                f"#{roll.get('target_roll_index')} ({global_part})  {outcome}"
+            )
+        return f"{marker} #{roll.get('index')} ({global_part})  {outcome}"
+
     def compose(self) -> ComposeResult:
         with Container():
             yield Static("Save quote to rolls (click to toggle)", classes="title")
             for idx, r in enumerate(self._rolls, start=1):
-                global_num = r.get("roll_number")
-                global_part = f"global #{global_num}" if global_num is not None else "global #?"
-                outcome = r.get("outcome") or "unknown"
-                if r.get("display_kind") == "deferred_in":
-                    label = f"deferred from ch {r.get('target_chapter_num')} #{r.get('target_roll_index')} ({global_part})  {outcome}"
-                else:
-                    label = f"#{r.get('index')} ({global_part})  {outcome}"
-                yield Button(label, id=f"roll_{idx}", name=str(idx))
+                yield Button(
+                    self._roll_button_label(idx, r),
+                    id=f"roll_{idx}",
+                    name=str(idx),
+                )
             yield Button("Confirm", id="confirm", variant="primary")
 
     @on(Button.Pressed)
     def _on_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "confirm":
-            self.app.pop_screen()
-            self._on_confirm(sorted(self._selected))
+            self.action_confirm_selection()
             return
-        name = event.button.name
+        self._toggle_button(event.button)
+
+    def _toggle_button(self, button: Button) -> None:
+        name = button.name
         if not name:
             return
         idx = int(name)
         if idx in self._selected:
             self._selected.discard(idx)
-            event.button.remove_class("selected")
+            button.remove_class("selected")
         else:
             self._selected.add(idx)
-            event.button.add_class("selected")
+            button.add_class("selected")
+        if 1 <= idx <= len(self._rolls):
+            button.label = self._roll_button_label(idx, self._rolls[idx - 1])
+
+    def action_toggle_focused_roll(self) -> None:
+        if isinstance(self.focused, Button) and self.focused.id != "confirm":
+            self._toggle_button(self.focused)
+
+    def action_confirm_selection(self) -> None:
+        self.app.pop_screen()
+        self._on_confirm(sorted(self._selected))
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -2242,7 +2279,9 @@ class ForgeCuratorApp(App):
         prose_view.anchor = None
         prose_view.visual_mode = False
         prose_view.visual_line_mode = False
-        prose_view.refresh()
+        refresh = getattr(prose_view, "refresh", None)
+        if callable(refresh):
+            refresh()
         self._post_curation_refresh(
             f"AN saved ({len(an_text.split())} words, sec {section_index})",
             full=True,
@@ -2284,7 +2323,9 @@ class ForgeCuratorApp(App):
         prose_view.anchor = None
         prose_view.visual_mode = False
         prose_view.visual_line_mode = False
-        prose_view.refresh()
+        refresh = getattr(prose_view, "refresh", None)
+        if callable(refresh):
+            refresh()
         self._post_curation_refresh(
             f"header marked ({word_end - word_start} words, sec {section_index})",
             full=True,
@@ -2556,7 +2597,20 @@ class ForgeCuratorApp(App):
             mention_word_position=mention_word,
             display_position_policy="mention",
         )
+        self._clear_prose_selection()
         self._post_curation_refresh(f"roll #{idx} quote saved ({len(quote)} chars)")
+
+    def _clear_prose_selection(self) -> None:
+        try:
+            prose_view = self.query_one("#prose", PassageView)
+        except Exception:
+            return
+        prose_view.anchor = None
+        prose_view.visual_mode = False
+        prose_view.visual_line_mode = False
+        refresh = getattr(prose_view, "refresh", None)
+        if callable(refresh):
+            refresh()
 
     def _selected_quote_start_word_index(self) -> int | None:
         cs = self.state.chapter
@@ -2582,6 +2636,7 @@ class ForgeCuratorApp(App):
         if not rolls:
             self._flash("save quote: no rolls in this chapter")
             return
+        self._clear_prose_selection()
 
         def on_confirm(indices: list[int]) -> None:
             if not indices:

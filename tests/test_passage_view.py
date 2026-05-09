@@ -684,6 +684,28 @@ def test_is_selects_inner_sentence() -> None:
     assert pv.text[sel[0]:sel[1]].strip().endswith(".")
 
 
+def test_counted_as_selects_multiple_sentences() -> None:
+    text = "First sentence. Second sentence! Third sentence?"
+    pv = _make(text, width=80)
+    pv.cursor = text.index("First")
+    pv.action_toggle_visual()
+
+    _send(pv, "2", "a", "s")
+
+    assert pv.selected_text == "First sentence. Second sentence! "
+
+
+def test_sentence_object_treats_single_hard_newline_as_whitespace() -> None:
+    text = "First sentence wraps\nonto the next hard line. Second sentence."
+    pv = _make(text, width=80)
+    pv.cursor = text.index("next")
+    pv.action_toggle_visual()
+
+    _send(pv, "i", "s")
+
+    assert pv.selected_text == "First sentence wraps\nonto the next hard line."
+
+
 def test_ip_selects_paragraph() -> None:
     text = "Para one line one.\nLine two.\n\nPara two body.\n\nPara three."
     pv = _make(text, width=80)

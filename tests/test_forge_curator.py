@@ -15,13 +15,17 @@ from types import SimpleNamespace
 
 import pytest
 from textual.css.query import NoMatches
-from textual.widgets import Input
+from textual.widgets import Button, Input
+
+import scripts.forge_curator.app as forge_app
 
 # Import here so the rest of the suite still loads even if textual is
 # unavailable.
 from scripts.forge_curator.app import (
     ForgeCuratorApp,
     PassageView,
+    PerkPicker,
+    RollEvidencePicker,
     StatsPanel,
     ActionsPanel,
     RegexBar,
@@ -70,6 +74,15 @@ def test_cp_raw_word_roundtrip_ch97(tmp_path: Path) -> None:
 
 def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_default_state_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        forge_app,
+        "STATE_FILE",
+        tmp_path / ".forge_curator_state.json",
+    )
 
 
 @pytest.fixture
@@ -660,6 +673,81 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     assert rolls[2]["narrative_evidence"] == "same quote"
 
 
+def test_roll_evidence_picker_labels_selected_rolls() -> None:
+    picker = RollEvidencePicker(
+        rolls=[
+            {
+                "index": 1,
+                "roll_number": 7,
+                "outcome": "hit",
+            },
+        ],
+        on_confirm=lambda _indices: None,
+    )
+    button = Button(picker._roll_button_label(1, picker._rolls[0]), name="1")
+
+    assert str(button.label).startswith("( ) #1")
+
+    picker._on_pressed(Button.Pressed(button))
+    assert str(button.label).startswith("(x) #1")
+
+    picker._on_pressed(Button.Pressed(button))
+    assert str(button.label).startswith("( ) #1")
+
+
+def test_roll_evidence_picker_keyboard_bindings_toggle_and_confirm() -> None:
+    bindings = {binding.key: binding.action for binding in RollEvidencePicker.BINDINGS}
+
+    assert bindings["space"] == "toggle_focused_roll"
+    assert bindings["enter"] == "confirm_selection"
+
+
+def test_roll_evidence_picker_space_action_toggles_focused_roll() -> None:
+    picker = RollEvidencePicker(
+        rolls=[
+            {
+                "index": 1,
+                "roll_number": 7,
+                "outcome": "hit",
+            },
+        ],
+        on_confirm=lambda _indices: None,
+    )
+    button = Button(picker._roll_button_label(1, picker._rolls[0]), name="1")
+    picker.focused = button
+
+    picker.action_toggle_focused_roll()
+
+    assert picker._selected == {1}
+    assert str(button.label).startswith("(x) #1")
+
+
+def test_perk_picker_keyboard_bindings_toggle_and_confirm() -> None:
+    bindings = {binding.key: binding.action for binding in PerkPicker.BINDINGS}
+
+    assert bindings["space"] == "toggle_focused_perk"
+    assert bindings["enter"] == "confirm_selection"
+
+
+def test_perk_picker_space_action_toggles_focused_perk() -> None:
+    picker = PerkPicker(
+        perks=[
+            {
+                "name": "Fashion",
+                "cost": 200,
+            },
+        ],
+        on_confirm=lambda _names: None,
+    )
+    button = Button("Fashion  200", name="Fashion")
+    picker.focused = button
+
+    picker.action_toggle_focused_perk()
+
+    assert picker._selected == {"Fashion"}
+    assert "selected" in button.classes
+
+
 def test_clear_roll_evidence_at_index(tmp_path) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
@@ -710,6 +798,44 @@ def test_save_quote_targets_selection_start_not_visual_cursor_end(
     ]["2"]["rolls"]
     assert saved[0]["narrative_evidence"]
     assert len(saved) == 1
+
+
+def test_save_quote_exits_visual_mode_after_success(
+    tmp_path, monkeypatch,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("2", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    cs = app.state.chapter
+    assert cs is not None
+    rolls = app._unified_rolls(cs)
+    roll_1 = next(
+        r for r in rolls
+        if r["target_chapter_num"] == "2" and r["target_roll_index"] == 1
+    )
+    start = cs.prose.word_offsets[int(roll_1["raw_word_position"])][0]
+    end = cs.prose.word_offsets[int(roll_1["raw_word_position"]) + 3][1]
+    prose = SimpleNamespace(
+        selection=(start, end),
+        cursor=end,
+        anchor=start,
+        visual_mode=True,
+        visual_line_mode=False,
+        refresh=lambda: None,
+    )
+    cs.cursor_char = end
+    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
+
+    app._action_save_quote("2")
+
+    assert prose.anchor is None
+    assert prose.visual_mode is False
+    assert prose.visual_line_mode is False
 
 
 def test_chapter_2_miss_quote_coordinates_target_first_roll(

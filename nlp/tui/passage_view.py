@@ -560,11 +560,17 @@ class PassageView(Widget, can_focus=True):
             if ch_for_pending in ("w", "W", "s", "p") and (
                 self.visual_mode or self.visual_line_mode
             ):
-                self._select_text_object(scope=scope, kind=ch_for_pending)
+                count = self._consume_count()
+                self._select_text_object(
+                    scope=scope,
+                    kind=ch_for_pending,
+                    count=count,
+                )
                 event.prevent_default()
                 event.stop()
                 return
             # Cancel without movement on any other key.
+            self._pending_count = ""
             event.prevent_default()
             event.stop()
             return
@@ -974,11 +980,12 @@ class PassageView(Widget, can_focus=True):
                 i += 1
         return i
 
-    def _sentence_bounds(self, cursor: int) -> tuple[int, int]:
+    def _sentence_bounds(self, cursor: int, *, count: int = 1) -> tuple[int, int]:
         """Return ``(start, end_exclusive)`` for the sentence containing cursor.
 
         Sentences are runs of text terminated by ``.``, ``!``, or ``?``.
-        Newlines act as soft sentence boundaries too.
+        Blank lines act as paragraph boundaries; single hard newlines are
+        treated as whitespace because prose may be hard-wrapped in source.
         """
         text = self.text
         n = len(text)
@@ -986,21 +993,31 @@ class PassageView(Widget, can_focus=True):
         s = cursor
         while s > 0:
             prev = text[s - 1]
-            if prev in ".!?\n":
+            if prev in ".!?":
+                break
+            if prev == "\n" and s >= 2 and text[s - 2] == "\n":
                 break
             s -= 1
         while s < n and text[s].isspace():
             s += 1
         # Walk forward to sentence end (inclusive of terminating punctuation).
         e = max(s, cursor)
-        while e < n:
-            c = text[e]
-            if c in ".!?":
+        remaining = max(1, count)
+        while remaining > 0 and e < n:
+            while e < n:
+                c = text[e]
+                if c in ".!?":
+                    e += 1
+                    remaining -= 1
+                    break
+                if c == "\n" and e + 1 < n and text[e + 1] == "\n":
+                    remaining = 0
+                    break
                 e += 1
+            if remaining <= 0:
                 break
-            if c == "\n" and e + 1 < n and text[e + 1] == "\n":
-                break
-            e += 1
+            while e < n and text[e].isspace():
+                e += 1
         return s, e
 
     def _paragraph_bounds(self, cursor: int) -> tuple[int, int]:
@@ -1024,7 +1041,7 @@ class PassageView(Widget, can_focus=True):
             e += 1
         return s, e
 
-    def _select_text_object(self, *, scope: str, kind: str) -> None:
+    def _select_text_object(self, *, scope: str, kind: str, count: int = 1) -> None:
         """Compute and apply a text-object selection.
 
         ``scope`` is ``"a"`` (around) or ``"i"`` (inner). ``kind`` is one
@@ -1052,7 +1069,7 @@ class PassageView(Widget, can_focus=True):
                 while e < n and text[e] in " \t":
                     e += 1
         elif kind == "s":
-            s, e = self._sentence_bounds(cursor)
+            s, e = self._sentence_bounds(cursor, count=count)
             if scope == "a":
                 while e < n and text[e] in " \t":
                     e += 1
