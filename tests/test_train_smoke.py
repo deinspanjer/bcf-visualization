@@ -25,14 +25,26 @@ pytestmark = pytest.mark.skipif(
 FIXTURES = Path(__file__).parent / "fixtures"
 TINY_SPANS = FIXTURES / "tiny_spans.jsonl"
 TINY_SECTIONS = FIXTURES / "tiny_sections.jsonl"
+SMOKE_BACKBONE = os.environ.get(
+    "BCF_TRAIN_SMOKE_BACKBONE",
+    "hf-internal-testing/tiny-random-bert",
+)
 
 
 def _run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = (
+        str(REPO_ROOT)
+        if not existing_pythonpath
+        else f"{REPO_ROOT}{os.pathsep}{existing_pythonpath}"
+    )
     return subprocess.run(
         [sys.executable] + cmd,
         cwd=str(cwd),
         capture_output=True,
         text=True,
+        env=env,
     )
 
 
@@ -53,15 +65,16 @@ def test_train_span_smoke(tmp_path, monkeypatch):
             "--version", "vtest",
             "--epochs", "1",
             "--batch-size", "1",
+            "--backbone", SMOKE_BACKBONE,
         ],
-        cwd=REPO_ROOT,
+        cwd=tmp_path,
     )
     print("STDOUT:", result.stdout[-2000:])
     print("STDERR:", result.stderr[-2000:])
     assert result.returncode == 0, f"train_span.py exited {result.returncode}:\n{result.stderr}"
 
     # Check artifacts
-    ckpt = REPO_ROOT / "checkpoints" / "span" / "vtest"
+    ckpt = tmp_path / "checkpoints" / "span" / "vtest"
     assert (ckpt / "metrics_final.json").exists()
     assert (ckpt / "dataset_manifest.json").exists()
     assert (ckpt / "git_state.json").exists()
@@ -81,13 +94,14 @@ def test_train_section_smoke(tmp_path, monkeypatch):
             "--version", "vtest",
             "--epochs", "1",
             "--batch-size", "1",
+            "--backbone", SMOKE_BACKBONE,
         ],
-        cwd=REPO_ROOT,
+        cwd=tmp_path,
     )
     print("STDOUT:", result.stdout[-2000:])
     print("STDERR:", result.stderr[-2000:])
     assert result.returncode == 0, f"train_section.py exited {result.returncode}:\n{result.stderr}"
 
-    ckpt = REPO_ROOT / "checkpoints" / "section" / "vtest"
+    ckpt = tmp_path / "checkpoints" / "section" / "vtest"
     assert (ckpt / "metrics_final.json").exists()
     assert (ckpt / "dataset_manifest.json").exists()

@@ -61,6 +61,7 @@ def train(args: argparse.Namespace) -> None:
     """Full training loop — only called when torch/transformers are present."""
     import atexit
     import hashlib
+    import inspect
     import json
     import random
     import subprocess
@@ -239,6 +240,35 @@ def train(args: argparse.Namespace) -> None:
 
         return compute_metrics
 
+    def collate_span_features(features):
+        max_len = max(len(feature["input_ids"]) for feature in features)
+        pad_token_id = tokenizer.pad_token_id
+        if pad_token_id is None:
+            pad_token_id = 0
+
+        def padded_tensor(feature, key: str, pad_value: int):
+            value = feature[key]
+            tensor = value if torch.is_tensor(value) else torch.tensor(value)
+            pad_width = max_len - tensor.shape[0]
+            if pad_width:
+                tensor = F.pad(tensor, (0, pad_width), value=pad_value)
+            return tensor
+
+        return {
+            "input_ids": torch.stack(
+                [padded_tensor(feature, "input_ids", pad_token_id) for feature in features]
+            ),
+            "attention_mask": torch.stack(
+                [padded_tensor(feature, "attention_mask", 0) for feature in features]
+            ),
+            "labels_layer_a": torch.stack(
+                [padded_tensor(feature, "labels_layer_a", -100) for feature in features]
+            ),
+            "labels_layer_b": torch.stack(
+                [padded_tensor(feature, "labels_layer_b", -100) for feature in features]
+            ),
+        }
+
     def _git_state() -> dict:
         try:
             commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
@@ -336,6 +366,12 @@ def train(args: argparse.Namespace) -> None:
     bf16 = args.bf16 and torch.cuda.is_bf16_supported() if torch.cuda.is_available() else False
     fp16 = (not bf16) and torch.cuda.is_available()
 
+    eval_strategy_arg = (
+        {"eval_strategy": "epoch"}
+        if "eval_strategy" in inspect.signature(TrainingArguments.__init__).parameters
+        else {"evaluation_strategy": "epoch"}
+    )
+
     training_args = TrainingArguments(
         output_dir=str(out_dir),
         num_train_epochs=args.epochs,
@@ -349,7 +385,7 @@ def train(args: argparse.Namespace) -> None:
         bf16=bf16,
         fp16=fp16,
         seed=args.seed,
-        evaluation_strategy="epoch",
+        **eval_strategy_arg,
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="f1_overall",
@@ -357,6 +393,7 @@ def train(args: argparse.Namespace) -> None:
         logging_steps=10,
         report_to=[],
         remove_unused_columns=False,
+        dataloader_pin_memory=torch.cuda.is_available(),
     )
 
     trainer = Trainer(
@@ -364,6 +401,7 @@ def train(args: argparse.Namespace) -> None:
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
+        data_collator=collate_span_features,
         compute_metrics=make_compute_metrics(ID2LABEL_A, ID2LABEL_B),
         callbacks=[EpochMetricsCallback(out_dir)],
     )

@@ -79,8 +79,18 @@ def test_propose_sends_chat_completions(tmp_path: Path) -> None:
     """propose() must POST to /v1/chat/completions with correct fields."""
     captured: list[httpx.Request] = []
 
+    target = "gained Perfect Pitch"
+    start = _PASSAGE.index(target)
+    end = start + len(target)
     valid_spans = [
-        {"layer": "A", "start": 44, "end": 62, "label": "ACQUISITION", "confidence": 0.9}
+        {
+            "layer": "A",
+            "start": start,
+            "end": end,
+            "label": "ACQUISITION",
+            "text": target,
+            "confidence": 0.9,
+        }
     ]
     response_body = _make_llm_response(valid_spans)
 
@@ -193,7 +203,14 @@ def test_propose_returns_valid_spans(tmp_path: Path) -> None:
     end = start + len(target)
 
     spans = [
-        {"layer": "A", "start": start, "end": end, "label": "ACQUISITION", "confidence": 0.85}
+        {
+            "layer": "A",
+            "start": start,
+            "end": end,
+            "label": "ACQUISITION",
+            "text": target,
+            "confidence": 0.85,
+        }
     ]
     client = httpx.Client(
         transport=_make_transport([_make_llm_response(spans)])
@@ -384,7 +401,14 @@ def test_raw_response_persisted(tmp_path: Path) -> None:
     """Raw LLM output is written to persist_raw_dir/<passage_id>.json."""
     raw_dir = tmp_path / "raw"
     spans = [
-        {"layer": "B", "start": 0, "end": 3, "label": "JOE_NAME", "confidence": 0.7}
+        {
+            "layer": "B",
+            "start": 0,
+            "end": 3,
+            "label": "JOE_NAME",
+            "text": "Joe",
+            "confidence": 0.7,
+        }
     ]
     client = httpx.Client(
         transport=_make_transport([_make_llm_response(spans, model="mymodel")])

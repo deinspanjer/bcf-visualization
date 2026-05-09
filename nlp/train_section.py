@@ -59,6 +59,7 @@ def _require_gpu_stack() -> None:
 def train(args: argparse.Namespace) -> None:
     import atexit
     import hashlib
+    import inspect
     import json
     import random
     import subprocess
@@ -274,6 +275,12 @@ def train(args: argparse.Namespace) -> None:
     bf16 = args.bf16 and torch.cuda.is_bf16_supported() if torch.cuda.is_available() else False
     fp16 = (not bf16) and torch.cuda.is_available()
 
+    eval_strategy_arg = (
+        {"eval_strategy": "epoch"}
+        if "eval_strategy" in inspect.signature(TrainingArguments.__init__).parameters
+        else {"evaluation_strategy": "epoch"}
+    )
+
     training_args = TrainingArguments(
         output_dir=str(out_dir),
         num_train_epochs=args.epochs,
@@ -287,7 +294,7 @@ def train(args: argparse.Namespace) -> None:
         bf16=bf16,
         fp16=fp16,
         seed=args.seed,
-        evaluation_strategy="epoch",
+        **eval_strategy_arg,
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model="f1_macro",
@@ -295,6 +302,7 @@ def train(args: argparse.Namespace) -> None:
         logging_steps=10,
         report_to=[],
         remove_unused_columns=False,
+        dataloader_pin_memory=torch.cuda.is_available(),
     )
 
     trainer = Trainer(
