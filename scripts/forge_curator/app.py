@@ -180,11 +180,14 @@ GLYPH_STYLES: dict[str, str] = {
     "H": "bold green",
     "M": "bold orange1",
     "A": "bold blue",
+    "Q": "bold green",
     "1": "bold yellow",
     "2": "bold cyan",
     "3": "bold magenta",
     "4": "bold white",
 }
+
+ROLL_EVIDENCE_GUTTER_GLYPH = "Q"
 
 LEGEND = [
     ("═", "section break / header", GLYPH_STYLES["═"]),
@@ -192,6 +195,11 @@ LEGEND = [
     ("H", "hit (curated/derived)", GLYPH_STYLES["H"]),
     ("M", "miss (curated/derived)", GLYPH_STYLES["M"]),
     ("A", "author note span", GLYPH_STYLES["A"]),
+    (
+        ROLL_EVIDENCE_GUTTER_GLYPH,
+        "saved roll evidence",
+        GLYPH_STYLES[ROLL_EVIDENCE_GUTTER_GLYPH],
+    ),
     ("1", "regex 1 (z, n/N)", GLYPH_STYLES["1"]),
     ("2", "regex 2", GLYPH_STYLES["2"]),
     ("3", "regex 3", GLYPH_STYLES["3"]),
@@ -212,10 +220,11 @@ _GLYPH_PRIORITY = {
     "H": 3,
     "M": 3,
     "A": 4,
-    "1": 5,
-    "2": 5,
-    "3": 5,
-    "4": 5,
+    ROLL_EVIDENCE_GUTTER_GLYPH: 5,
+    "1": 6,
+    "2": 6,
+    "3": 6,
+    "4": 6,
 }
 
 
@@ -422,6 +431,15 @@ def _wrap_title_for_stats(title: str, content_width: int) -> list[str]:
         else:
             lines.append(f"{continuation}{part}")
     return lines
+
+
+def _word_index_for_char_offset(
+    word_offsets: list[tuple[int, int]], char: int
+) -> int | None:
+    for index, (_start, end) in enumerate(word_offsets):
+        if char < end:
+            return index
+    return len(word_offsets) - 1 if word_offsets else None
 
 
 def _an_word_length(note: dict) -> int:
@@ -1113,14 +1131,54 @@ class ForgeCuratorApp(App):
             if 0 <= raw < len(wo):
                 cs_, ce_ = wo[raw]
                 spans.append({"start": cs_, "end": ce_, "layer": "B"})
-        for r in cs.derived.roll_facts:
-            local_cp = self._mention_cp_from_roll(cs.meta.chapter_num, r)
-            if r.get("narrative_evidence") and local_cp is not None:
-                raw = self._raw_word_for_cp_offset(int(local_cp))
-                if 0 <= raw < len(wo):
-                    cs_, ce_ = wo[raw]
-                    spans.append({"start": cs_, "end": ce_, "layer": "A"})
+        for start, end in self._roll_evidence_char_spans(cs):
+            spans.append({"start": start, "end": end, "layer": "A"})
         return spans
+
+    def _roll_evidence_char_spans(self, cs) -> list[tuple[int, int]]:
+        """Return current-chapter prose spans backed by saved roll evidence.
+
+        The derived roll fact owns whether evidence exists. The TUI only
+        maps the saved quote back onto the already-loaded prose for display;
+        if the quote is not present in this chapter, it falls back to the
+        roll's display slot.
+        """
+        wo = cs.prose.word_offsets
+        if not wo:
+            return []
+        spans: list[tuple[int, int]] = []
+        seen: set[tuple[int, int]] = set()
+        for roll in self._unified_rolls(cs):
+            quote = roll.get("narrative_evidence")
+            if not quote:
+                continue
+            start = cs.prose.text.find(str(quote))
+            if start >= 0:
+                span = (start, start + len(str(quote)))
+            else:
+                raw = self._evidence_fallback_word_index(cs, roll)
+                if raw is None or not (0 <= raw < len(wo)):
+                    continue
+                span = wo[raw]
+            if span not in seen:
+                seen.add(span)
+                spans.append(span)
+        return spans
+
+    def _roll_evidence_word_indices(self, cs) -> list[int]:
+        indices: list[int] = []
+        seen: set[int] = set()
+        for start, _end in self._roll_evidence_char_spans(cs):
+            word_idx = _word_index_for_char_offset(cs.prose.word_offsets, start)
+            if word_idx is not None and word_idx not in seen:
+                seen.add(word_idx)
+                indices.append(word_idx)
+        return indices
+
+    def _evidence_fallback_word_index(self, cs, roll: dict) -> int | None:
+        if roll.get("word_position") is None:
+            return None
+        return self._raw_word_for_cp_offset(int(roll["word_position"]))
 
     def _cursor_chapter_proportion(self) -> float:
         """Return cursor's position within the chapter as a float in [0, 1]."""
@@ -1191,6 +1249,13 @@ class ForgeCuratorApp(App):
             raw_idx = self._raw_word_for_cp_offset(int(r["word_position"]))
             if 0 <= raw_idx < total:
                 _add(raw_idx, "H" if outcome == "hit" else "M")
+
+        # Saved roll evidence quotes get their own persistent mark. When
+        # possible, mark the quote's actual prose location; otherwise mark
+        # the roll's display slot.
+        for raw_idx in self._roll_evidence_word_indices(cs):
+            if 0 <= raw_idx < total:
+                _add(raw_idx, ROLL_EVIDENCE_GUTTER_GLYPH)
 
         # Regex matches.
         for slot, hits in enumerate(cs.regex_hits, start=1):

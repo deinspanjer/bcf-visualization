@@ -88,6 +88,15 @@ def _stats_text(app: ForgeCuratorApp) -> str:
     return str(rendered) if rendered is not None else ""
 
 
+def _word_index_for_char(app: ForgeCuratorApp, char: int) -> int:
+    cs = app.state.chapter
+    assert cs is not None
+    for index, (_start, end) in enumerate(cs.prose.word_offsets):
+        if char < end:
+            return index
+    return max(0, len(cs.prose.word_offsets) - 1)
+
+
 @pytest.mark.asyncio
 async def test_b1_gg_then_j_moves_cursor_one_line() -> None:
     """B1: pressing j after gg should move cursor down exactly one visual line."""
@@ -518,6 +527,63 @@ async def test_chapter_2_header_eligibility_and_roll_stats() -> None:
         assert "Evidence:" not in text
         assert "T text evidence" not in text
         assert "@cp" not in text
+
+
+@pytest.mark.asyncio
+async def test_saved_roll_evidence_highlights_exact_quote_span() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        cs = app.state.chapter
+        assert cs is not None
+        quote = next(
+            r["narrative_evidence"]
+            for r in cs.derived.roll_facts
+            if r.get("roll_number") == 2
+        )
+        quote_start = cs.prose.text.find(quote)
+        assert quote_start >= 0
+
+        spans = app._compute_prose_spans()
+
+        assert {
+            "start": quote_start,
+            "end": quote_start + len(quote),
+            "layer": "A",
+        } in spans
+
+
+@pytest.mark.asyncio
+async def test_roll_evidence_gutter_mark_survives_chapter_navigation() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        cs = app.state.chapter
+        assert cs is not None
+        quote = next(
+            r["narrative_evidence"]
+            for r in cs.derived.roll_facts
+            if r.get("roll_number") == 2
+        )
+        quote_start = cs.prose.text.find(quote)
+        assert quote_start >= 0
+        expected_word = _word_index_for_char(app, quote_start)
+        expected = (
+            expected_word / max(1, len(cs.prose.word_offsets)),
+            "Q",
+        )
+
+        assert "hit Q" in _stats_text(app)
+        assert expected in app._compute_gutter_items()
+
+        app.action_next_chapter()
+        await pilot.pause()
+        app.action_prev_chapter()
+        await pilot.pause()
+
+        assert app.state.chapter is not None
+        assert app.state.chapter.meta.chapter_num == "2"
+        assert expected in app._compute_gutter_items()
 
 
 @pytest.mark.asyncio
