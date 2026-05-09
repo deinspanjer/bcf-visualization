@@ -11,9 +11,12 @@ python3 -m venv .venv
 
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e '.[dev]'
 python scripts/download_bcf_epub.py
 
 node --check web/app.js
+node --check web/data-contract.js
+python -m pytest tests/test_data_package_contract.py tests/test_web_data_contract.py
 python scripts/spot_check.py
 '''
 
