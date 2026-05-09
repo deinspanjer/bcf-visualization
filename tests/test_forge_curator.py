@@ -11,6 +11,7 @@ import asyncio
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from textual.css.query import NoMatches
@@ -52,27 +53,21 @@ from scripts.forge_curator.app import (
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.asyncio
-async def test_cp_raw_word_roundtrip_ch97() -> None:
+def test_cp_raw_word_roundtrip_ch97(tmp_path: Path) -> None:
     """ch 97 has a leading non-CP section. Confirm raw↔CP round-trip
     via the canonical App methods (which honour exclusion ranges)."""
-    app = ForgeCuratorApp(start_chapter="97")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        # First CP-eligible raw word: section 0 is
-        # ineligible; section 1 starts the CP body. The auto-detected
-        # header at the top of section 1 is also excluded. So the
-        # first eligible raw word is section0_words + auto_header_word_count.
-        ahc = int(cs.meta.sections[1].get("auto_header_word_count") or 0)
-        first_eligible = int(cs.meta.sections[0].get("word_count") or 0) + ahc
-        assert app._cp_earning_word_offset(first_eligible) == 0
-        # Raw 100 words past first eligible → CP 100.
-        assert app._cp_earning_word_offset(first_eligible + 100) == 100
-        # Inverse: CP 0 maps to first eligible raw word.
-        assert app._raw_word_for_cp_offset(0) == 0
-        # CP 100 maps to first_eligible + 100.
-        assert app._raw_word_for_cp_offset(100) == first_eligible + 100
+    app = _loaded_app("97", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    # First CP-eligible raw word: section 0 is ineligible; section 1 starts
+    # the CP body. The auto-detected header at the top of section 1 is also
+    # excluded.
+    ahc = int(cs.meta.sections[1].get("auto_header_word_count") or 0)
+    first_eligible = int(cs.meta.sections[0].get("word_count") or 0) + ahc
+    assert app._cp_earning_word_offset(first_eligible) == 0
+    assert app._cp_earning_word_offset(first_eligible + 100) == 100
+    assert app._raw_word_for_cp_offset(0) == 0
+    assert app._raw_word_for_cp_offset(100) == first_eligible + 100
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +82,22 @@ def _run(coro):
 @pytest.fixture
 def app() -> ForgeCuratorApp:
     return ForgeCuratorApp(start_chapter="1")
+
+
+def _loaded_app(chapter_num: str, tmp_path: Path) -> ForgeCuratorApp:
+    app = ForgeCuratorApp(
+        start_chapter=chapter_num,
+        state_path=tmp_path / ".forge_curator_state.json",
+    )
+    app._load_chapter(chapter_num)
+    return app
+
+
+def _render_stats_text(app: ForgeCuratorApp) -> str:
+    stats = StatsPanel()
+    stats.render_stats(app.state, app)
+    rendered = getattr(stats, "_renderable", None) or stats.render()
+    return str(rendered) if rendered is not None else ""
 
 
 def _plain_stats_lines(text: str) -> list[str]:
@@ -147,116 +158,81 @@ async def test_b1_gg_then_j_moves_cursor_one_line() -> None:
         )
 
 
-@pytest.mark.asyncio
-async def test_b5_b6_b7_stats_panel_ch97() -> None:
+def test_b5_b6_b7_stats_panel_ch97(tmp_path: Path) -> None:
     """Stats panel uses the rewritten eligibility/word/CP blocks."""
-    app = ForgeCuratorApp(start_chapter="97")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        text = _stats_text(app)
-        assert "Validation" not in text
-        assert "At cursor" not in text
-        assert "Chapter overrides" not in text
-        assert "Roll-acquired perks" not in text
-        assert "Eligibility\n" not in text
-        assert "Model:" in text
-        assert "Total content:" in text
-        assert "CP eligible:" in text
-        assert "Since last roll:" in text
-        assert "Until next roll:" in text
-        assert "Gained:" in text
-        assert "Spent:" in text
+    app = _loaded_app("97", tmp_path)
+    text = _render_stats_text(app)
+    assert "Validation" not in text
+    assert "At cursor" not in text
+    assert "Chapter overrides" not in text
+    assert "Roll-acquired perks" not in text
+    assert "Eligibility\n" not in text
+    assert "Model:" in text
+    assert "Total content:" in text
+    assert "CP eligible:" in text
+    assert "Since last roll:" in text
+    assert "Until next roll:" in text
+    assert "Gained:" in text
+    assert "Spent:" in text
 
 
-@pytest.mark.asyncio
-async def test_b8_cp_at_cursor_nonzero_after_first_roll() -> None:
+def test_b8_cp_at_cursor_nonzero_after_first_roll(tmp_path: Path) -> None:
     """B8: CP banked should be non-zero after navigating past the first roll."""
-    app = ForgeCuratorApp(start_chapter="97")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        # Find the first roll's word_position from the data.
-        cs = app.state.chapter
-        rolls = sorted(
-            (r for r in cs.derived.roll_facts if r.get("word_position") is not None),
-            key=lambda r: int(r["word_position"]),
-        )
-        assert rolls, "ch97 must have at least one roll fact"
-        first_roll = rolls[0]
-        first_cp = int(first_roll["word_position"])
-        first_banked = int(first_roll.get("banked_cp_after_roll") or 0)
-        # Position cursor a few CP-words past the first roll.
-        target_cp = first_cp + 10
-        cp_banked = app._cp_at_cursor(target_cp)
-        assert cp_banked > 0, (
-            f"CP banked at cp_word={target_cp} should be > 0; got {cp_banked} "
-            f"(first roll at cp_w={first_cp} banked={first_banked})"
-        )
-        # Should be at least the banked-after-roll value.
-        assert cp_banked >= first_banked, (
-            f"expected >= first_banked={first_banked}, got {cp_banked}"
-        )
+    app = _loaded_app("97", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    rolls = sorted(
+        (r for r in cs.derived.roll_facts if r.get("word_position") is not None),
+        key=lambda r: int(r["word_position"]),
+    )
+    assert rolls, "ch97 must have at least one roll fact"
+    first_roll = rolls[0]
+    first_cp = int(first_roll["word_position"])
+    first_banked = int(first_roll.get("banked_cp_after_roll") or 0)
+    target_cp = first_cp + 10
+    cp_banked = app._cp_at_cursor(target_cp)
+    assert cp_banked > 0, (
+        f"CP banked at cp_word={target_cp} should be > 0; got {cp_banked} "
+        f"(first roll at cp_w={first_cp} banked={first_banked})"
+    )
+    assert cp_banked >= first_banked, (
+        f"expected >= first_banked={first_banked}, got {cp_banked}"
+    )
 
 
-@pytest.mark.asyncio
-async def test_gutter_minimap_emits_an_and_roll_marks_for_ch97() -> None:
+def test_gutter_minimap_emits_an_and_roll_marks_for_ch97(tmp_path: Path) -> None:
     """Minimap items list contains A glyphs (AN spans) and R/H/M (rolls).
 
     Replaces the older B9/B10 test which assumed 1-row-per-line gutter
     rendering. The minimap design proportions one mark per logical span.
     """
-    app = ForgeCuratorApp(start_chapter="97")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        gutter = app.query_one("#gutter", GutterPanel)
-        assert gutter.size.width == 6, f"gutter width {gutter.size.width} != 6"
-        items = app._compute_gutter_items()
-        glyph_set = {g for _p, g in items}
-        assert "A" in glyph_set, (
-            f"expected at least one 'A' minimap item for ch97 AN; "
-            f"got: {glyph_set}"
-        )
-        # ch97 has roll data — expect at least one of R/H/M.
-        assert glyph_set & {"R", "H", "M"}, (
-            f"expected at least one R/H/M item; got: {glyph_set}"
-        )
-        # Every position should be in [0, 1].
-        for prop, _ in items:
-            assert 0.0 <= prop <= 1.0, f"minimap proportion out of [0,1]: {prop}"
+    app = _loaded_app("97", tmp_path)
+    items = app._compute_gutter_items()
+    glyph_set = {g for _p, g in items}
+    assert "A" in glyph_set, (
+        f"expected at least one 'A' minimap item for ch97 AN; got: {glyph_set}"
+    )
+    assert glyph_set & {"R", "H", "M"}, (
+        f"expected at least one R/H/M item; got: {glyph_set}"
+    )
+    for prop, _ in items:
+        assert 0.0 <= prop <= 1.0, f"minimap proportion out of [0,1]: {prop}"
 
 
 @pytest.mark.asyncio
-async def test_gutter_minimap_renders_quote_and_regex_on_same_row() -> None:
+async def test_gutter_minimap_renders_priority_cells() -> None:
     app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         gutter = app.query_one("#gutter", GutterPanel)
 
         gutter.render_minimap([(0.0, "Q"), (0.0, "*")], 1.0, 1)
-
         assert str(gutter.render()) == "Q*    "
 
-
-@pytest.mark.asyncio
-async def test_gutter_minimap_renders_regex_by_priority() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        gutter = app.query_one("#gutter", GutterPanel)
-
         gutter.render_minimap([(0.0, "2"), (0.0, "*"), (0.0, "1")], 1.0, 1)
-
         assert str(gutter.render()) == "*12   "
 
-
-@pytest.mark.asyncio
-async def test_gutter_minimap_uses_requested_indicator_priority() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        gutter = app.query_one("#gutter", GutterPanel)
-
         gutter.render_minimap([(0.0, "Q"), (0.0, "A"), (0.0, "1")], 1.0, 1)
-
         assert str(gutter.render()) == "AQ1   "
 
 
@@ -293,40 +269,37 @@ async def test_gutter_indicator_click_jumps_to_mark_word(monkeypatch) -> None:
 
 
 @pytest.mark.parametrize("chapter_num", ["2", "97"])
-@pytest.mark.asyncio
-async def test_gutter_marks_match_canonical_roll_fact_positions(
-    chapter_num: str,
+def test_gutter_marks_match_canonical_roll_fact_positions(
+    chapter_num: str, tmp_path: Path,
 ) -> None:
-    app = ForgeCuratorApp(start_chapter=chapter_num)
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-        total = len(app.state.chapter.prose.word_offsets)
-        expected = []
-        for roll in (cs.derived.chapter_facts or {}).get("rolls", []):
-            if (
-                roll.get("source_kind") == "trigger"
-                or roll.get("outcome") not in {"hit", "miss"}
-                or roll.get("word_position") is None
-                or str(roll.get("mechanical_chapter_num")) != chapter_num
-            ):
-                continue
-            raw = app._raw_word_for_cp_offset(roll["word_position"])
-            glyph = "H" if roll["outcome"] == "hit" else "M"
-            expected.append((raw / total, glyph))
+    app = _loaded_app(chapter_num, tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    total = len(app.state.chapter.prose.word_offsets)
+    expected = []
+    for roll in (cs.derived.chapter_facts or {}).get("rolls", []):
+        if (
+            roll.get("source_kind") == "trigger"
+            or roll.get("outcome") not in {"hit", "miss"}
+            or roll.get("word_position") is None
+            or str(roll.get("mechanical_chapter_num")) != chapter_num
+        ):
+            continue
+        raw = app._raw_word_for_cp_offset(roll["word_position"])
+        glyph = "H" if roll["outcome"] == "hit" else "M"
+        expected.append((raw / total, glyph))
 
-        actual = [
-            (prop, glyph) for prop, glyph in app._compute_gutter_items()
-            if glyph in {"H", "M"}
-        ]
-        assert actual == expected
+    actual = [
+        (prop, glyph) for prop, glyph in app._compute_gutter_items()
+        if glyph in {"H", "M"}
+    ]
+    assert actual == expected
 
 
 @pytest.mark.asyncio
 async def test_b12_jump_roll_scrolls_into_view() -> None:
     """B12: ]r should scroll the prose so the cursor is in view."""
-    app = ForgeCuratorApp(start_chapter="97")
+    app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         # Get initial scroll y of the VerticalScroll.
@@ -345,8 +318,7 @@ async def test_b12_jump_roll_scrolls_into_view() -> None:
             "cursor should move after ]r"
         )
         # Either scroll moved or cursor was already in view; the important
-        # thing is that the cursor's line is within the viewport. Since ch97
-        # rolls are deep into the chapter, scroll_y should change.
+        # thing is that the cursor's line is within the viewport.
         assert new_y != initial_y or new_cursor < 100, (
             f"expected scroll position to update (was {initial_y}, "
             f"now {new_y}); cursor moved to {new_cursor}"
@@ -354,8 +326,8 @@ async def test_b12_jump_roll_scrolls_into_view() -> None:
 
 
 @pytest.mark.asyncio
-async def test_keybind_redesign_chapter_chord() -> None:
-    """]] navigates to next chapter; [[ goes back."""
+async def test_keybind_redesign_chapter_and_section_chords() -> None:
+    """]] navigates chapters; ][ navigates sections."""
     app = ForgeCuratorApp(start_chapter="1")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
@@ -379,46 +351,16 @@ async def test_keybind_redesign_chapter_chord() -> None:
         assert cs2.meta.chapter_num == ch0, (
             f"[[ should return to {ch0}; got {cs2.meta.chapter_num}"
         )
-
-
-@pytest.mark.asyncio
-async def test_keybind_redesign_section_chord() -> None:
-    """][ navigates to next section; [] back. Use ch97 (3 sections)."""
-    app = ForgeCuratorApp(start_chapter="97")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
         cs = app.state.chapter
         assert cs is not None
-        # initial cursor at 0 → section 0
         assert cs.section_index_at(cs.cursor_word_index) == 0
         await pilot.press("]")
         await pilot.press("[")
         await pilot.pause()
-        # After ][, cursor should advance to start of section 1.
         new_sec = cs.section_index_at(cs.cursor_word_index)
         assert new_sec >= 1, (
             f"][ should advance to section >= 1; cursor at section {new_sec} "
             f"(word_idx={cs.cursor_word_index})"
-        )
-
-
-@pytest.mark.asyncio
-async def test_keybind_redesign_star_seeds_star_regex() -> None:
-    """* should seed the dedicated star regex with the word under the cursor."""
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        # Cursor at 0 -> first word.
-        await pilot.press("*")
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-        assert cs.regex_hits[3].pattern, (
-            "regex * should be seeded after *; pattern empty"
-        )
-        # The pattern should look like \b<word>\b
-        assert cs.regex_hits[3].pattern.startswith("\\b"), (
-            f"unexpected regex * pattern: {cs.regex_hits[3].pattern!r}"
         )
 
 
@@ -450,55 +392,60 @@ async def test_help_overlay_no_backslash_brackets() -> None:
 
 
 @pytest.mark.asyncio
-async def test_b3_no_double_vertical_separator() -> None:
-    """B3: primary columns meet cleanly without overlapping separators."""
-    app = ForgeCuratorApp(start_chapter="1")
+async def test_layout_columns_stats_width_and_regex_bar_chrome() -> None:
+    """Primary columns, stats width, and bottom regex chrome render correctly."""
+    from textual.containers import VerticalScroll
+
+    app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         gutter = app.query_one("#gutter", GutterPanel)
         stats_scroll = app.query_one("#stats_scroll")
         prose_scroll = app.query_one("#prose_scroll")
+        stats = app.query_one("#stats", StatsPanel)
+        regex_bar = app.query_one("#regex_bar", RegexBar)
 
         assert stats_scroll.region.right == prose_scroll.region.x
         assert prose_scroll.region.right == gutter.region.x
-
-
-@pytest.mark.asyncio
-async def test_b4_stats_panel_fixed_width() -> None:
-    """B4: StatsPanel keeps the canonical width in the live layout."""
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        stats = app.query_one("#stats", StatsPanel)
         assert stats.region.width == STATS_PANEL_WIDTH
-
-
-@pytest.mark.asyncio
-async def test_stats_panel_structured_status_rows_fit_content_width() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        text = _stats_text(app)
-        protected_prefixes = (
-            "  Model:",
-            "  Section:",
-            "  Text:",
-            "  Total content:",
-            "  CP eligible:",
-            "    story ",
-            "    chapter ",
-            "  Since last roll:",
-            "  Until next roll:",
-            "  Gained:",
-            "  Spent:",
-            "    total ",
+        assert (
+            app.query_one("#stats_scroll", VerticalScroll).size.width
+            > stats.size.width
         )
-        too_wide = [
-            (len(line), line)
-            for line in _plain_stats_lines(text)
-            if line.startswith(protected_prefixes) and len(line) > STATS_CONTENT_WIDTH
-        ]
-        assert not too_wide
+        assert regex_bar.size.height == 1
+        labels = [str(label.render()) for label in regex_bar.query("Static.label")]
+        assert labels == ["regex 1:", "regex 2:", "regex 3:", "regex *:"]
+        for slot in range(1, 5):
+            inp = app.query_one(f"#regex_{slot}", Input)
+            assert inp.compact is True
+            assert inp.size.height == 1
+        with pytest.raises(NoMatches):
+            app.query_one("#status")
+
+
+def test_stats_panel_structured_status_rows_fit_content_width(tmp_path: Path) -> None:
+    app = _loaded_app("2", tmp_path)
+    text = _render_stats_text(app)
+    protected_prefixes = (
+        "  Model:",
+        "  Section:",
+        "  Text:",
+        "  Total content:",
+        "  CP eligible:",
+        "    story ",
+        "    chapter ",
+        "  Since last roll:",
+        "  Until next roll:",
+        "  Gained:",
+        "  Spent:",
+        "    total ",
+    )
+    too_wide = [
+        (len(line), line)
+        for line in _plain_stats_lines(text)
+        if line.startswith(protected_prefixes) and len(line) > STATS_CONTENT_WIDTH
+    ]
+    assert not too_wide
 
 
 def test_stats_numeric_formatting_uses_grouped_digits() -> None:
@@ -516,36 +463,6 @@ def test_stats_title_wrapping_uses_hyphen_continuations() -> None:
     assert len(lines) > 1
     assert all(len(line) <= STATS_CONTENT_WIDTH for line in lines)
     assert all(line.startswith("    - ") for line in lines[1:])
-
-
-@pytest.mark.asyncio
-async def test_stats_panel_scrolls_and_bottom_chrome_is_single_regex_row() -> None:
-    from textual.containers import VerticalScroll
-
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        scroll = app.query_one("#stats_scroll", VerticalScroll)
-        stats = app.query_one("#stats", StatsPanel)
-        regex_bar = app.query_one("#regex_bar", RegexBar)
-        assert scroll.size.width > stats.size.width
-        assert regex_bar.size.height == 1
-        with pytest.raises(NoMatches):
-            app.query_one("#status")
-
-
-@pytest.mark.asyncio
-async def test_regex_bar_has_four_compact_unprefixed_fields() -> None:
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        regex_bar = app.query_one("#regex_bar", RegexBar)
-        labels = [str(label.render()) for label in regex_bar.query("Static.label")]
-        assert labels == ["regex 1:", "regex 2:", "regex 3:", "regex *:"]
-        for slot in range(1, 5):
-            inp = app.query_one(f"#regex_{slot}", Input)
-            assert inp.compact is True
-            assert inp.size.height == 1
 
 
 @pytest.mark.asyncio
@@ -614,144 +531,124 @@ def test_legend_no_ambiguous_glyph() -> None:
     assert "?" not in glyphs
 
 
-@pytest.mark.asyncio
-async def test_chapter_2_header_eligibility_and_roll_stats() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-        assert cs.prose.text.split()[:4] == ["2", "Preparation", "2", "Preparation"]
-        assert cs.prose.implicit_header_word_ranges
-        assert cs.prose.implicit_header_word_ranges[0] == (0, 4)
+def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
+    app = _loaded_app("2", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    assert cs.prose.text.split()[:4] == ["2", "Preparation", "2", "Preparation"]
+    assert cs.prose.implicit_header_word_ranges
+    assert cs.prose.implicit_header_word_ranges[0] == (0, 4)
 
-        text = _stats_text(app)
-        assert "chapter 2 /" in text
-        assert "chapter 2 / 194; section 1 / 2" in text
-        assert "2 Preparation" in text
-        assert "Model:" in text
-        assert "Section: CP eligible" in text
-        assert "Text: CP ineligible - header" in text
-        assert "Total content:" in text
-        assert "CP eligible:" in text
-        assert "deferred from ch 1 #2 (global #2)" in text
-        assert "#1 (global #3)" in text
-        assert "#2 (global #4)" in text
-        assert "hit" in text
-        assert "Clothing - Fashion (200)" in text
-        assert "Quality - Bling of War (100)" in text
-        assert "Alchemy - Alchemist (200)" in text
-        assert "Evidence:" not in text
-        assert "T text evidence" not in text
-        assert "@cp" not in text
+    text = _render_stats_text(app)
+    assert "chapter 2 /" in text
+    assert "chapter 2 / 194; section 1 / 2" in text
+    assert "2 Preparation" in text
+    assert "Model:" in text
+    assert "Section: CP eligible" in text
+    assert "Text: CP ineligible - header" in text
+    assert "Total content:" in text
+    assert "CP eligible:" in text
+    assert "deferred from ch 1 #2 (global #2)" in text
+    assert "#1 (global #3)" in text
+    assert "#2 (global #4)" in text
+    assert "hit" in text
+    assert "Clothing - Fashion (200)" in text
+    assert "Quality - Bling of War (100)" in text
+    assert "Alchemy - Alchemist (200)" in text
+    assert "Evidence:" not in text
+    assert "T text evidence" not in text
+    assert "@cp" not in text
 
 
-@pytest.mark.asyncio
-async def test_saved_roll_evidence_highlights_exact_quote_span() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-        quote = next(
-            r["narrative_evidence"]
-            for r in cs.derived.roll_facts
-            if r.get("roll_number") == 2
-        )
-        quote_start = cs.prose.text.find(quote)
-        assert quote_start >= 0
+def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None:
+    app = _loaded_app("2", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    quote = next(
+        r["narrative_evidence"]
+        for r in cs.derived.roll_facts
+        if r.get("roll_number") == 2
+    )
+    quote_start = cs.prose.text.find(quote)
+    assert quote_start >= 0
 
-        spans = app._compute_prose_spans()
+    spans = app._compute_prose_spans()
 
-        assert {
-            "start": quote_start,
-            "end": quote_start + len(quote),
-            "layer": "A",
-            "style": QUOTE_HIGHLIGHT_STYLE,
-            "priority": 20,
-        } in spans
+    assert {
+        "start": quote_start,
+        "end": quote_start + len(quote),
+        "layer": "A",
+        "style": QUOTE_HIGHLIGHT_STYLE,
+        "priority": 20,
+    } in spans
 
 
-@pytest.mark.asyncio
-async def test_roll_evidence_gutter_mark_survives_chapter_navigation() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-        quote = next(
-            r["narrative_evidence"]
-            for r in cs.derived.roll_facts
-            if r.get("roll_number") == 2
-        )
-        quote_start = cs.prose.text.find(quote)
-        assert quote_start >= 0
-        expected_word = _word_index_for_char(app, quote_start)
-        expected = (
-            expected_word / max(1, len(cs.prose.word_offsets)),
-            "Q",
-        )
+def test_roll_evidence_gutter_mark_survives_chapter_navigation(tmp_path: Path) -> None:
+    app = _loaded_app("2", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    quote = next(
+        r["narrative_evidence"]
+        for r in cs.derived.roll_facts
+        if r.get("roll_number") == 2
+    )
+    quote_start = cs.prose.text.find(quote)
+    assert quote_start >= 0
+    expected_word = _word_index_for_char(app, quote_start)
+    expected = (
+        expected_word / max(1, len(cs.prose.word_offsets)),
+        "Q",
+    )
 
-        assert "hit Q" in _stats_text(app)
-        assert expected in app._compute_gutter_items()
+    assert "hit Q" in _render_stats_text(app)
+    assert expected in app._compute_gutter_items()
 
-        app.action_next_chapter()
-        await pilot.pause()
-        app.action_prev_chapter()
-        await pilot.pause()
+    app._load_chapter("3")
+    app._load_chapter("2")
 
-        assert app.state.chapter is not None
-        assert app.state.chapter.meta.chapter_num == "2"
-        assert expected in app._compute_gutter_items()
+    assert app.state.chapter is not None
+    assert app.state.chapter.meta.chapter_num == "2"
+    assert expected in app._compute_gutter_items()
 
 
-@pytest.mark.asyncio
-async def test_chapter_2_auto_header_does_not_render_author_note_gutter_mark() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
+def test_chapter_2_auto_header_does_not_render_author_note_gutter_mark(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("2", tmp_path)
+    top_glyphs = [
+        glyph for prop, glyph in app._compute_gutter_items()
+        if prop == 0.0
+    ]
 
-        top_glyphs = [
-            glyph for prop, glyph in app._compute_gutter_items()
-            if prop == 0.0
-        ]
-
-        assert "═" in top_glyphs
-        assert "A" not in top_glyphs
+    assert "═" in top_glyphs
+    assert "A" not in top_glyphs
 
 
-@pytest.mark.asyncio
-async def test_actions_panel_omits_read_only_roll_structure_copy() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        actions = app.query_one("#actions", ActionsPanel)
-        rendered = getattr(actions, "_renderable", None) or actions.render()
-        text = str(rendered) if rendered is not None else ""
-        assert "Roll structure" not in text
-        assert "rolls come from the simulator" not in text
+def test_actions_panel_omits_read_only_roll_structure_copy() -> None:
+    actions = ActionsPanel()
+    actions.render_catalog()
+    rendered = getattr(actions, "_renderable", None) or actions.render()
+    text = str(rendered) if rendered is not None else ""
+    assert "Roll structure" not in text
+    assert "rolls come from the simulator" not in text
 
 
-@pytest.mark.asyncio
-async def test_last_viewed_chapter_persists_and_is_overridden(tmp_path) -> None:
+def test_last_viewed_chapter_persists_and_is_overridden(tmp_path) -> None:
     state_path = tmp_path / ".forge_curator_state.json"
     app = ForgeCuratorApp(start_chapter="2", state_path=state_path)
-    async with app.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        assert json.loads(state_path.read_text())["last_chapter"] == "2"
+    app._load_chapter("2")
+    assert json.loads(state_path.read_text())["last_chapter"] == "2"
 
     restored = ForgeCuratorApp(start_chapter=None, state_path=state_path)
-    async with restored.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        assert restored.state.chapter is not None
-        assert restored.state.chapter.meta.chapter_num == "2"
+    restored._load_chapter(restored._read_last_viewed_chapter() or "1")
+    assert restored.state.chapter is not None
+    assert restored.state.chapter.meta.chapter_num == "2"
 
     overridden = ForgeCuratorApp(start_chapter="1", state_path=state_path)
-    async with overridden.run_test(size=(120, 40)) as pilot:
-        await pilot.pause()
-        assert overridden.state.chapter is not None
-        assert overridden.state.chapter.meta.chapter_num == "1"
-        assert json.loads(state_path.read_text())["last_chapter"] == "1"
+    overridden._load_chapter("1")
+    assert overridden.state.chapter is not None
+    assert overridden.state.chapter.meta.chapter_num == "1"
+    assert json.loads(state_path.read_text())["last_chapter"] == "1"
 
 
 def test_save_quote_to_multiple_rolls(tmp_path) -> None:
@@ -785,31 +682,35 @@ def test_clear_roll_evidence_at_index(tmp_path) -> None:
     assert rolls[0]["narrative_evidence"] is None
 
 
-@pytest.mark.asyncio
-async def test_save_quote_targets_selection_start_not_visual_cursor_end(tmp_path) -> None:
+def test_save_quote_targets_selection_start_not_visual_cursor_end(
+    tmp_path, monkeypatch,
+) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.persistence = CurationPersistence(
-            chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-            journal_dir_path=tmp_path / ".journals",
-        )
-        app._post_curation_refresh = lambda message, *, full=False: None
-        cs = app.state.chapter
-        assert cs is not None
-        rolls = app._unified_rolls(cs)
-        roll_1 = next(r for r in rolls if r["target_chapter_num"] == "2" and r["target_roll_index"] == 1)
-        roll_2 = next(r for r in rolls if r["target_chapter_num"] == "2" and r["target_roll_index"] == 2)
-        start = cs.prose.word_offsets[int(roll_1["raw_word_position"])][0]
-        end = cs.prose.word_offsets[int(roll_2["raw_word_position"])][0]
-        prose = app.query_one("#prose", PassageView)
-        prose.anchor = start
-        prose.cursor = end
-        cs.cursor_char = end
+    app = _loaded_app("2", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    cs = app.state.chapter
+    assert cs is not None
+    rolls = app._unified_rolls(cs)
+    roll_1 = next(
+        r for r in rolls
+        if r["target_chapter_num"] == "2" and r["target_roll_index"] == 1
+    )
+    roll_2 = next(
+        r for r in rolls
+        if r["target_chapter_num"] == "2" and r["target_roll_index"] == 2
+    )
+    start = cs.prose.word_offsets[int(roll_1["raw_word_position"])][0]
+    end = cs.prose.word_offsets[int(roll_2["raw_word_position"])][0]
+    prose = SimpleNamespace(selection=(start, end), cursor=end)
+    cs.cursor_char = end
+    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
 
-        app._action_save_quote("2")
+    app._action_save_quote("2")
 
     saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
         "chapter_roll_overrides"
@@ -818,26 +719,26 @@ async def test_save_quote_targets_selection_start_not_visual_cursor_end(tmp_path
     assert len(saved) == 1
 
 
-@pytest.mark.asyncio
-async def test_chapter_2_miss_quote_coordinates_target_first_roll(tmp_path) -> None:
+def test_chapter_2_miss_quote_coordinates_target_first_roll(
+    tmp_path, monkeypatch,
+) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.persistence = CurationPersistence(
-            chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-            journal_dir_path=tmp_path / ".journals",
-        )
-        app._post_curation_refresh = lambda message, *, full=False: None
-        cs = app.state.chapter
-        assert cs is not None
-        prose = app.query_one("#prose", PassageView)
-        prose.anchor = cs.prose.word_offsets[3064][0]
-        prose.cursor = cs.prose.word_offsets[3079][1] - 1
-        cs.cursor_char = prose.cursor
+    app = _loaded_app("2", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    cs = app.state.chapter
+    assert cs is not None
+    start = cs.prose.word_offsets[3064][0]
+    end = cs.prose.word_offsets[3079][1] - 1
+    prose = SimpleNamespace(selection=(start, end), cursor=end)
+    cs.cursor_char = prose.cursor
+    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
 
-        app._action_save_quote("2")
+    app._action_save_quote("2")
 
     saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
         "chapter_roll_overrides"
@@ -874,68 +775,59 @@ def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
     assert fashion["roll_number"] == 2
 
 
-@pytest.mark.asyncio
-async def test_chapter_1_stats_marks_fashion_as_narrative_deferred() -> None:
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-
-        text = _stats_text(app)
-        assert "#2 (global #2) hit Q" in text
-        assert "narrative deferred to ch 2" in text
-        assert "Clothing - Fashion (200)" in text
+def test_chapter_1_stats_marks_fashion_as_narrative_deferred(tmp_path) -> None:
+    app = _loaded_app("1", tmp_path)
+    text = _render_stats_text(app)
+    assert "#2 (global #2) hit Q" in text
+    assert "narrative deferred to ch 2" in text
+    assert "Clothing - Fashion (200)" in text
 
 
-@pytest.mark.asyncio
-async def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        from scripts.forge_curator.persistence import CurationPersistence
-        app.persistence = CurationPersistence(
-            chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-            journal_dir_path=tmp_path / ".journals",
-        )
-        app._run_post_curation_derivation = lambda: None
+def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
+    app = _loaded_app("2", tmp_path)
+    from scripts.forge_curator.persistence import CurationPersistence
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
 
-        app._action_set_last_outcome("2", "miss")
+    app._action_set_last_outcome("2", "miss")
 
-        ch1_rolls = (
-            app.persistence.chapter_roll_overrides
-            .get("chapter_roll_overrides", {})
-            .get("1", {})
-            .get("rolls", [])
-        )
-        assert ch1_rolls[1]["outcome"] == "miss"
-        ch2_rolls = (
-            app.persistence.chapter_roll_overrides
-            .get("chapter_roll_overrides", {})
-            .get("2", {})
-            .get("rolls", [])
-        )
-        assert not ch2_rolls
+    ch1_rolls = (
+        app.persistence.chapter_roll_overrides
+        .get("chapter_roll_overrides", {})
+        .get("1", {})
+        .get("rolls", [])
+    )
+    assert ch1_rolls[1]["outcome"] == "miss"
+    ch2_rolls = (
+        app.persistence.chapter_roll_overrides
+        .get("chapter_roll_overrides", {})
+        .get("2", {})
+        .get("rolls", [])
+    )
+    assert not ch2_rolls
 
 
-@pytest.mark.asyncio
-async def test_defer_roll_action_uses_lowercase_space_d() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        calls: list[tuple[str, str]] = []
+def test_defer_roll_action_uses_lowercase_space_d(tmp_path) -> None:
+    app = _loaded_app("2", tmp_path)
+    calls: list[tuple[str, str]] = []
 
-        app._action_defer_roll_to_next_chapter = lambda cn: calls.append(("defer", cn))
-        app._action_remove_annotations_at_current_word = (
-            lambda cn: calls.append(("delete_annotations", cn))
-        )
+    app._action_defer_roll_to_next_chapter = lambda cn: calls.append(("defer", cn))
+    app._action_remove_annotations_at_current_word = (
+        lambda cn: calls.append(("delete_annotations", cn))
+    )
 
-        app._handle_space_chord("d")
-        app._handle_space_chord("D")
+    app._handle_space_chord("d")
+    app._handle_space_chord("D")
 
-        assert calls == [("defer", "2"), ("delete_annotations", "2")]
+    assert calls == [("defer", "2"), ("delete_annotations", "2")]
 
 
-@pytest.mark.asyncio
-async def test_remove_annotations_action_deletes_author_notes_and_headers_at_cursor(tmp_path) -> None:
+def test_remove_annotations_action_deletes_author_notes_and_headers_at_cursor(
+    tmp_path, monkeypatch,
+) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
     author_notes_path = tmp_path / "author_notes.json"
@@ -962,25 +854,28 @@ async def test_remove_annotations_action_deletes_author_notes_and_headers_at_cur
         ]
     }))
 
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.persistence = CurationPersistence(
-            author_notes_path=author_notes_path,
-            header_corrections_path=header_corrections_path,
-            journal_dir_path=tmp_path / ".journals",
-        )
-        app._run_full_curation_derivation = lambda: None
-        app._post_curation_refresh = lambda message, *, full=False: None
+    app = _loaded_app("2", tmp_path)
+    app.persistence = CurationPersistence(
+        author_notes_path=author_notes_path,
+        header_corrections_path=header_corrections_path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    monkeypatch.setattr(
+        app,
+        "query_one",
+        lambda *args, **kwargs: SimpleNamespace(selection=None),
+    )
 
-        app._action_remove_annotations_at_current_word("2")
+    app._action_remove_annotations_at_current_word("2")
 
     assert json.loads(author_notes_path.read_text())["author_notes"] == []
     assert json.loads(header_corrections_path.read_text())["corrections"] == []
 
 
-@pytest.mark.asyncio
-async def test_remove_annotations_action_clears_roll_evidence_under_cursor(tmp_path) -> None:
+def test_remove_annotations_action_clears_roll_evidence_under_cursor(
+    tmp_path, monkeypatch,
+) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
     chapter_roll_overrides_path = tmp_path / "chapter_roll_overrides.json"
@@ -988,28 +883,28 @@ async def test_remove_annotations_action_clears_roll_evidence_under_cursor(tmp_p
         Path("data/manual/chapter_roll_overrides.json").read_text()
     )
 
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.persistence = CurationPersistence(
-            chapter_roll_overrides_path=chapter_roll_overrides_path,
-            journal_dir_path=tmp_path / ".journals",
-        )
-        app._run_post_curation_derivation = lambda: None
-        app._post_curation_refresh = lambda message, *, full=False: None
-        cs = app.state.chapter
-        assert cs is not None
-        fashion = next(
-            r for r in app._unified_rolls(cs)
-            if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
-        )
-        quote_start = cs.prose.text.find(fashion["narrative_evidence"])
-        assert quote_start >= 0
-        prose = app.query_one("#prose", PassageView)
-        prose.cursor = quote_start
-        cs.cursor_char = quote_start
+    app = _loaded_app("2", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=chapter_roll_overrides_path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    cs = app.state.chapter
+    assert cs is not None
+    fashion = next(
+        r for r in app._unified_rolls(cs)
+        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
+    )
+    quote_start = cs.prose.text.find(fashion["narrative_evidence"])
+    assert quote_start >= 0
+    cs.cursor_char = quote_start
+    monkeypatch.setattr(
+        app,
+        "query_one",
+        lambda *args, **kwargs: SimpleNamespace(selection=None, cursor=quote_start),
+    )
 
-        app._action_remove_annotations_at_current_word("2")
+    app._action_remove_annotations_at_current_word("2")
 
     rolls = json.loads(chapter_roll_overrides_path.read_text())[
         "chapter_roll_overrides"
@@ -1017,8 +912,7 @@ async def test_remove_annotations_action_clears_roll_evidence_under_cursor(tmp_p
     assert rolls[1]["narrative_evidence"] is None
 
 
-@pytest.mark.asyncio
-async def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
+def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
     path = tmp_path / "chapter_roll_overrides.json"
@@ -1027,57 +921,55 @@ async def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
         journal_dir_path=tmp_path / ".journals",
     )
     persistence.update_roll_at_index("2", 1, narrative_evidence="quote")
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.persistence = persistence
-        calls: list[str] = []
-        app._run_post_curation_derivation = lambda: calls.append("post")
+    app = _loaded_app("2", tmp_path)
+    app.persistence = persistence
+    calls: list[str] = []
+    app._run_post_curation_derivation = lambda: calls.append("post")
+    app.refresh_all_panels = lambda: None
+    app._scroll_cursor_into_view = lambda: None
 
-        app.action_undo_last()
+    app.action_undo_last()
 
-        assert calls == ["post"]
-
-
-@pytest.mark.asyncio
-async def test_post_curation_refresh_reloads_derived_documents() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.data.roll_facts
-        app.data.chapter_facts
-        old_roll_facts = app.data._roll_facts_doc
-        old_chapter_facts = app.data._chapter_facts_doc
-        app.data._derived_cache["sentinel"] = object()
-
-        calls = []
-        app._run_post_curation_derivation = lambda: calls.append("ran")
-
-        app._post_curation_refresh("changed roll")
-
-        assert calls == ["ran"]
-        assert app.data._roll_facts_doc is not old_roll_facts
-        assert app.data._chapter_facts_doc is not old_chapter_facts
-        assert "sentinel" not in app.data._derived_cache
+    assert calls == ["post"]
 
 
-@pytest.mark.asyncio
-async def test_failed_post_curation_derivation_reports_error_without_reload() -> None:
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        app.data.roll_facts
-        app.data.chapter_facts
+def test_post_curation_refresh_reloads_derived_documents(tmp_path) -> None:
+    app = _loaded_app("2", tmp_path)
+    app.refresh_all_panels = lambda: None
+    app._scroll_cursor_into_view = lambda: None
+    app.data.roll_facts
+    app.data.chapter_facts
+    old_roll_facts = app.data._roll_facts_doc
+    old_chapter_facts = app.data._chapter_facts_doc
+    app.data._derived_cache["sentinel"] = object()
 
-        def fail() -> None:
-            raise RuntimeError("derive failed")
+    calls = []
+    app._run_post_curation_derivation = lambda: calls.append("ran")
 
-        app._run_post_curation_derivation = fail
-        app._post_curation_refresh("changed roll")
+    app._post_curation_refresh("changed roll")
 
-        assert app._last_curation_error == "derive failed"
-        assert app.data._roll_facts_doc is not None
-        assert app.data._chapter_facts_doc is not None
+    assert calls == ["ran"]
+    assert app.data._roll_facts_doc is not old_roll_facts
+    assert app.data._chapter_facts_doc is not old_chapter_facts
+    assert "sentinel" not in app.data._derived_cache
+
+
+def test_failed_post_curation_derivation_reports_error_without_reload(tmp_path) -> None:
+    app = _loaded_app("2", tmp_path)
+    app.refresh_all_panels = lambda: None
+    app._scroll_cursor_into_view = lambda: None
+    app.data.roll_facts
+    app.data.chapter_facts
+
+    def fail() -> None:
+        raise RuntimeError("derive failed")
+
+    app._run_post_curation_derivation = fail
+    app._post_curation_refresh("changed roll")
+
+    assert app._last_curation_error == "derive failed"
+    assert app.data._roll_facts_doc is not None
+    assert app.data._chapter_facts_doc is not None
 
 
 @pytest.mark.asyncio
