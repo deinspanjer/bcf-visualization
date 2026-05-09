@@ -224,6 +224,7 @@ async function loadContractJSON(dataPackage, name, { optional = false } = {}) {
 function attachDataPackageSelector(packageIndex, activePackageId, activeManifest) {
   const packages = Array.isArray(packageIndex?.packages) ? packageIndex.packages : [];
   const activePackage = packages.find(pkg => pkg.package_id === activePackageId) || activeManifest;
+  const slot = $("data-package-slot") || document.body;
 
   const selector = el("label", { id: "data-package-selector" },
     el("span", { text: "Data version" }));
@@ -252,7 +253,7 @@ function attachDataPackageSelector(packageIndex, activePackageId, activeManifest
     });
     selector.appendChild(select);
   }
-  document.body.appendChild(selector);
+  slot.replaceChildren(selector);
 }
 
 // ---------- coordinate model ---------------------------------------------

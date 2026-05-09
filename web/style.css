@@ -190,10 +190,14 @@ header .byline {
 header .viz-credit {
   margin: 0 0 10px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 5px;
   color: var(--gray-3);
   font-size: 0.72rem;
+}
+header .credit-separator {
+  color: var(--gray-4);
 }
 header .gh-link {
   display: inline-flex;
@@ -1114,34 +1118,26 @@ body.sky-focus-mode #zoom-controls {
 }
 
 #data-package-selector {
-  position: fixed;
-  right: 14px;
-  bottom: 12px;
-  z-index: 20;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 9px;
-  border: 1px solid var(--gray-5);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-  box-shadow: 0 8px 18px rgb(0 0 0 / 0.16);
-  color: var(--gray-2);
-  font-size: 12px;
+  gap: 5px;
+  color: inherit;
+  font-size: inherit;
 }
 
 #data-package-selector select {
-  max-width: min(260px, 55vw);
+  max-width: min(420px, 88vw);
   color: var(--ink);
   background: var(--bg-surface);
   border: 1px solid var(--gray-5);
   border-radius: 4px;
-  padding: 4px 6px;
+  padding: 2px 22px 2px 6px;
+  font: inherit;
 }
 
 #data-package-selector .data-package-static {
-  max-width: min(360px, 60vw);
-  color: var(--ink);
+  max-width: min(520px, 88vw);
+  color: var(--gray-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
