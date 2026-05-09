@@ -39,14 +39,15 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "roll_number", "word_position", "chapter_num", "regime", "cp_threshold"
+          "roll_number", "word_position", "chapter_num",
+          "cp_rule_regime", "roll_trigger_cp_threshold"
         ],
         "properties": {
-          "roll_number":   { "type": "integer", "minimum": 1 },
-          "word_position": { "type": "integer", "minimum": 0 },
-          "chapter_num":   { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
-          "regime":        { "enum": [1, 2, 3] },
-          "cp_threshold":  { "enum": [100, 200] }
+          "roll_number":               { "type": "integer", "minimum": 1 },
+          "word_position":             { "type": "integer", "minimum": 0 },
+          "chapter_num":               { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+          "cp_rule_regime":            { "enum": [1, 2, 3] },
+          "roll_trigger_cp_threshold": { "enum": [100, 200] }
         }
       }
     },

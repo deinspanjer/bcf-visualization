@@ -482,6 +482,7 @@ class ActionsPanel(Static):
             "[bold]Roll metadata[/bold]\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
+            "  ⎵D  Defer evidence to next chapter\n"
             "  ⎵c  Set constellation\n"
             "  ⎵p  Set perks\n\n"
             "[bold]Navigation[/bold]\n"
@@ -614,6 +615,7 @@ class HelpScreen(ModalScreen):
             "  <space>H         header span = current selection\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
+            "  <space>D         defer current roll evidence to next chapter\n"
             "  <space>h / m     last roll = hit / miss\n"
             "  <space>c / p     constellation / perks pickers\n"
             "  (no insert/delete: roll positions come from simulator)\n"
@@ -1062,7 +1064,7 @@ class ForgeCuratorApp(App):
                 cs_, ce_ = wo[raw]
                 spans.append({"start": cs_, "end": ce_, "layer": "B"})
         for r in cs.derived.roll_facts:
-            local_cp = self._local_cp_from_roll(cs.meta.chapter_num, r)
+            local_cp = self._mention_cp_from_roll(cs.meta.chapter_num, r)
             if r.get("narrative_evidence") and local_cp is not None:
                 raw = self._raw_word_for_cp_offset(int(local_cp))
                 if 0 <= raw < len(wo):
@@ -1348,25 +1350,60 @@ class ForgeCuratorApp(App):
         }
 
     def _global_cp_from_roll(self, chapter_num: str, roll: dict) -> int | None:
-        if roll.get("cumulative_word_offset") is not None:
-            return int(roll["cumulative_word_offset"])
-        return None
+        return self._chapter_scoped_roll_value(
+            chapter_num, roll, "cumulative_word_offset"
+        )
 
     def _local_cp_from_roll(self, chapter_num: str, roll: dict) -> int | None:
-        if roll.get("word_position") is not None:
-            return int(roll["word_position"])
+        return self._chapter_scoped_roll_value(chapter_num, roll, "word_position")
+
+    def _chapter_scoped_roll_value(
+        self, chapter_num: str, roll: dict, field: str
+    ) -> int | None:
+        cn = str(chapter_num)
+        display_field = f"display_{field}"
+        mechanical_field = f"mechanical_{field}"
+        if (
+            str(roll.get("display_chapter_num")) == cn
+            and roll.get(display_field) is not None
+        ):
+            return int(roll[display_field])
+        if (
+            str(roll.get("mechanical_chapter_num")) == cn
+            and roll.get(mechanical_field) is not None
+        ):
+            return int(roll[mechanical_field])
+        has_explicit_chapters = (
+            roll.get("display_chapter_num") is not None
+            or roll.get("mechanical_chapter_num") is not None
+        )
+        if not has_explicit_chapters and roll.get(field) is not None:
+            return int(roll[field])
         return None
+
+    def _mention_cp_from_roll(self, chapter_num: str, roll: dict) -> int | None:
+        cn = str(chapter_num)
+        if (
+            str(roll.get("mention_chapter_num")) == cn
+            and roll.get("mention_word_position") is not None
+        ):
+            return int(roll["mention_word_position"])
+        return self._local_cp_from_roll(chapter_num, roll)
 
     def _all_roll_global_positions(self) -> list[int]:
         positions: list[int] = []
-        for chapter in self.data.chapter_facts.get("chapters", []):
-            cn = str(chapter.get("chapter_num"))
-            for roll in chapter.get("rolls") or []:
-                if roll.get("source_kind") == "trigger":
-                    continue
-                pos = self._global_cp_from_roll(cn, roll)
-                if pos is not None:
-                    positions.append(pos)
+        for roll in self.data.roll_facts.get("rolls", []):
+            if roll.get("source_kind") == "trigger":
+                continue
+            pos = (
+                roll.get("display_cumulative_word_offset")
+                if roll.get("display_cumulative_word_offset") is not None
+                else roll.get("cumulative_word_offset")
+            )
+            if pos is None:
+                pos = roll.get("mechanical_cumulative_word_offset")
+            if pos is not None:
+                positions.append(int(pos))
         return sorted(set(positions))
 
     def _roll_distance_stats(self, story_cp_cursor: int) -> tuple[int, int | None]:
@@ -1513,16 +1550,19 @@ class ForgeCuratorApp(App):
             .get(cn) or {}
         ).get("rolls") or []
 
-        cf = cs.derived.chapter_facts or {}
         canonical_rows = [
-            r for r in (cf.get("rolls") or [])
+            r for r in cs.derived.roll_facts
             if r.get("source_kind") != "trigger"
+            and self._local_cp_from_roll(cn, r) is not None
         ]
 
         result: list[dict] = []
         rows = sorted(
             canonical_rows,
-            key=lambda r: int(r.get("roll_sequence_in_chapter") or 0),
+            key=lambda r: (
+                self._local_cp_from_roll(cn, r) or 0,
+                int(r.get("roll_number") or r.get("roll_sequence_in_chapter") or 0),
+            ),
         )
         for k, row in enumerate(rows, start=1):
             local_cp = self._local_cp_from_roll(cn, row)
@@ -1531,7 +1571,7 @@ class ForgeCuratorApp(App):
                 continue
             entry = {
                 **row,
-                "index": int(row.get("roll_sequence_in_chapter") or k),
+                "index": k,
                 "word_position": int(local_cp),
                 "global_cp_word": global_cp,
                 "raw_word_position": self._raw_word_for_cp_offset(int(local_cp)),
@@ -1747,6 +1787,8 @@ class ForgeCuratorApp(App):
             self._action_save_quote(cn)
         elif ch == "Q":
             self._action_save_quote_multi(cn)
+        elif ch == "D":
+            self._action_defer_roll_to_next_chapter(cn)
         elif ch == "i":
             self._action_insert_roll(cn)
         elif ch == "d":
@@ -1977,6 +2019,34 @@ class ForgeCuratorApp(App):
 
         self.push_screen(RollEvidencePicker(rolls=rolls, on_confirm=on_confirm))
 
+    def _next_chapter_num(self, chapter_num: str) -> str | None:
+        order = self.data.chapter_order
+        try:
+            idx = order.index(str(chapter_num))
+        except ValueError:
+            return None
+        if idx + 1 >= len(order):
+            return None
+        return order[idx + 1]
+
+    def _action_defer_roll_to_next_chapter(self, chapter_num: str) -> None:
+        idx = self._current_roll_index()
+        if idx is None:
+            self._flash("defer evidence: no predicted roll at/before cursor")
+            return
+        next_chapter = self._next_chapter_num(chapter_num)
+        if next_chapter is None:
+            self._flash("defer evidence: no next chapter")
+            return
+        self.persistence.mark_roll_deferred_to_chapter(
+            chapter_num,
+            idx,
+            next_chapter,
+            mention_word_position=None,
+            display_position_policy="mechanical",
+        )
+        self._flash(f"roll #{idx} evidence deferred to ch {next_chapter}")
+
     def _selected_quote(self, action_name: str) -> str | None:
         prose_view = self.query_one("#prose", PassageView)
         sel = prose_view.selection
@@ -2122,7 +2192,7 @@ class ForgeCuratorApp(App):
             if r.get("narrative_evidence") and r.get("word_position") is not None:
                 positions.append(self._raw_word_for_cp_offset(int(r["word_position"])))
         for r in cs.derived.roll_facts:
-            local_cp = self._local_cp_from_roll(cn, r)
+            local_cp = self._mention_cp_from_roll(cn, r)
             if r.get("narrative_evidence") and local_cp is not None:
                 positions.append(self._raw_word_for_cp_offset(int(local_cp)))
         positions = sorted(set(positions))

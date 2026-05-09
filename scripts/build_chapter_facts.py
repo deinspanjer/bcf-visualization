@@ -49,6 +49,7 @@ CLASSIFICATIONS = ROOT / "data" / "manual" / "section_classifications.json"
 HEADER_CORRECTIONS = ROOT / "data" / "manual" / "header_corrections.json"
 ROLL_FACTS = ROOT / "data" / "derived" / "roll_facts.json"
 ROLL_VALIDATION = ROOT / "data" / "derived" / "roll_validation.json"
+OBTAINED_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
 LAST_EDITED = ROOT / "data" / "derived" / "chapter_last_edited.json"
 TIMELINE = ROOT / "data" / "derived" / "timeline.json"
 OUT = ROOT / "data" / "derived" / "chapter_facts.json"
@@ -169,6 +170,17 @@ def main() -> None:
     manual_header_ranges = _manual_header_ranges_by_chapter()
     roll_facts_doc = json.loads(ROLL_FACTS.read_text())
     roll_validation_doc = json.loads(ROLL_VALIDATION.read_text())
+    obtained_doc = json.loads(OBTAINED_PERKS.read_text())
+    obtained_counts_by_chapter: dict[str, dict[str, int]] = {}
+    for perk in obtained_doc.get("perks", []):
+        cn = str(perk["chapter_num"])
+        counts = obtained_counts_by_chapter.setdefault(
+            cn, {"paid": 0, "free": 0}
+        )
+        if perk.get("free", False):
+            counts["free"] += 1
+        else:
+            counts["paid"] += 1
     model_checks_by_chapter = {
         str(row["chapter_num"]): row
         for row in roll_validation_doc.get("chapter_checks", [])
@@ -288,8 +300,9 @@ def main() -> None:
         hits = 0
         misses = 0
         unknowns = 0
-        paid_count_in_chap = 0
-        free_count_in_chap = 0
+        obtained_counts = obtained_counts_by_chapter.get(cn, {"paid": 0, "free": 0})
+        paid_count_in_chap = int(obtained_counts["paid"])
+        free_count_in_chap = int(obtained_counts["free"])
         banked_cp_at_start = None
         banked_cp_at_end = None
 
@@ -350,12 +363,21 @@ def main() -> None:
             if idx == 0:
                 banked_cp_at_start = roll.get("available_cp")
             banked_cp_at_end = roll.get("banked_cp_after_roll")
-            display_pos = roll.get("cumulative_word_offset")
+            display_pos = roll.get("display_cumulative_word_offset")
             roll_record = {
                 "roll_number": roll["roll_number"],
                 "section_index": _section_index_for_roll(roll),
                 "outcome": roll["outcome"],
                 "constellation": roll["constellation"],
+                "mechanical_chapter_num": roll["mechanical_chapter_num"],
+                "mechanical_word_position": roll["mechanical_word_position"],
+                "mechanical_cumulative_word_offset": roll["mechanical_cumulative_word_offset"],
+                "mention_chapter_num": roll["mention_chapter_num"],
+                "mention_word_position": roll["mention_word_position"],
+                "display_position_policy": roll["display_position_policy"],
+                "display_chapter_num": roll["display_chapter_num"],
+                "display_word_position": roll["display_word_position"],
+                "display_cumulative_word_offset": roll["display_cumulative_word_offset"],
                 "purchased_perk_id": roll["purchased_perk_id"],
                 "purchased_perks": roll.get("purchased_perks") or [],
                 "purchased_perk_cost_total": roll.get("purchased_perk_cost_total"),
@@ -381,8 +403,6 @@ def main() -> None:
             rolls_out.append(roll_record)
             if roll["outcome"] == "hit":
                 hits += 1
-                paid_count_in_chap += 1
-                free_count_in_chap += len(roll["free_perks"])
                 _append_shadow_if_needed(roll_record)
             elif roll["outcome"] == "miss":
                 misses += 1

@@ -244,8 +244,8 @@ class PredictedRoll:
     roll_number: int
     word_position: int
     chapter_num: str
-    regime: int
-    cp_threshold: int
+    cp_rule_regime: int
+    roll_trigger_cp_threshold: int
 
 
 def simulate_story(
@@ -348,8 +348,8 @@ def simulate_story(
                     roll_number=len(predicted) + 1,
                     word_position=last_word,
                     chapter_num=current_chapter,
-                    regime=current_regime,
-                    cp_threshold=REGIMES[current_regime]["cp_per_roll"],
+                    cp_rule_regime=current_regime,
+                    roll_trigger_cp_threshold=REGIMES[current_regime]["cp_per_roll"],
                 ))
                 banked_cp_x100 -= threshold_x100
                 continue
@@ -369,8 +369,8 @@ def simulate_story(
                     roll_number=len(predicted) + 1,
                     word_position=last_word,
                     chapter_num=current_chapter,
-                    regime=current_regime,
-                    cp_threshold=REGIMES[current_regime]["cp_per_roll"],
+                    cp_rule_regime=current_regime,
+                    roll_trigger_cp_threshold=REGIMES[current_regime]["cp_per_roll"],
                 ))
                 banked_cp_x100 -= threshold_x100
         last_word = target_word
@@ -431,7 +431,7 @@ class ChapterRollSim:
     word_position: int            # CHAPTER-LOCAL word offset
     available_cp_pre_debit: int   # banked CP just BEFORE this roll fires
     banked_cp_post_debit: int     # banked CP after this roll's hit (if any) is debited
-    cp_threshold: int             # 100 or 200
+    roll_trigger_cp_threshold: int  # 100 or 200
 
 
 def simulate_chapter_rolls(
@@ -449,8 +449,8 @@ def simulate_chapter_rolls(
           "words": int,                     # total CP-eligible words
           "predicted_rolls": [ {
               "word_position": int,         # CHAPTER-LOCAL offset
-              "cp_threshold": int,          # 100 or 200
-              "regime": int,                # informative; falls back to `regime`
+              "roll_trigger_cp_threshold": int,  # 100 or 200
+              "cp_rule_regime": int,        # informative; falls back to `regime`
           } ] }
 
     `hits_in_chapter` is the in-order list of paid acquisitions in this
@@ -530,8 +530,10 @@ def simulate_chapter_rolls(
         last_word = word_pos
         if kind == "roll":
             available_pre = banked_x100 // 100
-            cp_threshold = int(payload.get("cp_threshold")
-                               or REGIMES[current_regime]["cp_per_roll"])
+            roll_trigger_cp_threshold = int(
+                payload.get("roll_trigger_cp_threshold")
+                or REGIMES[current_regime]["cp_per_roll"]
+            )
             # NOTE: misses do NOT debit (curator semantics — banked CP
             # carries forward). Hits debit `cost`; the debit happens via
             # the "hit" event below.
@@ -541,7 +543,7 @@ def simulate_chapter_rolls(
                 word_position=word_pos,
                 available_cp_pre_debit=available_pre,
                 banked_cp_post_debit=banked_x100 // 100,
-                cp_threshold=cp_threshold,
+                roll_trigger_cp_threshold=roll_trigger_cp_threshold,
             ))
             roll_idx += 1
         elif kind == "regime_change":

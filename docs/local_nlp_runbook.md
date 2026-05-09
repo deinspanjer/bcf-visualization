@@ -105,11 +105,11 @@ Any FAIL line prints a hint pointing at the most common cause.
 ## Python tests (either box)
 
 ```sh
-python3 -m pytest tests/ -q
+python3 -m unittest discover tests '*unittest.py'
 ```
 
-The `tests/` suite covers `nlp.schema` and the FastAPI scaffold.
-It does not require torch, transformers, or a GPU.
+New verification should use stdlib `unittest`. The focused unittest
+subset does not require torch, transformers, or a GPU.
 
 ## If something fails
 

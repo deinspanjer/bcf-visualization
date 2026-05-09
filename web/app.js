@@ -7,10 +7,8 @@
  *   ─────────────────
  *   Word axis runs from -PRE_ROLL_WORDS (lead-in band) through 0 (start
  *   of chapter 1) to TOTAL_WORDS (end of last chapter). Roll positions
- *   are approximated from `predicted_word_position_epub` (CP-words)
- *   mapped into total-word space via each chapter's cp/total ratio;
- *   close enough for visualization. Shadow trigger positions also come
- *   in CP-words and use the same mapping.
+ *   use `display_word_position_epub` / `display_chapter_num` when present,
+ *   falling back to predicted CP-word positions.
  *
  *   playback
  *   ────────
@@ -202,7 +200,9 @@ function chapterAtWord(model, wordPos) {
 }
 
 function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal = 1) {
-  const span = model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
+  const displayChapterNum = roll.display_chapter_num || chapter.chapter_num;
+  const span = model.chapterSpans[model.idxOf.get(displayChapterNum)] ||
+    model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
   const cpPosition = roll.display_word_position_epub ?? roll.predicted_word_position_epub;
   if (cpPosition == null) {
     const chapterWidth = Math.max(1, span.end_word - span.start_word);
@@ -1241,23 +1241,34 @@ function skyRollInfo(state, chapter, roll, wordPos) {
 
 function findActiveSkyRoll(state, chapter) {
   if (!chapter || !state.sky) return null;
-  const rolls = (chapter.rolls || []).filter(r =>
-    r.outcome === "hit" || r.outcome === "miss" ||
-    r.outcome === "unknown" || r.evidence_kind === "untracked_acquisition");
-  if (!rolls.length) return null;
-  const fallbackRolls = chapter.rolls.filter(r => r.predicted_word_position_epub == null);
+  const displayed = [];
+  for (const owner of state.facts.chapters) {
+    for (const roll of owner.rolls || []) {
+      const displayChapterNum = roll.display_chapter_num || owner.chapter_num;
+      if (displayChapterNum !== chapter.chapter_num) continue;
+      if (roll.outcome !== "hit" && roll.outcome !== "miss" &&
+          roll.outcome !== "unknown" && roll.evidence_kind !== "untracked_acquisition") {
+        continue;
+      }
+      displayed.push({ owner, roll });
+    }
+  }
+  if (!displayed.length) return null;
+  const fallbackRolls = displayed
+    .map(item => item.roll)
+    .filter(r => r.predicted_word_position_epub == null);
   let best = null;
-  for (const roll of rolls) {
+  for (const { owner, roll } of displayed) {
     const fallbackIndex = fallbackRolls.indexOf(roll);
     const wordPos = rollWordPosition(
-      state.model, roll, chapter, Math.max(0, fallbackIndex), fallbackRolls.length || 1);
+      state.model, roll, owner, Math.max(0, fallbackIndex), fallbackRolls.length || 1);
     const distance = Math.abs(state.currentWord - wordPos);
     if (!best || distance < best.distance) {
-      best = { roll, wordPos, distance };
+      best = { owner, roll, wordPos, distance };
     }
   }
   if (!best) return null;
-  return skyRollInfo(state, chapter, best.roll, best.wordPos);
+  return skyRollInfo(state, best.owner, best.roll, best.wordPos);
 }
 
 function setSkyButtonPressed(id, pressed) {

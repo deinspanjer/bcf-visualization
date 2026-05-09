@@ -361,12 +361,15 @@ class ForgeCuratorData:
 
         rf = [
             r for r in self.roll_facts.get("rolls", [])
-            if str(r.get("chapter_num")) == cn
+            if (
+                str(r.get("chapter_num")) == cn
+                or str(r.get("mechanical_chapter_num")) == cn
+                or str(r.get("display_chapter_num")) == cn
+            )
         ]
-        # roll_facts uses a section-relative ordering; sort by sequence_in_chapter
         rf.sort(key=lambda r: (
-            r.get("roll_sequence_in_chapter") or r.get("sequence_in_chapter") or 0,
-            r.get("word_position") or 0,
+            _chapter_roll_sort_word(cn, r),
+            r.get("roll_number") or r.get("roll_sequence_in_chapter") or 0,
         ))
 
         preds = [
@@ -518,6 +521,23 @@ def _read_chapter_html(epub_path: Path, epub_href: str) -> str | None:
             stacklevel=2,
         )
     return None
+
+
+def _chapter_roll_sort_word(chapter_num: str, roll: dict) -> int:
+    cn = str(chapter_num)
+    if (
+        str(roll.get("display_chapter_num")) == cn
+        and roll.get("display_word_position") is not None
+    ):
+        return int(roll["display_word_position"])
+    if (
+        str(roll.get("mechanical_chapter_num")) == cn
+        and roll.get("mechanical_word_position") is not None
+    ):
+        return int(roll["mechanical_word_position"])
+    if roll.get("word_position") is not None:
+        return int(roll["word_position"])
+    return 0
 
 
 _WORD_RE = re.compile(r"\S+")

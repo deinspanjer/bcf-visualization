@@ -53,7 +53,7 @@ def _required_paid_roll_counts() -> Counter[str]:
 def _known_attempt_counts() -> Counter[str]:
     roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
     return Counter(
-        str(roll["chapter_num"])
+        str(roll.get("mechanical_chapter_num") or roll["chapter_num"])
         for roll in roll_facts
         if roll.get("source_kind") != "trigger"
     )

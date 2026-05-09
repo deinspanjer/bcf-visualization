@@ -1,5 +1,5 @@
 {
-  "_generated": "2026-05-08T18:36:00+00:00",
+  "_generated": "2026-05-09T00:04:15+00:00",
   "_source": "scripts/derive_roll_facts.py",
   "summary": {
     "chapters_total": 194,
@@ -7,7 +7,7 @@
     "infeasible": 31,
     "model_discrepancies": 41,
     "curator_divergences": 72,
-    "ambiguous": 86,
+    "ambiguous": 87,
     "overrides_applied": 0
   },
   "chapter_checks": [
@@ -17,7 +17,7 @@
       "has_discrepancy": false,
       "source_priority": "vetted_curated",
       "predicted_roll_count": 2,
-      "required_paid_roll_count": 0,
+      "required_paid_roll_count": 1,
       "known_attempt_count": 2,
       "paid_roll_capacity_ok": true,
       "known_attempt_capacity_ok": true,
@@ -31,8 +31,8 @@
       "has_discrepancy": false,
       "source_priority": "curator_log",
       "predicted_roll_count": 4,
-      "required_paid_roll_count": 3,
-      "known_attempt_count": 4,
+      "required_paid_roll_count": 2,
+      "known_attempt_count": 3,
       "paid_roll_capacity_ok": true,
       "known_attempt_capacity_ok": true,
       "cost_schedule_ok": true,
@@ -41,7 +41,7 @@
         {
           "code": "ambiguous_schedule",
           "severity": "info",
-          "message": "3 feasible hit/slot assignments."
+          "message": "5 feasible hit/slot assignments."
         }
       ]
     },
@@ -96,6 +96,11 @@
           "code": "known_attempts_exceed_predicted_slots",
           "severity": "error",
           "message": "5 known roll attempt(s) require more slots than 4 predicted roll(s)."
+        },
+        {
+          "code": "ambiguous_schedule",
+          "severity": "info",
+          "message": "4 feasible hit/slot assignments."
         }
       ]
     },
@@ -3685,7 +3690,7 @@
   "infeasible": [
     {
       "chapter_num": "40",
-      "banked_cp_in": 1013,
+      "banked_cp_in": 1099,
       "predicted_slots": [],
       "recorded_hits": [
         {
@@ -3712,11 +3717,11 @@
     },
     {
       "chapter_num": "43",
-      "banked_cp_in": 1167,
+      "banked_cp_in": 1252,
       "predicted_slots": [
         {
           "word_position": 774,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -3745,7 +3750,7 @@
     },
     {
       "chapter_num": "43.1",
-      "banked_cp_in": 322,
+      "banked_cp_in": 408,
       "predicted_slots": [],
       "recorded_hits": [
         {
@@ -3803,7 +3808,7 @@
       "predicted_slots": [
         {
           "word_position": 1976,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -3824,7 +3829,7 @@
       "predicted_slots": [
         {
           "word_position": 1548,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -3845,27 +3850,27 @@
       "predicted_slots": [
         {
           "word_position": 1555,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 3555,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 5555,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 7555,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 9555,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -3898,22 +3903,22 @@
       "predicted_slots": [
         {
           "word_position": 1900,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 3900,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 5900,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 7900,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -3958,27 +3963,27 @@
       "predicted_slots": [
         {
           "word_position": 1930,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 3930,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 5930,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 7930,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 9930,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4017,32 +4022,32 @@
       "predicted_slots": [
         {
           "word_position": 148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 2148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 4148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 6148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 8148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 10148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4081,7 +4086,7 @@
       "predicted_slots": [
         {
           "word_position": 563,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4102,17 +4107,17 @@
       "predicted_slots": [
         {
           "word_position": 1118,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 3118,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 5118,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4133,12 +4138,12 @@
       "predicted_slots": [
         {
           "word_position": 114,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 4114,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4177,17 +4182,17 @@
       "predicted_slots": [
         {
           "word_position": 1464,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 5464,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 9464,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4220,12 +4225,12 @@
       "predicted_slots": [
         {
           "word_position": 2858,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 6858,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4264,37 +4269,37 @@
       "predicted_slots": [
         {
           "word_position": 379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 4379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 8379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 12379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 16379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 20379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 24379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4360,7 +4365,7 @@
       "predicted_slots": [
         {
           "word_position": 5012,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4396,12 +4401,12 @@
       "predicted_slots": [
         {
           "word_position": 2418,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 8418,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4485,12 +4490,12 @@
       "predicted_slots": [
         {
           "word_position": 3728,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 9728,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4523,7 +4528,7 @@
       "predicted_slots": [
         {
           "word_position": 2080,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4559,12 +4564,12 @@
       "predicted_slots": [
         {
           "word_position": 4117,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 10117,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4591,7 +4596,7 @@
       "predicted_slots": [
         {
           "word_position": 9551,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4624,7 +4629,7 @@
       "predicted_slots": [
         {
           "word_position": 1684,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4666,7 +4671,7 @@
       "predicted_slots": [
         {
           "word_position": 1388,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4687,7 +4692,7 @@
       "predicted_slots": [
         {
           "word_position": 1030,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4708,22 +4713,22 @@
       "predicted_slots": [
         {
           "word_position": 725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 6725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 12725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 18725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4752,32 +4757,32 @@
       "predicted_slots": [
         {
           "word_position": 148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 2148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 4148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 6148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 8148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 10148,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4816,7 +4821,7 @@
       "predicted_slots": [
         {
           "word_position": 563,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4837,17 +4842,17 @@
       "predicted_slots": [
         {
           "word_position": 1118,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 3118,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         },
         {
           "word_position": 5118,
-          "cp_threshold": 100,
+          "roll_trigger_cp_threshold": 100,
           "source": "predicted"
         }
       ],
@@ -4868,17 +4873,17 @@
       "predicted_slots": [
         {
           "word_position": 1464,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 5464,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 9464,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -4911,22 +4916,22 @@
       "predicted_slots": [
         {
           "word_position": 2858,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 3521,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "synthetic"
         },
         {
           "word_position": 6858,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 7043,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "synthetic"
         }
       ],
@@ -4965,37 +4970,37 @@
       "predicted_slots": [
         {
           "word_position": 379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 4379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 8379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 12379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 16379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 20379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 24379,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5046,7 +5051,7 @@
       "predicted_slots": [
         {
           "word_position": 5012,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5082,7 +5087,7 @@
       "predicted_slots": [
         {
           "word_position": 2080,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5103,7 +5108,7 @@
       "predicted_slots": [
         {
           "word_position": 1159,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "synthetic"
         }
       ],
@@ -5124,12 +5129,12 @@
       "predicted_slots": [
         {
           "word_position": 4117,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 10117,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5156,17 +5161,17 @@
       "predicted_slots": [
         {
           "word_position": 4622,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "synthetic"
         },
         {
           "word_position": 9245,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "synthetic"
         },
         {
           "word_position": 9551,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5199,7 +5204,7 @@
       "predicted_slots": [
         {
           "word_position": 1684,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5241,7 +5246,7 @@
       "predicted_slots": [
         {
           "word_position": 1388,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5262,7 +5267,7 @@
       "predicted_slots": [
         {
           "word_position": 1030,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5283,22 +5288,22 @@
       "predicted_slots": [
         {
           "word_position": 725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 6725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 12725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         },
         {
           "word_position": 18725,
-          "cp_threshold": 200,
+          "roll_trigger_cp_threshold": 200,
           "source": "predicted"
         }
       ],
@@ -5326,29 +5331,28 @@
       "curator_outcomes": [
         "hit",
         "miss",
-        "miss"
+        "hit"
       ],
       "solver_outcomes": [
         "miss",
-        "miss"
+        "hit"
       ],
       "solver_slack": 0
     },
     {
       "chapter_num": "2",
       "curator_outcomes": [
-        "hit",
         "miss",
         "hit",
         "hit"
       ],
       "solver_outcomes": [
         "miss",
-        "hit",
+        "miss",
         "hit",
         "hit"
       ],
-      "solver_slack": 497
+      "solver_slack": 482
     },
     {
       "chapter_num": "3",
@@ -5362,7 +5366,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 398
+      "solver_slack": 582
     },
     {
       "chapter_num": "4",
@@ -5379,7 +5383,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 297
+      "solver_slack": 573
     },
     {
       "chapter_num": "5",
@@ -5391,7 +5395,7 @@
         "miss",
         "hit"
       ],
-      "solver_slack": 205
+      "solver_slack": 291
     },
     {
       "chapter_num": "6",
@@ -5409,7 +5413,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1115
+      "solver_slack": 1370
     },
     {
       "chapter_num": "6.1",
@@ -5435,7 +5439,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 810
+      "solver_slack": 980
     },
     {
       "chapter_num": "8",
@@ -5450,7 +5454,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1212
+      "solver_slack": 1382
     },
     {
       "chapter_num": "8.1",
@@ -5482,7 +5486,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3415
+      "solver_slack": 3670
     },
     {
       "chapter_num": "10",
@@ -5500,7 +5504,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3018
+      "solver_slack": 3273
     },
     {
       "chapter_num": "11",
@@ -5521,7 +5525,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2815
+      "solver_slack": 3070
     },
     {
       "chapter_num": "12",
@@ -5534,7 +5538,7 @@
         "miss",
         "hit"
       ],
-      "solver_slack": 705
+      "solver_slack": 790
     },
     {
       "chapter_num": "13",
@@ -5553,7 +5557,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2715
+      "solver_slack": 2973
     },
     {
       "chapter_num": "14",
@@ -5572,7 +5576,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3224
+      "solver_slack": 3564
     },
     {
       "chapter_num": "15",
@@ -5592,7 +5596,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2315
+      "solver_slack": 2573
     },
     {
       "chapter_num": "16",
@@ -5609,7 +5613,7 @@
         "miss",
         "hit"
       ],
-      "solver_slack": 1005
+      "solver_slack": 1090
     },
     {
       "chapter_num": "17",
@@ -5629,7 +5633,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3415
+      "solver_slack": 3670
     },
     {
       "chapter_num": "18",
@@ -5648,7 +5652,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3215
+      "solver_slack": 3473
     },
     {
       "chapter_num": "19",
@@ -5672,7 +5676,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3720
+      "solver_slack": 4060
     },
     {
       "chapter_num": "20",
@@ -5691,7 +5695,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1810
+      "solver_slack": 1982
     },
     {
       "chapter_num": "21",
@@ -5712,7 +5716,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4425
+      "solver_slack": 4855
     },
     {
       "chapter_num": "22",
@@ -5731,7 +5735,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2112
+      "solver_slack": 2282
     },
     {
       "chapter_num": "23",
@@ -5751,7 +5755,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3824
+      "solver_slack": 4164
     },
     {
       "chapter_num": "24",
@@ -5775,7 +5779,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4624
+      "solver_slack": 4964
     },
     {
       "chapter_num": "25",
@@ -5795,7 +5799,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2012
+      "solver_slack": 2182
     },
     {
       "chapter_num": "26",
@@ -5814,7 +5818,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2615
+      "solver_slack": 2873
     },
     {
       "chapter_num": "27",
@@ -5841,7 +5845,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4020
+      "solver_slack": 4364
     },
     {
       "chapter_num": "28",
@@ -5866,7 +5870,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2412
+      "solver_slack": 2582
     },
     {
       "chapter_num": "29",
@@ -5891,7 +5895,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4315
+      "solver_slack": 4570
     },
     {
       "chapter_num": "30",
@@ -5925,7 +5929,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 10642
+      "solver_slack": 11237
     },
     {
       "chapter_num": "31",
@@ -5950,7 +5954,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 4320
+      "solver_slack": 4660
     },
     {
       "chapter_num": "32",
@@ -5974,7 +5978,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3524
+      "solver_slack": 3864
     },
     {
       "chapter_num": "33",
@@ -5992,7 +5996,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1812
+      "solver_slack": 1982
     },
     {
       "chapter_num": "34",
@@ -6013,7 +6017,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3515
+      "solver_slack": 3770
     },
     {
       "chapter_num": "35",
@@ -6037,7 +6041,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3115
+      "solver_slack": 3370
     },
     {
       "chapter_num": "35.1",
@@ -6055,7 +6059,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2312
+      "solver_slack": 2482
     },
     {
       "chapter_num": "36",
@@ -6077,7 +6081,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3418
+      "solver_slack": 3673
     },
     {
       "chapter_num": "37",
@@ -6101,7 +6105,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 2510
+      "solver_slack": 2680
     },
     {
       "chapter_num": "38",
@@ -6130,7 +6134,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 7225
+      "solver_slack": 7650
     },
     {
       "chapter_num": "39",
@@ -6163,7 +6167,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 5520
+      "solver_slack": 5860
     },
     {
       "chapter_num": "41",
@@ -6207,7 +6211,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 10035
+      "solver_slack": 10637
     },
     {
       "chapter_num": "42",
@@ -6227,7 +6231,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 3415
+      "solver_slack": 3670
     },
     {
       "chapter_num": "43",
@@ -6243,7 +6247,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 1393
+      "solver_slack": 1648
     },
     {
       "chapter_num": "44",
@@ -6261,7 +6265,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 610
+      "solver_slack": 782
     },
     {
       "chapter_num": "45",
@@ -6283,7 +6287,7 @@
         "hit",
         "hit"
       ],
-      "solver_slack": 410
+      "solver_slack": 582
     },
     {
       "chapter_num": "46",
@@ -6819,213 +6823,218 @@
   "ambiguous_chapters": [
     {
       "chapter_num": "2",
-      "feasible_assignment_count": 3,
-      "slack": 497
+      "feasible_assignment_count": 5,
+      "slack": 482
     },
     {
       "chapter_num": "3",
       "feasible_assignment_count": 3,
-      "slack": 398
+      "slack": 582
+    },
+    {
+      "chapter_num": "4",
+      "feasible_assignment_count": 4,
+      "slack": 573
     },
     {
       "chapter_num": "5",
       "feasible_assignment_count": 3,
-      "slack": 205
+      "slack": 291
     },
     {
       "chapter_num": "6",
       "feasible_assignment_count": 10,
-      "slack": 1115
+      "slack": 1370
     },
     {
       "chapter_num": "7",
       "feasible_assignment_count": 3,
-      "slack": 810
+      "slack": 980
     },
     {
       "chapter_num": "8",
       "feasible_assignment_count": 10,
-      "slack": 1212
+      "slack": 1382
     },
     {
       "chapter_num": "9",
       "feasible_assignment_count": 10,
-      "slack": 3415
+      "slack": 3670
     },
     {
       "chapter_num": "10",
       "feasible_assignment_count": 4,
-      "slack": 3018
+      "slack": 3273
     },
     {
       "chapter_num": "11",
       "feasible_assignment_count": 10,
-      "slack": 2815
+      "slack": 3070
     },
     {
       "chapter_num": "12",
       "feasible_assignment_count": 4,
-      "slack": 705
+      "slack": 790
     },
     {
       "chapter_num": "13",
       "feasible_assignment_count": 20,
-      "slack": 2715
+      "slack": 2973
     },
     {
       "chapter_num": "14",
       "feasible_assignment_count": 5,
-      "slack": 3224
+      "slack": 3564
     },
     {
       "chapter_num": "15",
       "feasible_assignment_count": 20,
-      "slack": 2315
+      "slack": 2573
     },
     {
       "chapter_num": "16",
       "feasible_assignment_count": 5,
-      "slack": 1005
+      "slack": 1090
     },
     {
       "chapter_num": "17",
       "feasible_assignment_count": 20,
-      "slack": 3415
+      "slack": 3670
     },
     {
       "chapter_num": "18",
       "feasible_assignment_count": 10,
-      "slack": 3215
+      "slack": 3473
     },
     {
       "chapter_num": "19",
       "feasible_assignment_count": 50,
-      "slack": 3720
+      "slack": 4060
     },
     {
       "chapter_num": "20",
       "feasible_assignment_count": 15,
-      "slack": 1810
+      "slack": 1982
     },
     {
       "chapter_num": "21",
       "feasible_assignment_count": 21,
-      "slack": 4425
+      "slack": 4855
     },
     {
       "chapter_num": "22",
       "feasible_assignment_count": 15,
-      "slack": 2112
+      "slack": 2282
     },
     {
       "chapter_num": "23",
       "feasible_assignment_count": 15,
-      "slack": 3824
+      "slack": 4164
     },
     {
       "chapter_num": "24",
       "feasible_assignment_count": 50,
-      "slack": 4624
+      "slack": 4964
     },
     {
       "chapter_num": "25",
       "feasible_assignment_count": 15,
-      "slack": 2012
+      "slack": 2182
     },
     {
       "chapter_num": "26",
       "feasible_assignment_count": 20,
-      "slack": 2615
+      "slack": 2873
     },
     {
       "chapter_num": "27",
       "feasible_assignment_count": 50,
-      "slack": 4020
+      "slack": 4364
     },
     {
       "chapter_num": "28",
       "feasible_assignment_count": 36,
-      "slack": 2412
+      "slack": 2582
     },
     {
       "chapter_num": "29",
       "feasible_assignment_count": 50,
-      "slack": 4315
+      "slack": 4570
     },
     {
       "chapter_num": "30",
       "feasible_assignment_count": 50,
-      "slack": 10642
+      "slack": 11237
     },
     {
       "chapter_num": "31",
       "feasible_assignment_count": 50,
-      "slack": 4320
+      "slack": 4660
     },
     {
       "chapter_num": "32",
       "feasible_assignment_count": 50,
-      "slack": 3524
+      "slack": 3864
     },
     {
       "chapter_num": "33",
       "feasible_assignment_count": 15,
-      "slack": 1812
+      "slack": 1982
     },
     {
       "chapter_num": "34",
       "feasible_assignment_count": 20,
-      "slack": 3515
+      "slack": 3770
     },
     {
       "chapter_num": "35",
       "feasible_assignment_count": 50,
-      "slack": 3115
+      "slack": 3370
     },
     {
       "chapter_num": "35.1",
       "feasible_assignment_count": 36,
-      "slack": 2312
+      "slack": 2482
     },
     {
       "chapter_num": "36",
       "feasible_assignment_count": 35,
-      "slack": 3418
+      "slack": 3673
     },
     {
       "chapter_num": "37",
       "feasible_assignment_count": 28,
-      "slack": 2510
+      "slack": 2680
     },
     {
       "chapter_num": "38",
       "feasible_assignment_count": 50,
-      "slack": 7225
+      "slack": 7650
     },
     {
       "chapter_num": "39",
       "feasible_assignment_count": 50,
-      "slack": 5520
+      "slack": 5860
     },
     {
       "chapter_num": "41",
       "feasible_assignment_count": 50,
-      "slack": 10035
+      "slack": 10637
     },
     {
       "chapter_num": "42",
       "feasible_assignment_count": 20,
-      "slack": 3415
+      "slack": 3670
     },
     {
       "chapter_num": "44",
       "feasible_assignment_count": 12,
-      "slack": 610
+      "slack": 782
     },
     {
       "chapter_num": "45",
       "feasible_assignment_count": 7,
-      "slack": 410
+      "slack": 582
     },
     {
       "chapter_num": "46",

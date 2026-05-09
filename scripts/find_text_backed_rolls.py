@@ -25,7 +25,8 @@ Output:
   - data/derived/roll_text_evidence.json (validated)
 
 For each predicted roll we record:
-  - predicted (chapter, word index in chapter, char offset, regime, cp_threshold)
+  - predicted (chapter, word index in chapter, char offset,
+    cp_rule_regime, roll_trigger_cp_threshold)
   - prose window: ±WORD_RADIUS CP-earning words of prose centered on the
     predicted position, with [[X]] marking the predicted-position word
   - matching_events: regex events whose anchor falls within the prose
@@ -332,8 +333,8 @@ def main() -> None:
         out_rolls.append({
             "roll_number": p["roll_number"],
             "chapter_num": ch,
-            "regime": p["regime"],
-            "cp_threshold": p["cp_threshold"],
+            "cp_rule_regime": p["cp_rule_regime"],
+            "roll_trigger_cp_threshold": p["roll_trigger_cp_threshold"],
             "predicted_word_position_epub": p["word_position"],
             "predicted_word_in_chapter": target_word_in_chapter,
             "predicted_char_offset": center_char,

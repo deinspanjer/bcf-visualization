@@ -65,7 +65,8 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "roll_number", "chapter_num", "regime", "cp_threshold",
+        "roll_number", "chapter_num",
+        "cp_rule_regime", "roll_trigger_cp_threshold",
         "predicted_word_position_epub", "predicted_word_in_chapter",
         "predicted_char_offset", "anchor_string",
         "window_char_start", "window_char_end",
@@ -75,8 +76,8 @@
       "properties": {
         "roll_number":                 { "type": "integer", "minimum": 1 },
         "chapter_num":                 { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
-        "regime":                      { "type": "integer", "minimum": 1, "maximum": 3 },
-        "cp_threshold":                { "type": "integer", "minimum": 0 },
+        "cp_rule_regime":              { "type": "integer", "minimum": 1, "maximum": 3 },
+        "roll_trigger_cp_threshold":   { "type": "integer", "minimum": 0 },
         "predicted_word_position_epub": { "type": "integer", "minimum": 0 },
         "predicted_word_in_chapter":   { "type": "integer", "minimum": 0 },
         "predicted_char_offset":       { "type": "integer", "minimum": 0 },

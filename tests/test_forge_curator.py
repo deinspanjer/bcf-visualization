@@ -461,7 +461,8 @@ async def test_chapter_2_header_eligibility_and_roll_stats() -> None:
         assert "Text: CP ineligible - header" in text
         assert "Total content:" in text
         assert "CP eligible:" in text
-        assert "#1 (global #3)" in text
+        assert "#1 (global #2)" in text
+        assert "#2 (global #3)" in text
         assert "hit" in text
         assert "Clothing - Fashion (200)" in text
         assert "Quality - Bling of War (100)" in text
@@ -521,17 +522,24 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     assert rolls[2]["narrative_evidence"] == "same quote"
 
 
-def test_chapter_1_override_preserves_trigger_and_misses() -> None:
+def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
     app = ForgeCuratorApp(start_chapter="1")
     cf = app.data.chapter_derived("1").chapter_facts or {}
     rolls = cf.get("rolls") or []
     assert [(r.get("source_kind"), r.get("outcome")) for r in rolls] == [
         ("trigger", "hit"),
         ("miss", "miss"),
-        ("miss", "miss"),
     ]
     assert rolls[0]["purchased_perk_cost_total"] == 100
     assert [p["name"] for p in rolls[0]["purchased_perks"]] == ["Workshop"]
+
+    ch2 = app.data.chapter_derived("2").chapter_facts or {}
+    fashion = next(
+        r for r in ch2.get("rolls") or []
+        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
+    )
+    assert fashion["mechanical_chapter_num"] == "1"
+    assert fashion["roll_number"] == 2
 
 
 @pytest.mark.asyncio

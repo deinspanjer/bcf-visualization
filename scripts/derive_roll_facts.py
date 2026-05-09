@@ -6,6 +6,9 @@ derived source `build_chapter_facts.py` should consume for roll attempts.
 Inputs:
   - data/derived/rolls.json .............. curator roll log; wins where present
   - data/derived/roll_outcomes.json ...... interpolated fallback for uncovered chapters
+  - data/derived/predicted_rolls.json .... mechanical predicted-slot schedule
+  - data/manual/chapter_roll_overrides.json  manual per-chapter roll curation
+  - data/manual/roll_overrides.json ...... optional row-level patches
   - data/derived/roll_text_evidence.json . predicted prose anchors
   - data/derived/perk_directory.json ..... canonical perk ids/constellations
   - data/derived/outstanding_perks_by_chapter.json  miss-size estimates
@@ -196,7 +199,7 @@ def split_hit_perks(
     paid_perks = [p for p in perks if not p.get("free", False)]
     free_perks_raw = [p for p in perks if p.get("free", False)]
     if not paid_perks:
-        # All perks are free: still return a principal for legacy fields.
+        # All perks are free: still return one principal for scalar fields.
         principal = perks[0]
         principal_meta = perk_meta(by_name_jump, by_name, principal, parent_constellation)
         free_perks: list[dict] = []
@@ -411,7 +414,10 @@ def _build_scheduler_inputs() -> dict[str, dict]:
         predicted_slots = [
             SlotInput(
                 word_position=max(0, int(r["word_position"]) - ws_global),
-                cp_threshold=int(r.get("cp_threshold", REGIMES[regime_for_chapter(cn)]["cp_per_roll"])),
+                roll_trigger_cp_threshold=int(
+                    r.get("roll_trigger_cp_threshold")
+                    or REGIMES[regime_for_chapter(cn)]["cp_per_roll"]
+                ),
                 source="predicted",
             )
             for r in preds
@@ -425,6 +431,15 @@ def _build_scheduler_inputs() -> dict[str, dict]:
                 perk=u["paid"][0],
                 paid_perks=list(u["paid"]),
                 free_perks=list(u["free_perks"]),
+                mention_chapter_num=str(u.get("mention_chapter_num") or cn),
+                mention_word_position=(
+                    int(u["mention_word_position"])
+                    if u.get("mention_word_position") is not None else None
+                ),
+                display_position_policy=(
+                    u.get("display_position_policy") or "mechanical"
+                ),
+                narrative_evidence=u.get("narrative_evidence"),
             )
             for u in ch_units
         ]
@@ -443,7 +458,9 @@ def _build_scheduler_inputs() -> dict[str, dict]:
                 existing.add(pos)
                 slots.append(SlotInput(
                     word_position=pos,
-                    cp_threshold=REGIMES[regime_for_chapter(cn)]["cp_per_roll"],
+                    roll_trigger_cp_threshold=REGIMES[
+                        regime_for_chapter(cn)
+                    ]["cp_per_roll"],
                     source="synthetic",
                 ))
             slots.sort(key=lambda s: s.word_position)
@@ -494,14 +511,8 @@ def _restructure_curator_rows(
          Mismatch -> warn.
     """
     override_rolls_raw = override.get("rolls") or []
-    # Normalise each override-roll entry to a bare list of perk names so
-    # the rest of this function can stay agnostic to the on-disk schema.
-    # Both the legacy ``["A", "B"]`` form and the canonical
-    # ``{"perks": ["A", "B"], ...}`` form are accepted.
     def _names_of(entry):
-        if isinstance(entry, dict):
-            return list(entry.get("perks") or [])
-        return list(entry)
+        return list(entry.get("perks") or [])
     override_rolls = [_names_of(r) for r in override_rolls_raw]
 
     def _explicit_outcome(entry) -> str | None:
@@ -728,6 +739,134 @@ def _restructure_curator_rows(
     return out_rows
 
 
+def _norm_chapter(value: str | None, fallback: str) -> str:
+    return str(value) if value is not None else str(fallback)
+
+
+def _override_needs_direct_rows(chapter_num: str, override: dict) -> bool:
+    """True when the override cannot be matched only against same-chapter
+    curator hit rows.
+
+    Existing multi-grab overrides split curator rows within a chapter.
+    Deferred rolls point at a later mention/listing chapter, so they need
+    direct construction from obtained_perks instead.
+    """
+    for entry in override.get("rolls") or []:
+        if _norm_chapter(entry.get("mention_chapter_num"), chapter_num) != str(chapter_num):
+            return True
+    return False
+
+
+def _build_obtained_lookup(obtained_perks: list[dict]) -> dict[tuple[str, str], list[dict]]:
+    lookup: dict[tuple[str, str], list[dict]] = {}
+    for perk in obtained_perks:
+        name = perk.get("perk_name") or perk.get("name")
+        if not name:
+            continue
+        lookup.setdefault((str(perk["chapter_num"]), _norm_name(name)), []).append(perk)
+    return lookup
+
+
+def _obtained_as_roll_perk(perk: dict) -> dict:
+    return {
+        "name": perk.get("perk_name") or perk.get("name"),
+        "source": perk.get("jump") or perk.get("source"),
+        "cost": int(perk.get("cost") or 0),
+        "free": bool(perk.get("free", False)),
+        "constellation": perk.get("constellation"),
+    }
+
+
+def _direct_override_rows(
+    chapter_num: str,
+    curator_rows: list[tuple[int, dict]],
+    override: dict,
+    obtained_lookup: dict[tuple[str, str], list[dict]],
+) -> list[dict]:
+    """Build curator-equivalent rows directly from an index-aligned
+    chapter override.
+
+    This path is for deferred rows where the mechanical chapter and the
+    mention/listing chapter differ, so no same-chapter curator row can
+    host the perk.
+    """
+    out_rows: list[dict] = []
+    non_trigger_templates = [
+        (source_idx, row)
+        for source_idx, row in curator_rows
+        if row.get("kind") != "trigger"
+    ]
+    for source_idx, row in curator_rows:
+        if row.get("kind") != "trigger":
+            continue
+        out_rows.append({
+            "_source_idx": source_idx,
+            "_override_origin": None,
+            "_override_direct": False,
+            "kind": "trigger",
+            "perks": list(row.get("perks") or []),
+            "banked_before": row.get("banked_before"),
+            "banked_after": row.get("banked_after"),
+            "constellation": row.get("constellation"),
+            "constellation_revealed": row.get("constellation_revealed", False),
+            "roll_number": row.get("roll_number"),
+            "raw": row.get("raw"),
+        })
+
+    last_source_idx = non_trigger_templates[-1][0] if non_trigger_templates else 0
+    for override_idx, entry in enumerate(override.get("rolls") or []):
+        template = (
+            non_trigger_templates[override_idx][1]
+            if override_idx < len(non_trigger_templates) else {}
+        )
+        source_idx = (
+            non_trigger_templates[override_idx][0]
+            if override_idx < len(non_trigger_templates) else last_source_idx
+        )
+        mention_chapter = _norm_chapter(entry.get("mention_chapter_num"), chapter_num)
+        outcome = entry.get("outcome") or ("hit" if entry.get("perks") else "miss")
+        roll_perks: list[dict] = []
+        for name in entry.get("perks") or []:
+            candidates = obtained_lookup.get((mention_chapter, _norm_name(name))) or []
+            if not candidates:
+                candidates = obtained_lookup.get((chapter_num, _norm_name(name))) or []
+            if not candidates:
+                raise ValueError(
+                    f"chapter_roll_overrides ch {chapter_num} roll #{override_idx} "
+                    f"references {name!r}, but obtained_perks has no matching "
+                    f"perk in chapter {mention_chapter} or {chapter_num}"
+                )
+            roll_perks.append(_obtained_as_roll_perk(candidates[0]))
+
+        display_policy = entry.get("display_position_policy")
+        if display_policy is None:
+            display_policy = (
+                "mention"
+                if entry.get("mention_word_position") is not None
+                else "mechanical"
+            )
+        out_rows.append({
+            "_source_idx": source_idx,
+            "_override_origin": override_idx,
+            "_override_direct": True,
+            "_mention_chapter_num": mention_chapter,
+            "_mention_word_position": entry.get("mention_word_position"),
+            "_display_position_policy": display_policy,
+            "_narrative_evidence": entry.get("narrative_evidence"),
+            "kind": "miss" if outcome == "miss" else "roll",
+            "perks": roll_perks,
+            "banked_before": template.get("banked_before"),
+            "banked_after": template.get("banked_after"),
+            "constellation": entry.get("constellation") or (
+                roll_perks[0].get("constellation") if roll_perks else None
+            ),
+            "constellation_revealed": bool(entry.get("constellation")),
+            "roll_number": template.get("roll_number"),
+            "raw": template.get("raw"),
+        })
+    return out_rows
+
+
 def _apply_overrides(rolls: list[dict], overrides_doc: dict) -> int:
     """Apply hand-curation overrides as a final pass. Returns count."""
     roll_overrides = overrides_doc.get("roll_overrides") or {}
@@ -749,6 +888,7 @@ def main() -> None:
     curator_doc = json.loads(CURATOR_ROLLS.read_text())
     outcomes_doc = json.loads(ROLL_OUTCOMES.read_text())
     evidence_doc = json.loads(EVIDENCE.read_text())
+    obtained_doc = json.loads(OBTAINED_PERKS.read_text())
     directory = json.loads(DIRECTORY.read_text())["perks"]
     outstanding_doc = json.loads(OUTSTANDING.read_text())
     overrides_doc: dict = {}
@@ -757,6 +897,21 @@ def main() -> None:
 
     multi_overrides_doc = load_multi_grab_overrides()
     multi_overrides = multi_overrides_doc.get("chapter_roll_overrides") or {}
+    obtained_lookup = _build_obtained_lookup(obtained_doc["perks"])
+    deferred_consumed_by_mention_chapter: dict[str, set[str]] = {}
+    for mechanical_chapter, override in multi_overrides.items():
+        for entry in override.get("rolls") or []:
+            mention_chapter = _norm_chapter(
+                entry.get("mention_chapter_num"), mechanical_chapter
+            )
+            if mention_chapter == str(mechanical_chapter):
+                continue
+            if (entry.get("outcome") or ("hit" if entry.get("perks") else "miss")) != "hit":
+                continue
+            for name in entry.get("perks") or []:
+                deferred_consumed_by_mention_chapter.setdefault(
+                    mention_chapter, set()
+                ).add(_norm_name(name))
 
     curator_covered: set[str] = set()
     for row in curator_doc["rolls"]:
@@ -806,7 +961,7 @@ def main() -> None:
                 "banked_cp_in": banked_in,
                 "predicted_slots": [
                     {"word_position": s.word_position,
-                     "cp_threshold": s.cp_threshold,
+                     "roll_trigger_cp_threshold": s.roll_trigger_cp_threshold,
                      "source": s.source}
                     for s in inp["predicted_slots"]
                 ],
@@ -853,7 +1008,7 @@ def main() -> None:
                     "banked_cp_in": banked_in,
                     "predicted_slots": [
                         {"word_position": s.word_position,
-                         "cp_threshold": s.cp_threshold,
+                         "roll_trigger_cp_threshold": s.roll_trigger_cp_threshold,
                          "source": s.source}
                         for s in inp["slots"]
                     ],
@@ -882,6 +1037,16 @@ def main() -> None:
     curator_by_chapter: dict[str, list[tuple[int, dict]]] = {}
     for idx, row in enumerate(curator_doc["rolls"]):
         if row.get("kind") not in {"trigger", "roll", "miss"}:
+            continue
+        deferred_names = deferred_consumed_by_mention_chapter.get(
+            str(row.get("chapter_num")), set()
+        )
+        row_paid_names = {
+            _norm_name(p.get("name"))
+            for p in row.get("perks") or []
+            if not p.get("free", False)
+        }
+        if row.get("kind") == "roll" and row_paid_names & deferred_names:
             continue
         curator_by_chapter.setdefault(row["chapter_num"], []).append((idx, row))
 
@@ -912,9 +1077,14 @@ def main() -> None:
             chapter_override = multi_overrides.get(chapter_num)
             if chapter_override is not None:
                 # Override beats curator: rebuild rows from override.
-                synthetic = _restructure_curator_rows(
-                    chapter_num, rows_raw, chapter_override,
-                )
+                if _override_needs_direct_rows(chapter_num, chapter_override):
+                    synthetic = _direct_override_rows(
+                        chapter_num, rows_raw, chapter_override, obtained_lookup,
+                    )
+                else:
+                    synthetic = _restructure_curator_rows(
+                        chapter_num, rows_raw, chapter_override,
+                    )
                 # Re-pack into (source_idx, row) tuples; source_idx points
                 # at the original curator row (kept stable for evidence /
                 # roll_key generation). Emit a unique roll_key per synthetic
@@ -987,16 +1157,6 @@ def main() -> None:
                         int(p["cost"]) for p in purchased_perks
                         if not p.get("free", False)
                     )
-                miss_estimate = (
-                    miss_cost_estimate(
-                        outstanding_by_chapter,
-                        chapter_num,
-                        constellation,
-                        available_cp,
-                    )
-                    if outcome == "miss"
-                    else None
-                )
                 ov_origin = row.get("_override_origin") if isinstance(row, dict) else None
                 if ov_origin is not None:
                     roll_key = f"curator:{source_idx:04d}.{ov_origin}"
@@ -1005,13 +1165,19 @@ def main() -> None:
 
                 slot = None
                 pred_slot = None
+                assignment = None
                 if row["kind"] != "trigger":
                     slot_idx = non_trigger_seq
                     non_trigger_seq += 1
                     if sched_inp is not None and slot_idx < len(sched_inp["slots"]):
                         slot = sched_inp["slots"][slot_idx]
+                    if sched and sched.feasible and slot_idx < len(sched.assignments):
+                        assignment = sched.assignments[slot_idx]
                     if slot is not None and slot.source == "predicted":
                         pred_slot = pred_slot_by_local.get(int(slot.word_position))
+                if row.get("_override_direct") and assignment is not None:
+                    available_cp = assignment.available_cp
+                    banked_after = assignment.banked_cp_after_roll
                 canonical_roll_number = (
                     pred_slot.get("roll_number") if pred_slot is not None
                     else (roll_number if row["kind"] == "trigger" else None)
@@ -1021,10 +1187,15 @@ def main() -> None:
                     if canonical_roll_number is not None else None
                 )
                 predicted_chapter_num = ev.get("chapter_num") if ev else None
+                owner_chapter_num = (
+                    row.get("_mention_chapter_num")
+                    if row.get("_mention_chapter_num") is not None
+                    else chapter_num
+                )
                 record = roll_base(
                     roll_key=roll_key,
                     roll_number=canonical_roll_number,
-                    chapter_num=chapter_num,
+                    chapter_num=owner_chapter_num,
                     predicted_chapter_num=predicted_chapter_num,
                     source="curator_rolls",
                     source_kind=source_kind,
@@ -1039,8 +1210,57 @@ def main() -> None:
                     chapter_word_start_global.get(chapter_num, 0) + word_position_local
                     if word_position_local is not None else None
                 )
+                policy = row.get("_display_position_policy")
+                if policy is None:
+                    policy = (
+                        "mention"
+                        if row.get("_mention_word_position") is not None
+                        else "mechanical"
+                    )
+                mention_word_position = row.get("_mention_word_position")
+                if policy == "mention" and mention_word_position is not None:
+                    display_chapter_num = owner_chapter_num
+                    display_word_position = int(mention_word_position)
+                    display_cum_word = (
+                        chapter_word_start_global.get(display_chapter_num, 0)
+                        + display_word_position
+                    )
+                elif policy == "section_start" and row["kind"] != "trigger":
+                    display_chapter_num = owner_chapter_num
+                    display_word_position = 0
+                    display_cum_word = chapter_word_start_global.get(display_chapter_num, 0)
+                else:
+                    display_chapter_num = chapter_num
+                    display_word_position = word_position_local
+                    display_cum_word = cum_word
+                miss_estimate = (
+                    miss_cost_estimate(
+                        outstanding_by_chapter,
+                        chapter_num,
+                        constellation,
+                        available_cp,
+                    )
+                    if outcome == "miss"
+                    else None
+                )
                 principal_name = paid_meta["name"] if paid_meta else None
                 record.update({
+                    "mechanical_chapter_num": chapter_num,
+                    "mechanical_word_position": word_position_local,
+                    "mechanical_cumulative_word_offset": (
+                        int(cum_word) if cum_word is not None else None
+                    ),
+                    "mention_chapter_num": owner_chapter_num,
+                    "mention_word_position": (
+                        int(mention_word_position)
+                        if mention_word_position is not None else None
+                    ),
+                    "display_position_policy": policy,
+                    "display_chapter_num": display_chapter_num,
+                    "display_word_position": display_word_position,
+                    "display_cumulative_word_offset": (
+                        int(display_cum_word) if display_cum_word is not None else None
+                    ),
                     "constellation": constellation,
                     "constellation_revealed": bool(row.get("constellation_revealed", False)),
                     "available_cp": available_cp,
@@ -1055,6 +1275,7 @@ def main() -> None:
                         purchased_perk_cost_total if outcome == "hit" else miss_estimate
                     ),
                     "miss_cost_estimate": miss_estimate,
+                    "narrative_evidence": row.get("_narrative_evidence"),
                     "raw": row.get("raw"),
                     "roll_sequence_in_chapter": seq,
                     "rolls_in_chapter": total,
@@ -1062,9 +1283,9 @@ def main() -> None:
                         "curator+override" if ov_origin is not None
                         else "curator"
                     ),
-                    "word_position": word_position_local,
+                    "word_position": display_word_position,
                     "cumulative_word_offset": (
-                        int(cum_word) if cum_word is not None else None
+                        int(display_cum_word) if display_cum_word is not None else None
                     ),
                 })
                 rolls.append(record)
@@ -1108,15 +1329,19 @@ def main() -> None:
             #   metadata if it exists (so manual data is preserved).
             raw_paid_list: list[dict] = []
             free_perks_payload: list[dict] = []
+            assigned_hit = None
             if (
                 outcome == "hit"
                 and assignment is not None
                 and assignment.hit_index is not None
                 and sched_inp is not None
             ):
-                hit = sched_inp["hits"][assignment.hit_index]
-                raw_paid_list = list(hit.paid_perks or ([hit.perk] if hit.perk else []))
-                free_perks_payload = hit.free_perks or []
+                assigned_hit = sched_inp["hits"][assignment.hit_index]
+                raw_paid_list = list(
+                    assigned_hit.paid_perks
+                    or ([assigned_hit.perk] if assigned_hit.perk else [])
+                )
+                free_perks_payload = assigned_hit.free_perks or []
             elif outcome == "hit":
                 row_paid = row.get("paid_perks") or []
                 if row_paid:
@@ -1168,7 +1393,7 @@ def main() -> None:
             else:
                 available_cp = int_or_none(row.get("available_cp"))
                 if available_cp is None:
-                    available_cp = int_or_none(row.get("cp_threshold"))
+                    available_cp = int_or_none(row.get("roll_trigger_cp_threshold"))
                 banked_cp_after = int_or_none(row.get("banked_cp_after_roll"))
             constellation = paid_meta["constellation"] if paid_meta else None
             miss_estimate = (
@@ -1181,10 +1406,15 @@ def main() -> None:
                 if outcome == "miss"
                 else None
             )
+            owner_chapter_num = (
+                assigned_hit.mention_chapter_num
+                if assigned_hit is not None and assigned_hit.mention_chapter_num
+                else chapter_num
+            )
             record = roll_base(
                 roll_key=f"interpolated:{source_idx:04d}",
                 roll_number=roll_number,
-                chapter_num=chapter_num,
+                chapter_num=owner_chapter_num,
                 predicted_chapter_num=ev.get("chapter_num") if ev else chapter_num,
                 source="roll_outcomes",
                 source_kind="interpolated",
@@ -1220,7 +1450,7 @@ def main() -> None:
                     )
                     record["chapter_attribution_disagreement"] = (
                         record["predicted_chapter_num"] is not None
-                        and str(record["predicted_chapter_num"]) != str(chapter_num)
+                        and str(record["predicted_chapter_num"]) != str(record["chapter_num"])
                     )
                     record["predicted_word_position_epub"] = int(pred_slot["word_position"])
                     record["predicted_char_offset_in_chapter"] = (
@@ -1250,7 +1480,46 @@ def main() -> None:
                 else:
                     word_position_local = int(row_wp)
                     cum_word = ch_start + word_position_local
+            policy = (
+                assigned_hit.display_position_policy
+                if assigned_hit is not None else "mechanical"
+            )
+            mention_word_position = (
+                assigned_hit.mention_word_position
+                if assigned_hit is not None else None
+            )
+            if policy == "mention" and mention_word_position is not None:
+                display_chapter_num = owner_chapter_num
+                display_word_position = int(mention_word_position)
+                display_cum_word = (
+                    chapter_word_start_global.get(display_chapter_num, 0)
+                    + display_word_position
+                )
+            elif policy == "section_start" and record["source_kind"] != "trigger":
+                display_chapter_num = owner_chapter_num
+                display_word_position = 0
+                display_cum_word = chapter_word_start_global.get(display_chapter_num, 0)
+            else:
+                display_chapter_num = chapter_num
+                display_word_position = word_position_local
+                display_cum_word = cum_word
             record.update({
+                "mechanical_chapter_num": chapter_num,
+                "mechanical_word_position": word_position_local,
+                "mechanical_cumulative_word_offset": (
+                    int(cum_word) if cum_word is not None else None
+                ),
+                "mention_chapter_num": owner_chapter_num,
+                "mention_word_position": (
+                    int(mention_word_position)
+                    if mention_word_position is not None else None
+                ),
+                "display_position_policy": policy,
+                "display_chapter_num": display_chapter_num,
+                "display_word_position": display_word_position,
+                "display_cumulative_word_offset": (
+                    int(display_cum_word) if display_cum_word is not None else None
+                ),
                 "constellation": constellation,
                 "constellation_revealed": False,
                 "available_cp": available_cp,
@@ -1265,23 +1534,44 @@ def main() -> None:
                     purchased_perk_cost_total if paid_meta else miss_estimate
                 ),
                 "miss_cost_estimate": miss_estimate,
+                "narrative_evidence": (
+                    assigned_hit.narrative_evidence
+                    if assigned_hit is not None else None
+                ),
                 "raw": None,
                 "roll_sequence_in_chapter": seq,
                 "rolls_in_chapter": total,
                 "slot_source": "solver" if assignment is not None else "interpolated",
-                "word_position": word_position_local,
-                "cumulative_word_offset": cum_word,
+                "word_position": display_word_position,
+                "cumulative_word_offset": display_cum_word,
             })
             rolls.append(record)
 
     # ---- apply overrides as a final pass ----
     overrides_applied = _apply_overrides(rolls, overrides_doc)
 
+    rolls_by_owner: dict[str, list[dict]] = {}
+    for roll in rolls:
+        rolls_by_owner.setdefault(str(roll["chapter_num"]), []).append(roll)
+    for owner_rolls in rolls_by_owner.values():
+        owner_rolls.sort(key=lambda r: (
+            0 if r.get("source_kind") == "trigger" else 1,
+            r.get("display_cumulative_word_offset")
+            if r.get("display_cumulative_word_offset") is not None
+            else 10**12,
+            r.get("source_row_index", 0),
+            r.get("roll_key", ""),
+        ))
+        total_owner_rolls = len(owner_rolls)
+        for seq, roll in enumerate(owner_rolls, start=1):
+            roll["roll_sequence_in_chapter"] = seq
+            roll["rolls_in_chapter"] = total_owner_rolls
+
     known_attempt_count_by_chapter: dict[str, int] = {}
     for roll in rolls:
         if roll.get("source_kind") == "trigger":
             continue
-        cn = str(roll.get("chapter_num"))
+        cn = str(roll.get("mechanical_chapter_num") or roll.get("chapter_num"))
         known_attempt_count_by_chapter[cn] = (
             known_attempt_count_by_chapter.get(cn, 0) + 1
         )

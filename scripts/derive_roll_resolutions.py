@@ -8,7 +8,7 @@ output record that captures:
   - Curator outcome fields (curator_outcome, curator_perk_name, …) looked up
     in rolls.json for ch 1-75; null for ch 76+.
   - banked_at_roll / banked_at_roll_source: curator value when available, else
-    the predicted rolls cp_threshold.
+    the predicted roll's roll_trigger_cp_threshold.
   - chapter_acquired_perks_in_order: all perks in obtained_perks.json for this
     chapter, in epub_sequence order.
   - outstanding_perks_with_cost_gt_banked: perks whose cost > banked_at_roll
@@ -376,8 +376,8 @@ def main() -> None:
             banked_at_roll: int | None = curator_banked_before
             banked_at_roll_source = "curator"
         else:
-            banked_at_roll = pred.get("cp_threshold")
-            banked_at_roll_source = "cp_threshold"
+            banked_at_roll = pred.get("roll_trigger_cp_threshold")
+            banked_at_roll_source = "roll_trigger_cp_threshold"
 
         # --- chapter acquired perks ---
         chapter_acquired = build_chapter_acquired_perks(chapter_num, obtained_by_chapter)

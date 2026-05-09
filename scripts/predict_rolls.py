@@ -363,7 +363,7 @@ def main() -> None:
     # Print a small summary
     by_regime = {1: 0, 2: 0, 3: 0}
     for p in predicted:
-        by_regime[p.regime] += 1
+        by_regime[p.cp_rule_regime] += 1
     print(f"wrote {OUT.relative_to(ROOT)}: {len(predicted)} predicted rolls")
     print(f"  by regime: {by_regime}")
     val = payload["_validation_chapters_1_75"]

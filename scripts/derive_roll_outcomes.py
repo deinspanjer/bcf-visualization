@@ -160,7 +160,8 @@ def _build_chapter_slots(
     Returns slots in word_position ascending order. Each slot is a dict
     with keys:
         chapter_num, word_position, source, outcome, perk,
-        regime (predicted only), cp_threshold (predicted only),
+        cp_rule_regime (predicted only),
+        roll_trigger_cp_threshold (predicted only),
         roll_number (predicted only)
     """
     n = len(predicted)
@@ -190,8 +191,8 @@ def _build_chapter_slots(
             "paid_perks": [],
             "free_perks": [],
             "roll_number": r.get("roll_number"),
-            "regime": r.get("regime"),
-            "cp_threshold": r.get("cp_threshold"),
+            "cp_rule_regime": r.get("cp_rule_regime"),
+            "roll_trigger_cp_threshold": r.get("roll_trigger_cp_threshold"),
         })
     for pos in synth_positions:
         slots.append({
@@ -203,8 +204,8 @@ def _build_chapter_slots(
             "paid_perks": [],
             "free_perks": [],
             "roll_number": None,
-            "regime": None,
-            "cp_threshold": None,
+            "cp_rule_regime": None,
+            "roll_trigger_cp_threshold": None,
         })
 
     slots.sort(key=lambda s: s["word_position"])
@@ -274,7 +275,7 @@ def _build_chapter_slots(
 
         available_cp = banked_x100 // 100
         slot["available_cp"] = available_cp
-        slot["regime"] = slot.get("regime") or current_regime
+        slot["cp_rule_regime"] = slot.get("cp_rule_regime") or current_regime
 
         if slot["outcome"] == "hit" and slot["perk"] is not None:
             paid_perks = slot.get("paid_perks") or [slot["perk"]]

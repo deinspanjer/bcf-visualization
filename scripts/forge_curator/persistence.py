@@ -181,6 +181,9 @@ class CurationPersistence:
                 "outcome": None,
                 "constellation": None,
                 "word_position": None,
+                "mention_chapter_num": None,
+                "mention_word_position": None,
+                "display_position_policy": None,
                 "narrative_evidence": None,
             })
         return rolls[index - 1]
@@ -253,6 +256,42 @@ class CurationPersistence:
             },
         )
         return updated
+
+    def mark_roll_deferred_to_chapter(
+        self,
+        chapter_num: str,
+        index: int,
+        mention_chapter_num: str,
+        *,
+        mention_word_position: int | None = None,
+        display_position_policy: str = "mechanical",
+    ) -> dict:
+        """Mark an index-aligned roll as narrated/listed in another chapter.
+
+        This is evidence-location metadata only. It deliberately leaves
+        outcome/perks/constellation untouched so hit/miss curation remains a
+        separate action.
+        """
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["mention_chapter_num"] = str(mention_chapter_num)
+        roll["mention_word_position"] = mention_word_position
+        roll["display_position_policy"] = display_position_policy
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "mark_roll_deferred_to_chapter",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "index": index,
+                "mention_chapter_num": str(mention_chapter_num),
+                "mention_word_position": mention_word_position,
+                "display_position_policy": display_position_policy,
+            },
+        )
+        return roll
 
     # ------------------------------------------------------------------
     # Action handlers — one per <space>X keybind.

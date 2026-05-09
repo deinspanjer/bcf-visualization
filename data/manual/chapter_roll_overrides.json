@@ -1,5 +1,5 @@
 {
-  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. When a chapter has an entry here, it FULLY determines the chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, narrative_evidence}. The legacy shape (each roll as a bare list of perk names) is still accepted and mapped to outcome='hit', and other fields default to null. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, narrative_evidence}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', or 'section_start'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "chapter_roll_overrides": {
     "65": {
       "rolls": [
@@ -94,14 +94,19 @@
           "narrative_evidence": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach."
         },
         {
-          "perks": [],
-          "outcome": "miss",
-          "constellation": null,
+          "perks": [
+            "Fashion"
+          ],
+          "outcome": "hit",
+          "constellation": "Clothing",
           "word_position": null,
-          "narrative_evidence": null
+          "mention_chapter_num": "2",
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "narrative_evidence": "Fashion is mechanically the second chapter 1 roll, but the author narrates/lists the acquisition in chapter 2."
         }
       ],
-      "narrative_evidence": "Ch 1: Both predicted rolls are misses. Workshop, Access Key, and Entrance Hall were granted at the trigger event (with Joe receiving his power), before any roll fires. Treat as acquired at word 0."
+      "narrative_evidence": "Ch 1: Workshop, Access Key, and Entrance Hall were granted at the trigger event (with Joe receiving his power), before any roll fires. The first predicted roll is the narrated miss. The second predicted roll fires at the end of chapter 1 but is narrated/listed in chapter 2 as Fashion."
     }
   }
 }

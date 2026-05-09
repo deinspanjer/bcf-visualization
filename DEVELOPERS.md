@@ -21,8 +21,9 @@ Canvas 2D, using:
 
 - `chapter_facts.json` for chapter state and scrubber integration.
 - `constellation_wireframes.json` for cluster and jump geometry.
-- `roll_facts.json` for curated roll order, hit/miss outcome, banked
-  CP, and grab-cost context.
+- `roll_facts.json` via `chapter_facts.json` for curated roll order,
+  hit/miss outcome, banked CP, deferred mention/display coordinates,
+  and grab-cost context.
 
 Keep it out of the default `/web/` experience until the planetarium
 layout direction is settled.
@@ -46,6 +47,7 @@ python3 scripts/extract_last_edited.py
 python3 scripts/find_roll_locations.py
 python3 scripts/find_text_backed_rolls.py
 python3 scripts/validate_roll_locations.py
+python3 scripts/derive_roll_resolutions.py
 python3 scripts/derive_roll_outcomes.py
 python3 scripts/derive_roll_facts.py
 python3 scripts/build_chapter_facts.py
@@ -55,6 +57,13 @@ python3 scripts/make_charts.py
 
 Each derived JSON file should validate against its schema before being
 written. Structural drift should fail loudly.
+
+Roll data flow is intentionally layered: `predicted_rolls.json` is the
+mechanical threshold-crossing schedule, `chapter_roll_overrides.json`
+is manual curation keyed by mechanical chapter, `roll_facts.json`
+resolves outcome/accounting/deferral/display fields, and
+`chapter_facts.json` is the runtime backbone. Fix disagreements in
+that derivation path, not in the web app or Forge Curator display code.
 
 ## Web app checks
 
@@ -127,8 +136,10 @@ as fallbacks; the new layer is additive.
 client wrapper, smoke test, and Windows setup scripts are in place.
 `/health` and `/version` work on a fresh checkout; `/extract` and
 `/classify_section` return 503 with the documented
-`*_model_not_loaded` body until trained checkpoints exist. Run
-`python3 -m pytest tests/` to exercise the scaffold without a GPU.
+`*_model_not_loaded` body until trained checkpoints exist. Use stdlib
+`unittest` for new verification. Focused test modules can be run with
+`python3 -m unittest <module>`, and the current unittest subset can be
+run with `python3 -m unittest discover tests '*unittest.py'`.
 For the operator workflow (Windows install, smoke test, what to do
 when a check fails), see the runbook below.
 

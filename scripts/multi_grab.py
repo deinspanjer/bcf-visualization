@@ -18,6 +18,9 @@ Override schema (current, per-roll metadata)::
               "outcome": "hit"|"miss",
               "constellation": "...",
               "word_position": int|null,
+              "mention_chapter_num": "N",
+              "mention_word_position": int|null,
+              "display_position_policy": "mention"|"mechanical"|"section_start",
               "narrative_evidence": "..."
             },
             ...
@@ -27,27 +30,12 @@ Override schema (current, per-roll metadata)::
       }
     }
 
-Legacy schema (still accepted; bare list is treated as a hit with no
-metadata)::
-
-    {
-      "chapter_roll_overrides": {
-        "<chapter_num>": {
-          "rolls": [
-            ["Perk A", "Perk B"],
-            ["Perk C"]
-          ],
-          "narrative_evidence": "..."
-        }
-      }
-    }
-
 When a chapter has an entry, the override FULLY determines the chapter's
-paid roll list (grouping AND order). Each inner array is one roll
-containing one or more perks (paid or free). Free perks not listed in
-any override roll for that chapter attach to the LAST roll (so total CP
-debit is preserved). Paid perks not listed in any override roll for
-that chapter raise an error — the override would silently drop them.
+paid roll list (grouping AND order). Each `rolls` object is one roll
+containing zero or more perks. Free perks not listed in any override
+roll for that chapter attach to the LAST roll (so total CP debit is
+preserved). Paid perks not listed in any override roll for that chapter
+raise an error — the override would silently drop them.
 
 Without an override entry, the chapter falls back to: each paid
 obtained_perks row is its own roll, in obtained_perks/epub_sequence
@@ -61,12 +49,12 @@ Public API:
   chapter_roll_overrides)`` — return per-chapter rolls in the
   ``roll_facts``-shaped ``{purchased_perks, purchased_perk_cost_total}``
   form (used by future consumers).
-* ``merge_paid_units(obtained_perks, overrides)`` — back-compat wrapper
-  that returns units in the legacy shape ``{chapter_num, paid,
+* ``merge_paid_units(obtained_perks, overrides)`` — return acquisition
+  units in the shape ``{chapter_num, paid,
   free_perks, epub_sequence, jump}`` consumed by ``predict_rolls.py``,
   ``derive_roll_outcomes.py`` and ``derive_roll_facts.py``.
 * ``unit_total_cost`` / ``unit_principal_cost`` — cost helpers for the
-  legacy unit shape.
+  unit shape.
 """
 
 from __future__ import annotations
@@ -79,33 +67,16 @@ _OVERRIDES_PATH = (
     Path(__file__).resolve().parent.parent
     / "data" / "manual" / "chapter_roll_overrides.json"
 )
-_LEGACY_OVERRIDES_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "data" / "manual" / "multi_grab_overrides.json"
-)
-
-
 def _normalise_roll_entry(entry) -> dict:
     """Coerce one roll-spec entry into the canonical dict shape.
 
-    Accepted inputs:
-      * ``["Perk A", "Perk B"]`` (legacy bare list) →
-        ``{"perks": [...], "outcome": "hit", ...}``
-      * ``{"perks": [...], "outcome": ..., ...}`` (canonical) → as-is.
-
     Returns dict with keys: ``perks`` (list[str]),
     ``outcome`` (str | None), ``constellation`` (str | None),
-    ``word_position`` (int | None),
+    ``word_position`` (int | None), ``mention_chapter_num`` (str | None),
+    ``mention_word_position`` (int | None),
+    ``display_position_policy`` (str | None),
     ``narrative_evidence`` (str | None).
     """
-    if isinstance(entry, list):
-        return {
-            "perks": list(entry),
-            "outcome": "hit",
-            "constellation": None,
-            "word_position": None,
-            "narrative_evidence": None,
-        }
     if isinstance(entry, dict):
         perks = entry.get("perks") or []
         return {
@@ -113,10 +84,16 @@ def _normalise_roll_entry(entry) -> dict:
             "outcome": entry.get("outcome"),
             "constellation": entry.get("constellation"),
             "word_position": entry.get("word_position"),
+            "mention_chapter_num": (
+                str(entry.get("mention_chapter_num"))
+                if entry.get("mention_chapter_num") is not None else None
+            ),
+            "mention_word_position": entry.get("mention_word_position"),
+            "display_position_policy": entry.get("display_position_policy"),
             "narrative_evidence": entry.get("narrative_evidence"),
         }
     raise ValueError(
-        f"chapter_roll_overrides roll entry must be list or dict, "
+        f"chapter_roll_overrides roll entry must be dict, "
         f"got {type(entry).__name__}: {entry!r}"
     )
 
@@ -136,16 +113,9 @@ def load_overrides(path: Path | None = None) -> dict:
           "narrative_evidence": str | None,
         }
 
-    The on-disk schema may use either the canonical per-roll dict or
-    the legacy bare-list-of-names form; both are normalised here.
-
-    Missing file -> empty dict. Falls back to the legacy filename
-    (``multi_grab_overrides.json``) only if the new file is absent and
-    the legacy one is present, to ease migrations.
+    Missing file -> empty dict.
     """
     p = path or _OVERRIDES_PATH
-    if not p.exists() and _LEGACY_OVERRIDES_PATH.exists():
-        p = _LEGACY_OVERRIDES_PATH
     if not p.exists():
         return {"chapter_roll_overrides": {}}
     doc = json.loads(p.read_text())
@@ -155,8 +125,20 @@ def load_overrides(path: Path | None = None) -> dict:
         if not isinstance(entry, dict):
             continue
         rolls = entry.get("rolls") or []
+        normalised_rolls = []
+        for r in rolls:
+            roll = _normalise_roll_entry(r)
+            if roll.get("mention_chapter_num") is None:
+                roll["mention_chapter_num"] = str(cn)
+            if roll.get("display_position_policy") is None:
+                roll["display_position_policy"] = (
+                    "mention"
+                    if roll.get("mention_word_position") is not None
+                    else "mechanical"
+                )
+            normalised_rolls.append(roll)
         normalised[str(cn)] = {
-            "rolls": [_normalise_roll_entry(r) for r in rolls],
+            "rolls": normalised_rolls,
             "narrative_evidence": entry.get("narrative_evidence", ""),
         }
     return {"chapter_roll_overrides": normalised}
@@ -191,8 +173,8 @@ def group_chapter_paid_perks(
     Behaviour:
 
     * If ``chapter_num`` is in ``chapter_roll_overrides``: the override
-      ``rolls`` array determines structure. Each inner array of names is
-      one roll. Names are looked up case-insensitively against the
+      ``rolls`` array determines structure. Each entry is one roll.
+      Names are looked up case-insensitively against the
       chapter's combined paid+free perks. Unknown names raise a
       ``ValueError``. Free perks not listed in any override roll attach
       to the LAST roll (so the chapter's total CP debit and free-perk
@@ -221,7 +203,7 @@ def group_chapter_paid_perks(
         used_free: set[str] = set()
         rolls: list[dict] = []
         for roll_idx, roll_entry in enumerate(rolls_spec):
-            name_list = roll_entry["perks"] if isinstance(roll_entry, dict) else roll_entry
+            name_list = roll_entry.get("perks") or []
             purchased: list[dict] = []
             for nm in name_list:
                 key = _norm(nm)
@@ -287,8 +269,8 @@ def group_chapter_paid_perks(
 
     # No override — default behaviour: each paid perk is its own roll;
     # free perks attach to most recent preceding paid roll. Use the
-    # caller's input order (which is epub_sequence ascending in the
-    # legacy call paths, with free perks following their parent).
+    # caller's input order (epub_sequence ascending, with free perks
+    # following their parent).
     combined: list[dict] = []
     seen: set[int] = set()
 
@@ -337,7 +319,7 @@ def merge_paid_units(
     obtained_perks: list[dict],
     overrides: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    """Group obtained perks into multi-grab units (legacy unit shape).
+    """Group obtained perks into roll acquisition units.
 
     ``obtained_perks`` should be ordered by ``epub_sequence`` ascending
     (free perks immediately following their parent paid perk).
@@ -367,6 +349,47 @@ def merge_paid_units(
             chapter_order.append(cn)
         by_chapter[cn].append(perk)
 
+    paid_global: dict[tuple[str, str], list[dict]] = {}
+    free_global: dict[tuple[str, str], list[dict]] = {}
+    for perk in obtained_perks:
+        key = (str(perk["chapter_num"]), _norm(_perk_name(perk)))
+        if not key[1]:
+            continue
+        target = free_global if perk.get("free", False) else paid_global
+        target.setdefault(key, []).append(perk)
+
+    consumed_paid: set[int] = set()
+    consumed_free: set[int] = set()
+
+    def _first_available(
+        lookup: dict[tuple[str, str], list[dict]],
+        chapter_num: str,
+        name_key: str,
+        consumed: set[int],
+    ) -> dict | None:
+        for candidate in lookup.get((chapter_num, name_key), []):
+            if id(candidate) not in consumed:
+                return candidate
+        return None
+
+    def _unit_common(roll_entry: dict, mechanical_chapter: str) -> dict:
+        mention_chapter = str(
+            roll_entry.get("mention_chapter_num") or mechanical_chapter
+        )
+        policy = roll_entry.get("display_position_policy")
+        if policy is None:
+            policy = (
+                "mention"
+                if roll_entry.get("mention_word_position") is not None
+                else "mechanical"
+            )
+        return {
+            "mention_chapter_num": mention_chapter,
+            "mention_word_position": roll_entry.get("mention_word_position"),
+            "display_position_policy": policy,
+            "narrative_evidence": roll_entry.get("narrative_evidence"),
+        }
+
     units: list[dict] = []
     curated_chapters = 0
     curated_multi_grabs = 0
@@ -387,24 +410,44 @@ def merge_paid_units(
             used_free: set[str] = set()
 
             for roll_idx, roll_entry in enumerate(override["rolls"]):
-                name_list = roll_entry["perks"] if isinstance(roll_entry, dict) else roll_entry
+                name_list = roll_entry.get("perks") or []
+                mention_cn = str(roll_entry.get("mention_chapter_num") or cn)
                 paid_in_roll: list[dict] = []
                 free_in_roll: list[dict] = []
                 for nm in name_list:
                     key = _norm(nm)
-                    if key in paid_lookup:
-                        paid_in_roll.append(paid_lookup[key])
+                    paid = (
+                        _first_available(paid_global, mention_cn, key, consumed_paid)
+                        or (
+                            paid_lookup.get(key)
+                            if id(paid_lookup.get(key)) not in consumed_paid
+                            else None
+                        )
+                    )
+                    free = (
+                        _first_available(free_global, mention_cn, key, consumed_free)
+                        or (
+                            free_lookup.get(key)
+                            if id(free_lookup.get(key)) not in consumed_free
+                            else None
+                        )
+                    )
+                    if paid is not None:
+                        paid_in_roll.append(paid)
+                        consumed_paid.add(id(paid))
                         used_paid.add(key)
-                    elif key in free_lookup:
-                        free_in_roll.append(free_lookup[key])
+                    elif free is not None:
+                        free_in_roll.append(free)
+                        consumed_free.add(id(free))
                         used_free.add(key)
                     else:
                         raise ValueError(
                             f"multi_grab override for ch {cn} roll #{roll_idx} "
                             f"references {nm!r} but no obtained perk in the "
-                            f"chapter has that name "
-                            f"(paid: {sorted(paid_lookup)}; "
-                            f"free: {sorted(free_lookup)})"
+                            f"mechanical or mention chapter has that name "
+                            f"(mechanical paid: {sorted(paid_lookup)}; "
+                            f"mechanical free: {sorted(free_lookup)}; "
+                            f"mention_chapter_num: {mention_cn})"
                         )
                 if not paid_in_roll and not free_in_roll:
                     continue
@@ -420,10 +463,14 @@ def merge_paid_units(
                     "free_perks": list(free_in_roll),
                     "epub_sequence": anchor.get("epub_sequence"),
                     "jump": anchor.get("jump"),
+                    "_override_roll_index": roll_idx,
+                    **_unit_common(roll_entry, cn),
                 })
 
             unassigned_paid = [
-                paid_lookup[k] for k in paid_lookup if k not in used_paid
+                paid_lookup[k]
+                for k in paid_lookup
+                if k not in used_paid and id(paid_lookup[k]) not in consumed_paid
             ]
             if unassigned_paid:
                 names = [_perk_name(p) for p in unassigned_paid]
@@ -433,15 +480,23 @@ def merge_paid_units(
                 )
 
             leftover_free = [
-                free_lookup[k] for k in free_lookup if k not in used_free
+                free_lookup[k]
+                for k in free_lookup
+                if k not in used_free and id(free_lookup[k]) not in consumed_free
             ]
             if leftover_free and units and units[-1]["chapter_num"] == cn:
                 units[-1]["free_perks"].extend(leftover_free)
+                for p in leftover_free:
+                    consumed_free.add(id(p))
         else:
             # Default: each paid perk is its own unit; free perks attach
             # to most recent preceding paid unit in this chapter.
             current: dict | None = None
             for perk in chapter_perks:
+                if perk.get("free", False) and id(perk) in consumed_free:
+                    continue
+                if not perk.get("free", False) and id(perk) in consumed_paid:
+                    continue
                 if perk.get("free", False):
                     if current is None:
                         raise ValueError(
@@ -450,6 +505,7 @@ def merge_paid_units(
                             f"preceding paid acquisition"
                         )
                     current["free_perks"].append(perk)
+                    consumed_free.add(id(perk))
                     continue
                 current = {
                     "chapter_num": cn,
@@ -457,7 +513,13 @@ def merge_paid_units(
                     "free_perks": [],
                     "epub_sequence": perk.get("epub_sequence"),
                     "jump": perk.get("jump"),
+                    "mention_chapter_num": cn,
+                    "mention_word_position": None,
+                    "display_position_policy": "mechanical",
+                    "narrative_evidence": None,
+                    "_override_roll_index": None,
                 }
+                consumed_paid.add(id(perk))
                 units.append(current)
 
     stats = {

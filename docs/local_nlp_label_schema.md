@@ -369,16 +369,20 @@ by `scripts/derive_roll_resolutions.py` and stored in
 prompt so the LLM (and the human annotator via the TUI) sees the same
 contextual evidence.
 
+This context is for annotation candidate selection. Canonical roll ownership,
+deferred narration, display coordinates, and CP accounting live in
+`data/derived/roll_facts.json` and flow into `chapter_facts.json`.
+
 Fields (omit any that are null):
 
 | Field | Type | Description |
 |---|---|---|
-| `chapter_num` | string | Chapter identifier per the simulator, e.g. `"16.1"` |
+| `chapter_num` | string | Mechanical predicted-roll chapter identifier, e.g. `"16.1"` |
 | `section_index` | int | Section index within chapter |
 | `predicted_char_offset` | int | Character offset of the predicted roll position |
 | `anchor_string` | string | Last ~15 words of prose immediately before the predicted roll position |
 | `banked_at_roll` | int | CP banked at the predicted roll moment |
-| `banked_at_roll_source` | string | `"curator"` or `"cp_threshold"` |
+| `banked_at_roll_source` | string | `"curator"` or `"roll_trigger_cp_threshold"` |
 | `curator_chapter_num` | string or null | Chapter identifier per the curator log (null when no curator entry exists, e.g. ch 76+) |
 | `chapter_attribution_disagreement` | bool | `true` when the curator's `chapter_num` differs from the simulator's `chapter_num` |
 | `curator_outcome` | string or null | `"HIT"`, `"MISS"`, or null (ch 76+ not yet curated) |
@@ -386,7 +390,7 @@ Fields (omit any that are null):
 | `curator_constellation` | string or null | Curator-validated constellation |
 | `curator_cost` | int or null | Curator-validated perk cost |
 | `curator_free_associated_perks` | list or null | Free perks acquired alongside this hit |
-| `chapter_acquired_perks_in_order` | list | All hits in this chapter per the **simulator's** chapter view, ordered |
+| `chapter_acquired_perks_in_order` | list | Acquired perks listed for this chapter in `obtained_perks.json`, ordered |
 | `outstanding_perks_with_cost_gt_banked` | list | Top 5 catalog perks with cost > banked CP, ascending by cost |
 | `constellations_known_by_joe` | list | Constellation names Joe currently knows at this point |
 

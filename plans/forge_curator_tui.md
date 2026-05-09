@@ -1,20 +1,20 @@
 # Forge Curator TUI
 
-**Status:** active design, pre-implementation
+**Status:** implemented MVP with active model cleanup
 **Purpose:** an interactive terminal tool for walking the story chapter-by-chapter, reading prose with live derived-data stats, and committing curated facts (rolls, multi-grabs, regime transitions, eligibility transitions, AN markings) that override or extend the simulator's automatic derivations.
 **Audience:** the project owner, doing forensic data curation.
 **Out of scope:** NLP labeling (the existing `nlp/` TUI handles that), web visualization, automated detection of facts the user must verify by eye.
 
 ## Why this exists
 
-The validator currently surfaces 7 infeasible chapters and 76 curator/solver divergences. Each represents a place where derived data conflicts with the source narrative. Resolving each one requires reading the prose, identifying the actual rolls (hits, misses, multi-grabs, free-perk attachments) at their actual word offsets, and committing that knowledge as a curated override. This is not amenable to scripted automation — it requires reading and judgment. The TUI exists to make that human pass efficient.
+The validator surfaces infeasible chapters and curator/solver divergences. Each represents a place where derived data conflicts with the source narrative. Resolving each one requires reading the prose, identifying the actual rolls (hits, misses, multi-grabs, deferred mentions, free-perk attachments) at their actual word offsets, and committing that knowledge as a curated override. This is not amenable to scripted automation — it requires reading and judgment. The TUI exists to make that human pass efficient.
 
 It also serves as a forward-looking tool: as the story continues to update, new chapters need the same forensic pass.
 
 ## Decisions encoded
 
-- **Q-A — Persistence: minimal number of files.** Three persistence files total:
-  - `data/manual/chapter_roll_overrides.json` (renamed from `multi_grab_overrides.json`, extended schema) — single source for all per-roll curated metadata: roll structure, hit/miss, constellation, perks, word_position, narrative_evidence.
+- **Q-A — Persistence: minimal number of files.** Manual curation is split by fact type:
+  - `data/manual/chapter_roll_overrides.json` — single source for per-roll curated metadata keyed by mechanical chapter: roll structure, hit/miss, constellation, perks, mechanical/mention/display fields, and narrative evidence.
   - `data/manual/regime_transitions.json` (existing) — regime change events. Pre-curated outside the TUI; no in-TUI editing action.
   - `data/manual/author_notes.json` (existing) — AN spans.
   - `data/manual/header_corrections.json` (new, only if needed for the header-correction action) — corrects markup/header word miscounts.
@@ -128,7 +128,7 @@ Each action labeled with its keybind. Vim-discoverable. Routed to the right pers
 
 ## Persistence — file shapes
 
-### `data/manual/chapter_roll_overrides.json` (renamed from `multi_grab_overrides.json`)
+### `data/manual/chapter_roll_overrides.json`
 
 Extends the existing schema. Each override roll can now carry full metadata:
 
@@ -143,6 +143,9 @@ Extends the existing schema. Each override roll can now carry full metadata:
           "outcome": "miss",
           "constellation": "Alchemy",
           "word_position": 31,
+          "mention_chapter_num": "97",
+          "mention_word_position": 31,
+          "display_position_policy": "mention",
           "narrative_evidence": "I quickly noted a failed connection to the largest mote in the Alchemy constellation"
         },
         {
@@ -150,6 +153,9 @@ Extends the existing schema. Each override roll can now carry full metadata:
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": 4544,
+          "mention_chapter_num": "97",
+          "mention_word_position": 4544,
+          "display_position_policy": "mention",
           "narrative_evidence": "secured two connections (PR multi-grab)"
         },
         {
@@ -166,7 +172,7 @@ Extends the existing schema. Each override roll can now carry full metadata:
 }
 ```
 
-Multi-grab is a degenerate case: one roll entry with multiple perks. Single-perk hits are one entry with one perk. Misses have empty `perks` array. All fields except `perks` and `outcome` are optional.
+Multi-grab is a degenerate case: one roll entry with multiple perks. Single-perk hits are one entry with one perk. Misses have empty `perks` array. `mention_chapter_num` defaults to the mechanical chapter. `display_position_policy` is `mention`, `mechanical`, or `section_start`; if omitted, derivation defaults to `mention` when `mention_word_position` exists and `mechanical` otherwise.
 
 ### `data/manual/regime_transitions.json` (existing)
 
@@ -204,7 +210,7 @@ Mid-section eligibility transitions are deferred until a real case requires them
 - chapter / section structure: `data/derived/chapter_sections.json`
 - prose: parsed EPUB sources (need to confirm exact path during scaffolding)
 - per-chapter facts: `data/derived/chapter_facts.json`
-- roll table (current chapter slice): `data/derived/roll_facts.json`
+- roll table: `data/derived/roll_facts.json`, filtered by owner, mechanical, or display chapter as needed by the view
 - predicted rolls: `data/derived/predicted_rolls.json`
 - perks (chapter slice): `data/derived/obtained_perks.json` + `data/derived/perks_catalog.json` for cost lookup
 - validation status per chapter: `data/derived/roll_validation.json`
@@ -212,10 +218,9 @@ Mid-section eligibility transitions are deferred until a real case requires them
 
 ## Re-derivation strategy
 
-- After every action: auto-save to canonical override file + journal entry, then per-chapter in-memory recompute (regime simulator + scheduler + roll-fact assembly for current chapter only). Stats panel refreshes.
-- Per-chapter recompute uses the *previous* chapter's `banked_cp_at_end` from `chapter_facts.json` as the starting state — that data is treated as checkpointed/stable. Downstream chapters are not re-touched on this action; they refresh when navigated to.
-- Full pipeline run (writing every derived JSON file from scratch) is still the canonical "publish" step. The TUI does not run it on every action; the user runs it explicitly when ready to update derived data on disk for the rest of the project.
-- On chapter change: previous chapter's curated state is flushed; next chapter's per-chapter recompute fires on load.
+- After every action: auto-save to the canonical manual file + journal entry. Derived JSON remains the source consumed by the stats panel and visualization.
+- Full pipeline regeneration is the canonical publish step. If derived facts disagree with a curation action, fix the derivation pipeline/schema and regenerate; do not patch the TUI to reconcile stale facts locally.
+- On chapter change: the TUI reloads the relevant derived and manual slices.
 
 Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(chapter_num, ...)` function plus the existing whole-pipeline entry point.
 
@@ -270,8 +275,7 @@ Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(ch
 
 **Modify:**
 - `scripts/predict_rolls.py`, `scripts/derive_roll_outcomes.py`, `scripts/derive_roll_facts.py`, `scripts/roll_scheduler.py` — extract per-chapter functions
-- `data/manual/multi_grab_overrides.json` → renamed to `data/manual/chapter_roll_overrides.json` with extended schema (carry over existing entries)
-- All consumers of `multi_grab_overrides.json` — update path and schema parsing
+- `data/manual/chapter_roll_overrides.json` schema parsing
 - `nlp/tui/` (existing labeling TUI) — extract reusable parts into `nlp/tui_common/`
 
 ## Verification
@@ -284,7 +288,7 @@ Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(ch
 ## Pre-TUI prerequisites
 
 - **Regime 1 → regime 2 transition: verified.** Clean chapter boundary at ch 91→92 (curator-log roll thresholds shift from 100 CP to 200 CP exactly at the start of ch 92). No mid-chapter transition; no `regime_transitions.json` entry needed for this transition. The current `regime_simulator.py` `>=92 → regime 2` hardcoding is correct. The regime-mark TUI action can stay dropped.
-- **Migrate `multi_grab_overrides.json` to `chapter_roll_overrides.json`** with the extended schema. Existing 3 entries (ch 65, 67, 97) carry over; convert their inline arrays into the richer per-roll metadata shape (per-roll `outcome`/`constellation`/`word_position`/`narrative_evidence` fields). Update all consumers. Done as part of Phase 0.
+- **Chapter roll override schema is current.** Entries use per-roll objects with `outcome`, `constellation`, `word_position`, `mention_chapter_num`, `mention_word_position`, `display_position_policy`, and `narrative_evidence`.
 
 ## Open questions
 

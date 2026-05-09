@@ -70,7 +70,7 @@ def test_predicted_rolls_match_global_cp_simulator_and_regimes() -> None:
     assert actual == expected
 
 
-def test_canonical_roll_facts_use_predicted_global_cp_slots() -> None:
+def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> None:
     predicted, chapter_starts = _simulated_rolls()
     predicted_by_roll_number = {
         int(roll["roll_number"]): roll
@@ -95,19 +95,26 @@ def test_canonical_roll_facts_use_predicted_global_cp_slots() -> None:
             roll_number = roll.get("roll_number")
             if roll_number is None:
                 continue
-            if (
-                roll.get("word_position") is None
-                or roll.get("cumulative_word_offset") is None
-            ):
+            if roll.get("mechanical_cumulative_word_offset") is None:
                 continue
             predicted_roll = predicted_by_roll_number[int(roll_number)]
-            chapter_num = str(roll["chapter_num"])
-            expected_global = int(predicted_roll["word_position"])
-            expected_local = expected_global - int(chapter_starts[chapter_num])
-
-            assert roll["cumulative_word_offset"] == expected_global, (
-                f"{source_name} {roll.get('roll_key')} global position"
+            mechanical_chapter_num = str(
+                roll.get("mechanical_chapter_num") or roll["chapter_num"]
             )
-            assert roll["word_position"] == expected_local, (
-                f"{source_name} {roll.get('roll_key')} chapter-local position"
+            expected_global = int(predicted_roll["word_position"])
+            expected_local = (
+                expected_global - int(chapter_starts[mechanical_chapter_num])
+            )
+
+            assert roll["mechanical_cumulative_word_offset"] == expected_global, (
+                f"{source_name} {roll.get('roll_key')} mechanical global position"
+            )
+            assert roll["mechanical_word_position"] == expected_local, (
+                f"{source_name} {roll.get('roll_key')} mechanical local position"
+            )
+            assert roll["cumulative_word_offset"] == roll["display_cumulative_word_offset"], (
+                f"{source_name} {roll.get('roll_key')} display alias global"
+            )
+            assert roll["word_position"] == roll["display_word_position"], (
+                f"{source_name} {roll.get('roll_key')} display alias local"
             )

@@ -17,12 +17,12 @@ Per-chapter constraint structure: each chapter has K predicted rolls (from `pred
 
 Free perks attach to their parent paid hit's slot and do not consume separate slots. Chapters 1–75 are curator-recorded; chapters 76+ are interpolated.
 
-A prior recon found 39 hit rows where `purchased_perk_cost > available_cp`. All 39 are interpolated rows; root cause is `derive_roll_facts.py` lines ~364, 396 stamping `available_cp = cp_threshold` (the regime trigger amount, 100 or 200) instead of true pre-debit CP. Step 1 fixes this.
+A prior recon found 39 hit rows where `purchased_perk_cost > available_cp`. All 39 were interpolated rows; the root cause was using the roll trigger amount (`roll_trigger_cp_threshold`, 100 or 200) as `available_cp` instead of true pre-debit CP. Step 1 fixed this.
 
 ## Decisions
 
 - Single-script extension of existing `derive_roll_facts.py` (and supporting scripts), no new pipeline binary.
-- Misses with unknown constellation stay `constellation: null`. Carousel renders fuzzy. Hand-curated overrides land in `data/manual/roll_overrides.json`.
+- Misses with unknown constellation stay `constellation: null`. Carousel renders fuzzy. Hand-curated per-chapter roll overrides land in `data/manual/chapter_roll_overrides.json`.
 - Carousel cue: per-roll word position.
 - Scheduler canonical pick: **latest-feasible per hit** — among feasible assignments, choose the one where each hit's slot index is the latest possible. Deterministic, reflects "spend when forced."
 - **Shared regime simulator module**: extract `scripts/regime_simulator.py` consumed by both `predict_rolls.py` and `derive_roll_outcomes.py`. Single source of truth, prevents future drift.
@@ -32,7 +32,7 @@ A prior recon found 39 hit rows where `purchased_perk_cost > available_cp`. All 
 
 ### Step 1 — Real `available_cp` on interpolated rolls
 
-**Problem:** `derive_roll_facts.py` interpolated path uses `cp_threshold` as `available_cp`, which is wrong.
+**Problem:** `derive_roll_facts.py` interpolated path used the trigger threshold as `available_cp`, which was wrong.
 
 **Tasks:**
 
@@ -110,7 +110,7 @@ Pipeline exits non-zero on any infeasible chapter.
 
 ### Step 4 — Hand-curation override hook
 
-Create empty stub `data/manual/roll_overrides.json`:
+Create or update `data/manual/roll_overrides.json`:
 
 ```json
 {
@@ -123,7 +123,7 @@ Create empty stub `data/manual/roll_overrides.json`:
 `roll_overrides` keys are `roll_key` strings; value patches an individual row.
 `chapter_overrides` keys are `chapter_num` strings; value either marks `skip_solver: true` and provides a hand-curated row list, or supplies a known-good banked_cp_in to override the simulator's value.
 
-`derive_roll_facts.py` applies overrides as a final pass before writing roll_facts.json and before validation. Overridden rows get `slot_source: "override"`.
+`derive_roll_facts.py` applies manual chapter-roll overrides while building roll_facts.json and before validation. Overridden rows carry override provenance in `slot_source` or source notes.
 
 ### Step 5 — Carousel schema confirmation
 
@@ -140,7 +140,7 @@ If `cumulative_word_offset` is missing, derive from `predicted_rolls.json` and a
 
 ## Files
 
-- New: `scripts/regime_simulator.py`, `scripts/roll_scheduler.py`, `data/manual/roll_overrides.json`
+- New: `scripts/regime_simulator.py`, `scripts/roll_scheduler.py`, `data/manual/chapter_roll_overrides.json`
 - Modified: `scripts/predict_rolls.py`, `scripts/derive_roll_outcomes.py`, `scripts/derive_roll_facts.py`
 - Re-derived: `data/derived/roll_facts.json` (and possibly `data/derived/roll_outcomes.json`)
 - New output: `data/derived/roll_validation.json`

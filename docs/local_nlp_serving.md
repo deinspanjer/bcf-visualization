@@ -324,10 +324,11 @@ extract_chapter_sections.py        (existing, EPUB → sections JSON)
 │
 build_perk_directory.py             (existing; gains an optional ML-link path)
 predict_rolls.py                    (unchanged)
-find_roll_locations.py              (becomes fallback only)
-find_text_backed_rolls.py           (becomes fallback only)
-validate_roll_locations.py          (unchanged; runs on either path's output)
-build_chapter_facts.py              (existing; reads new derived files)
+find_roll_locations.py              (regex evidence anchors)
+find_text_backed_rolls.py           (prediction-centered evidence windows)
+derive_roll_resolutions.py          (NLP candidate context)
+derive_roll_facts.py                (canonical roll-result stream)
+build_chapter_facts.py              (runtime backbone; consumes roll_facts)
 spot_check.py                       (existing; gains ML-vs-rule comparison)
 ```
 
@@ -429,9 +430,10 @@ The pipeline should remain functional if the FastAPI server is down.
 - `build_section_classifications.py --use-ml` falls back to rule-only
   output if `/classify_section` is unreachable, with a logged
   warning.
-- `build_chapter_facts.py` reads whichever of `roll_text_evidence.json`
-  or `extracted_events.json` is present. Both available → ML wins.
-  Only one available → use it. Neither → error.
+- Roll accounting remains canonical through `derive_roll_facts.py` and
+  `chapter_facts.json`. ML outputs may become additional evidence inputs,
+  but `build_chapter_facts.py` should not choose between competing roll
+  fact sources or repair roll accounting locally.
 
 ## Versioning and provenance
 

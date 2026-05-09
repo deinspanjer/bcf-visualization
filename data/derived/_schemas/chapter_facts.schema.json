@@ -150,6 +150,11 @@
       "additionalProperties": false,
       "required": [
         "roll_number", "section_index", "outcome", "constellation",
+        "mechanical_chapter_num", "mechanical_word_position",
+        "mechanical_cumulative_word_offset",
+        "mention_chapter_num", "mention_word_position",
+        "display_position_policy", "display_chapter_num",
+        "display_word_position", "display_cumulative_word_offset",
         "purchased_perk_id", "purchased_perks", "purchased_perk_cost_total",
         "purchased_perk_jump", "free_perks",
         "word_position", "cumulative_word_offset",
@@ -170,6 +175,36 @@
         },
         "outcome":                      { "enum": ["hit", "miss", "unknown"] },
         "constellation":                { "type": ["string", "null"] },
+        "mechanical_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mechanical_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "mechanical_cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "mention_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mention_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "display_position_policy": {
+          "enum": ["mention", "mechanical", "section_start"]
+        },
+        "display_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "display_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "display_cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
         "purchased_perk_id":            { "type": ["string", "null"] },
         "purchased_perks": {
           "type": "array",

@@ -305,8 +305,14 @@ scale with zoom level and pixel ratio.
 
 ### 4.5 Roll firing animation
 
-Driven by `predicted_rolls.json`. Each entry has
-`(chapter_num, word_position, roll_number)`.
+Driven by roll entries embedded in `chapter_facts.json`, which come
+from canonical `roll_facts.json`. Each roll has owner/listing
+`chapter_num`, mechanical predicted-slot coordinates, display
+coordinates, outcome, CP accounting, and purchased/free perk payloads.
+The underlying mechanical schedule lives in `predicted_rolls.json`
+with `(chapter_num, word_position, roll_number, cp_rule_regime,
+roll_trigger_cp_threshold)` and is used for diagnostics, not for
+runtime perk matching.
 
 When the user scrubs into a chapter that contains a predicted roll
 (or several), the roll animation queue plays. State machine per roll:
@@ -323,14 +329,13 @@ queued → camera_zoom_in → reach_extends → resolve(hit|miss) → camera_zoo
   jump's center (or toward the specific perk for a hit). This is
   the "Joe's reach extends" beat.
 - **resolve**:
-  - *Hit* (acquisition matched in `obtained_perks.json` for this
-    chapter and jump): the matched perk star flares, transitions
-    to its `paid` or `free` pulsing state. Optional small text
-    overlay: perk name. Reach line collapses into the star.
-  - *Miss* (no `obtained_perks` entry matches at this jump for
-    this chapter, or `predicted_rolls` indicates we couldn't
-    align): camera pans across the jump without highlighting any
-    specific star. Reach line fades out without landing.
+  - *Hit* (`roll_facts.outcome == "hit"`): the purchased perk star
+    flares, transitions to its `paid` or `free` pulsing state.
+    Optional small text overlay: perk name. Reach line collapses
+    into the star.
+  - *Miss* (`roll_facts.outcome == "miss"`): camera pans across the
+    relevant constellation when known; otherwise it uses a neutral
+    miss beat. Reach line fades out without landing.
 - **camera_zoom_out** (~400ms): FOV widens back to default;
   focal point may stay or revert to cluster center.
 
@@ -567,14 +572,13 @@ aesthetic but inverted for the dark canvas).
    discovery experience. Suggest loading at chapter 1 (or
    the user's last position via `localStorage`). Confirm.
 
-7. **Predicted roll vs actual acquisition matching.**
-   `predicted_rolls.json` gives ~665 predicted rolls;
-   `obtained_perks.json` gives 504 acquisitions. Need a clear
-   join rule: for each predicted roll in a chapter, is there an
-   acquisition? If yes → hit, animate to that perk. If no → miss,
-   pan past. Some chapters have more acquisitions than predicted
-   rolls (free bonuses); decide whether free bonuses fire their
-   own roll animation or appear silently.
+7. **Roll matching source.**
+   Resolved: do not join `predicted_rolls.json` to
+   `obtained_perks.json` in the visualization. Use
+   `chapter_facts.json` / `roll_facts.json`, where the derivation
+   pipeline has already resolved hit/miss, mechanical chapter,
+   narration chapter, display coordinates, multi-grabs, and free
+   siblings.
 
 8. **Sound.** Out of scope for v1 per design constraints, but the
    roll animation hooks (§4.5) leave space for it.

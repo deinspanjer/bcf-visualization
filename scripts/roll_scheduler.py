@@ -44,7 +44,7 @@ except ImportError:  # pragma: no cover - fallback for script-mode runs
 class SlotInput:
     """One predicted roll slot (chapter-local word_position)."""
     word_position: int
-    cp_threshold: int
+    roll_trigger_cp_threshold: int
     source: str = "predicted"   # "predicted" | "synthetic"
 
 
@@ -61,6 +61,10 @@ class HitInput:
     perk: dict | None = None    # opaque payload preserved by caller (principal)
     paid_perks: list[dict] = field(default_factory=list)
     free_perks: list[dict] = field(default_factory=list)
+    mention_chapter_num: str | None = None
+    mention_word_position: int | None = None
+    display_position_policy: str = "mechanical"
+    narrative_evidence: str | None = None
 
 
 @dataclass
@@ -68,7 +72,7 @@ class Assignment:
     """One slot's resolved state in the scheduler's chosen plan."""
     slot_index: int
     word_position: int
-    cp_threshold: int
+    roll_trigger_cp_threshold: int
     available_cp: int           # banked CP just BEFORE this slot
     banked_cp_after_roll: int   # banked CP just AFTER this slot
     outcome: str                # "hit" | "miss"
@@ -83,6 +87,8 @@ class ScheduleResult:
     ambiguity: int = 0          # count of distinct feasible assignments (cap 50)
     diagnostic: str = ""        # populated when not feasible
     explanation: str = ""
+    banked_cp_out: int | None = None
+    shadow_out: ShadowState | None = None
 
 
 def _walk_pre_debit_cp(
@@ -172,7 +178,7 @@ def schedule_chapter(
 
     if k == 0:
         # All misses. Walk to stamp pre-debit CP.
-        pre_debit, _, _ = _walk_pre_debit_cp(
+        pre_debit, banked_out, shadow_out = _walk_pre_debit_cp(
             slots, chapter_words, regime, banked_cp_in, state_in, {},
             segments=segments,
         )
@@ -180,7 +186,7 @@ def schedule_chapter(
             Assignment(
                 slot_index=i,
                 word_position=s.word_position,
-                cp_threshold=s.cp_threshold,
+                roll_trigger_cp_threshold=s.roll_trigger_cp_threshold,
                 available_cp=pre_debit[i],
                 banked_cp_after_roll=pre_debit[i],
                 outcome="miss",
@@ -191,6 +197,8 @@ def schedule_chapter(
         return ScheduleResult(
             feasible=True, assignments=assignments,
             slack=0, ambiguity=1,
+            banked_cp_out=banked_out,
+            shadow_out=shadow_out,
         )
 
     if k > n:
@@ -261,7 +269,7 @@ def schedule_chapter(
 
     # Materialize assignments.
     final_partial = {idx: hits[i].cost for i, idx in enumerate(best_solution)}
-    pre_debit, _, _ = _walk_pre_debit_cp(
+    pre_debit, banked_out, shadow_out = _walk_pre_debit_cp(
         slots, chapter_words, regime, banked_cp_in, state_in, final_partial,
         segments=segments,
     )
@@ -278,7 +286,7 @@ def schedule_chapter(
             assignments.append(Assignment(
                 slot_index=i,
                 word_position=s.word_position,
-                cp_threshold=s.cp_threshold,
+                roll_trigger_cp_threshold=s.roll_trigger_cp_threshold,
                 available_cp=avail,
                 banked_cp_after_roll=after,
                 outcome="hit",
@@ -289,7 +297,7 @@ def schedule_chapter(
             assignments.append(Assignment(
                 slot_index=i,
                 word_position=s.word_position,
-                cp_threshold=s.cp_threshold,
+                roll_trigger_cp_threshold=s.roll_trigger_cp_threshold,
                 available_cp=avail,
                 banked_cp_after_roll=avail,  # miss: no debit
                 outcome="miss",
@@ -301,6 +309,8 @@ def schedule_chapter(
         assignments=assignments,
         slack=slack,
         ambiguity=feasible_count[0],
+        banked_cp_out=banked_out,
+        shadow_out=shadow_out,
     )
 
 
