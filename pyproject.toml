@@ -2,7 +2,7 @@
 name = "bcf-nlp"
 version = "0.1.0"
 description = "Local NLP scaffolding for the BCF visualization pipeline."
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11,<3.15"
 
 # Core deps that the FastAPI server, training scripts, TUI, and bootstrap
 # loop all share. Torch is intentionally NOT here so the iMac side can
@@ -19,6 +19,7 @@ dependencies = [
   "uvicorn[standard]>=0.30",
   "pydantic>=2.8",
   "httpx>=0.27",
+  "jsonschema>=4.0",
   "textual>=0.79",
   "rich>=13.8",
   "regex>=2024.7",
@@ -28,7 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = ["torch>=2.4"]
-dev = ["ruff", "pytest"]
+dev = ["ruff", "pytest", "pytest-asyncio"]
 
 [[tool.uv.index]]
 name = "pytorch-cu124"
@@ -48,3 +49,6 @@ packages = ["nlp"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+  "slow: marks tests that exercise heavier model/training paths",
+]

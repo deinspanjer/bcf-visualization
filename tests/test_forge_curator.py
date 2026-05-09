@@ -25,6 +25,7 @@ from scripts.forge_curator.app import (
     GutterPanel,
     LEGEND,
     ROLL_EVIDENCE_MARKERS,
+    STATS_PANEL_WIDTH,
     STATS_CONTENT_WIDTH,
     _fmt_int,
     _wrap_title_for_stats,
@@ -71,14 +72,6 @@ def _run(coro):
 @pytest.fixture
 def app() -> ForgeCuratorApp:
     return ForgeCuratorApp(start_chapter="1")
-
-
-def _stats_content_width() -> int:
-    width_match = re.search(r"\bwidth:\s*(\d+)", StatsPanel.DEFAULT_CSS)
-    assert width_match is not None, StatsPanel.DEFAULT_CSS
-    padding_match = re.search(r"\bpadding:\s+\d+\s+(\d+)", StatsPanel.DEFAULT_CSS)
-    horizontal_padding = int(padding_match.group(1)) * 2 if padding_match else 0
-    return int(width_match.group(1)) - horizontal_padding
 
 
 def _plain_stats_lines(text: str) -> list[str]:
@@ -355,22 +348,26 @@ async def test_help_overlay_no_backslash_brackets() -> None:
 
 @pytest.mark.asyncio
 async def test_b3_no_double_vertical_separator() -> None:
-    """B3: ensure StatsPanel and prose container don't both have right borders."""
-    from scripts.forge_curator.app import StatsPanel
-    css = StatsPanel.DEFAULT_CSS
-    # The original code had `border-right: solid $accent;` — verify it's gone.
-    assert "border-right" not in css, (
-        "StatsPanel should not have a border-right (causes doubled separator):\n"
-        f"{css}"
-    )
+    """B3: primary columns meet cleanly without overlapping separators."""
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        gutter = app.query_one("#gutter", GutterPanel)
+        stats_scroll = app.query_one("#stats_scroll")
+        prose_scroll = app.query_one("#prose_scroll")
+
+        assert stats_scroll.region.right == prose_scroll.region.x
+        assert prose_scroll.region.right == gutter.region.x
 
 
 @pytest.mark.asyncio
 async def test_b4_stats_panel_fixed_width() -> None:
-    """B4: StatsPanel should have a fixed reasonable width."""
-    from scripts.forge_curator.app import StatsPanel
-    css = StatsPanel.DEFAULT_CSS
-    assert "width:" in css, f"expected fixed width in StatsPanel CSS:\n{css}"
+    """B4: StatsPanel keeps the canonical width in the live layout."""
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        stats = app.query_one("#stats", StatsPanel)
+        assert stats.region.width == STATS_PANEL_WIDTH
 
 
 @pytest.mark.asyncio
@@ -379,7 +376,6 @@ async def test_stats_panel_structured_status_rows_fit_content_width() -> None:
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         text = _stats_text(app)
-        content_width = _stats_content_width()
         protected_prefixes = (
             "  Model:",
             "  Section:",
@@ -397,7 +393,7 @@ async def test_stats_panel_structured_status_rows_fit_content_width() -> None:
         too_wide = [
             (len(line), line)
             for line in _plain_stats_lines(text)
-            if line.startswith(protected_prefixes) and len(line) > content_width
+            if line.startswith(protected_prefixes) and len(line) > STATS_CONTENT_WIDTH
         ]
         assert not too_wide
 

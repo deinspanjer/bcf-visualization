@@ -38,7 +38,7 @@ This repository is organized for quick exploration first, with deeper technical 
 ## Quick local run
 
 ```sh
-python3 -m http.server 8000
+.venv/bin/python -m http.server 8000
 # open http://localhost:8000/  (root redirects to /web/)
 ```
 

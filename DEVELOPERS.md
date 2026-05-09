@@ -30,29 +30,31 @@ layout direction is settled.
 
 ## Regenerate derived data
 
-Use a virtual environment when available. If not in a venv, use
-`python3`.
+Run project Python commands through the checked-out virtual environment:
+use `.venv/bin/python` for scripts and `.venv/bin/pytest` for tests.
+If `.venv` has not been created yet, create/sync it before running the
+pipeline.
 
 Typical full regeneration order:
 
 ```sh
-python3 scripts/parse_threadmarks.py
-python3 scripts/parse_rolls.py
-python3 scripts/parse_reference.py
-python3 scripts/extract_chapter_sections.py
-python3 scripts/build_section_classifications.py
-python3 scripts/build_perk_directory.py
-python3 scripts/predict_rolls.py
-python3 scripts/extract_last_edited.py
-python3 scripts/find_roll_locations.py
-python3 scripts/find_text_backed_rolls.py
-python3 scripts/validate_roll_locations.py
-python3 scripts/derive_roll_resolutions.py
-python3 scripts/derive_roll_outcomes.py
-python3 scripts/derive_roll_facts.py
-python3 scripts/build_chapter_facts.py
-python3 scripts/spot_check.py
-python3 scripts/make_charts.py
+.venv/bin/python scripts/parse_threadmarks.py
+.venv/bin/python scripts/parse_rolls.py
+.venv/bin/python scripts/parse_reference.py
+.venv/bin/python scripts/extract_chapter_sections.py
+.venv/bin/python scripts/build_section_classifications.py
+.venv/bin/python scripts/build_perk_directory.py
+.venv/bin/python scripts/predict_rolls.py
+.venv/bin/python scripts/extract_last_edited.py
+.venv/bin/python scripts/find_roll_locations.py
+.venv/bin/python scripts/find_text_backed_rolls.py
+.venv/bin/python scripts/validate_roll_locations.py
+.venv/bin/python scripts/derive_roll_resolutions.py
+.venv/bin/python scripts/derive_roll_outcomes.py
+.venv/bin/python scripts/derive_roll_facts.py
+.venv/bin/python scripts/build_chapter_facts.py
+.venv/bin/python scripts/spot_check.py
+.venv/bin/python scripts/make_charts.py
 ```
 
 Each derived JSON file should validate against its schema before being
@@ -82,7 +84,7 @@ git diff --check -- web/index.html web/app.js web/style.css
 Serve locally with:
 
 ```sh
-python3 -m http.server 8001
+.venv/bin/python -m http.server 8001
 ```
 
 Then open <http://127.0.0.1:8001/web/>.
@@ -136,10 +138,9 @@ as fallbacks; the new layer is additive.
 client wrapper, smoke test, and Windows setup scripts are in place.
 `/health` and `/version` work on a fresh checkout; `/extract` and
 `/classify_section` return 503 with the documented
-`*_model_not_loaded` body until trained checkpoints exist. Use stdlib
-`unittest` for new verification. Focused test modules can be run with
-`python3 -m unittest <module>`, and the current unittest subset can be
-run with `python3 -m unittest discover tests '*unittest.py'`.
+`*_model_not_loaded` body until trained checkpoints exist. Use pytest
+for new verification. Run the full suite with `.venv/bin/pytest`, or a
+focused module with `.venv/bin/pytest tests/<module>.py`.
 For the operator workflow (Windows install, smoke test, what to do
 when a check fails), see the runbook below.
 

@@ -7,6 +7,7 @@ On the GPU box with torch: runs one epoch, checks artifacts exist.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,6 +16,11 @@ import pytest
 
 # Skip the whole module at collection time if torch is not available.
 torch = pytest.importorskip("torch", reason="torch not installed")
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("BCF_RUN_TRAIN_SMOKE") != "1",
+    reason="training smoke tests download and train a backbone; set BCF_RUN_TRAIN_SMOKE=1",
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TINY_SPANS = FIXTURES / "tiny_spans.jsonl"
@@ -40,7 +46,8 @@ def test_train_span_smoke(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     result = _run(
         [
-            str(REPO_ROOT / "nlp" / "train_span.py"),
+            "-m",
+            "nlp.train_span",
             "--train", str(TINY_SPANS),
             "--eval", str(TINY_SPANS),
             "--version", "vtest",
@@ -67,7 +74,8 @@ def test_train_section_smoke(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     result = _run(
         [
-            str(REPO_ROOT / "nlp" / "train_section.py"),
+            "-m",
+            "nlp.train_section",
             "--train", str(TINY_SECTIONS),
             "--eval", str(TINY_SECTIONS),
             "--version", "vtest",

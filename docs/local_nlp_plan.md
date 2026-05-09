@@ -209,12 +209,12 @@ uv run nlp/serve.py &              # span + section model on :8000
 .\run-llama-server.bat &           # llama.cpp on :11434
 
 # on iMac (existing flow + new step)
-python3 scripts/extract_chapter_sections.py
-python3 scripts/build_section_classifications.py   # uses /classify
-python3 scripts/extract_chapter_events.py          # NEW, uses /extract
-python3 scripts/extract_chapter_dates.py           # NEW, uses /extract
-python3 scripts/build_chapter_facts.py             # consumes new derived
-python3 scripts/spot_check.py
+.venv/bin/python scripts/extract_chapter_sections.py
+.venv/bin/python scripts/build_section_classifications.py   # uses /classify
+.venv/bin/python scripts/extract_chapter_events.py          # NEW, uses /extract
+.venv/bin/python scripts/extract_chapter_dates.py           # NEW, uses /extract
+.venv/bin/python scripts/build_chapter_facts.py             # consumes new derived
+.venv/bin/python scripts/spot_check.py
 ```
 
 The visualization picks up new tracks (in-world dates, Joe-on-screen

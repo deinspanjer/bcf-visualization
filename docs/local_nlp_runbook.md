@@ -75,9 +75,9 @@ section models. That is correct for Phase 0.
 
 ```sh
 # from the iMac, with the repo cloned and requirements installed
-pip install -r requirements.txt    # one-time
+.venv/bin/python -m pip install -r requirements.txt    # one-time
 
-python3 scripts/smoke_test_nlp.py \
+.venv/bin/python scripts/smoke_test_nlp.py \
     --nlp-url   http://<windows-ip>:8000 \
     --llama-url http://<windows-ip>:11434
 ```
@@ -87,7 +87,7 @@ Or set the env vars once and rely on defaults:
 ```sh
 export BCF_NLP_URL=http://<windows-ip>:8000
 export BCF_LLAMACPP_URL=http://<windows-ip>:11434
-python3 scripts/smoke_test_nlp.py
+.venv/bin/python scripts/smoke_test_nlp.py
 ```
 
 Expected output:
@@ -105,11 +105,13 @@ Any FAIL line prints a hint pointing at the most common cause.
 ## Python tests (either box)
 
 ```sh
-python3 -m unittest discover tests '*unittest.py'
+.venv/bin/pytest
 ```
 
-New verification should use stdlib `unittest`. The focused unittest
-subset does not require torch, transformers, or a GPU.
+New verification should use pytest. Focused modules can be run with
+`.venv/bin/pytest tests/<module>.py`; most tests do not require torch,
+transformers, or a GPU, and dependency-heavy tests skip when their
+optional packages are unavailable.
 
 ## If something fails
 
