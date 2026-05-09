@@ -114,7 +114,16 @@ class PassageView(BasePassageView):
                 event.stop()
                 return
 
-        # 3) `*` — search for word under cursor as regex 1.
+        # 3) `z` / `x` / `c` select the active regex slot for n/N.
+        if ch in ("z", "x", "c"):
+            handler = getattr(app, "_handle_regex_slot_hotkey", None)
+            if handler is not None:
+                handler(ch)
+                event.prevent_default()
+                event.stop()
+                return
+
+        # 4) `*` — search for word under cursor as the dedicated star regex.
         if ch == "*":
             handler = getattr(app, "_handle_star_search", None)
             if handler is not None:
@@ -123,7 +132,7 @@ class PassageView(BasePassageView):
                 event.stop()
                 return
 
-        # 4) `n` / `N` — next / prev regex 1 match.
+        # 5) `n` / `N` — next / prev active regex match.
         if ch in ("n", "N"):
             handler = getattr(app, "_handle_n_search", None)
             if handler is not None:
@@ -132,7 +141,7 @@ class PassageView(BasePassageView):
                 event.stop()
                 return
 
-        # 5) Space alone arms the action leader chord (overrides the base
+        # 6) Space alone arms the action leader chord (overrides the base
         #    PassageView's space=toggle_visual binding for forge_curator).
         if ch == " ":
             app._pending_space_chord = True
@@ -173,6 +182,7 @@ GLYPH_STYLES: dict[str, str] = {
     "1": "bold yellow",
     "2": "bold cyan",
     "3": "bold magenta",
+    "4": "bold white",
 }
 
 LEGEND = [
@@ -181,9 +191,10 @@ LEGEND = [
     ("H", "hit (curated/derived)", GLYPH_STYLES["H"]),
     ("M", "miss (curated/derived)", GLYPH_STYLES["M"]),
     ("A", "author note span", GLYPH_STYLES["A"]),
-    ("1", "regex 1 (n/N, *)", GLYPH_STYLES["1"]),
+    ("1", "regex 1 (z, n/N)", GLYPH_STYLES["1"]),
     ("2", "regex 2", GLYPH_STYLES["2"]),
     ("3", "regex 3", GLYPH_STYLES["3"]),
+    ("4", "regex *", GLYPH_STYLES["4"]),
 ]
 
 ROLL_EVIDENCE_MARKERS = [
@@ -203,6 +214,7 @@ _GLYPH_PRIORITY = {
     "1": 5,
     "2": 5,
     "3": 5,
+    "4": 5,
 }
 
 
@@ -490,8 +502,9 @@ class ActionsPanel(Static):
             "  ][ []  next/prev section\n"
             "  ]r [r  next/prev predicted roll\n"
             "  ]R [R  next/prev curated quote\n"
-            "  n N    regex 1 n/N\n"
-            "  *      seed regex 1\n"
+            "  z/x/c  active regex 1/2/3\n"
+            "  n N    active regex next/prev\n"
+            "  *      seed/select regex *\n"
             "  ]2 [2  regex 2\n"
             "  ]3 [3  regex 3\n\n"
             "  u  undo last action\n"
@@ -516,20 +529,28 @@ class RegexBar(Horizontal):
         width: 1fr;
         margin: 0 1;
     }
+    RegexBar > Input.active {
+        text-style: bold;
+    }
     RegexBar Static.label {
         height: 1;
         width: auto;
         margin: 0 1;
     }
+    RegexBar Static.label.active {
+        text-style: bold;
+    }
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("/regex1:", classes="label")
-        yield Input(id="regex_1", placeholder="(none)")
-        yield Static("/regex2:", classes="label")
-        yield Input(id="regex_2", placeholder="(none)")
-        yield Static("/regex3:", classes="label")
-        yield Input(id="regex_3", placeholder="(none)")
+        yield Static("regex 1:", id="regex_label_1", classes="label")
+        yield Input(id="regex_1", placeholder="(none)", compact=True)
+        yield Static("regex 2:", id="regex_label_2", classes="label")
+        yield Input(id="regex_2", placeholder="(none)", compact=True)
+        yield Static("regex 3:", id="regex_label_3", classes="label")
+        yield Input(id="regex_3", placeholder="(none)", compact=True)
+        yield Static("regex *:", id="regex_label_4", classes="label")
+        yield Input(id="regex_4", placeholder="(none)", compact=True)
 
 
 # ---------- help overlay ----------------------------------------------------
@@ -595,15 +616,16 @@ class HelpScreen(ModalScreen):
             "  ][ []   next/prev section\n"
             "  ]r [r   next/prev predicted roll\n"
             "  ]R [R   next/prev curated narrator-quote roll\n"
-            "  n / N   next/prev regex 1 match\n"
-            "  *       seed regex 1 with word under cursor\n"
+            "  z/x/c   select regex 1/2/3 for n/N\n"
+            "  n / N   next/prev active regex match\n"
+            "  *       seed/select regex * with word under cursor\n"
             "  ]2 [2   regex 2 matches\n"
             "  ]3 [3   regex 3 matches\n"
         )
         body.append("\nRegex bar\n", style="bold")
         body.append(
             "  /     focus regex 1\n"
-            "  Tab   cycle regex 1 -> 2 -> 3\n"
+            "  Tab   cycle regex 1 -> 2 -> 3 -> *\n"
             "  Enter apply regex\n"
         )
         body.append(
@@ -956,6 +978,7 @@ class ForgeCuratorApp(App):
         self._pending_chord: str | None = None
         # Tracker for <space>X leader chord state.
         self._pending_space_chord: bool = False
+        self.active_regex_slot: int = 0
     # ----- compose -----
 
     def compose(self) -> ComposeResult:
@@ -1038,6 +1061,23 @@ class ForgeCuratorApp(App):
             self._cursor_chapter_proportion(),
             gutter_height,
         )
+        self._refresh_regex_bar()
+
+    def _refresh_regex_bar(self) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        for idx, hits in enumerate(cs.regex_hits[:4], start=1):
+            try:
+                inp = self.query_one(f"#regex_{idx}", Input)
+                label = self.query_one(f"#regex_label_{idx}", Static)
+            except Exception:
+                continue
+            if not inp.has_focus:
+                inp.value = hits.pattern
+            active = idx - 1 == self.active_regex_slot
+            inp.set_class(active, "active")
+            label.set_class(active, "active")
 
     def _compute_prose_spans(self) -> list[dict]:
         """Inline highlight spans for the prose view.
@@ -1759,6 +1799,18 @@ class ForgeCuratorApp(App):
         self._pending_chord = None
         return self._handle_chord(prefix, ch)
 
+    def _set_active_regex_slot(self, slot: int) -> None:
+        if not (0 <= slot < 4):
+            return
+        self.active_regex_slot = slot
+        self._refresh_regex_bar()
+
+    def _handle_regex_slot_hotkey(self, ch: str) -> None:
+        slots = {"z": 0, "x": 1, "c": 2}
+        slot = slots.get(ch)
+        if slot is not None:
+            self._set_active_regex_slot(slot)
+
     # ----- space-leader chord (Phase 2 actions) ---------------------------
 
     def _handle_space_chord(self, ch: str | None) -> None:
@@ -2118,15 +2170,16 @@ class ForgeCuratorApp(App):
         if not m:
             return
         pattern = rf"\b{re.escape(m.group(0))}\b"
-        inp = self.query_one("#regex_1", Input)
+        self._set_active_regex_slot(3)
+        inp = self.query_one("#regex_4", Input)
         inp.value = pattern
-        self.state.set_regex(0, pattern)
+        self.state.set_regex(3, pattern)
         # Jump to the next match after cursor.
-        self._jump_regex(0, forward=True)
+        self._jump_regex(3, forward=True)
         self.refresh_all_panels()
 
     def _handle_n_search(self, *, forward: bool) -> None:
-        self._jump_regex(0, forward=forward)
+        self._jump_regex(self.active_regex_slot, forward=forward)
 
     # ----- jump navigation -----
 
@@ -2207,7 +2260,7 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return
-        if not (0 <= slot_idx < 3):
+        if not (0 <= slot_idx < 4):
             return
         hits = cs.regex_hits[slot_idx].word_indices
         if not hits:
@@ -2247,10 +2300,11 @@ class ForgeCuratorApp(App):
     @on(Input.Submitted)
     def _on_regex_submit(self, event: Input.Submitted) -> None:
         slot_id = event.input.id or ""
-        m = re.match(r"regex_([123])", slot_id)
+        m = re.match(r"regex_([1234])", slot_id)
         if not m:
             return
         slot = int(m.group(1)) - 1
+        self._set_active_regex_slot(slot)
         self.state.set_regex(slot, event.input.value)
         self.refresh_all_panels()
         prose = self.query_one("#prose", PassageView)

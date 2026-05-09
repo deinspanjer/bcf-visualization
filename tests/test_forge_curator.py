@@ -13,6 +13,7 @@ import re
 
 import pytest
 from textual.css.query import NoMatches
+from textual.widgets import Input
 
 # Import here so the rest of the suite still loads even if textual is
 # unavailable.
@@ -300,8 +301,8 @@ async def test_keybind_redesign_section_chord() -> None:
 
 
 @pytest.mark.asyncio
-async def test_keybind_redesign_star_seeds_regex1() -> None:
-    """* should seed regex 1 with the word under the cursor."""
+async def test_keybind_redesign_star_seeds_star_regex() -> None:
+    """* should seed the dedicated star regex with the word under the cursor."""
     app = ForgeCuratorApp(start_chapter="1")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
@@ -310,12 +311,12 @@ async def test_keybind_redesign_star_seeds_regex1() -> None:
         await pilot.pause()
         cs = app.state.chapter
         assert cs is not None
-        assert cs.regex_hits[0].pattern, (
-            "regex 1 should be seeded after *; pattern empty"
+        assert cs.regex_hits[3].pattern, (
+            "regex * should be seeded after *; pattern empty"
         )
         # The pattern should look like \b<word>\b
-        assert cs.regex_hits[0].pattern.startswith("\\b"), (
-            f"unexpected regex 1 pattern: {cs.regex_hits[0].pattern!r}"
+        assert cs.regex_hits[3].pattern.startswith("\\b"), (
+            f"unexpected regex * pattern: {cs.regex_hits[3].pattern!r}"
         )
 
 
@@ -429,6 +430,55 @@ async def test_stats_panel_scrolls_and_bottom_chrome_is_single_regex_row() -> No
         assert regex_bar.size.height == 1
         with pytest.raises(NoMatches):
             app.query_one("#status")
+
+
+@pytest.mark.asyncio
+async def test_regex_bar_has_four_compact_unprefixed_fields() -> None:
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        regex_bar = app.query_one("#regex_bar", RegexBar)
+        labels = [str(label.render()) for label in regex_bar.query("Static.label")]
+        assert labels == ["regex 1:", "regex 2:", "regex 3:", "regex *:"]
+        for slot in range(1, 5):
+            inp = app.query_one(f"#regex_{slot}", Input)
+            assert inp.compact is True
+            assert inp.size.height == 1
+
+
+@pytest.mark.asyncio
+async def test_zxc_star_select_active_regex_and_n_uses_it() -> None:
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        cs = app.state.chapter
+        assert cs is not None
+
+        app.state.set_regex(0, r"\bcurrent\b")
+        app.state.set_regex(1, r"\bglobal\b")
+        app.state.set_regex(2, r"\bcircumstances\b")
+        app.refresh_all_panels()
+
+        await pilot.press("x")
+        assert app.active_regex_slot == 1
+        assert app.query_one("#regex_2", Input).has_class("active")
+        await pilot.press("n")
+        assert cs.cursor_word_index == cs.regex_hits[1].word_indices[0]
+
+        await pilot.press("c")
+        assert app.active_regex_slot == 2
+        assert app.query_one("#regex_3", Input).has_class("active")
+        await pilot.press("n")
+        assert cs.cursor_word_index == cs.regex_hits[2].word_indices[0]
+
+        await pilot.press("z")
+        assert app.active_regex_slot == 0
+        assert app.query_one("#regex_1", Input).has_class("active")
+
+        await pilot.press("*")
+        assert app.active_regex_slot == 3
+        assert app.query_one("#regex_4", Input).has_class("active")
+        assert cs.regex_hits[3].pattern.startswith("\\b")
 
 
 def test_legend_no_ambiguous_glyph() -> None:

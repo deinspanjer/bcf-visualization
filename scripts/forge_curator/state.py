@@ -29,7 +29,9 @@ class ChapterState:
     prose: ChapterProse
     cursor_char: int = 0
     """Current cursor position as a char offset into ``prose.text``."""
-    regex_hits: list[RegexHits] = field(default_factory=lambda: [RegexHits(), RegexHits(), RegexHits()])
+    regex_hits: list[RegexHits] = field(
+        default_factory=lambda: [RegexHits(), RegexHits(), RegexHits(), RegexHits()]
+    )
 
     @property
     def cursor_word_index(self) -> int:
@@ -123,7 +125,7 @@ class ForgeCuratorState:
     # --- regex ---
 
     def set_regex(self, slot: int, pattern: str) -> RegexHits:
-        if self.chapter is None or not (0 <= slot < 3):
+        if self.chapter is None or not (0 <= slot < 4):
             return RegexHits(pattern=pattern)
         hits = RegexHits(pattern=pattern)
         if not pattern:
