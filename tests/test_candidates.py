@@ -161,8 +161,8 @@ def _simple_fixture(tmp_path: Path) -> Path:
         },
     ]
 
-    # roll_resolutions.json drives Source 1; predicted_rolls.json is kept for
-    # backward compat but is no longer read by _iter_event_focused.
+    # roll_resolutions.json drives Source 1; predicted_rolls.json is present
+    # because the derived directory fixture mirrors the real data bundle.
     roll_resolution_entries = [
         {
             "roll_number": 1,
@@ -236,9 +236,27 @@ def _simple_fixture(tmp_path: Path) -> Path:
         },
     ]
     rolls = [
-        {"roll_number": 1, "word_position": 100, "chapter_num": "1", "regime": 1, "cp_threshold": 100},
-        {"roll_number": 2, "word_position": 200, "chapter_num": "2", "regime": 1, "cp_threshold": 100},
-        {"roll_number": 3, "word_position": 300, "chapter_num": "1", "regime": 1, "cp_threshold": 100},
+        {
+            "roll_number": 1,
+            "word_position": 100,
+            "chapter_num": "1",
+            "cp_rule_regime": 1,
+            "roll_trigger_cp_threshold": 100,
+        },
+        {
+            "roll_number": 2,
+            "word_position": 200,
+            "chapter_num": "2",
+            "cp_rule_regime": 1,
+            "roll_trigger_cp_threshold": 100,
+        },
+        {
+            "roll_number": 3,
+            "word_position": 300,
+            "chapter_num": "1",
+            "cp_rule_regime": 1,
+            "roll_trigger_cp_threshold": 100,
+        },
     ]
 
     locations = [

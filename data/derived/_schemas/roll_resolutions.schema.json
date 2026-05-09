@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/roll_resolutions.schema.json",
+  "title": "Roll Resolutions",
+  "description": "NLP/curation context keyed to predicted roll slots. This schema pins the top-level web contract while allowing per-roll context fields to evolve under the contract version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_from", "rolls"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "generated_from": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "rolls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["roll_number", "chapter_num"],
+        "properties": {
+          "roll_number": { "type": "integer", "minimum": 1 },
+          "chapter_num": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+        }
+      }
+    }
+  }
+}

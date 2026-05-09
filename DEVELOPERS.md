@@ -7,7 +7,8 @@ The project is intentionally static:
 - `data/raw/` contains local source material such as MHT exports,
   spreadsheets, and optional EPUBs.
 - `data/manual/` contains curated inputs and overrides.
-- `data/derived/` contains committed JSON outputs and matching schemas.
+- `data/derived/` contains committed JSON outputs, matching schemas, and
+  the Phase 1 runtime data-package manifest.
 - `scripts/` contains parser, enrichment, validation, and chart scripts.
 - `web/` contains the dependency-free visualization.
 
@@ -21,40 +22,101 @@ Canvas 2D, using:
 
 - `chapter_facts.json` for chapter state and scrubber integration.
 - `constellation_wireframes.json` for cluster and jump geometry.
-- `roll_facts.json` for curated roll order, hit/miss outcome, banked
-  CP, and grab-cost context.
+- `roll_facts.json` via `chapter_facts.json` for curated roll order,
+  hit/miss outcome, banked CP, deferred mention/display coordinates,
+  and grab-cost context.
 
 Keep it out of the default `/web/` experience until the planetarium
 layout direction is settled.
 
 ## Regenerate derived data
 
-Use a virtual environment when available. If not in a venv, use
-`python3`.
+Run project Python commands through the checked-out virtual environment:
+use `.venv/bin/python` for scripts and `.venv/bin/pytest` for tests.
+If `.venv` has not been created yet, create/sync it before running the
+pipeline.
 
 Typical full regeneration order:
 
 ```sh
-python3 scripts/parse_threadmarks.py
-python3 scripts/parse_rolls.py
-python3 scripts/parse_reference.py
-python3 scripts/extract_chapter_sections.py
-python3 scripts/build_section_classifications.py
-python3 scripts/build_perk_directory.py
-python3 scripts/predict_rolls.py
-python3 scripts/extract_last_edited.py
-python3 scripts/find_roll_locations.py
-python3 scripts/find_text_backed_rolls.py
-python3 scripts/validate_roll_locations.py
-python3 scripts/derive_roll_outcomes.py
-python3 scripts/derive_roll_facts.py
-python3 scripts/build_chapter_facts.py
-python3 scripts/spot_check.py
-python3 scripts/make_charts.py
+.venv/bin/python scripts/parse_threadmarks.py
+.venv/bin/python scripts/parse_rolls.py
+.venv/bin/python scripts/parse_reference.py
+.venv/bin/python scripts/extract_chapter_sections.py
+.venv/bin/python scripts/build_section_classifications.py
+.venv/bin/python scripts/build_perk_directory.py
+.venv/bin/python scripts/predict_rolls.py
+.venv/bin/python scripts/extract_last_edited.py
+.venv/bin/python scripts/find_roll_locations.py
+.venv/bin/python scripts/find_text_backed_rolls.py
+.venv/bin/python scripts/validate_roll_locations.py
+.venv/bin/python scripts/derive_roll_resolutions.py
+.venv/bin/python scripts/derive_roll_outcomes.py
+.venv/bin/python scripts/derive_roll_facts.py
+.venv/bin/python scripts/build_chapter_facts.py
+.venv/bin/python scripts/spot_check.py
+.venv/bin/python scripts/make_charts.py
 ```
 
 Each derived JSON file should validate against its schema before being
 written. Structural drift should fail loudly.
+
+## Versioned data packages
+
+Phase 1 keeps top-level `data/derived/*.json` committed, but release and
+Pages tooling now treats runtime data as a versioned contract package.
+The browser loads `data_package.json` before `chapter_facts.json` and
+rejects unsupported contract versions instead of attempting local
+fallback reconciliation.
+
+Refresh the local runtime manifest after regenerating web-consumed data:
+
+```sh
+python3 scripts/data_release.py manifest --date YYYYMMDD --build-number N
+```
+
+Build release assets from the current derived data:
+
+```sh
+python3 scripts/data_release.py package \
+  --date YYYYMMDD \
+  --build-number N \
+  --output-dir dist/data-packages
+```
+
+The package command writes two assets:
+
+- `bcf-pages-runtime-YYYYMMDD.N.tar.gz`: minimal Pages/browser payload.
+- `bcf-dev-derived-YYYYMMDD.N.tar.gz`: full top-level derived JSON set
+  for maintainer bootstrap.
+
+To hydrate a fresh checkout from a maintainer bundle:
+
+```sh
+python3 scripts/data_release.py download-dev \
+  --tag data-vYYYYMMDD.N \
+  --asset bcf-dev-derived-YYYYMMDD.N.tar.gz
+```
+
+To dry-run old data-release cleanup:
+
+```sh
+python3 scripts/data_release.py cleanup --keep-tag data-vYYYYMMDD.N
+```
+
+Add `--yes` only after reviewing the dry-run output. Do not filter
+derived JSON out of git history until a release-backed Pages deployment
+and local bootstrap cycle have both been proven.
+
+Roll data flow is intentionally layered: `predicted_rolls.json` is the
+mechanical threshold-crossing schedule, `chapter_roll_overrides.json`
+is manual curation keyed by mechanical chapter, `roll_facts.json`
+resolves outcome/accounting/deferral/display fields, and
+`chapter_facts.json` is the runtime backbone. Fix disagreements in
+that derivation path, not in the web app or Forge Curator display code.
+Forge Curator may write manual inputs, but its stats, roll navigation,
+CP accounting, and hit/miss/perk/evidence display must render from
+regenerated derived JSON rather than overlaying manual edits directly.
 
 ## Web app checks
 
@@ -62,6 +124,7 @@ For JavaScript syntax:
 
 ```sh
 node --check web/app.js
+node --check web/data-contract.js
 ```
 
 For whitespace/conflict issues before committing:
@@ -73,7 +136,7 @@ git diff --check -- web/index.html web/app.js web/style.css
 Serve locally with:
 
 ```sh
-python3 -m http.server 8001
+.venv/bin/python -m http.server 8001
 ```
 
 Then open <http://127.0.0.1:8001/web/>.
@@ -127,8 +190,9 @@ as fallbacks; the new layer is additive.
 client wrapper, smoke test, and Windows setup scripts are in place.
 `/health` and `/version` work on a fresh checkout; `/extract` and
 `/classify_section` return 503 with the documented
-`*_model_not_loaded` body until trained checkpoints exist. Run
-`python3 -m pytest tests/` to exercise the scaffold without a GPU.
+`*_model_not_loaded` body until trained checkpoints exist. Use pytest
+for new verification. Run the full suite with `.venv/bin/pytest`, or a
+focused module with `.venv/bin/pytest tests/<module>.py`.
 For the operator workflow (Windows install, smoke test, what to do
 when a check fails), see the runbook below.
 

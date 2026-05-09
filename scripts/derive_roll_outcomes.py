@@ -60,11 +60,28 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
+from multi_grab import (
+    load_overrides as load_multi_grab_overrides,
+    merge_paid_units,
+    unit_principal_cost,
+    unit_total_cost,
+)
+from predict_rolls import _load_cp_words_per_chapter
+from regime_simulator import (
+    ShadowState,
+    load_regime_transitions,
+    regime_for_chapter,
+    regimes_for_chapter,
+    simulate_chapter_rolls,
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 
 DEFAULT_PREDICTED = ROOT / "data" / "derived" / "predicted_rolls.json"
 DEFAULT_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
 DEFAULT_CHAPTERS = ROOT / "data" / "derived" / "chapters.json"
+DEFAULT_SECTIONS = ROOT / "data" / "derived" / "chapter_sections.json"
+DEFAULT_CLASSIFICATIONS = ROOT / "data" / "manual" / "section_classifications.json"
 DEFAULT_OUTPUT = ROOT / "data" / "derived" / "roll_outcomes.json"
 
 SCHEMA_VERSION = 1
@@ -107,24 +124,12 @@ def _synthetic_positions(words: int, count: int, after_real: list[int]) -> list[
 
 
 def _build_acquisition_units(obtained_perks: list[dict]) -> list[dict]:
-    """Group paid acquisitions with their trailing free perks."""
-    units: list[dict] = []
-    current_unit: dict | None = None
-    for perk in obtained_perks:
-        if not perk.get("free", False):
-            current_unit = {
-                "chapter_num": perk["chapter_num"],
-                "paid": perk,
-                "free_perks": [],
-            }
-            units.append(current_unit)
-            continue
-        if current_unit is None or current_unit["chapter_num"] != perk["chapter_num"]:
-            raise SystemExit(
-                f"orphan free perk {perk['perk_name']!r} in ch {perk['chapter_num']} — "
-                "no preceding paid acquisition in same chapter"
-            )
-        current_unit["free_perks"].append(perk)
+    """Group paid acquisitions into multi-grab units (with their trailing
+    free perks). Each returned unit has a list of paid perks (one or more),
+    a list of free perks, and chapter metadata.
+    """
+    overrides = load_multi_grab_overrides()
+    units, _stats = merge_paid_units(obtained_perks, overrides)
     return units
 
 
@@ -144,19 +149,25 @@ def _build_chapter_slots(
     predicted: list[dict],
     acquisition_units: list[dict],
     words_approx: int,
-) -> list[dict]:
+    chapter_word_start: int = 0,
+    cp_words: int | None = None,
+    banked_cp_in: int = 0,
+    shadow_state: ShadowState | None = None,
+    transitions: list[dict] | None = None,
+) -> tuple[list[dict], int, ShadowState]:
     """Build the ordered slot list for one chapter.
 
     Returns slots in word_position ascending order. Each slot is a dict
     with keys:
         chapter_num, word_position, source, outcome, perk,
-        regime (predicted only), cp_threshold (predicted only),
+        cp_rule_regime (predicted only),
+        roll_trigger_cp_threshold (predicted only),
         roll_number (predicted only)
     """
     n = len(predicted)
     k = len(acquisition_units)
     if n == 0 and k == 0:
-        return []
+        return [], banked_cp_in, (shadow_state or ShadowState()).copy()
 
     # Real predicted slots (already sorted by word_position upstream, but
     # sort defensively).
@@ -177,10 +188,11 @@ def _build_chapter_slots(
             "source": "predicted",
             "outcome": "miss",  # default; flipped to "hit" below
             "perk": None,
+            "paid_perks": [],
             "free_perks": [],
             "roll_number": r.get("roll_number"),
-            "regime": r.get("regime"),
-            "cp_threshold": r.get("cp_threshold"),
+            "cp_rule_regime": r.get("cp_rule_regime"),
+            "roll_trigger_cp_threshold": r.get("roll_trigger_cp_threshold"),
         })
     for pos in synth_positions:
         slots.append({
@@ -189,10 +201,11 @@ def _build_chapter_slots(
             "source": "synthetic",
             "outcome": "miss",
             "perk": None,
+            "paid_perks": [],
             "free_perks": [],
             "roll_number": None,
-            "regime": None,
-            "cp_threshold": None,
+            "cp_rule_regime": None,
+            "roll_trigger_cp_threshold": None,
         })
 
     slots.sort(key=lambda s: s["word_position"])
@@ -203,14 +216,149 @@ def _build_chapter_slots(
     for idx, unit in zip(hit_idxs, acquisition_units):
         slot = slots[idx]
         slot["outcome"] = "hit"
-        slot["perk"] = _perk_payload(unit["paid"])
+        # `perk` retains the principal (largest-cost) paid perk for
+        # legacy callers; `paid_perks` holds the full multi-grab list.
+        paid_list = list(unit["paid"])
+        principal = max(paid_list, key=lambda p: int(p.get("cost") or 0))
+        slot["perk"] = _perk_payload(principal)
+        slot["paid_perks"] = [_perk_payload(p) for p in paid_list]
         slot["free_perks"] = [_perk_payload(p) for p in unit["free_perks"]]
 
     for index, slot in enumerate(slots, start=1):
         slot["sequence_in_chapter"] = index
         slot["rolls_in_chapter"] = len(slots)
 
-    return slots
+    # ---- CP simulation: stamp pre/post-debit available_cp on each slot ----
+    # Walk slots in word_position order, accumulating CP at the chapter's
+    # regime between slot positions and applying shadows from prior 600/800
+    # CP perks. Word positions in the predicted-rolls input are STORY-GLOBAL
+    # cumulative offsets; subtract chapter_word_start to get chapter-local.
+    state = (shadow_state or ShadowState()).copy()
+    total_words = cp_words if cp_words is not None else words_approx
+    banked_x100 = banked_cp_in * 100
+    last_word_local = 0
+    from regime_simulator import _accumulate_x100, shadow_words
+
+    # Resolve regime segments for the chapter (mid-chapter transitions).
+    segments = regimes_for_chapter(
+        chapter_num, transitions,
+        [u["paid"][0] for u in acquisition_units] if acquisition_units else [],
+        total_words or 0,
+    )
+    seg_idx = 0
+    current_regime = segments[seg_idx].regime
+
+    def _walk_to(target: int) -> None:
+        nonlocal banked_x100, last_word_local, seg_idx, current_regime
+        while last_word_local < target:
+            seg_end = segments[seg_idx].end_word_local
+            if seg_end is None or seg_end >= target:
+                step = target - last_word_local
+                if step > 0:
+                    banked_x100 = _accumulate_x100(
+                        step, current_regime, banked_x100, state,
+                    )
+                last_word_local = target
+                return
+            step = seg_end - last_word_local
+            if step > 0:
+                banked_x100 = _accumulate_x100(
+                    step, current_regime, banked_x100, state,
+                )
+            last_word_local = seg_end
+            seg_idx += 1
+            current_regime = segments[seg_idx].regime
+
+    for slot in slots:
+        wp_local = max(0, slot["word_position"] - chapter_word_start)
+        _walk_to(wp_local)
+
+        available_cp = banked_x100 // 100
+        slot["available_cp"] = available_cp
+        slot["cp_rule_regime"] = slot.get("cp_rule_regime") or current_regime
+
+        if slot["outcome"] == "hit" and slot["perk"] is not None:
+            paid_perks = slot.get("paid_perks") or [slot["perk"]]
+            total_cost = sum(
+                int(p.get("cost") or 0) for p in paid_perks
+                if not p.get("free", False)
+            )
+            principal_cost = max(
+                (int(p.get("cost") or 0) for p in paid_perks
+                 if not p.get("free", False)),
+                default=int(slot["perk"].get("cost") or 0),
+            )
+            banked_x100 -= total_cost * 100
+            if banked_x100 < 0:
+                banked_x100 = 0
+            sw = shadow_words(principal_cost, current_regime)
+            if sw:
+                state.remaining += sw
+        # A miss debits NOTHING per curator-observed semantics: missed
+        # rolls are not "spent." Banked CP carries over.
+
+        slot["banked_cp_after_roll"] = banked_x100 // 100
+
+    # Drain to chapter end so banked_cp_out reflects the post-chapter state.
+    if total_words and total_words > last_word_local:
+        _walk_to(total_words)
+
+    return slots, banked_x100 // 100, state
+
+
+def derive_chapter_outcomes(
+    chapter_num: str,
+    predicted_rolls: list[dict],
+    obtained_perks: list[dict],
+    *,
+    chapter_words: int,
+    chapter_word_start: int = 0,
+    cp_words: int | None = None,
+    banked_cp_in: int = 0,
+    shadow_state: "ShadowState | None" = None,
+    transitions: list[dict] | None = None,
+    multi_overrides: dict | None = None,
+) -> tuple[list[dict], int, "ShadowState"]:
+    """Derive interpolated hit/miss slots for a single chapter.
+
+    Phase 0 scaffold for Forge Curator's per-chapter recompute (Phase 3).
+    Wraps ``_build_chapter_slots`` with all the bookkeeping the
+    whole-pipeline ``main()`` does for one chapter:
+
+      * filters predicted rolls to this chapter,
+      * builds acquisition units from chapter-scoped obtained_perks,
+      * applies multi-grab overrides via ``merge_paid_units``,
+      * walks the regime simulator forward.
+
+    Returns ``(slots, banked_cp_out, shadow_state_out)``.
+    """
+    if multi_overrides is None:
+        multi_overrides = load_multi_grab_overrides()
+    if transitions is None:
+        transitions = load_regime_transitions()
+    if shadow_state is None:
+        shadow_state = ShadowState()
+    cn = str(chapter_num)
+    chapter_perks = [
+        p for p in obtained_perks if str(p.get("chapter_num")) == cn
+    ]
+    chapter_perks_sorted = sorted(
+        chapter_perks, key=lambda p: p.get("epub_sequence", 0)
+    )
+    units, _ = merge_paid_units(chapter_perks_sorted, multi_overrides)
+    chapter_units = [u for u in units if str(u["chapter_num"]) == cn]
+    chapter_preds = [r for r in predicted_rolls if str(r["chapter_num"]) == cn]
+    return _build_chapter_slots(
+        cn,
+        chapter_preds,
+        chapter_units,
+        chapter_words,
+        chapter_word_start=chapter_word_start,
+        cp_words=cp_words,
+        banked_cp_in=banked_cp_in,
+        shadow_state=shadow_state,
+        transitions=transitions,
+    )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -263,19 +411,52 @@ def main(argv: list[str] | None = None) -> None:
     )
     iteration_order = chapter_order + extra_chapter_nums
 
+    # CP-earning words per chapter, keyed by full_title (matches
+    # predict_rolls.py's CP arithmetic).
+    full_titles = {c["chapter_num"]: c["full_title"] for c in chapters}
+    cp_words_by_title = _load_cp_words_per_chapter()
+    cp_words_by_chapter = {
+        cn: int(cp_words_by_title.get(full_titles.get(cn), 0))
+        for cn in iteration_order
+    }
+    chapter_word_start: dict[str, int] = {}
+    cum = 0
+    for cn in iteration_order:
+        chapter_word_start[cn] = cum
+        cum += cp_words_by_chapter.get(cn, 0)
+
     all_rolls: list[dict] = []
     per_chapter_summary: list[dict] = []
+    banked_cp_in = 0
+    shadow = ShadowState()
+    transitions = load_regime_transitions()
 
     for chapter_num in iteration_order:
         preds = pred_by_ch.get(chapter_num, [])
         units = units_by_ch.get(chapter_num, [])
         if not preds and not units:
+            # Still walk silent words to keep the running banked_cp / shadow
+            # in sync with what predict_rolls.py would have computed.
+            silent_words = cp_words_by_chapter.get(chapter_num, 0)
+            if silent_words > 0:
+                from regime_simulator import _accumulate_x100
+                banked_x100 = banked_cp_in * 100
+                banked_x100 = _accumulate_x100(
+                    silent_words, regime_for_chapter(chapter_num),
+                    banked_x100, shadow,
+                )
+                banked_cp_in = banked_x100 // 100
             continue
-        slots = _build_chapter_slots(
+        slots, banked_cp_in, shadow = _build_chapter_slots(
             chapter_num,
             preds,
             units,
             words_by_chapter.get(chapter_num, 0),
+            chapter_word_start=chapter_word_start.get(chapter_num, 0),
+            cp_words=cp_words_by_chapter.get(chapter_num),
+            banked_cp_in=banked_cp_in,
+            shadow_state=shadow,
+            transitions=transitions,
         )
         all_rolls.extend(slots)
 

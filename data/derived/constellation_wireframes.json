@@ -1,4 +1,5 @@
 {
+  "schema_version": 1,
   "_source": "data/derived/perk_directory.json (constellations + jumps); coordinates hand-designed in scripts/build_constellation_wireframes.py",
   "_count": 14,
   "_jumps_count": 214,

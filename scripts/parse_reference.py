@@ -278,6 +278,14 @@ def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]
         classification = _norm(ws.cell(r, 4).value) or None
         jump = _norm(ws.cell(r, 5).value) or None
         name = _norm(ws.cell(r, 3).value)
+        if (
+            chapter_num == "1"
+            and name == "Workshop: Metalworking"
+            and jump == "Personal Reality"
+        ):
+            cost = 0
+            cost_text = "0"
+            free = False
         perks.append(
             ObtainedPerk(
                 epub_sequence=int(seq),

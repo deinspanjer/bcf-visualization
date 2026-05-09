@@ -1,0 +1,62 @@
+name: Build data release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_date:
+        description: 'Data package date in YYYYMMDD. Leave blank for current UTC date.'
+        required: false
+        type: string
+      build_number:
+        description: 'Data package build number. Leave blank for the workflow run number.'
+        required: false
+        type: string
+      draft:
+        description: 'Create the GitHub Release as a draft.'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build data bundles
+        id: build
+        run: |
+          DATE="${{ inputs.package_date }}"
+          BUILD="${{ inputs.build_number }}"
+          if [ -z "$DATE" ]; then
+            DATE="$(date -u +%Y%m%d)"
+          fi
+          if [ -z "$BUILD" ]; then
+            BUILD="$GITHUB_RUN_NUMBER"
+          fi
+          python3 scripts/data_release.py package \
+            --output-dir .data-release \
+            --date "$DATE" \
+            --build-number "$BUILD" \
+            --source-commit "$GITHUB_SHA"
+          echo "tag=data-v$DATE.$BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRAFT: ${{ inputs.draft }}
+          TAG: ${{ steps.build.outputs.tag }}
+        run: |
+          DRAFT_FLAG=""
+          if [ "$DRAFT" = "true" ]; then
+            DRAFT_FLAG="--draft"
+          fi
+          gh release create "$TAG" \
+            .data-release/*.tar.gz \
+            .data-release/SHA256SUMS \
+            --title "BCF data ${TAG#data-v}" \
+            --notes "Versioned BCF derived data bundle ${TAG}." \
+            $DRAFT_FLAG

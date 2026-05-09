@@ -60,14 +60,16 @@ class _Strip(HTMLParser):
         self.skip = 0
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style"):
+        tag = tag.lower()
+        if tag in ("head", "title", "script", "style"):
             self.skip += 1
-        if tag in ("p", "div", "br", "li", "h1", "h2", "h3"):
+        if not self.skip and tag in ("p", "div", "br", "li", "h1", "h2", "h3"):
             self.parts.append("\n")
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style"):
-            self.skip -= 1
+        tag = tag.lower()
+        if tag in ("head", "title", "script", "style"):
+            self.skip = max(0, self.skip - 1)
 
     def handle_data(self, data):
         if not self.skip:
@@ -134,6 +136,91 @@ def _structural_markers(text: str) -> list[str]:
 _AN_RE = re.compile(r"\(\s*Author'?s?\s+Note", re.IGNORECASE)
 
 
+# ---------- author-note ranges (curated) -----------------------------------
+
+
+AUTHOR_NOTES_JSON = ROOT / "data" / "manual" / "author_notes.json"
+
+
+def _load_curated_author_notes() -> dict[tuple[str, int], list[str]]:
+    """Read data/manual/author_notes.json and return verbatim AN texts
+    keyed by (chapter_num, section_index).
+
+    The curated file is the single source of truth for author-to-reader
+    asides. It was built by a one-time human-supervised scan of every
+    chapter (see file's `_source` field). Adding or removing an AN is a
+    manual edit to that file — the extractor never guesses.
+    """
+    if not AUTHOR_NOTES_JSON.exists():
+        return {}
+    data = json.loads(AUTHOR_NOTES_JSON.read_text())
+    out: dict[tuple[str, int], list[str]] = {}
+    for entry in data.get("author_notes", []):
+        key = (entry["chapter_num"], int(entry["section_index"]))
+        out.setdefault(key, []).append(entry["an_text"])
+    return out
+
+
+def _resolve_author_note_ranges(
+    section_text: str, an_texts: list[str], chapter_num: str, section_index: int
+) -> list[tuple[int, int]]:
+    """Locate each curated AN string in the section text and return
+    (start, end) char offsets. Errors loudly if an AN cannot be found —
+    that means the curated file has drifted from the source and a
+    human needs to reconcile it.
+    """
+    ranges: list[tuple[int, int]] = []
+    for an in an_texts:
+        idx = section_text.find(an)
+        if idx < 0:
+            raise SystemExit(
+                f"curated author-note text for chapter {chapter_num} "
+                f"section {section_index} not found in source text. "
+                f"data/manual/author_notes.json is stale; reconcile it "
+                f"before re-running. AN starts: {an[:80]!r}"
+            )
+        ranges.append((idx, idx + len(an)))
+    ranges.sort()
+    return ranges
+
+
+def _words_in_ranges(text: str, ranges: list[tuple[int, int]]) -> int:
+    return sum(_word_count(text[s:e]) for s, e in ranges)
+
+
+def _char_range_to_word_range(
+    text: str, char_start: int, char_end: int
+) -> tuple[int, int]:
+    """Convert a char-offset range in ``text`` to a word-index range.
+
+    Word indices count whitespace-delimited tokens (matching
+    ``_word_count`` semantics). The returned range is half-open
+    ``[word_start, word_end)``. Out-of-range or empty char spans
+    return ``(0, 0)``.
+    """
+    if char_end <= char_start or not text:
+        return (0, 0)
+    char_start = max(0, char_start)
+    char_end = min(len(text), char_end)
+    word_start = _word_count(text[:char_start])
+    word_end = word_start + _word_count(text[char_start:char_end])
+    return (word_start, word_end)
+
+
+def _merge_word_ranges(ranges: list[tuple[int, int]]) -> list[list[int]]:
+    """Sort + merge overlapping/adjacent ``(start, end)`` ranges. Returns
+    a list of two-element lists for JSON-friendliness."""
+    out: list[list[int]] = []
+    for s, e in sorted(ranges):
+        if e <= s:
+            continue
+        if out and s <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], e)
+        else:
+            out.append([s, e])
+    return out
+
+
 # ---------- section data structures ----------------------------------------
 
 
@@ -149,6 +236,14 @@ class Section:
     tp_count: int
     structural_markers: list[str] = field(default_factory=list)
     sample: str = ""             # first ~200 chars of prose (for review)
+    author_note_ranges: list[tuple[int, int]] = field(default_factory=list)
+    author_note_word_count: int = 0
+    # Auto-detected section-header word count: when the section's
+    # ``header`` field appears as a contiguous run at the start of the
+    # section's prose, those header words are excluded from CP-earning
+    # totals. Computed deterministically here so the TUI doesn't need
+    # to redo it.
+    auto_header_word_count: int = 0
 
 
 @dataclass
@@ -159,6 +254,14 @@ class ChapterSections:
     total_word_count: int
     cp_earning_word_count: int
     sections: list[Section]
+    # Union of all per-section content-exclusion ranges in chapter-local
+    # word coords. Built from AN word ranges (converted from per-section
+    # AN char ranges) + auto-header word ranges. Downstream CP consumers
+    # intersect these ranges with CP-eligible sections; content-word
+    # consumers subtract them globally. Manual header_corrections from
+    # data/manual/ are merged in at consumption time where needed since
+    # they live outside this file.
+    excluded_word_ranges: list[list[int]] = field(default_factory=list)
 
 
 # ---------- header rule -----------------------------------------------------
@@ -226,7 +329,15 @@ def _classify_by_content(text: str) -> tuple[str | None, str, dict]:
 # ---------- combine ---------------------------------------------------------
 
 
-def _classify_section(header: str | None, text: str) -> Section:
+def _classify_section(
+    header: str | None,
+    text: str,
+    an_ranges: list[tuple[int, int]] | None = None,
+    *,
+    implicit_header: str | None = None,
+) -> Section:
+    if an_ranges is None:
+        an_ranges = []
     header_class, header_reason = _classify_by_header(header)
     content_class, content_reason, evidence = _classify_by_content(text)
 
@@ -274,6 +385,12 @@ def _classify_section(header: str | None, text: str) -> Section:
 
     counts_for_cp = classification == "mc"
     sample = text[:600].replace("\n", " ").strip()
+    an_words = _words_in_ranges(text, an_ranges)
+    auto_header_words = _detect_auto_header_words(
+        text,
+        header,
+        implicit_header=implicit_header,
+    )
     return Section(
         header=header,
         word_count=_word_count(text),
@@ -285,7 +402,69 @@ def _classify_section(header: str | None, text: str) -> Section:
         tp_count=evidence["tp_count"],
         structural_markers=evidence["structural_markers"],
         sample=sample,
+        author_note_ranges=[list(r) for r in an_ranges],
+        author_note_word_count=an_words,
+        auto_header_word_count=auto_header_words,
     )
+
+
+_HEADER_NORM_RE = re.compile(r"^[\W_]+|[\W_]+$", re.UNICODE)
+
+
+def _norm_header_word(w: str) -> str:
+    return _HEADER_NORM_RE.sub("", w).lower()
+
+
+def _detect_auto_header_words(
+    text: str,
+    header: str | None,
+    *,
+    implicit_header: str | None = None,
+) -> int:
+    """Return the number of words at the start of ``text`` that match
+    the section's declared ``header`` field, or 0 if the match fails.
+
+    Case-insensitive, punctuation-stripped per word, with a 5-word slack
+    window. Same convention used previously by
+    ``forge_curator/data_loader.py::_detect_section_headers``; that
+    duplicate is now removed in favour of this canonical computation.
+    """
+    header = header or implicit_header
+    if not header or not text.strip():
+        return 0
+    header_words = [_norm_header_word(w) for w in header.split() if _norm_header_word(w)]
+    if not header_words:
+        return 0
+    text_words = text.split()
+    if not text_words:
+        return 0
+    slack = 5
+    max_offset = min(slack, len(text_words) - len(header_words))
+    if max_offset < 0:
+        return 0
+    for offset in range(max_offset + 1):
+        prose_norm = [
+            _norm_header_word(text_words[offset + k])
+            for k in range(len(header_words))
+        ]
+        if prose_norm == header_words:
+            repeats = len(header_words)
+            cursor = offset + len(header_words)
+            while cursor + len(header_words) <= len(text_words):
+                next_norm = [
+                    _norm_header_word(text_words[cursor + k])
+                    for k in range(len(header_words))
+                ]
+                if next_norm != header_words:
+                    break
+                repeats += len(header_words)
+                cursor += len(header_words)
+            # The auto-header occupies offset..cursor words. Including
+            # leading slack would over-count if punctuation precedes the
+            # header; this corpus does not do that in practice, so we
+            # report only the matched/repeated header words.
+            return repeats
+    return 0
 
 
 # ---------- perk extraction ------------------------------------------------
@@ -364,6 +543,13 @@ def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
     full chapter HTML. Sections are demarcated by <p><strong>X</strong></p>
     markers; an implicit section before the first marker is included if
     non-empty.
+
+    The section's html range starts at the marker, not after — so the
+    section's stripped text begins with the header text. This keeps
+    word-count semantics consistent with how the chapter is rendered
+    end-to-end (e.g. by the TUI's prose viewer); auto-header detection
+    can then identify the leading header words and exclude them from
+    CP-eligible totals.
     """
     markers = list(_MARKER_RE.finditer(html))
     if not markers:
@@ -372,7 +558,7 @@ def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
     if markers[0].start() > 0:
         out.append((None, 0, markers[0].start()))
     for i, m in enumerate(markers):
-        start = m.end()
+        start = m.start()
         end = markers[i + 1].start() if i + 1 < len(markers) else len(html)
         out.append((m.group(1).strip(), start, end))
     return out
@@ -402,6 +588,8 @@ def main() -> None:
     perk_records: list[dict] = []
     low_confidence_count = 0
     flagged: list[tuple[str, str, str]] = []
+    curated_an = _load_curated_author_notes()
+    consumed_an_keys: set[tuple[str, int]] = set()
 
     with zipfile.ZipFile(EPUB) as zf:
         title_to_href = _build_chapter_index(zf)
@@ -415,14 +603,55 @@ def main() -> None:
             sections: list[Section] = []
             cp_words = 0
             total_words = 0
-            for header, s, e in sections_html:
+            chapter_excluded_word_ranges: list[tuple[int, int]] = []
+            chapter_word_cursor = 0
+            for idx, (header, s, e) in enumerate(sections_html):
                 section_html = html[s:e]
                 section_text = _text(section_html)
-                section = _classify_section(header, section_text)
+                an_texts = curated_an.get((c["chapter_num"], idx), [])
+                an_ranges = _resolve_author_note_ranges(
+                    section_text, an_texts, c["chapter_num"], idx
+                )
+                if an_texts:
+                    consumed_an_keys.add((c["chapter_num"], idx))
+                section = _classify_section(
+                    header,
+                    section_text,
+                    an_ranges,
+                    implicit_header=c["full_title"] if header is None else None,
+                )
                 sections.append(section)
                 total_words += section.word_count
+                # Build chapter-local exclusion ranges for this section
+                # for content accounting. Downstream CP accounting
+                # intersects these ranges with CP-eligible sections, so
+                # ranges in ineligible sections are harmless but remain
+                # visible to content-word totals.
+                for an_cs, an_ce in an_ranges:
+                    ws_local, we_local = _char_range_to_word_range(
+                        section_text, an_cs, an_ce,
+                    )
+                    if we_local > ws_local:
+                        chapter_excluded_word_ranges.append((
+                            chapter_word_cursor + ws_local,
+                            chapter_word_cursor + we_local,
+                        ))
+                if section.auto_header_word_count > 0:
+                    chapter_excluded_word_ranges.append((
+                        chapter_word_cursor,
+                        chapter_word_cursor + section.auto_header_word_count,
+                    ))
+                # Section-local pre-merge total (used only for the
+                # legacy `cp_earning_word_count` field; the canonical
+                # consumer `_load_cp_words_per_chapter` uses the merged
+                # `excluded_word_ranges` instead).
                 if section.counts_for_cp:
-                    cp_words += section.word_count
+                    cp_words += (
+                        section.word_count
+                        - section.author_note_word_count
+                        - section.auto_header_word_count
+                    )
+                chapter_word_cursor += section.word_count
                 if section.confidence == "low":
                     low_confidence_count += 1
                     flagged.append((c["chapter_num"], header or "(implicit)",
@@ -446,7 +675,16 @@ def main() -> None:
                 total_word_count=total_words,
                 cp_earning_word_count=cp_words,
                 sections=sections,
+                excluded_word_ranges=_merge_word_ranges(chapter_excluded_word_ranges),
             ))
+
+    orphan_an = sorted(set(curated_an.keys()) - consumed_an_keys)
+    if orphan_an:
+        raise SystemExit(
+            "data/manual/author_notes.json references chapter/section "
+            f"keys not seen during extraction: {orphan_an}. The curated "
+            "file is stale; remove or relocate those entries."
+        )
 
     # Aggregate stats
     total_sections = sum(len(r.sections) for r in section_records)

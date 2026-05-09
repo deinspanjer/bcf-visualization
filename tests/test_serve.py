@@ -10,6 +10,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from nlp.serve import app
+from nlp.schema import SCHEMA_VERSION
 
 
 def _client() -> TestClient:
@@ -38,7 +39,7 @@ def test_version_returns_documented_keys():
     body = r.json()
     for key in ("service_version", "git_commit", "schema_version", "started_at", "models"):
         assert key in body, key
-    assert body["schema_version"] == 1
+    assert body["schema_version"] == SCHEMA_VERSION
     assert "span" in body["models"]
     assert "section" in body["models"]
 

@@ -6,10 +6,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "_source", "_method", "_count", "_grain", "_deferred",
+    "schema_version", "_source", "_method", "_count", "_grain", "_deferred",
     "shadow_periods", "in_world_timeline", "chapters"
   ],
   "properties": {
+    "schema_version": { "const": 1 },
     "_source": { "type": "string" },
     "_method": { "type": "string" },
     "_count":  { "type": "integer", "minimum": 0 },
@@ -150,11 +151,18 @@
       "additionalProperties": false,
       "required": [
         "roll_number", "section_index", "outcome", "constellation",
-        "purchased_perk_id", "purchased_perk_name",
-        "purchased_perk_cost", "purchased_perk_jump", "free_perks",
+        "mechanical_chapter_num", "mechanical_word_position",
+        "mechanical_cumulative_word_offset",
+        "mention_chapter_num", "mention_word_position",
+        "display_position_policy", "display_chapter_num",
+        "display_word_position", "display_cumulative_word_offset",
+        "purchased_perk_id", "purchased_perks", "purchased_perk_cost_total",
+        "purchased_perk_jump", "free_perks",
+        "word_position", "cumulative_word_offset",
         "predicted_word_position_epub", "display_word_position_epub",
         "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
+        "narrative_evidence",
         "available_cp", "banked_cp_after_roll",
         "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
         "roll_sequence_in_chapter", "rolls_in_chapter",
@@ -169,9 +177,51 @@
         },
         "outcome":                      { "enum": ["hit", "miss", "unknown"] },
         "constellation":                { "type": ["string", "null"] },
+        "mechanical_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mechanical_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "mechanical_cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "mention_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mention_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "display_position_policy": {
+          "enum": ["mention", "mechanical", "section_start"]
+        },
+        "display_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "display_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "display_cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
         "purchased_perk_id":            { "type": ["string", "null"] },
-        "purchased_perk_name":          { "type": ["string", "null"] },
-        "purchased_perk_cost": {
+        "purchased_perks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "cost"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "cost": { "type": "integer", "minimum": 0 },
+              "free": { "type": "boolean" }
+            }
+          }
+        },
+        "purchased_perk_cost_total": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "purchased_perk_jump":          { "type": ["string", "null"] },
@@ -188,6 +238,12 @@
               "constellation": { "type": ["string", "null"] }
             }
           }
+        },
+        "word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "predicted_word_position_epub": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
@@ -211,6 +267,7 @@
             "synthetic"
           ]
         },
+        "narrative_evidence": { "type": ["string", "null"] },
         "available_cp": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
@@ -245,6 +302,7 @@
         "cumulative_words_through_chapter", "cumulative_cp_earning_words",
         "cumulative_perks_through_chapter",
         "banked_cp_at_start", "banked_cp_at_end",
+        "model_validation",
         "pov_characters", "structural_markers",
         "sections", "rolls"
       ],
@@ -279,12 +337,58 @@
         "cumulative_perks_through_chapter": { "type": "integer", "minimum": 0 },
         "banked_cp_at_start": { "type": ["integer", "null"] },
         "banked_cp_at_end":   { "type": ["integer", "null"] },
+        "model_validation": { "$ref": "#/$defs/model_validation" },
 
         "pov_characters":     { "type": "array", "items": { "type": "string" } },
         "structural_markers": { "type": "array", "items": { "type": "string" } },
 
         "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
         "rolls":    { "type": "array", "items": { "$ref": "#/$defs/roll" } }
+      }
+    },
+    "model_validation_issue": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["code", "severity", "message"],
+      "properties": {
+        "code":     { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["error", "warning", "info"] },
+        "message":  { "type": "string", "minLength": 1 }
+      }
+    },
+    "model_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "current_discrepancy", "prior_discrepancy",
+        "first_discrepancy_chapter_num", "source_priority",
+        "predicted_roll_count", "required_paid_roll_count",
+        "known_attempt_count", "paid_roll_capacity_ok",
+        "known_attempt_capacity_ok", "cost_schedule_ok",
+        "synthetic_slot_count", "issues"
+      ],
+      "properties": {
+        "status": { "enum": ["ok", "discrepancy", "unknown"] },
+        "current_discrepancy": { "type": "boolean" },
+        "prior_discrepancy": { "type": "boolean" },
+        "first_discrepancy_chapter_num": {
+          "type": ["string", "null"],
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "source_priority": {
+          "enum": ["vetted_curated", "curator_log", "derived_perk_list", "none"]
+        },
+        "predicted_roll_count": { "type": "integer", "minimum": 0 },
+        "required_paid_roll_count": { "type": "integer", "minimum": 0 },
+        "known_attempt_count": { "type": "integer", "minimum": 0 },
+        "paid_roll_capacity_ok": { "type": "boolean" },
+        "known_attempt_capacity_ok": { "type": "boolean" },
+        "cost_schedule_ok": { "type": "boolean" },
+        "synthetic_slot_count": { "type": "integer", "minimum": 0 },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/model_validation_issue" }
+        }
       }
     }
   }

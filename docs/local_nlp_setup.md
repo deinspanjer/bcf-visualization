@@ -137,7 +137,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest"]
+dev = ["ruff"]
 ```
 
 PyTorch CUDA wheel: `uv` auto-resolves the right CUDA build. If it

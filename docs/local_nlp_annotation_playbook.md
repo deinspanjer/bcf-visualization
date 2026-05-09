@@ -92,6 +92,11 @@ The primary source is `data/derived/roll_resolutions.json`, which already
 carries predicted roll positions plus chapter context. Take a window of ±250
 words around each predicted position; that's one candidate.
 
+`roll_resolutions.json` is candidate context, not the canonical roll model.
+Canonical hit/miss ownership, deferred mentions, display coordinates, and CP
+accounting are resolved later in `roll_facts.json` and embedded into
+`chapter_facts.json`.
+
 `nlp/tui/candidates.py` should expose:
 
 ```python

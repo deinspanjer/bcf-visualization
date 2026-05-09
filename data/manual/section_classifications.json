@@ -10,7 +10,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit but tiny (253w) — scaffolding/AN"
+      "reason": "implicit but tiny (251w) — scaffolding/AN"
     },
     "1@1": {
       "chapter_num": "1",
@@ -542,7 +542,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (47w)"
+      "reason": "implicit + AN + tiny (38w)"
     },
     "32@1": {
       "chapter_num": "32",
@@ -808,7 +808,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (102w)"
+      "reason": "implicit + AN + tiny (99w)"
     },
     "41.1@1": {
       "chapter_num": "41.1",
@@ -857,7 +857,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (78w)"
+      "reason": "implicit + AN + tiny (69w)"
     },
     "42.1@1": {
       "chapter_num": "42.1",
@@ -913,7 +913,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (62w)"
+      "reason": "implicit + AN + tiny (59w)"
     },
     "43.1@1": {
       "chapter_num": "43.1",
@@ -969,7 +969,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (48w)"
+      "reason": "implicit + AN + tiny (45w)"
     },
     "45.1@1": {
       "chapter_num": "45.1",
@@ -1025,7 +1025,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (271w)"
+      "reason": "implicit + AN + tiny (269w)"
     },
     "47@1": {
       "chapter_num": "47",
@@ -1186,7 +1186,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (147w)"
+      "reason": "implicit + AN + tiny (144w)"
     },
     "56@1": {
       "chapter_num": "56",
@@ -1228,7 +1228,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (213w)"
+      "reason": "implicit + AN + tiny (206w)"
     },
     "57.1@1": {
       "chapter_num": "57.1",
@@ -1256,7 +1256,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (78w)"
+      "reason": "implicit + AN + tiny (72w)"
     },
     "58@1": {
       "chapter_num": "58",
@@ -1312,7 +1312,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (83w)"
+      "reason": "implicit + AN + tiny (78w)"
     },
     "58.2@1": {
       "chapter_num": "58.2",
@@ -1361,7 +1361,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (90w)"
+      "reason": "implicit + AN + tiny (87w)"
     },
     "60@1": {
       "chapter_num": "60",
@@ -1396,7 +1396,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (152w)"
+      "reason": "implicit + AN + tiny (149w)"
     },
     "62@1": {
       "chapter_num": "62",
@@ -1431,7 +1431,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (96w)"
+      "reason": "implicit + AN + tiny (93w)"
     },
     "63.1@1": {
       "chapter_num": "63.1",
@@ -1445,7 +1445,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit but tiny (19w) — scaffolding/AN"
+      "reason": "implicit but tiny (11w) — scaffolding/AN"
     },
     "64@1": {
       "chapter_num": "64",
@@ -1473,7 +1473,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (42w)"
+      "reason": "implicit + AN + tiny (39w)"
     },
     "65@1": {
       "chapter_num": "65",
@@ -1487,7 +1487,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (62w)"
+      "reason": "implicit + AN + tiny (59w)"
     },
     "65.1@1": {
       "chapter_num": "65.1",
@@ -1501,7 +1501,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit but tiny (45w) — scaffolding/AN"
+      "reason": "implicit but tiny (42w) — scaffolding/AN"
     },
     "65.2@1": {
       "chapter_num": "65.2",
@@ -1515,7 +1515,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (58w)"
+      "reason": "implicit + AN + tiny (55w)"
     },
     "65.3@1": {
       "chapter_num": "65.3",
@@ -1529,7 +1529,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (44w)"
+      "reason": "implicit + AN + tiny (41w)"
     },
     "65.4@1": {
       "chapter_num": "65.4",
@@ -1543,7 +1543,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (48w)"
+      "reason": "implicit + AN + tiny (44w)"
     },
     "66@1": {
       "chapter_num": "66",
@@ -1592,7 +1592,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (47w)"
+      "reason": "implicit + AN + tiny (44w)"
     },
     "68.1@1": {
       "chapter_num": "68.1",
@@ -1606,7 +1606,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (55w)"
+      "reason": "implicit + AN + tiny (52w)"
     },
     "68.2@1": {
       "chapter_num": "68.2",
@@ -1655,7 +1655,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit but tiny (18w) — scaffolding/AN"
+      "reason": "implicit but tiny (12w) — scaffolding/AN"
     },
     "71@1": {
       "chapter_num": "71",
@@ -1732,7 +1732,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (47w)"
+      "reason": "implicit + AN + tiny (44w)"
     },
     "74.1@1": {
       "chapter_num": "74.1",
@@ -1774,7 +1774,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (41w)"
+      "reason": "implicit + AN + tiny (38w)"
     },
     "76.1@1": {
       "chapter_num": "76.1",
@@ -1865,7 +1865,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (53w)"
+      "reason": "implicit + AN + tiny (51w)"
     },
     "81@1": {
       "chapter_num": "81",
@@ -1991,7 +1991,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (87w)"
+      "reason": "implicit + AN + tiny (84w)"
     },
     "86@1": {
       "chapter_num": "86",
@@ -2026,7 +2026,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (49w)"
+      "reason": "implicit + AN + tiny (46w)"
     },
     "87.1@1": {
       "chapter_num": "87.1",
@@ -2054,7 +2054,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (40w)"
+      "reason": "implicit + AN + tiny (37w)"
     },
     "88.1@1": {
       "chapter_num": "88.1",
@@ -2082,7 +2082,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (42w)"
+      "reason": "implicit + AN + tiny (39w)"
     },
     "89.1@1": {
       "chapter_num": "89.1",
@@ -2117,7 +2117,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (25w)"
+      "reason": "implicit + AN + tiny (23w)"
     },
     "91@1": {
       "chapter_num": "91",
@@ -2138,7 +2138,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (51w)"
+      "reason": "implicit + AN + tiny (48w)"
     },
     "92@1": {
       "chapter_num": "92",
@@ -2159,7 +2159,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (55w)"
+      "reason": "implicit + AN + tiny (51w)"
     },
     "93@1": {
       "chapter_num": "93",
@@ -2180,7 +2180,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (75w)"
+      "reason": "implicit + AN + tiny (73w)"
     },
     "94@1": {
       "chapter_num": "94",
@@ -2229,7 +2229,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (251w)"
+      "reason": "implicit + AN + tiny (248w)"
     },
     "95.2@1": {
       "chapter_num": "95.2",
@@ -2411,7 +2411,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (51w)"
+      "reason": "implicit + AN + tiny (48w)"
     },
     "99.1@1": {
       "chapter_num": "99.1",
@@ -2439,7 +2439,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (46w)"
+      "reason": "implicit + AN + tiny (40w)"
     },
     "99.3@1": {
       "chapter_num": "99.3",
@@ -2474,7 +2474,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (221w)"
+      "reason": "implicit + AN + tiny (218w)"
     },
     "100.1@1": {
       "chapter_num": "100.1",
@@ -2579,7 +2579,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (212w)"
+      "reason": "implicit + AN + tiny (209w)"
     },
     "105@1": {
       "chapter_num": "105",
@@ -2747,7 +2747,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (206w)"
+      "reason": "implicit + AN + tiny (203w)"
     },
     "111.1@1": {
       "chapter_num": "111.1",
@@ -2768,7 +2768,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (99w)"
+      "reason": "implicit + AN + tiny (96w)"
     },
     "111.3@1": {
       "chapter_num": "111.3",
@@ -2873,7 +2873,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (65w)"
+      "reason": "implicit + AN + tiny (59w)"
     },
     "116.2@1": {
       "chapter_num": "116.2",
@@ -2943,7 +2943,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (118w)"
+      "reason": "implicit + AN + tiny (115w)"
     },
     "119@1": {
       "chapter_num": "119",
@@ -2978,7 +2978,7 @@
       "section_index": 0,
       "header": null,
       "counts_for_cp": false,
-      "reason": "implicit + AN + tiny (54w)"
+      "reason": "implicit + AN + tiny (51w)"
     },
     "119.4@1": {
       "chapter_num": "119.4",

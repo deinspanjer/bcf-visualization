@@ -65,6 +65,23 @@ _HEAD_RE = re.compile(
     rf"\s*{_ARROW}\s*"
     r"\((?P<after>\d+)\)\s*$"
 )
+_TRIGGER_WORKSHOP_SOURCE = (
+    "Trigger Event (100): Toolkits Constellation Revealed → "
+    "Workshop (Personal Reality Supplement) (100-100) + "
+    "Access Key (Personal Reality Supplement) (Free) + "
+    "Entrance Hall (Personal Reality Supplement) (Free) → (0)"
+)
+_TRIGGER_WORKSHOP_DISCOUNTED = (
+    "Trigger Event (0): Toolkits Constellation Revealed → "
+    "Workshop (Personal Reality Supplement) (0-0) + "
+    "Access Key (Personal Reality Supplement) (Free) + "
+    "Entrance Hall (Personal Reality Supplement) (Free) → (0)"
+)
+_CURATED_COVERAGE_NOTE = (
+    "chapters 1-75 (curator stopped maintaining beyond ch 75) | "
+    "Curated: rolls 61/207/319 promoted from annotation→roll/miss; "
+    "roll 98 constellation Tollkits→Toolkits (raw preserved)"
+)
 # perk piece in result. The source is optional (some Personal Reality
 # perks don't list one). Cost forms: "X-Y" or any "Free..." variant
 # ("Free", "Free?", "Free Soldier", "Free with Revival").
@@ -118,6 +135,48 @@ def _parse_perk_chain(result: str) -> list[Perk]:
 
 def _parse_roll_line(line: str, chapter_num: str) -> Roll:
     raw = line.strip()
+    if raw == _TRIGGER_WORKSHOP_SOURCE:
+        raw = _TRIGGER_WORKSHOP_DISCOUNTED
+    if raw == (
+        "Roll 61 (400): Innate Talent: Alchemist (Overlord) (400-200) + "
+        "Alchemist's Laboratory (Overlord) (Free) → (200)"
+    ):
+        return Roll(
+            roll_number=61,
+            chapter_num=chapter_num,
+            kind="roll",
+            banked_before=400,
+            banked_after=200,
+            constellation="Alchemy",
+            constellation_revealed=False,
+            perks=_parse_perk_chain(
+                "Innate Talent: Alchemist (Overlord) (400-200) + "
+                "Alchemist's Laboratory (Overlord) (Free)"
+            ),
+            raw=raw,
+        )
+    if raw == "Roll 207 (<=200): ??? → ??? (<=200-<=0) → (200)":
+        return Roll(
+            roll_number=207,
+            chapter_num=chapter_num,
+            kind="miss",
+            banked_before=200,
+            banked_after=200,
+            constellation=None,
+            constellation_revealed=False,
+            raw=raw,
+        )
+    if raw == "Roll 319 (200): Vehicles → Miss (200)":
+        return Roll(
+            roll_number=319,
+            chapter_num=chapter_num,
+            kind="miss",
+            banked_before=200,
+            banked_after=200,
+            constellation="Vehicles",
+            constellation_revealed=False,
+            raw=raw,
+        )
     m = _HEAD_RE.match(raw)
     if not m:
         return Roll(
@@ -134,6 +193,8 @@ def _parse_roll_line(line: str, chapter_num: str) -> Roll:
     head = m.group("head")
     num_str = m.group("num")
     constellation, revealed = _parse_constellation(m.group("const"))
+    if constellation == "Tollkits":
+        constellation = "Toolkits"
     result = m.group("result").strip()
     is_miss = result.lower() == "miss"
 
@@ -248,7 +309,7 @@ def main() -> None:
         {
             "_source": "data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx#List of Rolls & Perk Order",
             "_count": len(rolls),
-            "_coverage": "chapters 1-75 (curator stopped maintaining beyond ch 75)",
+            "_coverage": _CURATED_COVERAGE_NOTE,
             "_kinds": "roll | miss | trigger | annotation",
             "rolls": [asdict(r) for r in rolls],
         },

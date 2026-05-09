@@ -1,3 +1,8 @@
+import {
+  validateDataDocument,
+  validateDataPackageManifest,
+} from "./data-contract.js";
+
 /* Brockton's Celestial Forge — DAW scrubber app
  *
  * Reads data/derived/chapter_facts.json and renders a multi-track
@@ -7,10 +12,8 @@
  *   ─────────────────
  *   Word axis runs from -PRE_ROLL_WORDS (lead-in band) through 0 (start
  *   of chapter 1) to TOTAL_WORDS (end of last chapter). Roll positions
- *   are approximated from `predicted_word_position_epub` (CP-words)
- *   mapped into total-word space via each chapter's cp/total ratio;
- *   close enough for visualization. Shadow trigger positions also come
- *   in CP-words and use the same mapping.
+ *   use `display_word_position_epub` / `display_chapter_num` when present,
+ *   falling back to predicted CP-word positions.
  *
  *   playback
  *   ────────
@@ -25,7 +28,25 @@
  */
 
 const DATA_BASE = "../data/derived";
+const PACKAGES_INDEX_URL = "../data/packages.json";
+const DATA_PACKAGE_PARAM = "dataPackage";
 const DATA_VERSION = "cpfix1";
+
+/* Multi-grab schema helpers: rolls now carry `purchased_perks: [...]`
+ * (and `purchased_perk_cost_total`) instead of singular fields.
+ */
+function rollPrincipalName(r) {
+  const arr = r.purchased_perks || [];
+  if (arr.length === 0) return null;
+  const paid = arr.filter(p => !p.free);
+  return (paid[0] || arr[0]).name;
+}
+function rollTotalCost(r) {
+  if (r.purchased_perk_cost_total != null) return r.purchased_perk_cost_total;
+  return (r.purchased_perks || [])
+    .filter(p => !p.free)
+    .reduce((s, p) => s + Number(p.cost || 0), 0);
+}
 
 const CONSTELLATION_ORDER = [
   "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
@@ -139,21 +160,91 @@ function $(id) { return document.getElementById(id); }
 
 // ---------- data loading -------------------------------------------------
 
-async function loadJSON(name) {
-  const r = await fetch(`${DATA_BASE}/${name}.json?v=${DATA_VERSION}`, {
+async function fetchJSON(url) {
+  const r = await fetch(url, {
     cache: "no-store",
   });
-  if (!r.ok) throw new Error(`failed to load ${name}: ${r.status}`);
+  if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
   return r.json();
 }
 
-async function loadOptionalJSON(name) {
+async function loadJSON(base, path) {
+  return fetchJSON(`${base}/${path}?v=${DATA_VERSION}`);
+}
+
+async function loadPackageIndex() {
   try {
-    return await loadJSON(name);
+    return await fetchJSON(`${PACKAGES_INDEX_URL}?v=${DATA_VERSION}`);
   } catch (err) {
-    console.warn(`optional data not loaded: ${name}`, err);
     return null;
   }
+}
+
+function selectedPackageBase(packageIndex) {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get(DATA_PACKAGE_PARAM);
+  const packages = Array.isArray(packageIndex?.packages) ? packageIndex.packages : [];
+  const selected = packages.find(p => p.package_id === requested);
+  if (!selected) {
+    return { base: DATA_BASE, packageId: null };
+  }
+  return { base: `../${selected.path}`, packageId: selected.package_id };
+}
+
+async function loadDataPackage(base) {
+  const manifest = await loadJSON(base, "data_package.json");
+  const contract = validateDataPackageManifest(manifest);
+  return { base, manifest, contract };
+}
+
+async function loadContractJSON(dataPackage, name, { optional = false } = {}) {
+  const meta = dataPackage.contract.files[name];
+  if (!meta) {
+    if (optional) return null;
+    throw new Error(`Data package manifest is missing required file metadata: ${name}.`);
+  }
+  try {
+    const doc = await loadJSON(dataPackage.base, meta.path);
+    const validation = validateDataDocument(name, doc, meta, { optional });
+    if (!validation.ok) {
+      console.warn(validation.reason);
+      return null;
+    }
+    return doc;
+  } catch (err) {
+    if (optional) {
+      console.warn(`optional data not loaded: ${name}`, err);
+      return null;
+    }
+    throw err;
+  }
+}
+
+function attachDataPackageSelector(packageIndex, activePackageId) {
+  const packages = Array.isArray(packageIndex?.packages) ? packageIndex.packages : [];
+  if (packages.length <= 1) return;
+
+  const selector = el("label", { id: "data-package-selector" },
+    el("span", { text: "Data version" }),
+    el("select", { id: "data-package-select", "aria-label": "Data version" }));
+  const select = selector.querySelector("select");
+  const defaultId = packageIndex.default_package_id;
+  for (const pkg of packages) {
+    const label = pkg.package_id === defaultId ? `${pkg.package_id} (default)` : pkg.package_id;
+    select.appendChild(el("option", {
+      value: pkg.package_id,
+      text: label,
+      selected: pkg.package_id === activePackageId,
+    }));
+  }
+  select.addEventListener("change", () => {
+    const params = new URLSearchParams(window.location.search);
+    if (select.value === defaultId) params.delete(DATA_PACKAGE_PARAM);
+    else params.set(DATA_PACKAGE_PARAM, select.value);
+    const qs = params.toString();
+    window.location.href = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+  });
+  document.body.appendChild(selector);
 }
 
 // ---------- coordinate model ---------------------------------------------
@@ -186,7 +277,9 @@ function chapterAtWord(model, wordPos) {
 }
 
 function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal = 1) {
-  const span = model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
+  const displayChapterNum = roll.display_chapter_num || chapter.chapter_num;
+  const span = model.chapterSpans[model.idxOf.get(displayChapterNum)] ||
+    model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
   const cpPosition = roll.display_word_position_epub ?? roll.predicted_word_position_epub;
   if (cpPosition == null) {
     const chapterWidth = Math.max(1, span.end_word - span.start_word);
@@ -228,8 +321,9 @@ function shadowWordRange(model, facts, sp) {
     const triggerRoll = triggerChapter.rolls.find(r =>
       sp.trigger_perk_id && r.purchased_perk_id === sp.trigger_perk_id) ||
       triggerChapter.rolls.find(r =>
-        r.purchased_perk_name === sp.trigger_perk_name &&
-        Number(r.purchased_perk_cost) === Number(sp.trigger_perk_cost));
+        (r.purchased_perks || []).some(p =>
+          p.name === sp.trigger_perk_name &&
+          Number(p.cost) === Number(sp.trigger_perk_cost)));
     if (triggerRoll) {
       triggerWord = purchaseWord(triggerChapter, triggerRoll);
     }
@@ -572,8 +666,8 @@ function renderFreePerkCluster(track, model, roll, chapter, wordPos, leftPct) {
     dot._roll = {
       outcome: "hit",
       constellation: freePerk.constellation || roll.constellation,
-      purchased_perk_name: freePerk.name,
-      purchased_perk_cost: 0,
+      purchased_perks: [{ name: freePerk.name, cost: 0, free: true }],
+      purchased_perk_cost_total: 0,
       purchased_perk_jump: freePerk.jump,
       free_perks: [],
       evidence_kind: "free_sibling",
@@ -671,11 +765,14 @@ function rollDotSize(r) {
 }
 
 function rollDotTitle(r, c) {
-  const name = r.purchased_perk_name ||
+  const name = rollPrincipalName(r) ||
     (r.outcome === "miss" ? "missed grab" : r.outcome);
   const bits = [`ch ${c.chapter_num}`, name];
   if (r.constellation) bits.push(r.constellation);
-  const cost = r.purchased_perk_cost ?? r.rolled_perk_cost ?? r.miss_cost_estimate;
+  let cost = rollTotalCost(r);
+  if (!cost) {
+    cost = r.purchased_perk_cost ?? r.rolled_perk_cost ?? r.miss_cost_estimate;
+  }
   if (cost != null) bits.push(`${cost} CP`);
   if (r.outcome === "miss" && r.available_cp != null) {
     bits.push(`${r.available_cp} available`);
@@ -684,7 +781,7 @@ function rollDotTitle(r, c) {
 }
 
 function freePerkTitle(freePerk, roll, chapter) {
-  const bits = [`ch ${chapter.chapter_num}`, freePerk.name, "free with " + roll.purchased_perk_name];
+  const bits = [`ch ${chapter.chapter_num}`, freePerk.name, "free with " + (rollPrincipalName(roll) || "roll")];
   if (freePerk.constellation) bits.push(freePerk.constellation);
   if (freePerk.jump) bits.push(freePerk.jump);
   return bits.join(" · ");
@@ -939,7 +1036,7 @@ function renderThisChapter(ch, inPreroll) {
       { class: r.outcome === "hit" ? "perk-cost" : "perk-cost free" },
       r.outcome === "hit" ? (r.constellation || "?")
         : (r.outcome === "miss" ? "miss" : "unknown"));
-    const name = r.purchased_perk_name || (r.outcome === "hit" ? "(unattributed)" : "missed grab");
+    const name = rollPrincipalName(r) || (r.outcome === "hit" ? "(unattributed)" : "missed grab");
     const left = el("span", null, el("span", { class: "perk-name" }, name));
     if (r.free_perks.length) {
       left.appendChild(el("span", { class: "perk-source" },
@@ -993,8 +1090,9 @@ function renderRecent(state, ch, inPreroll) {
   for (let i = idx; i >= 0 && collected.length < 10; i--) {
     const c = state.facts.chapters[i];
     for (const r of [...c.rolls].reverse()) {
-      if (r.outcome !== "hit" || !r.purchased_perk_name) continue;
-      collected.push({ roll: r, chapter: c });
+      const name = rollPrincipalName(r);
+      if (r.outcome !== "hit" || !name) continue;
+      collected.push({ roll: r, chapter: c, name });
       if (collected.length >= 10) break;
     }
   }
@@ -1004,8 +1102,8 @@ function renderRecent(state, ch, inPreroll) {
         "No acquisitions yet.")));
     return;
   }
-  for (const { roll, chapter } of collected) {
-    const left = el("span", { class: "perk-name" }, roll.purchased_perk_name);
+  for (const { roll, chapter, name } of collected) {
+    const left = el("span", { class: "perk-name" }, name);
     list.appendChild(el("li", null,
       left,
       el("span", { class: "perk-cost" }, roll.constellation || "?"),
@@ -1187,7 +1285,7 @@ function skyRollInfo(state, chapter, roll, wordPos) {
     ?? numericOrNull(roll.purchased_perk_cost)
     ?? numericOrNull(resolution?.curator_cost)
     ?? numericOrNull(missCandidate?.cost);
-  let perkName = roll.purchased_perk_name
+  let perkName = rollPrincipalName(roll)
     || resolution?.curator_perk_name
     || missCandidate?.name
     || (baseOutcome === "hit" ? "acquired mote" : "unresolved mote");
@@ -1224,23 +1322,34 @@ function skyRollInfo(state, chapter, roll, wordPos) {
 
 function findActiveSkyRoll(state, chapter) {
   if (!chapter || !state.sky) return null;
-  const rolls = (chapter.rolls || []).filter(r =>
-    r.outcome === "hit" || r.outcome === "miss" ||
-    r.outcome === "unknown" || r.evidence_kind === "untracked_acquisition");
-  if (!rolls.length) return null;
-  const fallbackRolls = chapter.rolls.filter(r => r.predicted_word_position_epub == null);
+  const displayed = [];
+  for (const owner of state.facts.chapters) {
+    for (const roll of owner.rolls || []) {
+      const displayChapterNum = roll.display_chapter_num || owner.chapter_num;
+      if (displayChapterNum !== chapter.chapter_num) continue;
+      if (roll.outcome !== "hit" && roll.outcome !== "miss" &&
+          roll.outcome !== "unknown" && roll.evidence_kind !== "untracked_acquisition") {
+        continue;
+      }
+      displayed.push({ owner, roll });
+    }
+  }
+  if (!displayed.length) return null;
+  const fallbackRolls = displayed
+    .map(item => item.roll)
+    .filter(r => r.predicted_word_position_epub == null);
   let best = null;
-  for (const roll of rolls) {
+  for (const { owner, roll } of displayed) {
     const fallbackIndex = fallbackRolls.indexOf(roll);
     const wordPos = rollWordPosition(
-      state.model, roll, chapter, Math.max(0, fallbackIndex), fallbackRolls.length || 1);
+      state.model, roll, owner, Math.max(0, fallbackIndex), fallbackRolls.length || 1);
     const distance = Math.abs(state.currentWord - wordPos);
     if (!best || distance < best.distance) {
-      best = { roll, wordPos, distance };
+      best = { owner, roll, wordPos, distance };
     }
   }
   if (!best) return null;
-  return skyRollInfo(state, chapter, best.roll, best.wordPos);
+  return skyRollInfo(state, best.owner, best.roll, best.wordPos);
 }
 
 function setSkyButtonPressed(id, pressed) {
@@ -1864,7 +1973,7 @@ function attachRollTooltip() {
     const c = dot._chapter;
     const outcomeText = r.outcome === "hit" ? "hit" :
                         r.outcome === "miss" ? "miss" : "unknown";
-    const titleText = r.purchased_perk_name || outcomeText.toUpperCase();
+    const titleText = rollPrincipalName(r) || outcomeText.toUpperCase();
     tip.appendChild(el("div", { class: "tip-title" }, titleText));
 
     function row(label, value) {
@@ -2472,10 +2581,13 @@ function attachIntroToggle() {
 (async () => {
   try {
     const skyEnabled = skyPrototypeEnabled();
+    const packageIndex = await loadPackageIndex();
+    const packageSelection = selectedPackageBase(packageIndex);
+    const dataPackage = await loadDataPackage(packageSelection.base);
     const [facts, wireframes, rollResolutions] = await Promise.all([
-      loadJSON("chapter_facts"),
-      skyEnabled ? loadOptionalJSON("constellation_wireframes") : Promise.resolve(null),
-      skyEnabled ? loadOptionalJSON("roll_resolutions") : Promise.resolve(null),
+      loadContractJSON(dataPackage, "chapter_facts"),
+      skyEnabled ? loadContractJSON(dataPackage, "constellation_wireframes", { optional: true }) : Promise.resolve(null),
+      skyEnabled ? loadContractJSON(dataPackage, "roll_resolutions", { optional: true }) : Promise.resolve(null),
     ]);
     const model = buildCoordinateModel(facts);
     const cumIdx = buildCumulativeIndex(facts);
@@ -2496,10 +2608,11 @@ function attachIntroToggle() {
     attachThemeToggle();
     attachIntroToggle();
     const skySection = $("sky-section");
-    if (skySection) skySection.hidden = !skyEnabled;
+    if (skySection) skySection.hidden = !skyEnabled || !wireframes;
     renderTracks(model, facts);
     applyTimelineZoom(state, { center: true });
-    if (skyEnabled) initSkyView(state, wireframes, rollResolutions);
+    if (skyEnabled && wireframes) initSkyView(state, wireframes, rollResolutions);
+    attachDataPackageSelector(packageIndex, packageSelection.packageId || dataPackage.manifest.package_id);
     attachRollTooltip();
     attachScrubber(state);
     attachChapterSelection(state);
@@ -2515,8 +2628,8 @@ function attachIntroToggle() {
       el("h1", null, "Failed to load data"),
       el("p", null, err.message),
       el("p", null, "Make sure you're serving from the repo root over HTTP "
-        + "(e.g. python3 -m http.server) so data/derived/chapter_facts.json "
-        + "is reachable."));
+        + "(e.g. python3 -m http.server) so data/derived/data_package.json "
+        + "and chapter_facts.json are reachable."));
     clear(document.body);
     document.body.appendChild(errBox);
   }

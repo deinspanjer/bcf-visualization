@@ -29,6 +29,10 @@
 
 ## Documentation and maintenance
 
+- After the first release-backed Pages deploy succeeds, decide when to
+  untrack and ignore top-level `data/derived/*.json`.
+- Treat any future `git-filter-repo` cleanup as a coordinated migration
+  with a write freeze, branch guidance, and reclone instructions.
 - Decide whether the long mechanics and analytics sections in
   `README.md` should move into focused docs under `docs/` after the
   next milestone.

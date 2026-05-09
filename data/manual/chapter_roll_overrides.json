@@ -1,0 +1,293 @@
+{
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, narrative_evidence}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', or 'section_start'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "chapter_roll_overrides": {
+    "65": {
+      "rolls": [
+        {
+          "perks": [
+            "Fueling Station",
+            "Garage"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Two of the motes were secured (PR multi-grab)."
+        },
+        {
+          "perks": [
+            "Workshop: Electronics"
+          ],
+          "outcome": "hit",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "narrative_evidence": "Workshop: Electronics is a separate Toolkits roll."
+        }
+      ],
+      "narrative_evidence": "Two of the motes were secured (PR multi-grab); Workshop: Electronics is a separate Toolkits roll. Order verified against curator rolls.json (PR multi-grab roll_number 444, Workshop: Electronics 448). (ch 65)"
+    },
+    "67": {
+      "rolls": [
+        {
+          "perks": [
+            "The Meaning of Life",
+            "Natural Lighting",
+            "The Pond-Expansion",
+            "Neutral Lighting"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections."
+        },
+        {
+          "perks": [
+            "The Pond"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Then The Pond."
+        },
+        {
+          "perks": [
+            "Pilot Simulator"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Then Pilot Simulator."
+        }
+      ],
+      "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections; then The Pond; then Pilot Simulator. Ch 67's curator-listed order (Pilot Simulator first) disagrees with narrative."
+    },
+    "97": {
+      "rolls": [
+        {
+          "perks": [
+            "Additional Space - Starting Area",
+            "Additional Space – Lofty Loft"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Secured two connections (PR multi-grab)."
+        },
+        {
+          "perks": [
+            "Nano-Forge"
+          ],
+          "outcome": "hit",
+          "constellation": "Size",
+          "word_position": null,
+          "narrative_evidence": "Then Nano-Forge."
+        }
+      ],
+      "narrative_evidence": "secured two connections (PR multi-grab); then Nano-Forge. (ch 97)"
+    },
+    "1": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "narrative_evidence": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach."
+        },
+        {
+          "perks": [
+            "Fashion"
+          ],
+          "outcome": "hit",
+          "constellation": "Clothing",
+          "word_position": null,
+          "mention_chapter_num": "2",
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "narrative_evidence": "I felt myself latch on to a mote of power. It was from one of the smaller constellations and a little less powerful than the mote that I had missed on my previous attempt. As my connection solidified I felt my knowledge of the power and its constellation expand.\n\nThis was not a tinker power. This was something better. This was a brute power that required tinker support.\n\nThat constellation was called 'Clothing'. I didn't have a good sense of the other powers within it, but this power was called 'Fashion'."
+        }
+      ],
+      "narrative_evidence": "Ch 1: Workshop, Access Key, and Entrance Hall were granted at the trigger event (with Joe receiving his power), before any roll fires. The first predicted roll is the narrated miss. The second predicted roll fires at the end of chapter 1 but is narrated/listed in chapter 2 as Fashion."
+    },
+    "100": {
+      "rolls": [
+        {
+          "perks": [
+            "Skills: Communications",
+            "Skills: Espionage",
+            "Skills: Piloting",
+            "Skills: Weapons"
+          ],
+          "outcome": "hit",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions into one Knowledge roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "103": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table records this as a Toolkits miss."
+        },
+        {
+          "perks": [
+            "Minor Blessing Demeter - Cultivation",
+            "Unnatural Skill: Naturecraft"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft as one 300 CP Quality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "104": {
+      "rolls": [
+        {
+          "perks": [
+            "Entrance Hall - Espirit de Kerbal",
+            "Entrance Hall - Fleet",
+            "Entrance Hall - Some Old Friends",
+            "Entrance Hall - The Matrix",
+            "Entrance Hall – Aisha",
+            "Entrance Hall – Survey",
+            "Entrance Hall – Tetra",
+            "Entrance Hall – Tybalt"
+          ],
+          "outcome": "hit",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table records the eight Entryway/Entrance Hall acquisitions as a single x8 roll."
+        },
+        {
+          "perks": [
+            "Firestorm"
+          ],
+          "outcome": "hit",
+          "constellation": "Resources and Durability",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table records Firestorm as a Resources and Durability hit."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "106": {
+      "rolls": [
+        {
+          "perks": [
+            "Minor Blessing Apollo - Medicine",
+            "Unnatural Skill: Healing"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing as one Quality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "109": {
+      "rolls": [
+        {
+          "perks": [
+            "Basic Nutrition",
+            "A Little Less Basic",
+            "A Lot Less"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less as one 500 CP roll. The source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality after its perks were exhausted."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "112": {
+      "rolls": [
+        {
+          "perks": [
+            "Minor Blessing Hermes - Invention",
+            "Unnatural Skill: Weaving"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing and Unnatural Skill acquisitions as one Quality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "114": {
+      "rolls": [
+        {
+          "perks": [
+            "Starting Collection",
+            "Expanded Collection - Mysticism",
+            "Esoteric Collection - Magic"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades as one 200 CP Personal Reality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "116.2": {
+      "rolls": [
+        {
+          "perks": [
+            "Music Collection",
+            "Movie & TV Series Collection"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection as one 100 CP Personal Reality roll."
+        }
+      ],
+      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+    },
+    "2": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "narrative_evidence": "I felt my power try and fail to latch onto a mote from a new constellation."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "narrative_evidence": "One of the largest constellations was swinging towards me and my power latched onto a small mote from it. I took a moment to focus on the new power. The constellation was 'Quality' and this particular power was called 'Bling of War'."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "narrative_evidence": "It was the same constellation I had failed to connect to with my first attempt. This time my power was strong enough to latch onto a mote as they flew past. Unlike last time this took every ounce of my stored energy to secure the link. Finally I had the connection and could tell what that constellation was.\n\nIt was the 'Alchemy' constellation and the mote I had connected to was 'Evermore Alchemist'."
+        }
+      ],
+      "narrative_evidence": ""
+    }
+  }
+}

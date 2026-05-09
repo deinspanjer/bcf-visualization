@@ -1380,6 +1380,7 @@ def main() -> None:
         cluster_entries.append(build_cluster_constellation(name, spec, jumps_in))
 
     payload = {
+        "schema_version": 1,
         "_source": "data/derived/perk_directory.json (constellations + jumps); coordinates hand-designed in scripts/build_constellation_wireframes.py",
         "_count": len(cluster_entries),
         "_jumps_count": len(jump_entries),

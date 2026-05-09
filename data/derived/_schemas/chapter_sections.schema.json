@@ -47,6 +47,16 @@
         "sections": {
           "type": "array",
           "items": { "$ref": "#/$defs/section" }
+        },
+        "excluded_word_ranges": {
+          "type": "array",
+          "description": "Union of CP-exclusion word ranges (chapter-local), built from per-section AN + auto-header ranges and merged for de-duplication. Manual header_corrections from data/manual/header_corrections.json are merged in at consumption time.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 0 }
+          }
         }
       }
     },
@@ -56,7 +66,8 @@
       "required": [
         "header", "word_count", "counts_for_cp",
         "classification", "confidence", "classification_reason",
-        "fp_count", "tp_count", "structural_markers", "sample"
+        "fp_count", "tp_count", "structural_markers", "sample",
+        "author_note_ranges", "author_note_word_count"
       ],
       "properties": {
         "header":                { "type": ["string", "null"] },
@@ -68,7 +79,18 @@
         "fp_count":              { "type": "integer", "minimum": 0 },
         "tp_count":              { "type": "integer", "minimum": 0 },
         "structural_markers":    { "type": "array", "items": { "type": "string" } },
-        "sample":                { "type": "string" }
+        "sample":                { "type": "string" },
+        "author_note_ranges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "author_note_word_count": { "type": "integer", "minimum": 0 },
+        "auto_header_word_count": { "type": "integer", "minimum": 0 }
       }
     }
   }

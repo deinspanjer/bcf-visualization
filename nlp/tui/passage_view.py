@@ -94,6 +94,7 @@ class PassageView(Widget, can_focus=True):
         Binding("G", "doc_end", "doc end", show=False),
         # Visual mode
         Binding("v", "toggle_visual", "visual", show=False),
+        Binding("V", "toggle_visual_line", "visual line", show=False),
         Binding("space", "toggle_visual", "visual", show=False),
         Binding("escape", "clear_visual", "clear", show=False),
     ]
@@ -103,6 +104,7 @@ class PassageView(Widget, can_focus=True):
     cursor: reactive[int] = reactive(0)
     anchor: reactive[Optional[int]] = reactive(None)
     visual_mode: reactive[bool] = reactive(False)
+    visual_line_mode: reactive[bool] = reactive(False)
 
     # Rich style strings (not Textual CSS — `$accent` won't resolve in Rich).
     cursor_style: reactive[str] = reactive("reverse")
@@ -128,6 +130,10 @@ class PassageView(Widget, can_focus=True):
         # Pending two-key operator: ``"f"``, ``"F"``, ``"t"``, ``"T"`` waits
         # for the next character. ``None`` when no operator is pending.
         self._pending_op: Optional[str] = None
+        # Pending text-object scope ``"a"`` (around) or ``"i"`` (inner).
+        # Only armed inside visual / visual-line mode; cleared when a
+        # following ``w/W/s/p`` completes the selection.
+        self._pending_text_object: Optional[str] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -170,16 +176,25 @@ class PassageView(Widget, can_focus=True):
         Vim's character-wise visual mode is inclusive of the cursor's cell:
         with anchor at offset 0 and cursor on offset 10, the selection
         covers ``[0..10]`` (11 chars). Python slices are end-exclusive, so
-        we extend by one beyond the rightmost endpoint. When anchor is at
-        or past the end of the text, we still produce a single-cell range.
+        we extend by one beyond the rightmost endpoint. Visual-line mode
+        (``V``) extends both endpoints to whole-line boundaries. When
+        anchor is at or past the end of the text, we still produce a
+        single-cell range.
         """
         if self.anchor is None:
             return None
         n = len(self.text)
-        # When anchor == cursor, vim still highlights one cell. Make a
-        # single-char selection — useful for click-no-drag and Space-then-a.
         lo = min(self.anchor, self.cursor)
         hi = max(self.anchor, self.cursor) + 1
+        if self.visual_line_mode and self._lines:
+            # Expand to whole visual lines: lo → start of anchor's line,
+            # hi → end of cursor's line (exclusive of trailing newline,
+            # inclusive of the last char so the range is non-empty even
+            # for a single-line case).
+            lo_line = self._line_index(lo)
+            hi_line = self._line_index(max(0, hi - 1))
+            lo = self._lines[lo_line][0]
+            hi = self._lines[hi_line][1]
         if hi > n:
             hi = n
         if lo >= hi:
@@ -208,9 +223,14 @@ class PassageView(Widget, can_focus=True):
     def _wrap_text(text: str, width: int) -> list[tuple[int, int]]:
         """Return wrap geometry as ``[(start, end), ...]`` for *text* at *width*.
 
-        Hard newlines split lines and are *consumed* by the break (not part of
-        any line's range). Long lines soft-wrap at *width*. An empty input
-        produces a single empty range so the cursor is always renderable.
+        Hard newlines split lines and are *consumed* by the break.
+        Soft wraps prefer **word boundaries**: within a long line, the
+        wrap point is the last whitespace at or before ``width`` chars
+        from the segment start. The whitespace itself is consumed by
+        the break (not in either neighbouring line's range), keeping
+        the visual flow clean. If no whitespace is available within the
+        segment, falls back to a hard char-wrap so over-long single
+        words still don't overflow.
         """
         width = max(1, width)
         n = len(text)
@@ -219,23 +239,38 @@ class PassageView(Widget, can_focus=True):
         lines: list[tuple[int, int]] = []
         i = 0
         while i <= n:
-            # Find next hard newline; if i == n we're past the text.
             nl = text.find("\n", i) if i < n else -1
             hard_end = nl if nl != -1 else n
             if i == hard_end:
-                # Empty line (or trailing newline produced empty terminal line).
                 lines.append((i, i))
             else:
                 j = i
                 while j < hard_end:
-                    k = min(j + width, hard_end)
-                    lines.append((j, k))
-                    j = k
+                    ideal_end = min(j + width, hard_end)
+                    if ideal_end == hard_end:
+                        lines.append((j, hard_end))
+                        j = hard_end
+                        break
+                    # Search backward from ideal_end-1 for the last
+                    # whitespace position. We want to break at that
+                    # space so the previous word stays whole.
+                    space_at = -1
+                    for ki in range(ideal_end - 1, j - 1, -1):
+                        if text[ki].isspace():
+                            space_at = ki
+                            break
+                    if space_at > j:
+                        lines.append((j, space_at))
+                        j = space_at + 1
+                    else:
+                        # No whitespace in segment — single word longer
+                        # than width. Hard char-wrap as fallback.
+                        lines.append((j, ideal_end))
+                        j = ideal_end
             if nl == -1:
                 break
             i = nl + 1
             if i == n:
-                # Trailing newline → empty terminal line.
                 lines.append((i, i))
                 break
         return lines or [(0, 0)]
@@ -268,8 +303,8 @@ class PassageView(Widget, can_focus=True):
         Layer-A and layer-B spans may overlap; layer A wins as a tie-breaker
         because it is the dominant event-tagging layer.
         """
-        a_hit = False
-        b_hit = False
+        best_style: Optional[str] = None
+        best_priority = -1
         for sp in self._spans:
             try:
                 start = int(sp.get("start", 0))
@@ -277,15 +312,56 @@ class PassageView(Widget, can_focus=True):
             except (TypeError, ValueError):
                 continue
             if start <= offset < end:
-                if sp.get("layer", "A") == "A":
-                    a_hit = True
+                style = sp.get("style")
+                if style:
+                    try:
+                        priority = int(sp.get("priority", 30))
+                    except (TypeError, ValueError):
+                        priority = 30
+                elif sp.get("layer", "A") == "A":
+                    style = _LAYER_A_STYLE
+                    priority = 20
                 else:
-                    b_hit = True
-        if a_hit:
-            return _LAYER_A_STYLE
-        if b_hit:
-            return _LAYER_B_STYLE
-        return None
+                    style = _LAYER_B_STYLE
+                    priority = 10
+                if priority > best_priority:
+                    best_style = str(style)
+                    best_priority = priority
+        return best_style
+
+    def _cursor_primary_line(self) -> int:
+        """Index of the visual line where the cursor should render.
+
+        - A cursor strictly inside a line range ``(start <= cursor < end)``
+          renders inline in that line.
+        - A cursor at exactly ``len(text)`` renders as a synthetic trailing
+          block on the last line.
+        - A cursor sitting on an empty line ``(start == end)`` or on a hard
+          newline position ``(cursor == end)`` of a non-final line renders
+          as a synthetic block on that line.
+        - When two adjacent lines share the same offset (soft wrap), the
+          *next* line's inner loop wins so the cursor renders on the
+          continuation line, not as a phantom at the end of the prior line.
+        """
+        cursor = self.cursor
+        n = len(self.text)
+        if not self._lines:
+            return 0
+        if cursor >= n:
+            return len(self._lines) - 1
+        for i, (start, end) in enumerate(self._lines):
+            if start <= cursor < end:
+                return i
+        # Boundary case: cursor == end for some line, but no inner loop
+        # rendered it (hard newline or empty line). Find the line whose end
+        # equals cursor; prefer the empty-line owner if start==end==cursor.
+        for i, (start, end) in enumerate(self._lines):
+            if start == end == cursor:
+                return i
+        for i, (start, end) in enumerate(self._lines):
+            if cursor == end:
+                return i
+        return len(self._lines) - 1
 
     def render(self) -> Text:
         """Render the passage with cursor + selection overlays."""
@@ -296,9 +372,11 @@ class PassageView(Widget, can_focus=True):
         rich_text = Text()
         sel = self.selection
         sel_lo, sel_hi = (sel if sel is not None else (-1, -1))
+        primary_line = self._cursor_primary_line()
 
         for li, (start, end) in enumerate(self._lines):
             i = start
+            cursor_drawn_inline = False
             while i < end:
                 ch = text[i]
                 styles: list[str] = []
@@ -307,16 +385,18 @@ class PassageView(Widget, can_focus=True):
                     styles.append(span_style)
                 if sel_lo <= i < sel_hi:
                     styles.append(self.selection_style)
-                if i == self.cursor:
+                if i == self.cursor and li == primary_line:
                     styles.append(self.cursor_style)
+                    cursor_drawn_inline = True
                 if styles:
                     rich_text.append(ch, style=" ".join(styles))
                 else:
                     rich_text.append(ch)
                 i += 1
-            # If cursor is at end of text, render a synthetic block so it's
-            # still visible even when there's no character to invert.
-            if li == len(self._lines) - 1 and self.cursor == len(text):
+            # Render synthetic cursor block on the primary line when the
+            # inner loop didn't draw it (empty line, hard newline boundary,
+            # or cursor at end-of-document on the last line).
+            if li == primary_line and not cursor_drawn_inline:
                 rich_text.append(" ", style=self.cursor_style)
             if li < len(self._lines) - 1:
                 rich_text.append("\n")
@@ -327,9 +407,20 @@ class PassageView(Widget, can_focus=True):
     # ------------------------------------------------------------------
 
     def _xy_to_offset(self, x: int, y: int) -> int:
-        """Convert widget-local (x, y) to a character offset."""
+        """Convert widget-local (x, y) to a character offset.
+
+        Subtracts the widget's CSS padding so a click on the leftmost
+        visible character maps to the start of that line, not the
+        padding column.
+        """
         if not self._lines:
             return 0
+        try:
+            pad = self.styles.padding
+            x -= pad.left
+            y -= pad.top
+        except Exception:
+            pass
         line_idx = max(0, min(y, len(self._lines) - 1))
         start, end = self._lines[line_idx]
         col = max(0, x)
@@ -338,15 +429,26 @@ class PassageView(Widget, can_focus=True):
             offset = end
         return max(0, min(offset, len(self.text)))
 
+    # Drag selection requires the cursor to move a meaningful distance
+    # away from the click point before an anchor is committed. Tiny
+    # sub-pixel drift during a plain click should never create a
+    # selection.
+    _DRAG_THRESHOLD_CHARS = 4
+
     def on_mouse_down(self, event: events.MouseDown) -> None:
         if event.button != 1:
             return
         self.focus()
         offset = self._xy_to_offset(event.x, event.y)
         self.cursor = offset
-        self.anchor = offset
+        # IMPORTANT: do NOT set anchor here. We commit it only on
+        # actual drag movement past the threshold. This avoids the
+        # "click triggers a 1-char selection" bug.
+        self.anchor = None
         self.visual_mode = False
+        self.visual_line_mode = False
         self._dragging = True
+        self._drag_start_offset = offset
         self.capture_mouse()
         self.refresh()
         event.stop()
@@ -355,9 +457,16 @@ class PassageView(Widget, can_focus=True):
         if not self._dragging:
             return
         offset = self._xy_to_offset(event.x, event.y)
-        if offset != self.cursor:
-            self.cursor = offset
-            self.refresh()
+        start = getattr(self, "_drag_start_offset", offset)
+        if offset == self.cursor:
+            event.stop()
+            return
+        # Only commit anchor once the user has dragged past threshold;
+        # treat shorter drags as a still-pending click.
+        if self.anchor is None and abs(offset - start) >= self._DRAG_THRESHOLD_CHARS:
+            self.anchor = start
+        self.cursor = offset
+        self.refresh()
         event.stop()
 
     def on_mouse_up(self, event: events.MouseUp) -> None:
@@ -367,8 +476,9 @@ class PassageView(Widget, can_focus=True):
         self.release_mouse()
         offset = self._xy_to_offset(event.x, event.y)
         self.cursor = offset
-        # Click without drag — clear selection.
-        if self.anchor == self.cursor:
+        start = getattr(self, "_drag_start_offset", offset)
+        # If the drag never crossed the threshold, treat as a click.
+        if self.anchor is not None and abs(offset - start) < self._DRAG_THRESHOLD_CHARS:
             self.anchor = None
         self.refresh()
         event.stop()
@@ -380,30 +490,46 @@ class PassageView(Widget, can_focus=True):
     def _maybe_extend(self, new_cursor: int) -> None:
         """Move the cursor and, if not in visual mode, drop the anchor.
 
-        In visual mode the anchor is preserved so the selection grows /
-        shrinks. Outside visual mode any prior selection is cleared by a
-        plain motion.
+        In visual mode (char-wise ``v`` or line-wise ``V``) the anchor
+        is preserved so the selection grows / shrinks. Outside visual
+        mode any prior selection is cleared by a plain motion.
         """
         new_cursor = max(0, min(new_cursor, len(self.text)))
-        if not self.visual_mode:
+        if not (self.visual_mode or self.visual_line_mode):
             # Plain motion clears any pre-existing (e.g. mouse) selection.
             self.anchor = None
         self.cursor = new_cursor
         self.refresh()
 
     def _line_index(self, offset: int) -> int:
-        """Return the visual-line index containing *offset*."""
+        """Return the visual-line index containing *offset*.
+
+        Matches the rendering convention so motion math (j/k/$/^/etc.)
+        agrees with where the cursor is actually drawn:
+
+        - A position strictly inside a line (``start <= offset < end``)
+          belongs to that line — the inner render loop draws the cursor
+          there. For a soft-wrap boundary offset that is both the ``end``
+          of line N and the ``start`` of line N+1, this rule selects
+          line N+1, the continuation line, where the cursor renders.
+        - Otherwise the offset is at a true boundary (empty line range
+          ``(i, i)`` or a hard-newline position with no continuation
+          starting at the same offset). Pick the *last* line whose
+          ``end == offset`` — that's the line whose synthetic cursor
+          cell is drawn.
+        """
         if not self._lines:
             return 0
         for i, (start, end) in enumerate(self._lines):
-            if start <= offset <= end:
-                # If exactly at end and a next line starts here, prefer this one
-                # for cursor-at-end semantics.
-                if offset == end and i + 1 < len(self._lines):
-                    if self._lines[i + 1][0] == end:
-                        # Wrapped: still belongs to current line.
-                        return i
+            if start <= offset < end:
                 return i
+        # Boundary positions: empty line, hard-newline char, or end-of-text.
+        last_match = -1
+        for i, (start, end) in enumerate(self._lines):
+            if end == offset:
+                last_match = i
+        if last_match >= 0:
+            return last_match
         return len(self._lines) - 1
 
     def _column(self, offset: int) -> int:
@@ -423,6 +549,35 @@ class PassageView(Widget, can_focus=True):
         are called so the binding-based action handlers don't also fire.
         Otherwise the event bubbles through normally.
         """
+        ch_for_pending = event.character
+        key_for_pending = event.key
+
+        # Pending text-object completion: ``aw / iw / aW / iW / as / is /
+        # ap / ip``. Only armed inside visual / visual-line mode.
+        if self._pending_text_object in ("a", "i"):
+            scope = self._pending_text_object
+            self._pending_text_object = None
+            if ch_for_pending in ("w", "W", "s", "p") and (
+                self.visual_mode or self.visual_line_mode
+            ):
+                self._select_text_object(scope=scope, kind=ch_for_pending)
+                event.prevent_default()
+                event.stop()
+                return
+            # Cancel without movement on any other key.
+            event.prevent_default()
+            event.stop()
+            return
+
+        # Arm text-object pending state when ``a`` / ``i`` is pressed in
+        # visual mode. Outside visual mode they fall through (we don't
+        # use them as motions/operators).
+        if (self.visual_mode or self.visual_line_mode) and ch_for_pending in ("a", "i"):
+            self._pending_text_object = ch_for_pending
+            event.prevent_default()
+            event.stop()
+            return
+
         # If a two-key operator is pending (f / F / t / T), consume the next
         # printable character as the target. Anything non-printable (Escape,
         # arrows, etc.) clears the pending state without movement.
@@ -747,6 +902,8 @@ class PassageView(Widget, can_focus=True):
         """Toggle visual selection mode (``v`` or Space)."""
         self._pending_g = False
         self._pending_count = ""
+        # Switching modes: drop line-mode if active.
+        self.visual_line_mode = False
         if self.visual_mode:
             self.visual_mode = False
             self.anchor = None
@@ -755,12 +912,175 @@ class PassageView(Widget, can_focus=True):
             self.anchor = self.cursor
         self.refresh()
 
+    def action_toggle_visual_line(self) -> None:
+        """Toggle line-wise visual selection mode (``V``)."""
+        self._pending_g = False
+        self._pending_count = ""
+        if self.visual_line_mode:
+            self.visual_line_mode = False
+            self.visual_mode = False
+            self.anchor = None
+        else:
+            self.visual_line_mode = True
+            self.visual_mode = False
+            self.anchor = self.cursor
+        self.refresh()
+
+    # ------------------------------------------------------------------
+    # Text objects (vim ``aw / iw / aW / iW / as / is / ap / ip``)
+    # ------------------------------------------------------------------
+
+    def _word_bounds(self, cursor: int, *, big: bool) -> Optional[tuple[int, int]]:
+        """Return ``(start, end_exclusive)`` of the word containing cursor.
+
+        ``big=True`` uses vim WORD semantics (whitespace-delimited);
+        ``big=False`` uses ``\\w+``. Returns ``None`` when ``cursor``
+        sits on a non-word character (or whitespace, for big=False).
+        """
+        text = self.text
+        n = len(text)
+        if not (0 <= cursor < n):
+            return None
+        if big:
+            if text[cursor].isspace():
+                return None
+            s = cursor
+            while s > 0 and not text[s - 1].isspace():
+                s -= 1
+            e = cursor
+            while e < n and not text[e].isspace():
+                e += 1
+            return s, e
+        if not _WORD_CHAR.match(text, cursor):
+            return None
+        s = cursor
+        while s > 0 and _WORD_CHAR.match(text, s - 1):
+            s -= 1
+        e = cursor
+        while e < n and _WORD_CHAR.match(text, e):
+            e += 1
+        return s, e
+
+    def _next_word_at_or_after(self, cursor: int, *, big: bool) -> int:
+        """Skip whitespace forward to the next word/WORD start at or after cursor."""
+        text = self.text
+        n = len(text)
+        i = cursor
+        if big:
+            while i < n and text[i].isspace():
+                i += 1
+        else:
+            while i < n and not _WORD_CHAR.match(text, i):
+                i += 1
+        return i
+
+    def _sentence_bounds(self, cursor: int) -> tuple[int, int]:
+        """Return ``(start, end_exclusive)`` for the sentence containing cursor.
+
+        Sentences are runs of text terminated by ``.``, ``!``, or ``?``.
+        Newlines act as soft sentence boundaries too.
+        """
+        text = self.text
+        n = len(text)
+        # Walk back to find sentence start.
+        s = cursor
+        while s > 0:
+            prev = text[s - 1]
+            if prev in ".!?\n":
+                break
+            s -= 1
+        while s < n and text[s].isspace():
+            s += 1
+        # Walk forward to sentence end (inclusive of terminating punctuation).
+        e = max(s, cursor)
+        while e < n:
+            c = text[e]
+            if c in ".!?":
+                e += 1
+                break
+            if c == "\n" and e + 1 < n and text[e + 1] == "\n":
+                break
+            e += 1
+        return s, e
+
+    def _paragraph_bounds(self, cursor: int) -> tuple[int, int]:
+        """Return ``(start, end_exclusive)`` for the paragraph containing cursor.
+
+        Paragraphs are runs separated by one or more blank lines (``\\n\\n``).
+        """
+        text = self.text
+        n = len(text)
+        # Find paragraph start: scan back until previous \n\n.
+        s = cursor
+        while s > 0:
+            if s >= 2 and text[s - 2] == "\n" and text[s - 1] == "\n":
+                break
+            s -= 1
+        # Find paragraph end: scan forward until next \n\n.
+        e = max(s, cursor)
+        while e < n:
+            if e + 1 < n and text[e] == "\n" and text[e + 1] == "\n":
+                break
+            e += 1
+        return s, e
+
+    def _select_text_object(self, *, scope: str, kind: str) -> None:
+        """Compute and apply a text-object selection.
+
+        ``scope`` is ``"a"`` (around) or ``"i"`` (inner). ``kind`` is one
+        of ``w / W / s / p``.
+        """
+        text = self.text
+        n = len(text)
+        if n == 0:
+            return
+        cursor = self.cursor
+
+        if kind in ("w", "W"):
+            big = kind == "W"
+            bounds = self._word_bounds(cursor, big=big)
+            if bounds is None:
+                # On whitespace — find next word.
+                start = self._next_word_at_or_after(cursor, big=big)
+                if start >= n:
+                    return
+                bounds = self._word_bounds(start, big=big)
+                if bounds is None:
+                    return
+            s, e = bounds
+            if scope == "a":
+                while e < n and text[e] in " \t":
+                    e += 1
+        elif kind == "s":
+            s, e = self._sentence_bounds(cursor)
+            if scope == "a":
+                while e < n and text[e] in " \t":
+                    e += 1
+        elif kind == "p":
+            s, e = self._paragraph_bounds(cursor)
+            if scope == "a":
+                while e < n and text[e] == "\n":
+                    e += 1
+        else:
+            return
+
+        if e <= s:
+            return
+        # Vim selection: anchor at start, cursor on last char of range.
+        if not (self.visual_mode or self.visual_line_mode):
+            self.visual_mode = True
+        self.anchor = s
+        self.cursor = max(s, e - 1)
+        self.refresh()
+
     def action_clear_visual(self) -> None:
         """Clear any active selection / visual mode (Escape)."""
         self._pending_g = False
         self._pending_count = ""
         self._pending_op = None
+        self._pending_text_object = None
         self.visual_mode = False
+        self.visual_line_mode = False
         self.anchor = None
         self.refresh()
 
@@ -771,6 +1091,6 @@ class PassageView(Widget, can_focus=True):
         so the widget doesn't repaint mid-loop.
         """
         new_cursor = max(0, min(new_cursor, len(self.text)))
-        if not self.visual_mode:
+        if not (self.visual_mode or self.visual_line_mode):
             self.anchor = None
         self.cursor = new_cursor
