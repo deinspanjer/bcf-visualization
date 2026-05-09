@@ -78,6 +78,14 @@ commits after Phase 1 is proven.
 - Verify that release packaging, Pages deployment, and local tests still
   work from hydrated data.
 
+Status: complete. After untracking top-level generated derived JSON,
+the first validated release-backed Pages deploy from regenerated manual
+inputs used:
+
+```text
+bcf-visualization-data-v20260509.4-ch194-120.1
+```
+
 ## Phase 3: Release Maintenance And Multi-Package Pages
 
 Goal: make long-lived release operations explicit and safe.
