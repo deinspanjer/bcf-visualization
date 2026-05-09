@@ -26,6 +26,11 @@ on:
         required: false
         default: 'bcf-visualization-data-v20260509.3-ch194-120.1.tar.gz'
         type: string
+      regenerate:
+        description: 'Regenerate release data from committed manual inputs after hydrating source_data_asset.'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -42,6 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SOURCE_DATA_TAG: ${{ inputs.source_data_tag }}
           SOURCE_DATA_ASSET: ${{ inputs.source_data_asset }}
+          REGENERATE: ${{ inputs.regenerate }}
         run: |
           if [ ! -f data/derived/chapter_facts.json ]; then
             if [ -z "$SOURCE_DATA_TAG" ] || [ -z "$SOURCE_DATA_ASSET" ]; then
@@ -51,6 +57,12 @@ jobs:
             python3 scripts/data_release.py download-dev \
               --tag "$SOURCE_DATA_TAG" \
               --asset "$SOURCE_DATA_ASSET"
+          fi
+          if [ "$REGENERATE" = "true" ]; then
+            python3 -m pip install -r requirements.txt
+            python3 scripts/download_bcf_epub.py
+            python3 scripts/derive_roll_facts.py
+            python3 scripts/build_chapter_facts.py
           fi
           DATE="${{ inputs.package_date }}"
           BUILD="${{ inputs.build_number }}"

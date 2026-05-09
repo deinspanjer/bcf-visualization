@@ -89,7 +89,7 @@
         {
           "perks": [],
           "outcome": "miss",
-          "constellation": null,
+          "constellation": "Alchemy",
           "word_position": null,
           "narrative_evidence": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach."
         },
@@ -285,6 +285,41 @@
           "mention_word_position": 6958,
           "display_position_policy": "mention",
           "narrative_evidence": "It was the same constellation I had failed to connect to with my first attempt. This time my power was strong enough to latch onto a mote as they flew past. Unlike last time this took every ounce of my stored energy to secure the link. Finally I had the connection and could tell what that constellation was.\n\nIt was the 'Alchemy' constellation and the mote I had connected to was 'Evermore Alchemist'."
+        }
+      ],
+      "narrative_evidence": ""
+    },
+    "3": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "3",
+          "mention_word_position": 1274,
+          "display_position_policy": "mention",
+          "narrative_evidence": "My power latched on to one of the smaller motes and secured a connection. The constellation was 'Vehicles' and the mote was called 'Black Thumb'."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "3",
+          "mention_word_position": 5566,
+          "display_position_policy": "mention",
+          "narrative_evidence": "During the fight with Oni Lee my power had failed to latch onto one of the larger motes from the Vehicle constellation."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "3",
+          "mention_word_position": 5588,
+          "display_position_policy": "mention",
+          "narrative_evidence": "This time it connected with a small mote from what turned out to be the 'Time' constellation."
         }
       ],
       "narrative_evidence": ""

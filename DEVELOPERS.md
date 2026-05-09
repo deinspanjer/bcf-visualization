@@ -7,8 +7,8 @@ The project is intentionally static:
 - `data/raw/` contains local source material such as MHT exports,
   spreadsheets, and optional EPUBs.
 - `data/manual/` contains curated inputs and overrides.
-- `data/derived/` contains committed JSON outputs, matching schemas, and
-  the Phase 1 runtime data-package manifest.
+- `data/derived/` contains generated JSON outputs after bootstrap or
+  regeneration, plus committed schemas in `data/derived/_schemas/`.
 - `scripts/` contains parser, enrichment, validation, and chart scripts.
 - `web/` contains the dependency-free visualization.
 
@@ -95,6 +95,12 @@ python3 scripts/data_release.py package \
   --build-number N \
   --output-dir dist/data-packages
 ```
+
+The GitHub `Build data release` workflow hydrates from the latest
+validated maintainer bundle when needed, then regenerates the roll facts
+and chapter facts from committed manual inputs before packaging by
+default. Use the workflow's `regenerate=false` input only when you
+intentionally want to republish exactly hydrated derived data.
 
 The package command writes two assets:
 
