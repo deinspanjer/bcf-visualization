@@ -388,6 +388,81 @@ class CurationPersistence:
         )
         return new_entry
 
+    def remove_annotations_at_word(
+        self,
+        chapter_num: str,
+        word_index: int,
+        *,
+        author_note_keys: list[tuple[int, str]] | None = None,
+    ) -> dict[str, int]:
+        """Remove manual AN/header annotations that cover ``word_index``.
+
+        ``author_note_keys`` contains ``(section_index, an_text)`` pairs
+        already resolved by the caller. Header corrections carry explicit
+        word offsets, so they can be removed directly here.
+        """
+        cn = str(chapter_num)
+        wi = int(word_index)
+        note_keys = {
+            (int(section_index), str(an_text))
+            for section_index, an_text in (author_note_keys or [])
+        }
+
+        before = {
+            "author_notes": deepcopy(self.author_notes),
+            "header_corrections": deepcopy(self.header_corrections),
+        }
+
+        notes = self.author_notes.setdefault("author_notes", [])
+        kept_notes = []
+        removed_notes = 0
+        for note in notes:
+            key = (int(note.get("section_index", -1)), str(note.get("an_text") or ""))
+            if str(note.get("chapter_num")) == cn and key in note_keys:
+                removed_notes += 1
+                continue
+            kept_notes.append(note)
+        self.author_notes["author_notes"] = kept_notes
+
+        corrections = self.header_corrections.setdefault("corrections", [])
+        kept_corrections = []
+        removed_headers = 0
+        for correction in corrections:
+            if (
+                str(correction.get("chapter_num")) == cn
+                and int(correction.get("word_offset_start", -1)) <= wi
+                and wi < int(correction.get("word_offset_end", -1))
+            ):
+                removed_headers += 1
+                continue
+            kept_corrections.append(correction)
+        self.header_corrections["corrections"] = kept_corrections
+
+        if removed_notes:
+            _atomic_write_json(self.author_notes_path, self.author_notes)
+        if removed_headers:
+            _atomic_write_json(self.header_corrections_path, self.header_corrections)
+        if removed_notes or removed_headers:
+            self._append_journal(
+                "remove_annotations_at_word",
+                MANUAL,
+                cn,
+                before,
+                {
+                    "author_notes": deepcopy(self.author_notes),
+                    "header_corrections": deepcopy(self.header_corrections),
+                },
+                extra={
+                    "word_index": wi,
+                    "removed_author_notes": removed_notes,
+                    "removed_header_corrections": removed_headers,
+                },
+            )
+        return {
+            "author_notes": removed_notes,
+            "header_corrections": removed_headers,
+        }
+
     def set_last_roll_outcome(
         self, chapter_num: str, outcome: str
     ) -> dict | None:
@@ -517,6 +592,23 @@ class CurationPersistence:
             idx -= 1
         if idx < 0:
             return None
+        if last.get("action_type") == "remove_annotations_at_word":
+            before_state = last["before"]
+            author_notes = before_state.get("author_notes")
+            header_corrections = before_state.get("header_corrections")
+            if author_notes is not None:
+                _atomic_write_json(self.author_notes_path, author_notes)
+                self.author_notes = author_notes
+            if header_corrections is not None:
+                _atomic_write_json(self.header_corrections_path, header_corrections)
+                self.header_corrections = header_corrections
+            self._append_journal(
+                "undo", MANUAL, last.get("chapter_num"),
+                before=last.get("after"),
+                after=before_state,
+                extra={"undid": last.get("action_type")},
+            )
+            return last.get("action_type", "?"), last.get("chapter_num")
         target_rel = last["target_file"]
         before_state = last["before"]
         target_abs = Path(target_rel)

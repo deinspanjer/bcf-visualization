@@ -20,7 +20,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 from rich.text import Text
 from textual import events, on
@@ -496,9 +495,11 @@ class ActionsPanel(Static):
             "[bold]Roll metadata[/bold]\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
-            "  ⎵D  Defer evidence to next chapter\n"
+            "  ⎵d  Defer evidence to next chapter\n"
             "  ⎵c  Set constellation\n"
             "  ⎵p  Set perks\n\n"
+            "[bold]Annotation cleanup[/bold]\n"
+            "  ⎵D  Remove annotation at word\n\n"
             "[bold]Navigation[/bold]\n"
             "  ]] [[  next/prev chapter\n"
             "  ][ []  next/prev section\n"
@@ -639,7 +640,8 @@ class HelpScreen(ModalScreen):
             "  <space>H         header span = current selection\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
-            "  <space>D         defer current roll evidence to next chapter\n"
+            "  <space>d         defer current roll evidence to next chapter\n"
+            "  <space>D         remove annotation at current word\n"
             "  <space>h / m     last roll = hit / miss\n"
             "  <space>c / p     constellation / perks pickers\n"
             "  (no insert/delete: roll positions come from simulator)\n"
@@ -741,16 +743,19 @@ class ConstellationPicker(ModalScreen):
             self._pending_zero = False
             if ch and ch.isdigit():
                 idx = 9 + int(ch)  # 0->9 (10th), 1->10, ..., 4->13
-                event.prevent_default(); event.stop()
+                event.prevent_default()
+                event.stop()
                 self._select_idx(idx)
                 return
         if ch == "0":
             self._pending_zero = True
-            event.prevent_default(); event.stop()
+            event.prevent_default()
+            event.stop()
             return
         if ch and ch.isdigit():
             idx = int(ch) - 1
-            event.prevent_default(); event.stop()
+            event.prevent_default()
+            event.stop()
             self._select_idx(idx)
             return
 
@@ -1151,8 +1156,14 @@ class ForgeCuratorApp(App):
             if 0 <= ws < total:
                 _add(ws, "═")
         cn = cs.meta.chapter_num
-        # Derived excluded ranges, currently used for curated AN spans.
+        # Derived excluded ranges include ANs and auto/manual header
+        # exclusions. Auto headers already have a header glyph above, so
+        # don't render their duplicate exclusion range as an AN.
+        implicit_headers = set(cs.prose.implicit_header_word_ranges or [])
         for ws, _we in (cs.meta.excluded_word_ranges or []):
+            span = (int(ws), int(_we))
+            if span in implicit_headers:
+                continue
             if 0 <= int(ws) < total:
                 _add(int(ws), "A")
 
@@ -1307,7 +1318,6 @@ class ForgeCuratorApp(App):
         return int(cf.get("banked_cp_at_end") or 0)
 
     def _eligibility_at_cursor(self, cs, word_idx: int, sec_idx: int) -> dict:
-        cn = cs.meta.chapter_num
         sections = cs.meta.sections or []
         section_counts = False
         if 0 <= sec_idx < len(sections):
@@ -1848,12 +1858,12 @@ class ForgeCuratorApp(App):
             self._action_save_quote(cn)
         elif ch == "Q":
             self._action_save_quote_multi(cn)
-        elif ch == "D":
+        elif ch == "d":
             self._action_defer_roll_to_next_chapter(cn)
+        elif ch == "D":
+            self._action_remove_annotations_at_current_word(cn)
         elif ch == "i":
             self._action_insert_roll(cn)
-        elif ch == "d":
-            self._action_delete_last_roll(cn)
         else:
             self._flash(f"<space>{ch}: not bound")
 
@@ -2055,6 +2065,105 @@ class ForgeCuratorApp(App):
         prose_view.refresh()
         self._post_curation_refresh(
             f"header marked ({word_end - word_start} words, sec {section_index})",
+            full=True,
+        )
+
+    def _manual_author_note_keys_at_word(
+        self, chapter_num: str, word_idx: int,
+    ) -> list[tuple[int, str]]:
+        """Resolve manual author-note entries that cover ``word_idx``."""
+        cs = self.state.chapter
+        if cs is None:
+            return []
+        notes = self.persistence.author_notes.get("author_notes") or []
+        word_offsets = cs.prose.word_offsets
+        if not word_offsets:
+            return []
+
+        section_starts: list[int] = []
+        running = 0
+        for section in cs.meta.sections or []:
+            section_starts.append(running)
+            running += int(section.get("word_count") or 0)
+
+        matches: list[tuple[int, str]] = []
+        for note in notes:
+            if str(note.get("chapter_num")) != str(chapter_num):
+                continue
+            try:
+                section_index = int(note.get("section_index"))
+            except Exception:
+                continue
+            an_text = str(note.get("an_text") or "")
+            if not an_text or not (0 <= section_index < len(section_starts)):
+                continue
+
+            section_start_word = section_starts[section_index]
+            section_end_word = (
+                section_starts[section_index + 1]
+                if section_index + 1 < len(section_starts)
+                else len(word_offsets)
+            )
+            if section_start_word >= len(word_offsets):
+                continue
+            section_start_char = word_offsets[section_start_word][0]
+            section_end_char = (
+                word_offsets[min(section_end_word, len(word_offsets)) - 1][1]
+                if section_end_word > section_start_word
+                else section_start_char
+            )
+            section_text = cs.prose.text[section_start_char:section_end_char]
+            offset = section_text.find(an_text)
+            if offset < 0:
+                note_words = an_text.split()
+                section_words = [
+                    cs.prose.text[s:e]
+                    for s, e in word_offsets[section_start_word:section_end_word]
+                ]
+                for rel_start in range(0, len(section_words) - len(note_words) + 1):
+                    rel_end = rel_start + len(note_words)
+                    if section_words[rel_start:rel_end] == note_words:
+                        start_word = section_start_word + rel_start
+                        end_word = section_start_word + rel_end
+                        if start_word <= int(word_idx) < end_word:
+                            matches.append((section_index, an_text))
+                        break
+                continue
+
+            start_char = section_start_char + offset
+            end_char = start_char + len(an_text)
+            start_word = next(
+                (i for i, (_s, e) in enumerate(word_offsets) if e > start_char),
+                len(word_offsets),
+            )
+            end_word = next(
+                (i for i, (s, _e) in enumerate(word_offsets) if s >= end_char),
+                len(word_offsets),
+            )
+            if start_word <= int(word_idx) < end_word:
+                matches.append((section_index, an_text))
+        return matches
+
+    def _action_remove_annotations_at_current_word(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        word_idx = cs.cursor_word_index
+        result = self.persistence.remove_annotations_at_word(
+            chapter_num,
+            word_idx,
+            author_note_keys=self._manual_author_note_keys_at_word(chapter_num, word_idx),
+        )
+        total = result["author_notes"] + result["header_corrections"]
+        if not total:
+            self._flash("annotation delete: none at current word")
+            return
+        self._post_curation_refresh(
+            (
+                "annotation delete: "
+                f"{result['author_notes']} AN, "
+                f"{result['header_corrections']} header"
+            ),
             full=True,
         )
 

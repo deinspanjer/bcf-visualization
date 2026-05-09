@@ -521,6 +521,21 @@ async def test_chapter_2_header_eligibility_and_roll_stats() -> None:
 
 
 @pytest.mark.asyncio
+async def test_chapter_2_auto_header_does_not_render_author_note_gutter_mark() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+
+        top_glyphs = [
+            glyph for prop, glyph in app._compute_gutter_items()
+            if prop == 0.0
+        ]
+
+        assert "═" in top_glyphs
+        assert "A" not in top_glyphs
+
+
+@pytest.mark.asyncio
 async def test_actions_panel_omits_read_only_roll_structure_copy() -> None:
     app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
@@ -618,6 +633,69 @@ async def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) ->
             .get("rolls", [])
         )
         assert not ch2_rolls
+
+
+@pytest.mark.asyncio
+async def test_defer_roll_action_uses_lowercase_space_d() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        calls: list[tuple[str, str]] = []
+
+        app._action_defer_roll_to_next_chapter = lambda cn: calls.append(("defer", cn))
+        app._action_remove_annotations_at_current_word = (
+            lambda cn: calls.append(("delete_annotations", cn))
+        )
+
+        app._handle_space_chord("d")
+        app._handle_space_chord("D")
+
+        assert calls == [("defer", "2"), ("delete_annotations", "2")]
+
+
+@pytest.mark.asyncio
+async def test_remove_annotations_action_deletes_author_notes_and_headers_at_cursor(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    author_notes_path = tmp_path / "author_notes.json"
+    header_corrections_path = tmp_path / "header_corrections.json"
+    author_notes_path.write_text(json.dumps({
+        "author_notes": [
+            {
+                "chapter_num": "2",
+                "section_index": 0,
+                "an_text": "2 Preparation 2 Preparation",
+                "reason": "test",
+            }
+        ]
+    }))
+    header_corrections_path.write_text(json.dumps({
+        "corrections": [
+            {
+                "chapter_num": "2",
+                "section_index": 0,
+                "word_offset_start": 0,
+                "word_offset_end": 4,
+                "excerpt": "2 Preparation 2 Preparation",
+            }
+        ]
+    }))
+
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        app.persistence = CurationPersistence(
+            author_notes_path=author_notes_path,
+            header_corrections_path=header_corrections_path,
+            journal_dir_path=tmp_path / ".journals",
+        )
+        app._run_full_curation_derivation = lambda: None
+        app._post_curation_refresh = lambda message, *, full=False: None
+
+        app._action_remove_annotations_at_current_word("2")
+
+    assert json.loads(author_notes_path.read_text())["author_notes"] == []
+    assert json.loads(header_corrections_path.read_text())["corrections"] == []
 
 
 @pytest.mark.asyncio
