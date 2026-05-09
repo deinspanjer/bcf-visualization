@@ -261,9 +261,9 @@
           "outcome": null,
           "constellation": null,
           "word_position": null,
-          "mention_chapter_num": null,
-          "mention_word_position": null,
-          "display_position_policy": null,
+          "mention_chapter_num": "2",
+          "mention_word_position": 3064,
+          "display_position_policy": "mention",
           "narrative_evidence": "I felt my power try and fail to latch onto a mote from a new constellation."
         },
         {
@@ -271,9 +271,9 @@
           "outcome": null,
           "constellation": null,
           "word_position": null,
-          "mention_chapter_num": null,
-          "mention_word_position": null,
-          "display_position_policy": null,
+          "mention_chapter_num": "2",
+          "mention_word_position": 4967,
+          "display_position_policy": "mention",
           "narrative_evidence": "One of the largest constellations was swinging towards me and my power latched onto a small mote from it. I took a moment to focus on the new power. The constellation was 'Quality' and this particular power was called 'Bling of War'."
         },
         {
@@ -281,9 +281,9 @@
           "outcome": null,
           "constellation": null,
           "word_position": null,
-          "mention_chapter_num": null,
-          "mention_word_position": null,
-          "display_position_policy": null,
+          "mention_chapter_num": "2",
+          "mention_word_position": 6958,
+          "display_position_policy": "mention",
           "narrative_evidence": "It was the same constellation I had failed to connect to with my first attempt. This time my power was strong enough to latch onto a mote as they flew past. Unlike last time this took every ounce of my stored energy to secure the link. Finally I had the connection and could tell what that constellation was.\n\nIt was the 'Alchemy' constellation and the mote I had connected to was 'Evermore Alchemist'."
         }
       ],

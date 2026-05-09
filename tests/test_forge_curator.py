@@ -32,6 +32,8 @@ from scripts.forge_curator.app import (
     ActionsPanel,
     RegexBar,
     GutterPanel,
+    GutterMark,
+    GLYPH_COLORS,
     GLYPH_STYLES,
     LEGEND,
     QUOTE_HIGHLIGHT_STYLE,
@@ -206,7 +208,7 @@ async def test_gutter_minimap_emits_an_and_roll_marks_for_ch97() -> None:
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         gutter = app.query_one("#gutter", GutterPanel)
-        assert gutter.size.width == 2, f"gutter width {gutter.size.width} != 2"
+        assert gutter.size.width == 6, f"gutter width {gutter.size.width} != 6"
         items = app._compute_gutter_items()
         glyph_set = {g for _p, g in items}
         assert "A" in glyph_set, (
@@ -231,19 +233,19 @@ async def test_gutter_minimap_renders_quote_and_regex_on_same_row() -> None:
 
         gutter.render_minimap([(0.0, "Q"), (0.0, "*")], 1.0, 1)
 
-        assert str(gutter.render()) == "Q*"
+        assert str(gutter.render()) == "Q*    "
 
 
 @pytest.mark.asyncio
-async def test_gutter_minimap_keeps_regex_only_marks_in_second_column() -> None:
+async def test_gutter_minimap_renders_regex_by_priority() -> None:
     app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         gutter = app.query_one("#gutter", GutterPanel)
 
-        gutter.render_minimap([(0.0, "*")], 1.0, 2)
+        gutter.render_minimap([(0.0, "2"), (0.0, "*"), (0.0, "1")], 1.0, 1)
 
-        assert str(gutter.render()).splitlines()[0] == " *"
+        assert str(gutter.render()) == "*12   "
 
 
 @pytest.mark.asyncio
@@ -255,10 +257,11 @@ async def test_gutter_minimap_uses_requested_indicator_priority() -> None:
 
         gutter.render_minimap([(0.0, "Q"), (0.0, "A"), (0.0, "1")], 1.0, 1)
 
-        assert str(gutter.render()) == "AQ"
+        assert str(gutter.render()) == "AQ1   "
 
 
 def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
+    css = RegexBar.DEFAULT_CSS
     assert len(set(GLYPH_STYLES.values())) == len(GLYPH_STYLES)
     assert ROLL_HIGHLIGHT_STYLE == GLYPH_STYLES["R"]
     assert QUOTE_HIGHLIGHT_STYLE == GLYPH_STYLES["Q"]
@@ -268,6 +271,25 @@ def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
         GLYPH_STYLES["3"],
         GLYPH_STYLES["*"],
     )
+    for glyph, slot in (("1", "1"), ("2", "2"), ("3", "3"), ("*", "4")):
+        assert f"regex-slot-{slot}" in css
+        assert f"color: {GLYPH_COLORS[glyph]};" in css
+        assert css.count(f"color: {GLYPH_COLORS[glyph]};") == 2
+
+
+@pytest.mark.asyncio
+async def test_gutter_indicator_click_jumps_to_mark_word(monkeypatch) -> None:
+    app = ForgeCuratorApp(start_chapter="2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        gutter = app.query_one("#gutter", GutterPanel)
+        jumps: list[int] = []
+        monkeypatch.setattr(app, "_jump_to_word", lambda word_idx: jumps.append(word_idx))
+
+        gutter.render_minimap([GutterMark(0.0, "Q", 3068)], 1.0, 1)
+        gutter.on_click(_FakeMouseEvent(0, 0))
+
+        assert jumps == [3068]
 
 
 @pytest.mark.parametrize("chapter_num", ["2", "97"])
@@ -1072,14 +1094,16 @@ async def test_b2_mouse_click_word_alignment() -> None:
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         prose = app.query_one("#prose", PassageView)
-        # Padding-aware: with PassageView CSS padding 1 2, a click at
-        # widget-local (5, 1) lands inside line 0 at column 5-2=3.
+        # Padding-aware: a click at left padding + 5 lands inside line 0
+        # at content column 5.
         pad = prose.styles.padding
-        offset = prose._xy_to_offset(2 + 5, pad.top + 0)
-        assert offset == 5, f"_xy_to_offset(2+5, pad.top) -> {offset} (expected 5)"
-        offset2 = prose._xy_to_offset(2 + 0, pad.top + 1)
+        offset = prose._xy_to_offset(pad.left + 5, pad.top + 0)
+        assert offset == 5, (
+            f"_xy_to_offset(pad.left+5, pad.top) -> {offset} (expected 5)"
+        )
+        offset2 = prose._xy_to_offset(pad.left + 0, pad.top + 1)
         if len(prose._lines) > 1:
             assert offset2 == prose._lines[1][0], (
-                f"_xy_to_offset(2+0, pad.top+1) -> {offset2} != line1 start "
+                f"_xy_to_offset(pad.left+0, pad.top+1) -> {offset2} != line1 start "
                 f"{prose._lines[1][0]}"
             )

@@ -197,6 +197,9 @@ class CurationPersistence:
         constellation: str | None = None,
         perks: list[str] | None = None,
         narrative_evidence: str | None = None,
+        mention_chapter_num: str | None = None,
+        mention_word_position: int | None = None,
+        display_position_policy: str | None = None,
     ) -> dict:
         """Update an override roll at 1-based chapter-local ``index``.
 
@@ -212,13 +215,22 @@ class CurationPersistence:
             roll["perks"] = list(perks)
         if narrative_evidence is not None:
             roll["narrative_evidence"] = narrative_evidence
+        if mention_chapter_num is not None:
+            roll["mention_chapter_num"] = str(mention_chapter_num)
+        if mention_word_position is not None:
+            roll["mention_word_position"] = int(mention_word_position)
+        if display_position_policy is not None:
+            roll["display_position_policy"] = display_position_policy
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
             "update_roll_at_index", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),
             extra={"index": index, "outcome": outcome,
                    "constellation": constellation, "perks": perks,
-                   "narrative_evidence": narrative_evidence},
+                   "narrative_evidence": narrative_evidence,
+                   "mention_chapter_num": mention_chapter_num,
+                   "mention_word_position": mention_word_position,
+                   "display_position_policy": display_position_policy},
         )
         return roll
 
@@ -228,6 +240,9 @@ class CurationPersistence:
         indices: list[int],
         *,
         narrative_evidence: str,
+        mention_chapter_num: str | None = None,
+        mention_word_position: int | None = None,
+        display_position_policy: str | None = None,
     ) -> list[dict]:
         """Save the same curated quote to multiple chapter-local rolls.
 
@@ -242,6 +257,12 @@ class CurationPersistence:
         for index in clean_indices:
             roll = self.get_or_create_roll_at_index(chapter_num, index)
             roll["narrative_evidence"] = narrative_evidence
+            if mention_chapter_num is not None:
+                roll["mention_chapter_num"] = str(mention_chapter_num)
+            if mention_word_position is not None:
+                roll["mention_word_position"] = int(mention_word_position)
+            if display_position_policy is not None:
+                roll["display_position_policy"] = display_position_policy
             updated.append(roll)
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
@@ -253,6 +274,9 @@ class CurationPersistence:
             extra={
                 "indices": clean_indices,
                 "narrative_evidence": narrative_evidence,
+                "mention_chapter_num": mention_chapter_num,
+                "mention_word_position": mention_word_position,
+                "display_position_policy": display_position_policy,
             },
         )
         return updated

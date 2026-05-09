@@ -20,6 +20,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from rich.text import Text
 from textual import events, on
@@ -191,18 +192,21 @@ class PassageView(BasePassageView):
 # ---------- gutter widget ---------------------------------------------------
 
 
-# Glyphs used in the gutter. Each glyph carries a Rich style.
+# Glyph colors used by gutter Rich styles, prose highlights, and RegexBar CSS.
+GLYPH_COLORS: dict[str, str] = {
+    "═": "grey70",
+    "R": "red",
+    "H": "green",
+    "M": "orange1",
+    "A": "blue",
+    "Q": "medium_purple1",
+    "1": "yellow",
+    "2": "cyan",
+    "3": "magenta",
+    "*": "white",
+}
 GLYPH_STYLES: dict[str, str] = {
-    "═": "bold grey70",
-    "R": "bold red",
-    "H": "bold green",
-    "M": "bold orange1",
-    "A": "bold blue",
-    "Q": "bold spring_green3",
-    "1": "bold yellow",
-    "2": "bold cyan",
-    "3": "bold magenta",
-    "*": "bold white",
+    glyph: f"bold {color}" for glyph, color in GLYPH_COLORS.items()
 }
 
 ROLL_HIGHLIGHT_STYLE = GLYPH_STYLES["R"]
@@ -240,8 +244,8 @@ ROLL_EVIDENCE_MARKERS = [
     ("I", "inferred"),
 ]
 
-# Lower rank values render first. A row can show at most two indicators:
-# the strongest in column 1 and the next strongest in column 2.
+# Lower rank values render first. A row can show up to five indicators
+# followed by a blank spacer column.
 _GLYPH_PRIORITY = {
     "H": 1,
     "M": 2,
@@ -254,7 +258,12 @@ _GLYPH_PRIORITY = {
     "2": 9,
     "3": 10,
 }
-_REGEX_GLYPHS = {"*", "1", "2", "3"}
+
+
+class GutterMark(NamedTuple):
+    proportion: float
+    glyph: str
+    word_idx: int | None = None
 
 
 class GutterPanel(Static):
@@ -273,8 +282,8 @@ class GutterPanel(Static):
 
     DEFAULT_CSS = """
     GutterPanel {
-        width: 2;
-        min-width: 2;
+        width: 6;
+        min-width: 6;
         background: $panel;
         color: $text;
     }
@@ -284,10 +293,11 @@ class GutterPanel(Static):
 
     def __init__(self, **kw):
         super().__init__("", **kw)
+        self._row_targets: list[list[int | None]] = []
 
     def render_minimap(
         self,
-        items: list[tuple[float, str]],
+        items: list[GutterMark | tuple[float, str] | tuple[float, str, int]],
         cursor_proportion: float,
         height: int,
     ) -> None:
@@ -298,33 +308,28 @@ class GutterPanel(Static):
         to render (caller computes from the panel's actual size).
         """
         height = max(1, int(height))
-        rows: list[list[str]] = [[] for _ in range(height)]
+        rows: list[list[tuple[str, int | None]]] = [[] for _ in range(height)]
 
         def row_for(prop: float) -> int:
             return max(0, min(height - 1, int(round(prop * (height - 1)))))
 
-        for prop, glyph in items:
+        for item in items:
+            prop = float(item[0])
+            glyph = str(item[1])
+            word_idx = int(item[2]) if len(item) > 2 and item[2] is not None else None
             r = row_for(prop)
-            if glyph not in _GLYPH_PRIORITY or glyph in rows[r]:
+            if glyph not in _GLYPH_PRIORITY or any(existing == glyph for existing, _ in rows[r]):
                 continue
-            rows[r].append(glyph)
-            rows[r].sort(key=lambda g: _GLYPH_PRIORITY[g])
-            del rows[r][2:]
+            rows[r].append((glyph, word_idx))
+            rows[r].sort(key=lambda item: _GLYPH_PRIORITY[item[0]])
+            del rows[r][5:]
+        self._row_targets = [[word_idx for _glyph, word_idx in row] for row in rows]
 
         cursor_row = row_for(max(0.0, min(1.0, cursor_proportion)))
 
         out = Text()
-        for i, glyphs in enumerate(rows):
+        for i, marks in enumerate(rows):
             on_cursor = (i == cursor_row)
-            non_regex = [g for g in glyphs if g not in _REGEX_GLYPHS]
-            regex = [g for g in glyphs if g in _REGEX_GLYPHS]
-            col1 = non_regex[0] if non_regex else ""
-            col2 = (
-                non_regex[1]
-                if len(non_regex) > 1
-                else regex[0] if regex else ""
-            )
-
             def append_cell(glyph: str, *, cursor_mark: bool = False) -> None:
                 style = GLYPH_STYLES.get(glyph, "") if glyph else ""
                 if on_cursor:
@@ -334,11 +339,29 @@ class GutterPanel(Static):
                     style=style,
                 )
 
-            append_cell(col1, cursor_mark=True)
-            append_cell(col2)
+            for col in range(5):
+                glyph = marks[col][0] if col < len(marks) else ""
+                append_cell(
+                    glyph,
+                    cursor_mark=(col == 0),
+                )
+            out.append(" ", style=self._CURSOR_ROW_STYLE if on_cursor else "")
             if i < height - 1:
                 out.append("\n")
         self.update(out)
+
+    def on_click(self, event: events.Click) -> None:
+        row = int(event.y)
+        col = int(event.x)
+        if row < 0 or row >= len(self._row_targets) or col < 0 or col >= 5:
+            return
+        targets = self._row_targets[row]
+        if col >= len(targets) or targets[col] is None:
+            return
+        jump = getattr(self.app, "_jump_to_word", None)
+        if jump is not None:
+            jump(int(targets[col]))
+            event.stop()
 
 
 # ---------- stats panel -----------------------------------------------------
@@ -579,52 +602,60 @@ class ActionsPanel(Static):
 
 
 class RegexBar(Horizontal):
-    DEFAULT_CSS = """
-    RegexBar {
+    DEFAULT_CSS = f"""
+    RegexBar {{
         height: 1;
         background: $panel;
         padding: 0;
-    }
-    RegexBar > Input {
+    }}
+    RegexBar > Input {{
         height: 1;
         width: 1fr;
         margin: 0 1;
-    }
-    RegexBar > Input.active {
+    }}
+    RegexBar > Input.active {{
+        text-style: bold underline;
+    }}
+    RegexBar > Input.regex-slot-1 {{
+        color: {GLYPH_COLORS["1"]};
         text-style: bold;
-    }
-    RegexBar > Input.regex-slot-1 {
-        color: yellow;
-    }
-    RegexBar > Input.regex-slot-2 {
-        color: cyan;
-    }
-    RegexBar > Input.regex-slot-3 {
-        color: magenta;
-    }
-    RegexBar > Input.regex-slot-4 {
-        color: white;
-    }
-    RegexBar Static.label {
+    }}
+    RegexBar > Input.regex-slot-2 {{
+        color: {GLYPH_COLORS["2"]};
+        text-style: bold;
+    }}
+    RegexBar > Input.regex-slot-3 {{
+        color: {GLYPH_COLORS["3"]};
+        text-style: bold;
+    }}
+    RegexBar > Input.regex-slot-4 {{
+        color: {GLYPH_COLORS["*"]};
+        text-style: bold;
+    }}
+    RegexBar Static.label {{
         height: 1;
         width: auto;
         margin: 0 1;
-    }
-    RegexBar Static.label.active {
+    }}
+    RegexBar Static.label.active {{
+        text-style: bold underline;
+    }}
+    RegexBar Static.label.regex-slot-1 {{
+        color: {GLYPH_COLORS["1"]};
         text-style: bold;
-    }
-    RegexBar Static.label.regex-slot-1 {
-        color: yellow;
-    }
-    RegexBar Static.label.regex-slot-2 {
-        color: cyan;
-    }
-    RegexBar Static.label.regex-slot-3 {
-        color: magenta;
-    }
-    RegexBar Static.label.regex-slot-4 {
-        color: white;
-    }
+    }}
+    RegexBar Static.label.regex-slot-2 {{
+        color: {GLYPH_COLORS["2"]};
+        text-style: bold;
+    }}
+    RegexBar Static.label.regex-slot-3 {{
+        color: {GLYPH_COLORS["3"]};
+        text-style: bold;
+    }}
+    RegexBar Static.label.regex-slot-4 {{
+        color: {GLYPH_COLORS["*"]};
+        text-style: bold;
+    }}
     """
 
     def compose(self) -> ComposeResult:
@@ -707,8 +738,9 @@ class HelpScreen(ModalScreen):
         body.append(
             "  ]] [[   next/prev chapter\n"
             "  ][ []   next/prev section\n"
-            "  ]r [r   next/prev predicted roll\n"
-            "  ]R [R   next/prev curated narrator-quote roll\n"
+            "  ]r [r   next/prev curated hit/miss\n"
+            "  ]R [R   next/prev predicted roll\n"
+            "  ]q [q   next/prev curated narrator quote\n"
             "  z/x/c   select regex 1/2/3 for n/N\n"
             "  n / N   next/prev active regex match\n"
             "  *       seed/select regex * with word under cursor\n"
@@ -1040,7 +1072,7 @@ class ForgeCuratorApp(App):
     }
     PassageView {
         background: $surface;
-        padding: 1 2;
+        padding: 1 5;
     }
     GutterPanel {
         height: 1fr;
@@ -1157,7 +1189,7 @@ class ForgeCuratorApp(App):
         gutter = self.query_one("#gutter", GutterPanel)
         gutter_height = max(1, gutter.size.height or 1)
         gutter.render_minimap(
-            self._compute_gutter_items(),
+            self._compute_gutter_marks(),
             self._cursor_chapter_proportion(),
             gutter_height,
         )
@@ -1193,12 +1225,7 @@ class ForgeCuratorApp(App):
         if not wo:
             return []
         spans: list[dict] = []
-        cp_start = self._chapter_cp_start(cs.meta.chapter_num)
-        for r in cs.derived.predicted_rolls:
-            wp = r.get("word_position")
-            if wp is None:
-                continue
-            raw = self._raw_word_for_cp_offset(max(0, int(wp) - cp_start))
+        for raw in self._predicted_roll_word_indices(cs):
             if 0 <= raw < len(wo):
                 cs_, ce_ = wo[raw]
                 spans.append({
@@ -1268,6 +1295,32 @@ class ForgeCuratorApp(App):
                 indices.append(word_idx)
         return indices
 
+    def _predicted_roll_word_indices(self, cs) -> list[int]:
+        indices: list[int] = []
+        cn = cs.meta.chapter_num
+        for roll in (cs.derived.chapter_facts or {}).get("rolls", []):
+            if str(roll.get("mechanical_chapter_num")) != cn:
+                continue
+            wp = roll.get("mechanical_word_position")
+            if wp is None:
+                wp = roll.get("word_position")
+            if wp is not None:
+                indices.append(self._raw_word_for_cp_offset(int(wp)))
+        return indices
+
+    def _curated_roll_word_index(self, cs, roll: dict) -> int | None:
+        if roll.get("display_kind") == "deferred_in":
+            return None
+        raw = roll.get("raw_word_position")
+        if raw is not None:
+            return int(raw)
+        quote = roll.get("narrative_evidence")
+        if quote:
+            start = cs.prose.text.find(str(quote))
+            if start >= 0:
+                return _word_index_for_char_offset(cs.prose.word_offsets, start)
+        return None
+
     def _evidence_fallback_word_index(self, cs, roll: dict) -> int | None:
         if roll.get("word_position") is None:
             return None
@@ -1283,7 +1336,13 @@ class ForgeCuratorApp(App):
         return max(0.0, min(1.0, wi / total))
 
     def _compute_gutter_items(self) -> list[tuple[float, str]]:
-        """Return ``[(proportion, glyph), ...]`` for the chapter minimap.
+        return [
+            (mark.proportion, mark.glyph)
+            for mark in self._compute_gutter_marks()
+        ]
+
+    def _compute_gutter_marks(self) -> list[GutterMark]:
+        """Return marks for the chapter minimap.
 
         Proportions are in [0, 1] over chapter word indices. Multi-word
         spans contribute a single mark at their start; the user asked
@@ -1293,10 +1352,10 @@ class ForgeCuratorApp(App):
         if cs is None:
             return []
         total = max(1, len(cs.prose.word_offsets))
-        items: list[tuple[float, str]] = []
+        items: list[GutterMark] = []
 
         def _add(word_idx: int, glyph: str) -> None:
-            items.append((word_idx / total, glyph))
+            items.append(GutterMark(word_idx / total, glyph, int(word_idx)))
 
         # Section breaks (single mark each).
         for word_idx in cs.prose.section_break_word_indices:
@@ -1306,7 +1365,6 @@ class ForgeCuratorApp(App):
         for ws, _we in (cs.prose.implicit_header_word_ranges or []):
             if 0 <= ws < total:
                 _add(ws, "═")
-        cn = cs.meta.chapter_num
         # Derived excluded ranges include ANs and auto/manual header
         # exclusions. Auto headers already have a header glyph above, so
         # don't render their duplicate exclusion range as an AN.
@@ -1320,13 +1378,7 @@ class ForgeCuratorApp(App):
 
         # Predicted rolls — convert chapter-local CP-word to raw via
         # the canonical exclusion-aware inverse.
-        for r in cs.derived.predicted_rolls:
-            wp = r.get("word_position")
-            if wp is None:
-                continue
-            raw_idx = self._raw_word_for_cp_offset(
-                max(0, int(wp) - self._chapter_cp_start(cn))
-            )
+        for raw_idx in self._predicted_roll_word_indices(cs):
             if 0 <= raw_idx < total:
                 _add(raw_idx, "R")
 
@@ -1334,13 +1386,11 @@ class ForgeCuratorApp(App):
         # converts the derived CP-word coordinate to a raw prose word for
         # minimap display.
         for r in self._unified_rolls(cs):
-            if r.get("display_kind") == "deferred_in":
-                continue
             outcome = r.get("outcome")
             if outcome not in ("hit", "miss"):
                 continue
-            raw_idx = self._raw_word_for_cp_offset(int(r["word_position"]))
-            if 0 <= raw_idx < total:
+            raw_idx = self._curated_roll_word_index(cs, r)
+            if raw_idx is not None and 0 <= raw_idx < total:
                 _add(raw_idx, "H" if outcome == "hit" else "M")
 
         # Saved roll evidence quotes get their own persistent mark. When
@@ -2397,7 +2447,7 @@ class ForgeCuratorApp(App):
         return targets
 
     def _current_roll_target(self, *, word_idx: int | None = None) -> dict | None:
-        """Action target for the displayed roll at or before the cursor.
+        """Action target for the mechanical roll at or before the cursor.
 
         This is the "target" roll for `<space>h/m/c/p/q` actions. If
         the cursor is before the first predicted roll, returns None.
@@ -2410,7 +2460,18 @@ class ForgeCuratorApp(App):
         )
         target: dict | None = None
         for roll in self._unified_rolls(cs):
-            if roll["word_position"] <= cp_word_idx:
+            if roll.get("display_kind") == "deferred_in":
+                if int(roll.get("word_position") or 0) <= cp_word_idx:
+                    target = roll
+                continue
+            if str(roll.get("target_chapter_num") or cs.meta.chapter_num) != str(
+                cs.meta.chapter_num
+            ):
+                continue
+            mechanical_word = roll.get("mechanical_word_position")
+            if mechanical_word is None:
+                mechanical_word = roll.get("word_position")
+            if int(mechanical_word) <= cp_word_idx:
                 target = roll
             else:
                 break
@@ -2486,8 +2547,14 @@ class ForgeCuratorApp(App):
             return
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
         idx = int(target["target_roll_index"])
+        mention_word = self._cp_earning_word_offset(target_word or 0)
         self.persistence.update_roll_at_index(
-            target_chapter, idx, narrative_evidence=quote,
+            target_chapter,
+            idx,
+            narrative_evidence=quote,
+            mention_chapter_num=chapter_num,
+            mention_word_position=mention_word,
+            display_position_policy="mention",
         )
         self._post_curation_refresh(f"roll #{idx} quote saved ({len(quote)} chars)")
 
@@ -2509,6 +2576,8 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return
+        target_word = self._selected_quote_start_word_index()
+        mention_word = self._cp_earning_word_offset(target_word or 0)
         rolls = self._unified_rolls(cs)
         if not rolls:
             self._flash("save quote: no rolls in this chapter")
@@ -2533,6 +2602,9 @@ class ForgeCuratorApp(App):
                     target_chapter,
                     target_indices,
                     narrative_evidence=quote,
+                    mention_chapter_num=chapter_num,
+                    mention_word_position=mention_word,
+                    display_position_policy="mention",
                 )
             self._post_curation_refresh(
                 f"quote saved to rolls {', '.join(map(str, indices))}"
@@ -2622,9 +2694,12 @@ class ForgeCuratorApp(App):
             self._jump_section(forward=(prefix == "]"))
             return True
         if key == "r":
-            self._jump_roll_predicted(forward=(prefix == "]"))
+            self._jump_roll_curated(forward=(prefix == "]"))
             return True
         if key == "R":
+            self._jump_roll_predicted(forward=(prefix == "]"))
+            return True
+        if key == "q":
             self._jump_roll_quoted(forward=(prefix == "]"))
             return True
         if key in ("2", "3"):
@@ -2683,20 +2758,37 @@ class ForgeCuratorApp(App):
         self._jump_to_word(target)
 
     def _jump_roll_predicted(self, *, forward: bool) -> None:
-        """Jump to next/prev canonical roll position."""
+        """Jump to next/prev predicted roll position."""
+        cs = self.state.chapter
+        if cs is None:
+            return
+        cur_wi = cs.cursor_word_index
+        positions = self._predicted_roll_word_indices(cs)
+        positions.sort()
+        candidates = [p for p in positions if (p > cur_wi if forward else p < cur_wi)]
+        if not candidates:
+            self._flash("no further predicted roll in this chapter")
+            return
+        target = min(candidates) if forward else max(candidates)
+        self._jump_to_word(target)
+
+    def _jump_roll_curated(self, *, forward: bool) -> None:
+        """Jump to next/prev curated hit/miss display position."""
         cs = self.state.chapter
         if cs is None:
             return
         cur_wi = cs.cursor_word_index
         positions = [
-            self._raw_word_for_cp_offset(int(r["word_position"]))
+            raw
             for r in self._unified_rolls(cs)
-            if r.get("display_kind") != "deferred_in"
+            if r.get("outcome") in ("hit", "miss")
+            for raw in [self._curated_roll_word_index(cs, r)]
+            if raw is not None
         ]
-        positions.sort()
+        positions = sorted(set(positions))
         candidates = [p for p in positions if (p > cur_wi if forward else p < cur_wi)]
         if not candidates:
-            self._flash("no further predicted roll in this chapter")
+            self._flash("no further curated hit/miss in this chapter")
             return
         target = min(candidates) if forward else max(candidates)
         self._jump_to_word(target)
@@ -2707,12 +2799,7 @@ class ForgeCuratorApp(App):
         if cs is None:
             return
         cur_wi = cs.cursor_word_index
-        positions: list[int] = []
-        cn = cs.meta.chapter_num
-        for r in cs.derived.roll_facts:
-            local_cp = self._mention_cp_from_roll(cn, r)
-            if r.get("narrative_evidence") and local_cp is not None:
-                positions.append(self._raw_word_for_cp_offset(int(local_cp)))
+        positions = self._roll_evidence_word_indices(cs)
         positions = sorted(set(positions))
         candidates = [p for p in positions if (p > cur_wi if forward else p < cur_wi)]
         if not candidates:
@@ -2785,7 +2872,7 @@ class ForgeCuratorApp(App):
             gutter = self.query_one("#gutter", GutterPanel)
             gutter_height = max(1, gutter.size.height or 1)
             gutter.render_minimap(
-                self._compute_gutter_items(),
+                self._compute_gutter_marks(),
                 self._cursor_chapter_proportion(),
                 gutter_height,
             )

@@ -159,17 +159,19 @@ def _is_metadata_only_roll_entry(entry: dict, chapter_num: str) -> bool:
         return False
     if entry.get("perks"):
         return False
-    mention_chapter = entry.get("mention_chapter_num")
-    if mention_chapter is not None and str(mention_chapter) != str(chapter_num):
-        return False
     structural_fields = (
         "constellation",
         "word_position",
-        "mention_word_position",
     )
     if any(entry.get(field) not in (None, "", []) for field in structural_fields):
         return False
-    return entry.get("display_position_policy") in (None, "", "mechanical")
+    return entry.get("display_position_policy") in (
+        None,
+        "",
+        "mechanical",
+        "mention",
+        "section_start",
+    )
 
 
 def _structural_override(override: dict | None, chapter_num: str) -> dict | None:

@@ -111,26 +111,47 @@ async def test_unified_rolls_ignore_manual_quote_until_derived_regenerated(
 
 
 @pytest.mark.asyncio
-async def test_chapter_1_roll_jumps_reach_deferred_display_roll() -> None:
-    app = ForgeCuratorApp(start_chapter="1")
+async def test_chapter_2_roll_jumps_use_predicted_curated_and_quote_positions() -> None:
+    app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         chapter_state = app.state.chapter
         assert chapter_state is not None
-        rolls = app._unified_rolls(chapter_state)
+        predicted_raw = app._predicted_roll_word_indices(chapter_state)[0]
+        curated_raw = next(
+            raw for roll in app._unified_rolls(chapter_state)
+            for raw in [app._curated_roll_word_index(chapter_state, roll)]
+            if raw is not None
+        )
+        quote_raw = app._roll_evidence_word_indices(chapter_state)[0]
 
-        first_raw = app._raw_word_for_cp_offset(int(rolls[0]["word_position"]))
-        second_raw = app._raw_word_for_cp_offset(int(rolls[1]["word_position"]))
+        assert predicted_raw != curated_raw
+        assert quote_raw != curated_raw
 
-        app._jump_to_word(first_raw)
+        app._jump_to_word(0)
         app._jump_roll_predicted(forward=True)
         await pilot.pause()
-        assert chapter_state.cursor_word_index == second_raw
+        assert chapter_state.cursor_word_index == predicted_raw
 
-        app._jump_to_word(first_raw)
+        app._jump_to_word(0)
+        app._jump_roll_curated(forward=True)
+        await pilot.pause()
+        assert chapter_state.cursor_word_index == curated_raw
+
+        app._jump_to_word(0)
         app._jump_roll_quoted(forward=True)
         await pilot.pause()
-        assert chapter_state.cursor_word_index == second_raw
+        assert chapter_state.cursor_word_index == quote_raw
+
+        app._jump_to_word(0)
+        await pilot.press("]", "r")
+        await pilot.pause()
+        assert chapter_state.cursor_word_index == curated_raw
+
+        app._jump_to_word(0)
+        await pilot.press("]", "R")
+        await pilot.pause()
+        assert chapter_state.cursor_word_index == predicted_raw
 
 
 def test_mark_roll_deferred_preserves_existing_outcome(tmp_path: Path) -> None:

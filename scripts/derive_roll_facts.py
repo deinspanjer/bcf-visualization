@@ -494,21 +494,19 @@ def _is_metadata_only_roll_override(
         return False
     if entry.get("perks"):
         return False
-    mention_chapter = entry.get("mention_chapter_num")
-    if (
-        chapter_num is not None
-        and mention_chapter is not None
-        and str(mention_chapter) != str(chapter_num)
-    ):
-        return False
     structural_fields = (
         "constellation",
         "word_position",
-        "mention_word_position",
     )
     if any(entry.get(field) not in (None, "", []) for field in structural_fields):
         return False
-    return entry.get("display_position_policy") in (None, "", "mechanical")
+    return entry.get("display_position_policy") in (
+        None,
+        "",
+        "mechanical",
+        "mention",
+        "section_start",
+    )
 
 
 def _has_structural_roll_override(
@@ -518,6 +516,22 @@ def _has_structural_roll_override(
         not _is_metadata_only_roll_override(entry, chapter_num)
         for entry in (override.get("rolls") or [])
     )
+
+
+def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None:
+    if not entry:
+        return
+    evidence = entry.get("narrative_evidence")
+    if evidence:
+        payload["_narrative_evidence"] = evidence
+    if entry.get("mention_chapter_num") is not None:
+        payload["_mention_chapter_num"] = _norm_chapter(
+            entry.get("mention_chapter_num"), chapter_num
+        )
+    if entry.get("mention_word_position") is not None:
+        payload["_mention_word_position"] = entry.get("mention_word_position")
+    if entry.get("display_position_policy") is not None:
+        payload["_display_position_policy"] = entry.get("display_position_policy")
 
 
 def _restructure_curator_rows(
@@ -558,12 +572,6 @@ def _restructure_curator_rows(
         if idx not in metadata_only_by_index
     ]
 
-    def _evidence_for_non_trigger_index(non_trigger_index: int) -> str | None:
-        entry = metadata_only_by_index.get(non_trigger_index)
-        if not entry:
-            return None
-        return entry.get("narrative_evidence")
-
     def _passthrough_rows() -> list[dict]:
         out_rows: list[dict] = []
         non_trigger_index = 0
@@ -581,9 +589,9 @@ def _restructure_curator_rows(
                 "raw": row.get("raw"),
             }
             if row.get("kind") != "trigger":
-                evidence = _evidence_for_non_trigger_index(non_trigger_index)
-                if evidence:
-                    payload["_narrative_evidence"] = evidence
+                _apply_metadata(
+                    payload, metadata_only_by_index.get(non_trigger_index), chapter_num
+                )
                 non_trigger_index += 1
             out_rows.append(payload)
         return out_rows
@@ -748,9 +756,9 @@ def _restructure_curator_rows(
                 "raw": row.get("raw"),
             }
             if row.get("kind") != "trigger":
-                evidence = _evidence_for_non_trigger_index(non_trigger_index)
-                if evidence:
-                    payload["_narrative_evidence"] = evidence
+                _apply_metadata(
+                    payload, metadata_only_by_index.get(non_trigger_index), chapter_num
+                )
                 non_trigger_index += 1
             out_rows.append(payload)
             continue
@@ -771,9 +779,9 @@ def _restructure_curator_rows(
                 "roll_number": row.get("roll_number"),
                 "raw": row.get("raw"),
             }
-            evidence = _evidence_for_non_trigger_index(non_trigger_index)
-            if evidence:
-                payload["_narrative_evidence"] = evidence
+            _apply_metadata(
+                payload, metadata_only_by_index.get(non_trigger_index), chapter_num
+            )
             non_trigger_index += 1
             out_rows.append(payload)
             continue
@@ -940,9 +948,7 @@ def _direct_override_rows(
                 "roll_number": template.get("roll_number"),
                 "raw": template.get("raw"),
             }
-            evidence = entry.get("narrative_evidence")
-            if evidence:
-                payload["_narrative_evidence"] = evidence
+            _apply_metadata(payload, entry, chapter_num)
             out_rows.append(payload)
             continue
         template = (
