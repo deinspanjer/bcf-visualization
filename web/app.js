@@ -988,16 +988,81 @@ function freePerkTitle(freePerk, roll, chapter) {
 }
 
 function renderLegend() {
+  renderConstellationLegend();
+  renderMarkerMeaningLegend();
+  renderMarkerCostLegend();
+}
+
+function legendStar(colorKey, cost, options = {}) {
+  const system = el("span", {
+    class: `legend-star roll-star-system ${colorKey} ${options.miss ? "is-miss-like" : ""}`,
+    "aria-hidden": "true",
+  });
+  const sourceCount = options.sources || 1;
+  sourceOffsets(sourceCount).forEach((offset, idx) => {
+    const source = el("span", {
+      class: `star-source ${colorKey} source-${idx + 1}`,
+      style: {
+        "--source-x": `${offset.x}px`,
+        "--source-y": `${offset.y}px`,
+        "--source-scale": String(offset.scale),
+      },
+    });
+    source.appendChild(renderStarSourceSvg(cost));
+    system.appendChild(source);
+  });
+  companionOffsets(options.companions || 0).forEach((offset, idx) => {
+    system.appendChild(el("span", {
+      class: `star-companion ${colorKey} companion-${idx + 1}`,
+      style: {
+        "--companion-x": `${offset.x}px`,
+        "--companion-y": `${offset.y}px`,
+        "--companion-scale": String(offset.scale),
+      },
+    }));
+  });
+  if (options.untracked) system.appendChild(el("span", { class: "star-untracked-ring" }));
+  return system;
+}
+
+function renderConstellationLegend() {
   const container = $("constellation-legend");
+  if (!container) return;
   clear(container);
   for (const name of CONSTELLATION_ORDER) {
+    const colorKey = colorKeyForConstellation(name);
     container.appendChild(el("span", { class: "swatch-row" },
-      el("span", {
-        class: "swatch",
-        style: { backgroundColor: CONSTELLATION_COLORS[name] },
-      }),
+      legendStar(colorKey, 300),
       el("span", { text: name })));
   }
+}
+
+function renderMarkerMeaningLegend() {
+  const container = $("marker-meaning-legend");
+  if (!container) return;
+  clear(container);
+  [
+    ["simple perk", legendStar("toolkits", 300)],
+    ["perk with add-ons", legendStar("toolkits", 300, { companions: 2 })],
+    ["binary paid grab", legendStar("toolkits", 300, { sources: 2 })],
+    ["trinary with add-ons", legendStar("toolkits", 400, { sources: 3, companions: 2 })],
+    ["miss or unknown", legendStar("miss", 300, { miss: true })],
+  ].forEach(([label, marker]) => {
+    container.appendChild(el("div", { class: "legend-row marker-example-row" },
+      marker,
+      el("span", { text: label })));
+  });
+}
+
+function renderMarkerCostLegend() {
+  const container = $("marker-cost-legend");
+  if (!container) return;
+  clear(container);
+  [100, 200, 300, 400, 600, 800, 1000].forEach(cost => {
+    container.appendChild(el("span", { class: "cost-example" },
+      legendStar("toolkits", cost),
+      el("span", { text: `${cost} CP` })));
+  });
 }
 
 function renderAxisTrack(model) {
