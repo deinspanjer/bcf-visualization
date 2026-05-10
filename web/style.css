@@ -251,48 +251,6 @@ header .gh-link svg {
 .theme-toggle[data-theme-pref="dark"]  .theme-icon-dark {
   display: block;
 }
-.intro-section {
-  max-width: 980px;
-  margin-top: 12px;
-}
-.intro-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 6px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--gray-1);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.intro-toggle::before {
-  content: "";
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 6px solid currentColor;
-  transition: transform 140ms ease;
-}
-.intro-toggle:hover { color: var(--ink); }
-.intro-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-.intro-section.is-collapsed .intro-toggle::before {
-  transform: rotate(-90deg);
-}
-header .subtitle {
-  margin: 0;
-  color: var(--gray-2);
-  font-size: 0.92rem;
-}
 .site-badge {
   display: inline-flex;
   align-items: center;
@@ -464,7 +422,6 @@ body.sky-focus-mode {
   background: #090b10;
 }
 
-body.sky-focus-mode header .intro-section,
 body.sky-focus-mode #panels,
 body.sky-focus-mode #recent-rail,
 body.sky-focus-mode .control-panels,
@@ -1747,7 +1704,6 @@ body.sky-focus-mode #zoom-controls {
 @media (max-width: 700px) {
   header { padding: 18px 16px 8px; }
   header h1 { font-size: 1.25rem; }
-  header .subtitle { font-size: 0.88rem; }
   #scrubber-section {
     padding: 10px 16px 12px;
     gap: 8px;

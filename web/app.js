@@ -122,7 +122,6 @@ const SKY_DEFAULT_PREFS = {
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
 const LS_ZOOM = "bcf:timeline:zoom";
-const LS_INTRO_COLLAPSED = "bcf:intro:collapsed";
 const LS_THEME = "bcf:theme";   // "auto" | "light" | "dark" (must match the inline script in index.html)
 const LS_SKY_PREFS = "bcf:sky:prefs:v1";
 const LS_VERSION = "bcf:storage:version";
@@ -2833,35 +2832,6 @@ function attachThemeToggle() {
   });
 }
 
-// ---------- intro ----------------------------------------------------------
-
-function attachIntroToggle() {
-  const section = $("intro-section");
-  const toggle = $("intro-toggle");
-  const body = $("intro-body");
-  if (!section || !toggle || !body) return;
-
-  function setCollapsed(collapsed) {
-    section.classList.toggle("is-collapsed", collapsed);
-    body.hidden = collapsed;
-    toggle.setAttribute("aria-expanded", String(!collapsed));
-  }
-
-  let isCollapsed = false;
-  try {
-    isCollapsed = localStorage.getItem(LS_INTRO_COLLAPSED) === "true";
-  } catch {}
-  setCollapsed(isCollapsed);
-
-  toggle.addEventListener("click", () => {
-    const collapsed = !body.hidden;
-    setCollapsed(collapsed);
-    try {
-      localStorage.setItem(LS_INTRO_COLLAPSED, String(collapsed));
-    } catch {}
-  });
-}
-
 // ---------- bootstrap ----------------------------------------------------
 
 (async () => {
@@ -2892,7 +2862,6 @@ function attachIntroToggle() {
       },
     };
     attachThemeToggle();
-    attachIntroToggle();
     const skySection = $("sky-section");
     if (skySection) skySection.hidden = !skyEnabled || !wireframes;
     renderTracks(model, facts);

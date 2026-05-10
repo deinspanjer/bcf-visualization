@@ -2,15 +2,358 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Brockton's Celestial Forge — visualizations</title>
-  <meta http-equiv="refresh" content="0; url=./web/">
-  <link rel="canonical" href="./web/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Brockton's Celestial Forge — Progression Visualization</title>
+  <meta name="description" content="An introductory note from Survey with a link to the Brockton's Celestial Forge progression visualization.">
+  <link rel="canonical" href="https://deinspanjer.github.io/bcf-visualization/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='7' fill='%23fff'/%3E%3Cpath d='M32 4v56M4 32h56M13 13l38 38M51 13 13 51' stroke='%2371cef9' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-           margin: 60px auto; max-width: 600px; padding: 0 24px; color: #333; }
+    :root {
+      color-scheme: dark;
+      --void: #03080d;
+      --ink: #e8fdff;
+      --muted: #9ad7df;
+      --dim: #5f9ba4;
+      --cyan: #5cf4ff;
+      --green: #7bffbd;
+      --edge: rgba(92, 244, 255, 0.56);
+      --edge-soft: rgba(92, 244, 255, 0.2);
+      --glow: rgba(92, 244, 255, 0.28);
+      --panel: rgba(5, 29, 38, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 50% 86%, rgba(92, 244, 255, 0.24), transparent 19%),
+        radial-gradient(circle at 27% 18%, rgba(123, 255, 189, 0.16), transparent 28%),
+        radial-gradient(circle at 80% 21%, rgba(182, 172, 255, 0.14), transparent 24%),
+        linear-gradient(180deg, #07121a 0%, var(--void) 57%, #020406 100%);
+      color: var(--ink);
+      font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 0 58%, rgba(0, 0, 0, 0.5) 100%);
+    }
+
+    @keyframes scan-drift {
+      from { background-position: 0 0, 0 -220px; }
+      to { background-position: 0 36px, 0 760px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+      }
+    }
+
+    main {
+      position: relative;
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      padding: clamp(22px, 4vw, 48px);
+      isolation: isolate;
+    }
+
+    .projection-shell {
+      position: relative;
+      z-index: 2;
+      width: min(860px, 100%);
+      padding: clamp(22px, 4vw, 36px);
+    }
+
+    .projection-shell::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -34px;
+      width: min(760px, 94vw);
+      height: min(760px, 94vh);
+      transform: translateX(-50%);
+      clip-path: polygon(41% 100%, 59% 100%, 100% 0, 0 0);
+      background:
+        linear-gradient(90deg, transparent, rgba(92, 244, 255, 0.2), transparent),
+        linear-gradient(180deg, rgba(92, 244, 255, 0.17), rgba(92, 244, 255, 0.035));
+      opacity: 0.92;
+      filter: blur(0.25px);
+      pointer-events: none;
+    }
+
+    .projection-shell::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -56px;
+      width: min(320px, 70vw);
+      height: 56px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(92, 244, 255, 0.46);
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(92, 244, 255, 0.42), rgba(92, 244, 255, 0.08) 44%, transparent 69%);
+      box-shadow: 0 0 64px rgba(92, 244, 255, 0.38);
+      pointer-events: none;
+    }
+
+    .message-panel {
+      position: relative;
+      z-index: 2;
+      overflow: hidden;
+      padding: clamp(24px, 4.6vw, 44px);
+      border: 1px solid var(--edge);
+      background:
+        linear-gradient(120deg, rgba(92, 244, 255, 0.1), transparent 36%),
+        rgba(5, 29, 38, 0.54);
+      box-shadow:
+        0 0 0 1px rgba(92, 244, 255, 0.12) inset,
+        0 0 58px rgba(92, 244, 255, 0.2),
+        0 28px 90px rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(2px);
+    }
+
+    .message-panel::before {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(92, 244, 255, 0.24);
+      clip-path: polygon(0 0, 100% 0, 100% 18%, 97% 18%, 97% 7%, 3% 7%, 3% 93%, 97% 93%, 97% 82%, 100% 82%, 100% 100%, 0 100%);
+      pointer-events: none;
+    }
+
+    .message-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 5px),
+        linear-gradient(180deg, transparent 0 14%, rgba(92, 244, 255, 0.16) 15%, rgba(92, 244, 255, 0.04) 18%, transparent 22% 100%);
+      mix-blend-mode: screen;
+      opacity: 0.58;
+      animation: scan-drift 4.8s linear infinite;
+    }
+
+    .constellation {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .constellation-line {
+      position: absolute;
+      height: 1px;
+      background: rgba(186, 245, 255, 0.42);
+      transform-origin: left center;
+      box-shadow: 0 0 8px rgba(92, 244, 255, 0.18);
+    }
+
+    .constellation-star {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(238, 253, 255, 0.88);
+      box-shadow:
+        0 0 3px rgba(255, 255, 255, 0.7),
+        0 0 10px rgba(92, 244, 255, 0.42);
+      transform: translate(-50%, -50%);
+    }
+
+    .cs1 { top: 16%; left: 70%; }
+    .cs2 { top: 24%; left: 83%; }
+    .cs3 { top: 39%; left: 74%; }
+    .cs4 { top: 55%; left: 88%; }
+    .cs5 { top: 67%; left: 78%; }
+    .cs6 { top: 31%; left: 21%; }
+    .cs7 { top: 48%; left: 14%; }
+    .cs8 { top: 64%; left: 27%; }
+    .cl1 { top: 20%; left: 70%; width: 96px; transform: rotate(29deg); }
+    .cl2 { top: 31%; left: 75%; width: 104px; transform: rotate(-45deg); }
+    .cl3 { top: 46%; left: 76%; width: 116px; transform: rotate(32deg); }
+    .cl4 { top: 61%; left: 79%; width: 84px; transform: rotate(-57deg); }
+    .cl5 { top: 39%; left: 16%; width: 96px; transform: rotate(63deg); }
+    .cl6 { top: 57%; left: 16%; width: 110px; transform: rotate(31deg); }
+
+    .subject {
+      position: relative;
+      z-index: 2;
+      margin: 0 0 22px;
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(0.82rem, 1.9vw, 1.08rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1.45;
+      text-transform: uppercase;
+      text-shadow: 0 0 16px rgba(123, 255, 189, 0.36);
+    }
+
+    .letter {
+      position: relative;
+      z-index: 2;
+      max-width: 720px;
+      color: rgba(232, 253, 255, 0.88);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1rem, 1.9vw, 1.22rem);
+      line-height: 1.56;
+      text-shadow: 0 0 13px rgba(92, 244, 255, 0.34);
+    }
+
+    .letter p {
+      margin: 0;
+    }
+
+    .letter p + p {
+      margin-top: 0.86em;
+    }
+
+    .signature {
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    .actions {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px 18px;
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid var(--edge-soft);
+    }
+
+    .primary-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid var(--cyan);
+      background: rgba(92, 244, 255, 0.14);
+      color: var(--ink);
+      box-shadow:
+        0 0 26px var(--glow),
+        0 0 0 1px rgba(92, 244, 255, 0.14) inset;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .primary-link:hover {
+      background: rgba(92, 244, 255, 0.24);
+    }
+
+    .secondary-link {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+      text-transform: uppercase;
+    }
+
+    .secondary-link:hover {
+      color: var(--ink);
+    }
+
+    @media (max-width: 700px) {
+      main {
+        display: block;
+        min-height: 100vh;
+        padding: 16px 12px 62px;
+      }
+
+      .projection-shell {
+        padding: 0;
+      }
+
+      .projection-shell::before {
+        height: 88vh;
+      }
+
+      .message-panel {
+        padding: 24px 18px;
+      }
+
+      .subject {
+        margin-bottom: 18px;
+      }
+
+      .letter {
+        font-size: 0.98rem;
+        line-height: 1.5;
+      }
+
+      .actions {
+        margin-top: 24px;
+      }
+    }
   </style>
 </head>
 <body>
-  <p>Redirecting to the <a href="./web/">scrubber</a>…</p>
+  <main>
+    <div class="projection-shell">
+      <section class="message-panel" aria-label="Introductory note">
+        <div class="constellation" aria-hidden="true">
+          <span class="constellation-line cl1"></span>
+          <span class="constellation-line cl2"></span>
+          <span class="constellation-line cl3"></span>
+          <span class="constellation-line cl4"></span>
+          <span class="constellation-line cl5"></span>
+          <span class="constellation-line cl6"></span>
+          <span class="constellation-star cs1"></span>
+          <span class="constellation-star cs2"></span>
+          <span class="constellation-star cs3"></span>
+          <span class="constellation-star cs4"></span>
+          <span class="constellation-star cs5"></span>
+          <span class="constellation-star cs6"></span>
+          <span class="constellation-star cs7"></span>
+          <span class="constellation-star cs8"></span>
+        </div>
+
+        <p class="subject">Re: Joe's power progression visualization</p>
+
+        <div class="letter">
+          <p>Aisha,</p>
+          <p>Regarding your recent complaint about how difficult it is to understand what exactly Joe is talking about when he discusses the "constellations" of his "Forge" and how it "grabs perks," I have performed a new in-depth analysis of all recorded power acquisitions to date and rendered them in an interactive visualization that I hope will provide valuable insight for you.</p>
+          <p>Similar to digital audio workstation software, the scrubber will allow you to review the power progression to your desired level of detail, with links to various recordings of what Joe and other relevant individuals were doing at that time.</p>
+          <p>Please let me know if you observe any inaccuracies or have ideas on ways to provide additional analysis.</p>
+          <p class="signature">- Survey</p>
+        </div>
+
+        <nav class="actions" aria-label="Visualization links">
+          <a class="primary-link" href="./web/">Open visualization</a>
+          <a class="secondary-link" href="https://github.com/deinspanjer/bcf-visualization" target="_blank" rel="noopener noreferrer">View source</a>
+        </nav>
+      </section>
+    </div>
+  </main>
 </body>
 </html>

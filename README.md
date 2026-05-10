@@ -1,6 +1,6 @@
 # bcf-visualization
 
-## ➡️ [**View the live visualization on GitHub Pages**](https://deinspanjer.github.io/bcf-visualization/) ⬅️
+## ➡️ [**Open the live landing page on GitHub Pages**](https://deinspanjer.github.io/bcf-visualization/) ⬅️
 
 Visualizations and analysis of *Brockton's Celestial Forge (Worm/Jumpchain)* by LordRoustabout.
 
@@ -23,7 +23,9 @@ This repository is organized for quick exploration first, with deeper technical 
 
 ## What this project includes
 
-- A static, dependency-light web scrubber timeline in `web/`
+- A static landing page at `/` with the introductory note and a link to the
+  visualization
+- A dependency-light web scrubber timeline in `web/`
 - Derived story schemas in `data/derived/_schemas/` and generated
   story datasets hydrated into `data/derived/` from versioned release
   bundles for local work and Pages publishing
@@ -43,7 +45,8 @@ This repository is organized for quick exploration first, with deeper technical 
 
 ```sh
 .venv/bin/python -m http.server 8000
-# open http://localhost:8000/  (root redirects to /web/)
+# open http://localhost:8000/  (landing page)
+# open http://localhost:8000/web/  (visualization)
 ```
 
 The app reads `data/derived/data_package.json` first, then loads the
