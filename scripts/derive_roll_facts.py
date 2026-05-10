@@ -1054,8 +1054,51 @@ def main() -> None:
         if row.get("kind") in {"trigger", "roll", "miss"}:
             curator_covered.add(row["chapter_num"])
 
+    curator_by_chapter: dict[str, list[tuple[int, dict]]] = {}
+    for idx, row in enumerate(curator_doc["rolls"]):
+        if row.get("kind") not in {"trigger", "roll", "miss"}:
+            continue
+        deferred_names = deferred_consumed_by_mention_chapter.get(
+            str(row.get("chapter_num")), set()
+        )
+        row_paid_names = {
+            _norm_name(p.get("name"))
+            for p in row.get("perks") or []
+            if not p.get("free", False)
+        }
+        if row.get("kind") == "roll" and row_paid_names & deferred_names:
+            continue
+        curator_by_chapter.setdefault(row["chapter_num"], []).append((idx, row))
+
     # ---- scheduler pass: per-chapter feasibility + slot assignment ----
     scheduler_inputs = _build_scheduler_inputs()
+    for cn, curator_rows in curator_by_chapter.items():
+        inp = scheduler_inputs.get(cn)
+        if inp is None:
+            continue
+        non_trigger_count = sum(
+            1 for _idx, row in curator_rows
+            if row.get("kind") != "trigger"
+        )
+        extra = non_trigger_count - len(inp["slots"])
+        if extra <= 0:
+            continue
+        words = int(inp["chapter_words"])
+        existing = {int(slot.word_position) for slot in inp["slots"]}
+        for offset in range(extra):
+            pos = max(1, words - (extra - 1 - offset))
+            while pos in existing and pos > 1:
+                pos -= 1
+            existing.add(pos)
+            inp["slots"].append(SlotInput(
+                word_position=pos,
+                roll_trigger_cp_threshold=REGIMES[
+                    regime_for_chapter(cn)
+                ]["cp_per_roll"],
+                source="curator_end",
+            ))
+        inp["slots"].sort(key=lambda slot: slot.word_position)
+        inp["synthetic_slot_count"] = len(inp["slots"]) - len(inp["predicted_slots"])
     # Build a quick lookup of word offset (chapter-local) per slot index
     # per chapter, plus chapter_word_start for cumulative offsets.
     chapter_word_start_global = {
@@ -1169,22 +1212,6 @@ def main() -> None:
         c["chapter_num"]: c["before_chapter"]["by_constellation"]
         for c in outstanding_doc["chapters"]
     }
-
-    curator_by_chapter: dict[str, list[tuple[int, dict]]] = {}
-    for idx, row in enumerate(curator_doc["rolls"]):
-        if row.get("kind") not in {"trigger", "roll", "miss"}:
-            continue
-        deferred_names = deferred_consumed_by_mention_chapter.get(
-            str(row.get("chapter_num")), set()
-        )
-        row_paid_names = {
-            _norm_name(p.get("name"))
-            for p in row.get("perks") or []
-            if not p.get("free", False)
-        }
-        if row.get("kind") == "roll" and row_paid_names & deferred_names:
-            continue
-        curator_by_chapter.setdefault(row["chapter_num"], []).append((idx, row))
 
     outcome_by_chapter: dict[str, list[tuple[int, dict]]] = {}
     for idx, row in enumerate(outcomes_doc["rolls"]):

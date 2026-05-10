@@ -118,3 +118,28 @@ def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> Non
             assert roll["word_position"] == roll["display_word_position"], (
                 f"{source_name} {roll.get('roll_key')} display alias local"
             )
+
+
+def test_unpredicted_curator_roll_is_placed_at_chapter_end() -> None:
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    chapters = {
+        row["chapter_num"]: row
+        for row in json.loads(CHAPTER_FACTS_JSON.read_text())["chapters"]
+    }
+    chapter = chapters["4"]
+    roll = next(r for r in roll_facts if r.get("roll_key") == "curator:0014")
+    chapter_start = (
+        int(chapter["cumulative_cp_earning_words"])
+        - int(chapter["cp_earning_word_count"])
+    )
+
+    assert roll["chapter_num"] == "4"
+    assert roll["mechanical_chapter_num"] == "4"
+    assert roll["source"] == "curator_rolls"
+    assert roll["source_kind"] == "miss"
+    assert roll["mechanical_word_position"] == chapter["cp_earning_word_count"]
+    assert roll["display_word_position"] == chapter["cp_earning_word_count"]
+    assert roll["word_position"] == chapter["cp_earning_word_count"]
+    assert roll["mechanical_cumulative_word_offset"] == (
+        chapter_start + chapter["cp_earning_word_count"]
+    )

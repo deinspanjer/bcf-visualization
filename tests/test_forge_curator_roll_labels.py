@@ -79,6 +79,19 @@ def test_chapter_2_stats_header_counts_deferred_in_roll(tmp_path: Path) -> None:
     assert "narrative deferred to ch 2" in text
 
 
+def test_chapter_4_unpredicted_curator_roll_is_not_deferred(tmp_path: Path) -> None:
+    app = _loaded_app("4", tmp_path)
+    chapter_state = app.state.chapter
+    assert chapter_state is not None
+
+    rolls = app._unified_rolls(chapter_state)
+    extra_roll = next(r for r in rolls if r.get("roll_key") == "curator:0014")
+
+    assert extra_roll["display_kind"] == "chapter_roll"
+    assert extra_roll["index"] == 5
+    assert extra_roll["word_position"] == chapter_state.meta.cp_earning_word_count
+
+
 def test_unified_rolls_ignore_manual_quote_until_derived_regenerated(
     tmp_path: Path,
 ) -> None:
