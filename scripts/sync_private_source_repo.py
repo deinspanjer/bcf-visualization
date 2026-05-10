@@ -56,8 +56,7 @@ def ensure_clone(repo: str, private_dir: Path) -> None:
     if private_dir.exists() and any(private_dir.iterdir()):
         raise SystemExit(f"{private_dir} exists but is not an empty git clone")
     private_dir.parent.mkdir(parents=True, exist_ok=True)
-    clone_url = f"https://github.com/{repo}.git"
-    run(["git", "clone", clone_url, str(private_dir)])
+    run(["gh", "repo", "clone", repo, str(private_dir)])
 
 
 def download_epub(output: Path, story_url: str) -> str:
@@ -185,8 +184,6 @@ def commit_tag_push(private_dir: Path, version_tag: str, metadata: dict) -> None
         title = metadata["chapters"].get("last_chapter_title") or "unknown chapter"
         run([
             "git",
-            "-c",
-            "commit.gpgsign=false",
             "commit",
             "-m",
             (
@@ -200,8 +197,6 @@ def commit_tag_push(private_dir: Path, version_tag: str, metadata: dict) -> None
     if tag_exists.returncode != 0:
         run([
             "git",
-            "-c",
-            "tag.gpgsign=false",
             "tag",
             "-a",
             version_tag,
