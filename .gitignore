@@ -39,6 +39,11 @@ venv/
 # See README "Source material" section for where to obtain these.
 data/raw/*.epub
 
+# Private source files live in a separate private repository. The local
+# checkout is nested here for maintainer convenience but must never be
+# committed to the public repository.
+data/private-source/
+
 # Local NLP work (see docs/local_nlp_*.md). Commit the .gitkeep
 # placeholders so the directory layout exists on a fresh clone, ignore
 # everything else underneath.

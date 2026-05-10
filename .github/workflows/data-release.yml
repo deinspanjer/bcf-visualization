@@ -31,6 +31,16 @@ on:
         required: true
         default: true
         type: boolean
+      private_source_repo:
+        description: 'Private repository containing source EPUB files. Leave blank to fall back to FicHub download.'
+        required: false
+        default: 'deinspanjer/bcf-visualization-private-source'
+        type: string
+      private_source_ref:
+        description: 'Private source repo ref/tag to checkout.'
+        required: false
+        default: 'source-v20260510.1'
+        type: string
 
 permissions:
   contents: write
@@ -40,6 +50,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - name: Checkout private source files
+        if: ${{ inputs.private_source_repo != '' }}
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.private_source_repo }}
+          ref: ${{ inputs.private_source_ref }}
+          path: data/private-source
+          ssh-key: ${{ secrets.BCF_PRIVATE_SOURCE_DEPLOY_KEY }}
 
       - name: Build data bundles
         id: build
@@ -60,7 +79,13 @@ jobs:
           fi
           if [ "$REGENERATE" = "true" ]; then
             python3 -m pip install -r requirements.txt
-            python3 scripts/download_bcf_epub.py
+            if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
+              mkdir -p data/raw
+              cp data/private-source/Brocktons_Celestial_Forge.epub \
+                data/raw/Brocktons_Celestial_Forge.epub
+            else
+              python3 scripts/download_bcf_epub.py
+            fi
             python3 scripts/derive_roll_facts.py
             python3 scripts/build_chapter_facts.py
           fi

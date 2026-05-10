@@ -2,6 +2,9 @@
 
 ## Data and extraction
 
+- Keep the data-release workflow's private source repo path as the
+  preferred EPUB input and treat FicHub download as an explicit fallback,
+  not the normal release path.
 - Locate and document any later author clarification about which
   non-Joe-POV sections count for CP earning.
 - Reclassify sections under the suspected "Joe on screen" rule while
@@ -45,6 +48,12 @@
   not use it as the canonical TODO list.
 - Confirm final public credit wording with the author/source display
   names before publishing broadly.
+- Rename the final runtime payload from `chapter_facts.json` to a
+  broader name such as `bcf-visualization-data.json`, with compatibility
+  updates across schemas, web loading, tests, and release packaging.
+- Move committed schema contracts out of `data/derived/_schemas/` into
+  a non-derived schema/contract path, preserving compatibility for the
+  validators during the transition.
 
 ## Research
 

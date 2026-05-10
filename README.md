@@ -16,6 +16,8 @@ This repository is organized for quick exploration first, with deeper technical 
 - **Pre-narrative history dates:** [docs/pre_narrative_history.md](docs/pre_narrative_history.md)
 - **Narrative timeline (April 2011):** [docs/narrative_timeline_april_2011.md](docs/narrative_timeline_april_2011.md)
 - **Derived dataset inventory:** [docs/derived_dataset_inventory.md](docs/derived_dataset_inventory.md)
+- **Data file audit:** [docs/data_file_audit.md](docs/data_file_audit.md)
+- **Private source repo runbook:** [docs/private_source_repo_runbook.md](docs/private_source_repo_runbook.md)
 - **Chart pack guide:** [docs/chart_pack_guide.md](docs/chart_pack_guide.md)
 - **Roll simulation/validation notes:** [docs/roll_simulation_and_validation_notes.md](docs/roll_simulation_and_validation_notes.md)
 
