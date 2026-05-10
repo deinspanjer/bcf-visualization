@@ -4,17 +4,11 @@ version = "0.1.0"
 description = "Local NLP scaffolding for the BCF visualization pipeline."
 requires-python = ">=3.11,<3.15"
 
-# Core deps that the FastAPI server, training scripts, TUI, and bootstrap
-# loop all share. Torch is intentionally NOT here so the iMac side can
-# `import nlp.client` / `import nlp.schema` without dragging in CUDA
-# wheels. Install the `gpu` extra on the Windows box.
+# Core deps for lightweight local work: Forge Curator, schema validation,
+# parser/regeneration scripts, the HTTP client, the FastAPI shell, and the
+# Textual review tools. Keep the transformer/training stack out of the default
+# install so small Linux environments do not download torch/CUDA wheels.
 dependencies = [
-  "transformers>=4.45",
-  "tokenizers>=0.20",
-  "accelerate>=0.34",
-  "datasets>=3.0",
-  "evaluate>=0.4",
-  "seqeval>=1.2",
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
   "pydantic>=2.8",
@@ -22,13 +16,22 @@ dependencies = [
   "jsonschema>=4.0",
   "textual>=0.79",
   "rich>=13.8",
-  "regex>=2024.7",
   "rapidfuzz>=3.9",
+  "openpyxl>=3.1",
+  "matplotlib>=3.5",
   "tqdm>=4.66",
 ]
 
 [project.optional-dependencies]
-gpu = ["torch>=2.4"]
+gpu = [
+  "torch>=2.4",
+  "transformers>=4.45",
+  "tokenizers>=0.20",
+  "accelerate>=0.34",
+  "datasets>=3.0",
+  "evaluate>=0.4",
+  "seqeval>=1.2",
+]
 dev = ["ruff", "pytest", "pytest-asyncio"]
 
 [[tool.uv.index]]
