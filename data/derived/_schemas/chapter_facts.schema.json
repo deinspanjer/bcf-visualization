@@ -302,7 +302,7 @@
         "cumulative_words_through_chapter", "cumulative_cp_earning_words",
         "cumulative_perks_through_chapter",
         "banked_cp_at_start", "banked_cp_at_end",
-        "model_validation",
+        "model_validation", "constellation_progress",
         "pov_characters", "structural_markers",
         "sections", "rolls"
       ],
@@ -338,12 +338,40 @@
         "banked_cp_at_start": { "type": ["integer", "null"] },
         "banked_cp_at_end":   { "type": ["integer", "null"] },
         "model_validation": { "$ref": "#/$defs/model_validation" },
+        "constellation_progress": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/constellation_progress" }
+        },
 
         "pov_characters":     { "type": "array", "items": { "type": "string" } },
         "structural_markers": { "type": "array", "items": { "type": "string" } },
 
         "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
         "rolls":    { "type": "array", "items": { "$ref": "#/$defs/roll" } }
+      }
+    },
+    "constellation_progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name", "count", "total", "discovered", "discovered_pct",
+        "complete", "visible"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+            "Clothing", "Magic", "Quality", "Size",
+            "Resources and Durability", "Magitech", "Alchemy",
+            "Capstone", "Personal Reality"
+          ]
+        },
+        "count":          { "type": "integer", "minimum": 0 },
+        "total":          { "type": "integer", "minimum": 0 },
+        "discovered":     { "type": "integer", "minimum": 0 },
+        "discovered_pct": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "complete":       { "type": "boolean" },
+        "visible":        { "type": "boolean" }
       }
     },
     "model_validation_issue": {

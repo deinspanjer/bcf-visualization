@@ -967,12 +967,11 @@ function fmtKWords(n) {
   return `${(n / 1_000_000).toFixed(2)}M`;
 }
 
-function buildCumulativeIndex(facts, perkDirectory) {
+function buildCumulativeIndex(facts) {
   let paid = 0, free = 0, hits = 0, otherRolls = 0;
   const cumByCh = new Map();
   const progressIndex = buildConstellationProgressIndex(
     facts,
-    perkDirectory,
     CONSTELLATION_ORDER,
   );
   for (const c of facts.chapters) {
@@ -2684,14 +2683,13 @@ function attachIntroToggle() {
     const packageIndex = await loadPackageIndex();
     const packageSelection = selectedPackageBase(packageIndex);
     const dataPackage = await loadDataPackage(packageSelection.base);
-    const [facts, perkDirectory, wireframes, rollResolutions] = await Promise.all([
+    const [facts, wireframes, rollResolutions] = await Promise.all([
       loadContractJSON(dataPackage, "chapter_facts"),
-      loadContractJSON(dataPackage, "perk_directory"),
       skyEnabled ? loadContractJSON(dataPackage, "constellation_wireframes", { optional: true }) : Promise.resolve(null),
       skyEnabled ? loadContractJSON(dataPackage, "roll_resolutions", { optional: true }) : Promise.resolve(null),
     ]);
     const model = buildCoordinateModel(facts);
-    const cumIdx = buildCumulativeIndex(facts, perkDirectory);
+    const cumIdx = buildCumulativeIndex(facts);
     const stored = loadStorage();
     const state = {
       facts, model, cumIdx,

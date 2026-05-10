@@ -36,6 +36,7 @@ from __future__ import annotations
 import json
 import re
 import zipfile
+from collections import Counter
 from pathlib import Path
 
 from _common import write_validated_json
@@ -50,9 +51,17 @@ HEADER_CORRECTIONS = ROOT / "data" / "manual" / "header_corrections.json"
 ROLL_FACTS = ROOT / "data" / "derived" / "roll_facts.json"
 ROLL_VALIDATION = ROOT / "data" / "derived" / "roll_validation.json"
 OBTAINED_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
+PERK_DIRECTORY = ROOT / "data" / "derived" / "perk_directory.json"
 LAST_EDITED = ROOT / "data" / "derived" / "chapter_last_edited.json"
 TIMELINE = ROOT / "data" / "derived" / "timeline.json"
 OUT = ROOT / "data" / "derived" / "chapter_facts.json"
+
+CONSTELLATION_ORDER = [
+    "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+    "Clothing", "Magic", "Quality", "Size",
+    "Resources and Durability", "Magitech", "Alchemy",
+    "Capstone", "Personal Reality",
+]
 
 
 # ---------- regime + shadow constants (mirroring predict_rolls.py) ---------
@@ -71,6 +80,37 @@ def regime_for_chapter(chap_num: str) -> int:
 REGIME_3_WORDS_PER_100_CP = 3000
 SHADOW_TRIGGER_COSTS = {600, 800}
 SHADOW_TRIGGER_MIN_CHAPTER = 97   # rule introduced in ch97 author note
+
+
+def _chapter_key(chapter_num: str | None) -> tuple[int, int]:
+    if not chapter_num:
+        return (0, 0)
+    head, _, tail = str(chapter_num).partition(".")
+    return (int(head or 0), int(tail or 0))
+
+
+def _countable_directory_perk(perk: dict) -> bool:
+    return (
+        not perk.get("free", False)
+        and perk.get("cost") is not None
+        and perk.get("status") != "Locked"
+    )
+
+
+def _roll_constellation_counts(rolls: list[dict]) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for roll in rolls:
+        if roll.get("outcome") != "hit" and roll.get("evidence_kind") != "untracked_acquisition":
+            continue
+        for perk in roll.get("purchased_perks") or []:
+            constellation = perk.get("constellation") or roll.get("constellation")
+            if constellation:
+                counts[constellation] += 1
+        for perk in roll.get("free_perks") or []:
+            constellation = perk.get("constellation") or roll.get("constellation")
+            if constellation:
+                counts[constellation] += 1
+    return counts
 
 
 # ---------- header parsing -------------------------------------------------
@@ -181,6 +221,20 @@ def main() -> None:
             counts["free"] += 1
         else:
             counts["paid"] += 1
+    perk_directory_doc = json.loads(PERK_DIRECTORY.read_text())
+    countable_perks = [
+        perk for perk in perk_directory_doc.get("perks", [])
+        if _countable_directory_perk(perk)
+    ]
+    constellation_totals: Counter[str] = Counter(
+        perk["constellation"] for perk in countable_perks
+    )
+    acquired_by_chapter: dict[str, Counter[str]] = {}
+    for perk in countable_perks:
+        chapter_num = perk.get("acquired_chapter_num")
+        if not chapter_num:
+            continue
+        acquired_by_chapter.setdefault(str(chapter_num), Counter())[perk["constellation"]] += 1
     model_checks_by_chapter = {
         str(row["chapter_num"]): row
         for row in roll_validation_doc.get("chapter_checks", [])
@@ -232,6 +286,8 @@ def main() -> None:
     cum_words = 0
     cum_cp_words = 0
     cum_perks = 0
+    cum_roll_constellations: Counter[str] = Counter()
+    cum_acquired_constellations: Counter[str] = Counter()
     shadow_periods: list[dict] = []
 
     for c in chapters:
@@ -305,6 +361,7 @@ def main() -> None:
         free_count_in_chap = int(obtained_counts["free"])
         banked_cp_at_start = None
         banked_cp_at_end = None
+        chapter_roll_constellations: Counter[str] = Counter()
 
         def _display_cp_position(index: int, total: int) -> int | None:
             if chapter_cp_words <= 0 or total <= 0:
@@ -409,6 +466,7 @@ def main() -> None:
                 misses += 1
             else:
                 unknowns += 1
+        chapter_roll_constellations.update(_roll_constellation_counts(rolls_out))
 
         model_check = model_checks_by_chapter.get(cn, {
             "status": "unknown",
@@ -429,6 +487,27 @@ def main() -> None:
         cum_words += sec_meta["total_word_count"]
         cum_cp_words += chapter_cp_words
         cum_perks += paid_count_in_chap + free_count_in_chap
+        cum_roll_constellations.update(chapter_roll_constellations)
+        for acquired_chapter, by_constellation in acquired_by_chapter.items():
+            if _chapter_key(acquired_chapter) == _chapter_key(cn):
+                cum_acquired_constellations.update(by_constellation)
+        constellation_progress = []
+        for name in CONSTELLATION_ORDER:
+            total = int(constellation_totals.get(name, 0))
+            acquired = int(cum_acquired_constellations.get(name, 0))
+            count = int(cum_roll_constellations.get(name, 0))
+            visible = total > 0 and count > 0
+            constellation_progress.append({
+                "name": name,
+                "count": count,
+                "total": total,
+                "discovered": acquired,
+                "discovered_pct": (
+                    round((acquired / total) * 100) if total > 0 else 0
+                ),
+                "complete": total > 0 and acquired >= total,
+                "visible": visible,
+            })
 
         out_chapters.append({
             "chapter_num": cn,
@@ -484,6 +563,7 @@ def main() -> None:
                 "synthetic_slot_count": model_check["synthetic_slot_count"],
                 "issues": model_check["issues"],
             },
+            "constellation_progress": constellation_progress,
 
             "pov_characters": sorted(pov_set),
             "structural_markers": sorted(struct_markers_aggregate),

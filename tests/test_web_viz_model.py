@@ -115,50 +115,31 @@ def test_constellation_progress_hides_late_constellations_until_opened() -> None
         chapters: [
           {
             chapter_num: '1',
-            rolls: [{
-              outcome: 'hit',
-              constellation: 'Toolkits',
-              purchased_perks: [{ name: 'Wrench', cost: 100, free: false }],
-              free_perks: [],
-            }],
+            constellation_progress: [
+              { name: 'Toolkits', count: 1, total: 3, discovered: 2, discovered_pct: 67, complete: false, visible: true },
+              { name: 'Personal Reality', count: 0, total: 2, discovered: 0, discovered_pct: 0, complete: false, visible: false },
+              { name: 'Capstone', count: 0, total: 2, discovered: 0, discovered_pct: 0, complete: false, visible: false },
+            ],
           },
           {
             chapter_num: '62',
-            rolls: [{
-              outcome: 'hit',
-              constellation: 'Personal Reality',
-              purchased_perks: [{ name: 'Storage', cost: 200, free: false }],
-              free_perks: [{ name: 'Shelving', constellation: 'Personal Reality' }],
-            }],
+            constellation_progress: [
+              { name: 'Toolkits', count: 1, total: 3, discovered: 2, discovered_pct: 67, complete: false, visible: true },
+              { name: 'Personal Reality', count: 2, total: 2, discovered: 1, discovered_pct: 50, complete: false, visible: true },
+              { name: 'Capstone', count: 0, total: 2, discovered: 0, discovered_pct: 0, complete: false, visible: false },
+            ],
           },
           {
             chapter_num: '63',
-            rolls: [{
-              outcome: 'hit',
-              constellation: 'Capstone',
-              purchased_perks: [
-                { name: 'Mantra', cost: 100, free: false },
-                { name: 'Wardrobe', cost: 50, free: false },
-              ],
-              free_perks: [],
-            }],
+            constellation_progress: [
+              { name: 'Toolkits', count: 1, total: 3, discovered: 2, discovered_pct: 67, complete: false, visible: true },
+              { name: 'Personal Reality', count: 2, total: 2, discovered: 1, discovered_pct: 50, complete: false, visible: true },
+              { name: 'Capstone', count: 2, total: 2, discovered: 2, discovered_pct: 100, complete: true, visible: true },
+            ],
           },
         ],
       };
-      const directory = {
-        perks: [
-          { constellation: 'Toolkits', name: 'Wrench', cost: 100, free: false, status: 'Obtained', acquired_chapter_num: '1' },
-          { constellation: 'Toolkits', name: 'Hammer', cost: 100, free: false, status: 'Available', acquired_chapter_num: null },
-          { constellation: 'Toolkits', name: 'Extra Wrench', cost: 50, free: false, status: 'Repeatable', acquired_chapter_num: '1' },
-          { constellation: 'Toolkits', name: 'Freebie', cost: 0, free: true, status: 'Obtained', acquired_chapter_num: '1' },
-          { constellation: 'Capstone', name: 'Mantra', cost: 100, free: false, status: 'Obtained', acquired_chapter_num: '63' },
-          { constellation: 'Capstone', name: 'Wardrobe', cost: 50, free: false, status: 'Obtained', acquired_chapter_num: '63' },
-          { constellation: 'Capstone', name: 'Locked One', cost: 400, free: false, status: 'Locked', acquired_chapter_num: null },
-          { constellation: 'Personal Reality', name: 'Storage', cost: 200, free: false, status: 'Obtained', acquired_chapter_num: '62' },
-          { constellation: 'Personal Reality', name: 'Other Room', cost: 200, free: false, status: 'Available', acquired_chapter_num: null },
-        ],
-      };
-      const idx = buildConstellationProgressIndex(facts, directory);
+      const idx = buildConstellationProgressIndex(facts);
       const ch1 = idx.byChapter.get('1');
       const ch62 = idx.byChapter.get('62');
       const ch63 = idx.byChapter.get('63');
