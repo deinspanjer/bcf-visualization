@@ -35,6 +35,7 @@ ROLL_VALIDATION = DERIVED / "roll_validation.json"
 OBTAINED_PERKS = DERIVED / "obtained_perks.json"
 PERKS_CATALOG = DERIVED / "perks_catalog.json"
 ROLL_OUTCOMES = DERIVED / "roll_outcomes.json"
+OUTSTANDING_PERKS = DERIVED / "outstanding_perks_by_chapter.json"
 
 CHAPTER_ROLL_OVERRIDES = MANUAL / "chapter_roll_overrides.json"
 AUTHOR_NOTES = MANUAL / "author_notes.json"
@@ -186,6 +187,7 @@ class ForgeCuratorData:
         self._roll_validation_doc: dict | None = None
         self._obtained_doc: dict | None = None
         self._roll_outcomes_doc: dict | None = None
+        self._outstanding_doc: dict | None = None
         self._chapter_roll_overrides_doc: dict | None = None
         self._author_notes_doc: dict | None = None
         self._regime_transitions_doc: dict | None = None
@@ -206,6 +208,7 @@ class ForgeCuratorData:
         self._roll_validation_doc = None
         self._obtained_doc = None
         self._roll_outcomes_doc = None
+        self._outstanding_doc = None
         self._chapter_roll_overrides_doc = None
         self._author_notes_doc = None
         self._regime_transitions_doc = None
@@ -264,6 +267,12 @@ class ForgeCuratorData:
         if self._roll_outcomes_doc is None:
             self._roll_outcomes_doc = _read_json(ROLL_OUTCOMES)
         return self._roll_outcomes_doc
+
+    @property
+    def outstanding_perks(self) -> dict:
+        if self._outstanding_doc is None:
+            self._outstanding_doc = _read_json(OUTSTANDING_PERKS)
+        return self._outstanding_doc
 
     @property
     def chapter_roll_overrides(self) -> dict:

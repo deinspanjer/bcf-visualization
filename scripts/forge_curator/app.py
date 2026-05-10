@@ -446,6 +446,7 @@ class StatsPanel(Static):
                     line = f"[dim]{line}[/]"
                 roll_lines.append(line)
         rolls_block = "\n".join(roll_lines)
+        evidence_block = app._evidence_block(cs)
         perks_block = app._perks_this_chapter_block(cs)
         model_status = app._model_validation_summary(cs)
         title_block = "\n".join(
@@ -470,6 +471,7 @@ class StatsPanel(Static):
             f"  Since last roll: {_fmt_int(since_last_roll)}\n"
             f"  Until next roll: {_fmt_int(until_next_roll)}\n\n"
             f"[bold]CP at cursor[/bold]\n"
+            f"  Available: {_fmt_int(cp_stats['available'])}\n"
             f"  Gained:\n"
             f"    total {_fmt_int(cp_stats['gained_total'])}\n"
             f"    chapter {_fmt_int(cp_stats['gained_chapter'])}\n"
@@ -478,6 +480,7 @@ class StatsPanel(Static):
             f"    chapter {_fmt_int(cp_stats['spent_chapter'])}\n\n"
             f"[bold]Rolls[/bold] [dim]({app._rolls_header_count(cs)})[/]\n"
             f"{rolls_block}\n\n"
+            f"[bold]Evidence[/bold]\n{evidence_block}\n\n"
             f"[bold]Perks this chapter[/bold]\n{perks_block}\n"
         )
         self.update(body)
@@ -485,6 +488,11 @@ class StatsPanel(Static):
 
 def _fmt_int(value: int | None) -> str:
     return "n/a" if value is None else f"{int(value):,}"
+
+
+def _fmt_signed_int(value: int) -> str:
+    sign = "+" if value >= 0 else "-"
+    return f"{sign}{abs(int(value)):,}"
 
 
 def _wrap_title_for_stats(title: str, content_width: int) -> list[str]:
@@ -588,7 +596,7 @@ class ActionsPanel(Static):
             "[bold]Annotation cleanup[/bold]\n"
             "  ⎵D  Remove annotation at word\n\n"
             "[bold]Navigation[/bold]\n"
-            "  ]] [[  next/prev chapter\n"
+            "  ]] [[  chapter top/bottom\n"
             "  ][ []  next/prev section\n"
             "  ]r [r  next/prev predicted roll\n"
             "  ]R [R  next/prev curated quote\n"
@@ -742,7 +750,7 @@ class HelpScreen(ModalScreen):
         )
         body.append("\nNavigation\n", style="bold")
         body.append(
-            "  ]] [[   next/prev chapter\n"
+            "  ]] [[   chapter top/bottom\n"
             "  ][ []   next/prev section\n"
             "  ]r [r   next/prev curated hit/miss\n"
             "  ]R [R   next/prev predicted roll\n"
@@ -1350,8 +1358,22 @@ class ForgeCuratorApp(App):
             if wp is None:
                 wp = roll.get("word_position")
             if wp is not None:
-                indices.append(self._raw_word_for_cp_offset(int(wp)))
+                indices.append(self._roll_marker_word_index_from_cp(cs, int(wp)))
         return indices
+
+    def _roll_marker_word_index_from_cp(self, cs, cp_word_idx: int) -> int:
+        if not cs.prose.word_offsets:
+            return 0
+        raw = min(
+            self._raw_word_for_cp_offset(cp_word_idx),
+            len(cs.prose.word_offsets) - 1,
+        )
+        while raw > 0:
+            sec_idx = cs.section_index_at(raw)
+            if self._eligibility_at_cursor(cs, raw, sec_idx)["text_eligible"]:
+                return raw
+            raw -= 1
+        return raw
 
     def _curated_roll_word_index(self, cs, roll: dict) -> int | None:
         if roll.get("display_kind") == "deferred_in":
@@ -1359,17 +1381,32 @@ class ForgeCuratorApp(App):
         raw = roll.get("raw_word_position")
         if raw is not None:
             return int(raw)
-        quote = roll.get("narrative_evidence")
-        if quote:
-            start = cs.prose.text.find(str(quote))
-            if start >= 0:
-                return _word_index_for_char_offset(cs.prose.word_offsets, start)
         return None
 
     def _evidence_fallback_word_index(self, cs, roll: dict) -> int | None:
+        raw = self._curated_roll_word_index(cs, roll)
+        if raw is not None:
+            return raw
         if roll.get("word_position") is None:
             return None
         return self._raw_word_for_cp_offset(int(roll["word_position"]))
+
+    def _evidence_reference_word_index(self, cs, roll: dict) -> int | None:
+        if (
+            str(roll.get("mechanical_chapter_num")) == cs.meta.chapter_num
+            and roll.get("mechanical_word_position") is not None
+        ):
+            return self._roll_marker_word_index_from_cp(
+                cs, int(roll["mechanical_word_position"])
+            )
+        if (
+            str(roll.get("display_chapter_num")) == cs.meta.chapter_num
+            and roll.get("display_word_position") is not None
+        ):
+            return self._roll_marker_word_index_from_cp(
+                cs, int(roll["display_word_position"])
+            )
+        return roll.get("raw_word_position")
 
     def _cursor_chapter_proportion(self) -> float:
         """Return cursor's position within the chapter as a float in [0, 1]."""
@@ -1710,6 +1747,7 @@ class ForgeCuratorApp(App):
         return {
             "gained_total": gained_total,
             "gained_chapter": max(0, gained_total - gained_before),
+            "available": banked,
             "spent_total": spent_total,
             "spent_chapter": spent_chapter,
         }
@@ -1813,7 +1851,11 @@ class ForgeCuratorApp(App):
             and str(r.get("mechanical_chapter_num")) == str(chapter_num)
         ]
         rows.sort(key=lambda r: (
-            int(r.get("mechanical_word_position") or r.get("word_position") or 0),
+            (
+                int(r.get("mechanical_word_position") or r.get("word_position"))
+                if (r.get("mechanical_word_position") or r.get("word_position")) is not None
+                else 10**12
+            ),
             int(r.get("roll_number") or r.get("roll_sequence_in_chapter") or 0),
         ))
         roll_number = roll.get("roll_number")
@@ -1842,31 +1884,67 @@ class ForgeCuratorApp(App):
         ]
 
         result: list[dict] = []
-        rows = sorted(
-            canonical_rows,
-            key=lambda r: (
-                0 if self._local_cp_from_roll(cn, r) is None else 1,
-                self._local_cp_from_roll(cn, r) or 0,
-                int(r.get("mechanical_cumulative_word_offset") or 0),
-                int(r.get("roll_number") or r.get("roll_sequence_in_chapter") or 0),
-            ),
-        )
+
+        def _is_deferred_in(row: dict, local_cp: int | None) -> bool:
+            return (
+                local_cp is None
+                and str(row.get("chapter_num")) == cn
+                and str(row.get("mechanical_chapter_num") or cn) != cn
+            )
+
+        def _is_unslotted_current_chapter(row: dict, local_cp: int | None) -> bool:
+            return (
+                local_cp is None
+                and str(row.get("mechanical_chapter_num") or row.get("chapter_num")) == cn
+            )
+
+        def _sort_key(row: dict) -> tuple[int, int, int, int]:
+            local_cp = self._local_cp_from_roll(cn, row)
+            if _is_deferred_in(row, local_cp):
+                bucket = 0
+            elif local_cp is not None:
+                bucket = 1
+            else:
+                bucket = 2
+            return (
+                bucket,
+                local_cp if local_cp is not None else 10**12,
+                int(row.get("mechanical_cumulative_word_offset") or 10**12),
+                int(row.get("roll_number") or row.get("roll_sequence_in_chapter") or 0),
+            )
+
+        rows = sorted(canonical_rows, key=_sort_key)
         local_index = 0
         for row in rows:
             local_cp = self._local_cp_from_roll(cn, row)
-            is_deferred_in = local_cp is None and str(row.get("chapter_num")) == cn
-            if local_cp is None and not is_deferred_in:
+            is_deferred_in = _is_deferred_in(row, local_cp)
+            is_unslotted_current = _is_unslotted_current_chapter(row, local_cp)
+            if local_cp is None and not (is_deferred_in or is_unslotted_current):
                 continue
             if is_deferred_in:
                 display_kind = "deferred_in"
                 word_position = 0
                 raw_word_position = 0
                 global_cp = row.get("mechanical_cumulative_word_offset")
+            elif is_unslotted_current:
+                display_kind = "chapter_roll"
+                local_index += 1
+                raw_word_position = self._curated_roll_word_index(cs, row)
+                if raw_word_position is not None:
+                    word_position = self._cp_earning_word_offset(raw_word_position)
+                else:
+                    word_position = self._chapter_cp_total(cn, cs)
+                    raw_word_position = self._roll_marker_word_index_from_cp(
+                        cs, int(word_position)
+                    )
+                global_cp = self._chapter_cp_start(cn) + int(word_position)
             else:
                 display_kind = "chapter_roll"
                 local_index += 1
                 word_position = int(local_cp)
-                raw_word_position = self._raw_word_for_cp_offset(int(local_cp))
+                raw_word_position = self._roll_marker_word_index_from_cp(
+                    cs, int(local_cp)
+                )
                 global_cp = self._global_cp_from_roll(cn, row)
             entry = {
                 **row,
@@ -1923,14 +2001,14 @@ class ForgeCuratorApp(App):
 
     def _format_roll_stat_line(self, roll: dict, marker: str) -> str:
         global_num = roll.get("roll_number")
-        global_part = f"global #{global_num}" if global_num is not None else "global #?"
         outcome = roll.get("outcome") or "unknown"
         evidence = self._roll_evidence_marker(roll)
         constel = roll.get("constellation") or "unknown"
         if outcome == "miss":
             min_cost = roll.get("miss_cost_estimate") or roll.get("rolled_perk_cost")
+            possible = self._miss_possible_suffix(roll, min_cost)
             perk_text = (
-                f"missed >= {int(min_cost)} CP"
+                f"missed >= {int(min_cost)} CP{possible}"
                 if min_cost is not None else "missed"
             )
             detail_lines = [f"    {constel} - {perk_text}"]
@@ -1944,16 +2022,18 @@ class ForgeCuratorApp(App):
                     detail_lines.append(f"    {constel} - {name} ({cost})")
             else:
                 detail_lines = [f"    {constel} - perk unknown"]
+        available = roll.get("available_cp")
+        available_part = (
+            f"Avail CP {int(available)}" if available is not None else "Avail CP ?"
+        )
         if roll.get("display_kind") == "deferred_in":
             source_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
             source_idx = roll.get("target_roll_index") or "?"
-            available = roll.get("available_cp")
-            if available is not None:
-                detail_lines.append(f"    available CP at slot: {int(available)}")
             return "\n".join([
                 (
                     f"  {marker} deferred from ch {source_chapter} #{source_idx} "
-                    f"({global_part}) {outcome} {evidence}"
+                    f"({global_num if global_num is not None else '?'}) "
+                    f"{available_part} {outcome} {evidence}"
                 ),
                 *detail_lines,
             ])
@@ -1967,9 +2047,74 @@ class ForgeCuratorApp(App):
             detail_lines.insert(0, f"    narrative deferred to ch {mention_chapter}")
         chapter_idx = int(roll.get("index") or roll.get("roll_sequence_in_chapter") or 0)
         return "\n".join([
-            f"  {marker} #{chapter_idx} ({global_part}) {outcome} {evidence}",
+            (
+                f"  {marker} # {chapter_idx} "
+                f"({global_num if global_num is not None else '?'}) "
+                f"{available_part} {outcome} {evidence}"
+            ),
             *detail_lines,
         ])
+
+    def _miss_possible_suffix(self, roll: dict, min_cost) -> str:
+        if min_cost is None:
+            return ""
+        constellation = roll.get("constellation")
+        if not constellation:
+            return ""
+        chapter_num = str(
+            roll.get("mechanical_chapter_num")
+            or roll.get("target_chapter_num")
+            or roll.get("chapter_num")
+            or roll.get("visible_chapter_num")
+            or ""
+        )
+        before = next(
+            (
+                c.get("before_chapter", {}).get("by_constellation", {})
+                for c in self.data.outstanding_perks.get("chapters", [])
+                if str(c.get("chapter_num")) == chapter_num
+            ),
+            {},
+        )
+        candidates = [
+            p for p in before.get(str(constellation), [])
+            if p.get("cost") is not None and int(p["cost"]) == int(min_cost)
+        ]
+        if not candidates:
+            return ""
+        if len(candidates) == 1:
+            return f" ({candidates[0].get('name') or 'unknown'})"
+        return f" ({len(candidates)} possible)"
+
+    def _evidence_block(self, cs) -> str:
+        rows: list[str] = []
+        for roll in self._unified_rolls(cs):
+            quote = roll.get("narrative_evidence")
+            if not quote:
+                continue
+            quote_start = cs.prose.text.find(str(quote))
+            if quote_start < 0:
+                continue
+            quote_word = _word_index_for_char_offset(
+                cs.prose.word_offsets, quote_start
+            )
+            roll_word = self._evidence_reference_word_index(cs, roll)
+            if quote_word is None or roll_word is None:
+                continue
+            quote_cp = self._cp_earning_word_offset(int(quote_word))
+            distance = int(quote_word) - int(roll_word)
+            target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
+            target_index = roll.get("target_roll_index") or roll.get("index") or "?"
+            global_num = roll.get("roll_number")
+            global_part = f"global #{global_num}" if global_num is not None else "global #?"
+            rows.extend([
+                f"  Q against ch {target_chapter} #{target_index} ({global_part})",
+                f"    word distance: {_fmt_signed_int(distance)}",
+                (
+                    f"    CP at quote start: {self._cp_at_cursor(quote_cp)}"
+                ),
+            ])
+        return "\n".join(rows) if rows else "  (no evidence)"
 
     def _perks_this_chapter_block(self, cs) -> str:
         lines: list[str] = []
@@ -2840,9 +2985,9 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return False
-        # ]] / [[  — chapter
+        # ]] / [[  — chapter edges
         if key == prefix:
-            (self.action_next_chapter if prefix == "]" else self.action_prev_chapter)()
+            self._jump_chapter_edge(top=(prefix == "]"))
             return True
         # ][ / []  — section
         if (prefix == "]" and key == "[") or (prefix == "[" and key == "]"):
@@ -2888,6 +3033,13 @@ class ForgeCuratorApp(App):
         self._jump_regex(self.active_regex_slot, forward=forward)
 
     # ----- jump navigation -----
+
+    def _jump_chapter_edge(self, *, top: bool) -> None:
+        cs = self.state.chapter
+        if cs is None or not cs.prose.word_offsets:
+            return
+        target = 0 if top else len(cs.prose.word_offsets) - 1
+        self._jump_to_word(target)
 
     def _jump_to_word(self, word_idx: int) -> None:
         cs = self.state.chapter

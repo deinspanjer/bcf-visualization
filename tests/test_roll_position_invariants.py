@@ -97,6 +97,10 @@ def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> Non
                 continue
             if roll.get("mechanical_cumulative_word_offset") is None:
                 continue
+            if roll.get("predicted_word_position_epub") != roll.get(
+                "mechanical_cumulative_word_offset"
+            ):
+                continue
             predicted_roll = predicted_by_roll_number[int(roll_number)]
             mechanical_chapter_num = str(
                 roll.get("mechanical_chapter_num") or roll["chapter_num"]

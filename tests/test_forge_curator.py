@@ -178,8 +178,10 @@ def test_b5_b6_b7_stats_panel_ch97(tmp_path: Path) -> None:
     assert "CP eligible:" in text
     assert "Since last roll:" in text
     assert "Until next roll:" in text
+    assert "Available:" in text
     assert "Gained:" in text
     assert "Spent:" in text
+    assert "Evidence" in text
 
 
 def test_b8_cp_at_cursor_nonzero_after_first_roll(tmp_path: Path) -> None:
@@ -331,33 +333,38 @@ async def test_b12_jump_roll_scrolls_into_view() -> None:
 
 
 @pytest.mark.asyncio
-async def test_keybind_redesign_chapter_and_section_chords() -> None:
-    """]] navigates chapters; ][ navigates sections."""
+async def test_keybind_redesign_chapter_edge_and_section_chords() -> None:
+    """]] / [[ jump to chapter edges; ][ navigates sections."""
     app = ForgeCuratorApp(start_chapter="1")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         cs0 = app.state.chapter
         assert cs0 is not None
         ch0 = cs0.meta.chapter_num
+        app._jump_to_word(100)
+        await pilot.pause()
         await pilot.press("]")
         await pilot.press("]")
         await pilot.pause()
         cs1 = app.state.chapter
         assert cs1 is not None
-        assert cs1.meta.chapter_num != ch0, (
-            f"]] should advance chapter; stayed on {ch0}"
-        )
-        # Now go back.
+        assert cs1.meta.chapter_num == ch0
+        assert cs1.cursor_word_index == 0
+        await pilot.press("]")
+        await pilot.press("]")
+        await pilot.pause()
+        assert cs1.cursor_word_index == 0
         await pilot.press("[")
         await pilot.press("[")
         await pilot.pause()
         cs2 = app.state.chapter
         assert cs2 is not None
-        assert cs2.meta.chapter_num == ch0, (
-            f"[[ should return to {ch0}; got {cs2.meta.chapter_num}"
-        )
+        assert cs2.meta.chapter_num == ch0
+        assert cs2.cursor_word_index == len(cs2.prose.word_offsets) - 1
         cs = app.state.chapter
         assert cs is not None
+        app._jump_to_word(0)
+        await pilot.pause()
         assert cs.section_index_at(cs.cursor_word_index) == 0
         await pilot.press("]")
         await pilot.press("[")
@@ -553,10 +560,10 @@ def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
     assert "Text: CP ineligible - header" in text
     assert "Total content:" in text
     assert "CP eligible:" in text
-    assert "#1 (global #2)" in text
+    assert "# 1 (2) Avail CP 200 hit Q" in text
     assert "narrative deferred to ch 2" in text
-    assert "#2 (global #3)" in text
-    assert "#3 (global #4)" in text
+    assert "# 2 (3) Avail CP 100 miss Q" in text
+    assert "# 3 (4) Avail CP 200 hit Q" in text
     assert "hit" in text
     assert "Clothing - Fashion (200)" in text
     assert "Quality - Bling of War (100)" in text
@@ -564,6 +571,97 @@ def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
     assert "Evidence:" not in text
     assert "T text evidence" not in text
     assert "@cp" not in text
+
+
+def test_chapter_4_unpredicted_roll_without_evidence_anchors_to_last_word(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("4", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    fifth_fact = next(
+        r for r in cs.derived.roll_facts
+        if r.get("roll_sequence_in_chapter") == 5
+        and str(r.get("mechanical_chapter_num")) == "4"
+    )
+    fifth_fact["narrative_evidence"] = None
+    for field in (
+        "word_position",
+        "display_word_position",
+        "display_cumulative_word_offset",
+        "mechanical_word_position",
+        "mechanical_cumulative_word_offset",
+    ):
+        fifth_fact[field] = None
+
+    fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
+
+    assert fifth["roll_number"] == 14
+    assert fifth["display_kind"] == "chapter_roll"
+    assert fifth["raw_word_position"] == int(cs.meta.sections[0]["word_count"]) - 1
+
+
+def test_chapter_4_end_of_section_roll_marker_does_not_land_in_bottom_section(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("4", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+
+    story_section_last_word = int(cs.meta.sections[0]["word_count"]) - 1
+    marker_indices = app._predicted_roll_word_indices(cs)
+
+    assert story_section_last_word in marker_indices
+    assert story_section_last_word + 1 not in marker_indices
+
+
+def test_stats_evidence_block_reports_reference_distance_and_cp(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("4", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    text = _render_stats_text(app)
+
+    assert text.index("Rolls") < text.index("Evidence")
+    assert text.index("Evidence") < text.index("Perks this chapter")
+    assert "against ch 4 #5 (global #14)" in text
+    assert "word distance:" in text
+    assert "CP at quote start:" in text
+    assert "word distance: -1,541" in text
+    assert "word distance: +0" not in text
+    assert "word distance: -1,541\n    CP at quote start: 100" in text
+    assert "word distance: -1,541; CP at quote start: 100" not in text
+
+
+def test_chapter_4_unpredicted_roll_keeps_saved_evidence_separate_from_slot(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("4", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    quote = "That had taken too long the first time"
+    fifth_fact = next(
+        r for r in cs.derived.roll_facts
+        if r.get("roll_sequence_in_chapter") == 5
+        and str(r.get("mechanical_chapter_num")) == "4"
+    )
+    fifth_fact["narrative_evidence"] = quote
+    for field in (
+        "word_position",
+        "display_word_position",
+        "display_cumulative_word_offset",
+        "mechanical_word_position",
+        "mechanical_cumulative_word_offset",
+    ):
+        fifth_fact[field] = None
+
+    fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
+
+    assert fifth["roll_number"] == 14
+    assert fifth["narrative_evidence"] == quote
+    assert fifth["raw_word_position"] == int(cs.meta.sections[0]["word_count"]) - 1
+    assert fifth["word_position"] == cs.meta.cp_earning_word_count
 
 
 def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None:
@@ -930,7 +1028,7 @@ def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
 def test_chapter_1_stats_marks_fashion_as_narrative_deferred(tmp_path) -> None:
     app = _loaded_app("1", tmp_path)
     text = _render_stats_text(app)
-    assert "#2 (global #2) hit Q" in text
+    assert "# 2 (2) Avail CP 200 hit Q" in text
     assert "narrative deferred to ch 2" in text
     assert "Clothing - Fashion (200)" in text
 

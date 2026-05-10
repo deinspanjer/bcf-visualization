@@ -155,6 +155,19 @@ def test_chapter_1_fashion_is_deferred_to_chapter_2_roll_facts() -> None:
     assert fashion["cumulative_word_offset"] == fashion["display_cumulative_word_offset"]
 
 
+def test_chapter_4_unpredicted_miss_consumes_global_roll_number() -> None:
+    rolls = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    ch4_rolls = [
+        r for r in rolls
+        if r.get("source_kind") != "trigger"
+        and str(r.get("mechanical_chapter_num")) == "4"
+    ]
+    fifth = next(r for r in ch4_rolls if r["roll_sequence_in_chapter"] == 5)
+
+    assert fifth["outcome"] == "miss"
+    assert fifth["roll_number"] == 14
+
+
 def test_deferred_roll_validation_counts_mechanical_chapter() -> None:
     checks = {
         row["chapter_num"]: row

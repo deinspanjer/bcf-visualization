@@ -1270,6 +1270,7 @@ def main() -> None:
                     for pred in sched_inp["predicted_rolls"]
                 }
             non_trigger_seq = 0
+            roll_number_shift: int | None = None
             # Cross-check: compare curator outcomes vs scheduler decision.
             if sched and sched.feasible:
                 curator_outcomes = [
@@ -1345,6 +1346,20 @@ def main() -> None:
                     pred_slot.get("roll_number") if pred_slot is not None
                     else (roll_number if row["kind"] == "trigger" else None)
                 )
+                if (
+                    row["kind"] != "trigger"
+                    and pred_slot is not None
+                    and pred_slot.get("roll_number") is not None
+                    and roll_number is not None
+                ):
+                    roll_number_shift = int(pred_slot["roll_number"]) - int(roll_number)
+                elif (
+                    row["kind"] != "trigger"
+                    and canonical_roll_number is None
+                    and roll_number is not None
+                    and roll_number_shift is not None
+                ):
+                    canonical_roll_number = int(roll_number) + roll_number_shift
                 ev = (
                     evidence_by_roll.get(canonical_roll_number)
                     if canonical_roll_number is not None else None

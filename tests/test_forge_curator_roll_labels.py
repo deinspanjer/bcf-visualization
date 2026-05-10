@@ -33,8 +33,31 @@ def test_chapter_1_roll_attempt_index_excludes_trigger(tmp_path: Path) -> None:
     assert rolls[0]["index"] == 1
 
     rendered = app._format_roll_stat_line(rolls[0], "▸")
-    assert "#1 (global #1) miss" in rendered
+    assert "# 1 (1) Avail CP 100 miss Q" in rendered
+    assert "available CP at prediction:" not in rendered
     assert "#2 (global #1)" not in rendered
+
+
+def test_miss_roll_line_counts_possible_perks_at_missed_cost(tmp_path: Path) -> None:
+    app = _loaded_app("4", tmp_path)
+    chapter_state = app.state.chapter
+    assert chapter_state is not None
+
+    miss = next(r for r in app._unified_rolls(chapter_state) if r["roll_number"] == 11)
+    rendered = app._format_roll_stat_line(miss, " ")
+
+    assert "Knowledge - missed >= 300 CP (4 possible)" in rendered
+
+
+def test_single_possible_miss_roll_line_names_the_perk(tmp_path: Path) -> None:
+    app = _loaded_app("7", tmp_path)
+    chapter_state = app.state.chapter
+    assert chapter_state is not None
+
+    miss = next(r for r in app._unified_rolls(chapter_state) if r["roll_number"] == 27)
+    rendered = app._format_roll_stat_line(miss, " ")
+
+    assert "Vehicles - missed >= 300 CP (Valuable Memories)" in rendered
 
 
 def test_chapter_1_roll_list_keeps_mechanical_deferred_roll(tmp_path: Path) -> None:
@@ -75,7 +98,7 @@ def test_chapter_2_stats_header_counts_deferred_in_roll(tmp_path: Path) -> None:
     text = _render_stats_text(app)
 
     assert "Rolls (4 predicted)" in text
-    assert "#1 (global #2) hit" in text
+    assert "# 1 (2) Avail CP 200 hit" in text
     assert "narrative deferred to ch 2" in text
 
 
@@ -87,9 +110,12 @@ def test_chapter_4_unpredicted_curator_roll_is_not_deferred(tmp_path: Path) -> N
     rolls = app._unified_rolls(chapter_state)
     extra_roll = next(r for r in rolls if r.get("roll_key") == "curator:0014")
 
+    expected_raw = int(chapter_state.meta.sections[0]["word_count"]) - 1
     assert extra_roll["display_kind"] == "chapter_roll"
     assert extra_roll["index"] == 5
+    assert extra_roll["roll_number"] == 14
     assert extra_roll["word_position"] == chapter_state.meta.cp_earning_word_count
+    assert extra_roll["raw_word_position"] == expected_raw
 
 
 def test_unified_rolls_ignore_manual_quote_until_derived_regenerated(

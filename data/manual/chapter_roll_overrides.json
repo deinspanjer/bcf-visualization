@@ -347,6 +347,36 @@
           "mention_word_position": 1888,
           "display_position_policy": "mention",
           "narrative_evidence": "the approach of the Knowledge constellation within the Celestial Forge. My power failed to latch onto the nearest mote"
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "4",
+          "mention_word_position": 5010,
+          "display_position_policy": "mention",
+          "narrative_evidence": "The Celestial Forge moved and focused on one of the arrays of powers. The Toolkits constellation was swinging towards me and my power latched onto a small mote, securing the connection. It was called Laboratorium."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "4",
+          "mention_word_position": 7367,
+          "display_position_policy": "mention",
+          "narrative_evidence": "The next morning I woke up to the feeling of the Knowledge constellation in the Celestial Forge swinging by me. My power's reach was the strongest it had ever been and was just enough to latch on to a mid-sized mote. The ability was called 'Grease Monkey'."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "4",
+          "mention_word_position": 9427,
+          "display_position_policy": "mechanical",
+          "narrative_evidence": "While I was waiting my power completely failed to grab a mote from one of the constellations I had yet to identify."
         }
       ],
       "narrative_evidence": ""
