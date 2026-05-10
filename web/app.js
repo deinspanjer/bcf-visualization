@@ -3,6 +3,11 @@ import {
   validateDataDocument,
   validateDataPackageManifest,
 } from "./data-contract.js";
+import {
+  buildConstellationProgressIndex,
+  paidRollPerks,
+  rollMarkerModel,
+} from "./viz-model.js";
 
 /* Brockton's Celestial Forge — DAW scrubber app
  *
@@ -653,51 +658,68 @@ function renderRollsTrack(model, facts) {
       const leftPct = pctOf(model, wp);
       const dot = el("button", {
         type: "button",
-        class: `roll-dot ${rollClass(r)}`,
+        class: `roll-dot ${rollClass(r)} ${rollMarkerClass(r)}`,
         style: rollDotStyle(r, leftPct),
         "data-chapter-num": c.chapter_num,
         "data-roll-number": r.roll_number ?? "",
         title: rollDotTitle(r, c),
       });
+      renderRollMarker(dot, r);
       dot._roll = r;
       dot._chapter = c;
       dot._wordPos = wp;
       dot._wordPct = leftPct;
       dot._dotSize = rollDotSize(r);
       track.appendChild(dot);
-      renderFreePerkCluster(track, model, r, c, wp, leftPct);
     }
   }
 }
 
-function renderFreePerkCluster(track, model, roll, chapter, wordPos, leftPct) {
-  const freePerks = roll.free_perks || [];
-  if (roll.outcome !== "hit" || freePerks.length === 0) return;
+function rollMarkerClass(r) {
+  return `marker-${rollMarkerModel(r).kind}`;
+}
 
-  freePerks.forEach((freePerk, idx) => {
-    const dot = el("button", {
-      type: "button",
-      class: "roll-dot free-sibling",
-      style: freePerkDotStyle(leftPct, freePerk, idx, freePerks.length),
-      "data-chapter-num": chapter.chapter_num,
-      "data-free-index": String(idx),
-      title: freePerkTitle(freePerk, roll, chapter),
-    });
-    dot._roll = {
-      outcome: "hit",
-      constellation: freePerk.constellation || roll.constellation,
-      purchased_perks: [{ name: freePerk.name, cost: 0, free: true }],
-      purchased_perk_cost_total: 0,
-      purchased_perk_jump: freePerk.jump,
-      free_perks: [],
-      evidence_kind: "free_sibling",
-    };
-    dot._chapter = chapter;
-    dot._wordPos = wordPos;
-    dot._wordPct = leftPct;
-    dot._dotSize = 4;
-    track.appendChild(dot);
+function renderRollMarker(dot, roll) {
+  const marker = rollMarkerModel(roll);
+  const colorKey = roll.outcome === "miss" || roll.outcome === "unknown"
+    ? "miss"
+    : colorKeyForConstellation(roll.constellation);
+  const system = el("span", {
+    class: `roll-star-system ${colorKey} ${marker.isMissLike ? "is-miss-like" : ""}`,
+    "aria-hidden": "true",
   });
+
+  const sourceCount = marker.kind.startsWith("trinary") ? 3 :
+    marker.kind.startsWith("binary") ? 2 : 1;
+  const offsets = sourceOffsets(sourceCount);
+  offsets.forEach((offset, idx) => {
+    system.appendChild(el("span", {
+      class: `star-source ${colorKey} source-${idx + 1}`,
+      style: {
+        "--source-x": `${offset.x}px`,
+        "--source-y": `${offset.y}px`,
+        "--source-scale": String(offset.scale),
+      },
+    }));
+  });
+
+  const companions = companionOffsets((roll.free_perks || []).length);
+  companions.forEach((offset, idx) => {
+    const freePerk = roll.free_perks[idx] || {};
+    system.appendChild(el("span", {
+      class: `star-companion ${colorKeyForConstellation(freePerk.constellation || roll.constellation)}`,
+      style: {
+        "--companion-x": `${offset.x}px`,
+        "--companion-y": `${offset.y}px`,
+        "--companion-scale": String(offset.scale),
+      },
+    }));
+  });
+
+  if (marker.isUntracked) {
+    system.appendChild(el("span", { class: "star-untracked-ring" }));
+  }
+  dot.appendChild(system);
 }
 
 function rollClass(r) {
@@ -709,33 +731,50 @@ function rollClass(r) {
 
 function rollDotStyle(r, leftPct) {
   const size = rollDotSize(r);
-  const color = rollDotColor(r);
   return {
     left: `${leftPct.toFixed(4)}%`,
     width: `${size}px`,
     height: `${size}px`,
     marginLeft: `${-(size / 2)}px`,
-    backgroundColor: color,
-    borderColor: r.evidence_kind === "untracked_acquisition" ? color : "rgba(255, 255, 255, 0.7)",
+    "--marker-color": rollDotColor(r),
   };
 }
 
-function freePerkDotStyle(leftPct, freePerk, idx, total) {
-  const maxCols = 5;
-  const colsInRow = Math.min(maxCols, total - Math.floor(idx / maxCols) * maxCols);
-  const col = idx % maxCols;
-  const row = Math.floor(idx / maxCols);
-  const offset = (col - (colsInRow - 1) / 2) * 6;
-  const color = CONSTELLATION_COLORS[freePerk.constellation] || "var(--hit)";
-  return {
-    left: `${leftPct.toFixed(4)}%`,
-    top: `${42 + row * 7}px`,
-    width: "4px",
-    height: "4px",
-    marginLeft: `${offset - 2}px`,
-    backgroundColor: color,
-    borderColor: color,
-  };
+function sourceOffsets(count) {
+  if (count >= 3) {
+    return [
+      { x: -8, y: 4, scale: 0.78 },
+      { x: 8, y: 4, scale: 0.78 },
+      { x: 0, y: -7, scale: 0.92 },
+    ];
+  }
+  if (count === 2) {
+    return [
+      { x: -5, y: 1, scale: 0.88 },
+      { x: 6, y: -1, scale: 0.78 },
+    ];
+  }
+  return [{ x: 0, y: 0, scale: 1 }];
+}
+
+function companionOffsets(count) {
+  const positions = [
+    { x: 0, y: -13, scale: 1 },
+    { x: 13, y: 0, scale: 0.86 },
+    { x: -9, y: -9, scale: 0.82 },
+    { x: 0, y: 13, scale: 0.78 },
+    { x: -13, y: 0, scale: 0.74 },
+    { x: 9, y: 9, scale: 0.7 },
+  ];
+  return positions.slice(0, count);
+}
+
+function colorKeyForConstellation(constellation) {
+  const key = String(constellation || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return key || "unknown";
 }
 
 function rollDotColor(r) {
@@ -776,12 +815,17 @@ function nextVisualCostAbove(availableCp) {
 }
 
 function rollDotSize(r) {
-  if (r.outcome === "hit" || r.evidence_kind === "untracked_acquisition") {
-    return sizeForCost(r.purchased_perk_cost, 6);
+  const marker = rollMarkerModel(r);
+  if (!marker.isMissLike) {
+    const base = sizeForCost(marker.cost, 8);
+    if (marker.paidCount >= 3) return Math.max(34, base + 22);
+    if (marker.paidCount === 2) return Math.max(30, base + 18);
+    if (marker.freeCount > 0) return Math.max(30, base + 18);
+    return Math.max(26, base + 16);
   }
   const missCost = r.rolled_perk_cost ?? r.miss_cost_estimate ??
     nextVisualCostAbove(r.available_cp);
-  return sizeForCost(missCost, 8);
+  return Math.max(24, sizeForCost(missCost, 8) + 14);
 }
 
 function rollDotTitle(r, c) {
@@ -882,7 +926,6 @@ function layoutAxisLabels() {
 }
 
 function rollDotLane(dot) {
-  if (dot.classList.contains("free-sibling")) return "free";
   if (dot.classList.contains("miss") || dot.classList.contains("unknown")) return "miss";
   return "hit";
 }
@@ -895,12 +938,10 @@ function layoutRollDots() {
     ? {
         hit: [18, 6, 30, 42],
         miss: [66, 78, 54, 90],
-        free: [48, 58, 38, 70],
       }
     : {
         hit: [26, 12, 40, 54],
         miss: [82, 96, 68, 110],
-        free: [60, 72, 48, 84],
       };
   for (const [lane, rowTops] of Object.entries(lanes)) {
     const dots = Array.from($("track-rolls").querySelectorAll(".roll-dot"))
@@ -926,31 +967,26 @@ function fmtKWords(n) {
   return `${(n / 1_000_000).toFixed(2)}M`;
 }
 
-function buildCumulativeIndex(facts) {
+function buildCumulativeIndex(facts, perkDirectory) {
   let paid = 0, free = 0, hits = 0, otherRolls = 0;
   const cumByCh = new Map();
-  const constByCh = new Map();
-  const constState = new Map(CONSTELLATION_ORDER.map(c => [c, 0]));
+  const progressIndex = buildConstellationProgressIndex(
+    facts,
+    perkDirectory,
+    CONSTELLATION_ORDER,
+  );
   for (const c of facts.chapters) {
     paid += c.paid_perks_gained;
     free += c.free_perks_gained;
     hits += c.hits_count;
     otherRolls += c.misses_count + c.unknowns_count;
-    for (const r of c.rolls) {
-      if (r.outcome === "hit" && r.constellation) {
-        constState.set(r.constellation, (constState.get(r.constellation) || 0) + 1);
-      }
-      for (const freePerk of r.free_perks || []) {
-        if (freePerk.constellation) {
-          constState.set(freePerk.constellation, (constState.get(freePerk.constellation) || 0) + 1);
-        }
-      }
-    }
     cumByCh.set(c.chapter_num, { paid, free, hits, otherRolls });
-    constByCh.set(c.chapter_num, new Map(constState));
   }
-  const constMax = Math.max(1, ...Array.from(constState.values()));
-  return { cumByCh, constByCh, constMax };
+  return {
+    cumByCh,
+    constProgressByCh: progressIndex.byChapter,
+    constMax: progressIndex.constMax,
+  };
 }
 
 function renderState(state) {
@@ -958,6 +994,9 @@ function renderState(state) {
   const inPreroll = currentWord < 0;
   const ch = chapterAtWord(model, currentWord);
   const idx = ch ? model.idxOf.get(ch.chapter_num) : -1;
+  if (state.selectedChapterNum && (!ch || ch.chapter_num !== state.selectedChapterNum)) {
+    state.selectedChapterNum = null;
+  }
 
   // Playhead
   const playhead = $("scrubber-playhead");
@@ -995,12 +1034,21 @@ function renderState(state) {
   $("stat-rolls-other").textContent = fmt(cum.otherRolls);
 
   renderSelectedChapter(state);
-  const constMap = (!inPreroll && ch)
-    ? cumIdx.constByCh.get(ch.chapter_num)
-    : new Map(CONSTELLATION_ORDER.map(c => [c, 0]));
-  renderConstellations(constMap, cumIdx.constMax);
+  const constProgress = (!inPreroll && ch)
+    ? cumIdx.constProgressByCh.get(ch.chapter_num)
+    : { rows: [] };
+  renderConstellations(constProgress.rows, cumIdx.constMax);
   renderRecent(state, ch, inPreroll);
   updateSkyState(state);
+}
+
+function clearSelectedChapter(state) {
+  state.selectedChapterNum = null;
+  renderSelectedChapter(state);
+}
+
+function selectChapter(state, chapterNum) {
+  state.selectedChapterNum = chapterNum;
 }
 
 function renderSelectedChapter(state) {
@@ -1073,14 +1121,20 @@ function renderThisChapter(ch, inPreroll) {
   }
 }
 
-function renderConstellations(constMap, scaleMax) {
+function renderConstellations(rows, scaleMax) {
   const container = $("constellation-bars");
   clear(container);
   const max = Math.max(1, scaleMax);
-  for (const name of CONSTELLATION_ORDER) {
-    const count = constMap.get(name) || 0;
+  if (!rows || rows.length === 0) {
+    container.appendChild(el("span", { class: "const-empty" }, "No constellations opened yet."));
+    return;
+  }
+  for (const row of rows) {
+    const { name, count, discoveredPct, complete } = row;
     const pct = (count / max) * 100;
-    container.appendChild(el("span", { class: "const-name" }, name));
+    container.appendChild(el("span", {
+      class: `const-name ${complete ? "complete" : ""}`,
+    }, name));
     container.appendChild(el("span", {
       class: "const-bar-wrap",
       style: { display: "block", height: "12px" },
@@ -1093,7 +1147,12 @@ function renderConstellations(constMap, scaleMax) {
         backgroundColor: CONSTELLATION_COLORS[name],
       },
     })));
-    container.appendChild(el("span", { class: "const-count" }, fmt(count)));
+    container.appendChild(el("span", {
+      class: `const-count ${complete ? "complete" : ""}`,
+    }, fmt(count)));
+    container.appendChild(el("span", {
+      class: `const-discovered ${complete ? "complete" : ""}`,
+    }, `${discoveredPct}%`));
   }
 }
 
@@ -2004,9 +2063,26 @@ function attachRollTooltip() {
     row("chapter", `ch ${c.chapter_num} — ${c.full_title}`);
     row("outcome", outcomeText);
     if (r.constellation) row("constellation", r.constellation);
-    if (r.purchased_perk_cost != null) row("cost", `${r.purchased_perk_cost} CP`);
+    const totalCost = rollTotalCost(r);
+    if (totalCost) row("cost", `${totalCost} CP`);
     if (r.purchased_perk_jump) row("jump", r.purchased_perk_jump);
     row("evidence", r.evidence_kind);
+
+    const paidPerks = paidRollPerks(r);
+    if (paidPerks.length > 1) {
+      const block = el("div", { class: "tip-perks" },
+        el("span", { class: "tip-label" }, "paid bundle"));
+      for (const p of paidPerks) {
+        const span = el("span", { class: "perk" });
+        span.appendChild(document.createTextNode(`• ${p.name}`));
+        if (p.cost != null) {
+          span.appendChild(el("span", { style: { color: "var(--gray-3)" } },
+            ` (${p.cost} CP)`));
+        }
+        block.appendChild(span);
+      }
+      tip.appendChild(block);
+    }
 
     if (r.free_perks && r.free_perks.length > 0) {
       const block = el("div", { class: "tip-perks" },
@@ -2247,7 +2323,7 @@ function attachScrubber(state) {
     const tap = pendingChapTap;
     pendingChapTap = null;
     if (!tap || tap.moved) return;
-    state.selectedChapterNum = tap.tick.dataset.chapterNum;
+    selectChapter(state, tap.tick.dataset.chapterNum);
     state.scrollFollow.pausedManualLock = false;
     setWord(state, tap.tick._wordPos);
     renderSelectedChapter(state);
@@ -2378,10 +2454,14 @@ function attachScrubber(state) {
 
 function attachChapterSelection(state) {
   const track = $("track-chapters");
+  const close = $("chapter-detail-close");
+  if (close) {
+    close.addEventListener("click", () => clearSelectedChapter(state));
+  }
   track.addEventListener("click", e => {
     const tick = e.target.closest(".chap-tick");
     if (!tick) return;
-    state.selectedChapterNum = tick.dataset.chapterNum;
+    selectChapter(state, tick.dataset.chapterNum);
     state.scrollFollow.pausedManualLock = false;
     setWord(state, tick._wordPos);
     renderSelectedChapter(state);
@@ -2604,13 +2684,14 @@ function attachIntroToggle() {
     const packageIndex = await loadPackageIndex();
     const packageSelection = selectedPackageBase(packageIndex);
     const dataPackage = await loadDataPackage(packageSelection.base);
-    const [facts, wireframes, rollResolutions] = await Promise.all([
+    const [facts, perkDirectory, wireframes, rollResolutions] = await Promise.all([
       loadContractJSON(dataPackage, "chapter_facts"),
+      loadContractJSON(dataPackage, "perk_directory"),
       skyEnabled ? loadContractJSON(dataPackage, "constellation_wireframes", { optional: true }) : Promise.resolve(null),
       skyEnabled ? loadContractJSON(dataPackage, "roll_resolutions", { optional: true }) : Promise.resolve(null),
     ]);
     const model = buildCoordinateModel(facts);
-    const cumIdx = buildCumulativeIndex(facts);
+    const cumIdx = buildCumulativeIndex(facts, perkDirectory);
     const stored = loadStorage();
     const state = {
       facts, model, cumIdx,

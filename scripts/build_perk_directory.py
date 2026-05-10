@@ -647,6 +647,7 @@ def main() -> None:
     write_validated_json(
         OUT,
         {
+            "schema_version": 1,
             "_source": "data/raw/Brocktons_Celestial_Forge_Reference.xlsx#Unabridged List",
             "_count": len(perks),
             "_status_distribution": status_dist,

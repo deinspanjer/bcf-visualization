@@ -31,7 +31,7 @@ CONTRACT_VERSION = 1
 MANIFEST_SCHEMA_VERSION = 1
 PACKAGE_PREFIX = "bcf-visualization"
 
-RUNTIME_REQUIRED = ["chapter_facts"]
+RUNTIME_REQUIRED = ["chapter_facts", "perk_directory"]
 RUNTIME_OPTIONAL = ["constellation_wireframes", "roll_resolutions"]
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(
