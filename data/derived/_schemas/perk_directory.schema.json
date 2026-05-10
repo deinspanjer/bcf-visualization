@@ -6,6 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "_source",
     "_count",
     "_status_distribution",
@@ -16,6 +17,7 @@
     "perks"
   ],
   "properties": {
+    "schema_version":        { "const": 1 },
     "_source":               { "type": "string" },
     "_count":                { "type": "integer", "minimum": 0 },
     "_status_distribution":  {

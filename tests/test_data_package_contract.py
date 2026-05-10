@@ -29,7 +29,7 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     assert manifest["contract"] == "bcf-visualization-data"
     assert manifest["contract_version"] == 1
     assert manifest["bundle_class"] == "pages-runtime"
-    assert manifest["entrypoints"]["web"]["required"] == ["chapter_facts"]
+    assert manifest["entrypoints"]["web"]["required"] == ["chapter_facts", "perk_directory"]
 
     for name, meta in manifest["files"].items():
         path = DERIVED / meta["path"]
@@ -44,6 +44,7 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
 def test_web_consumed_schemas_pin_contract_versions() -> None:
     for schema_name in (
         "chapter_facts",
+        "perk_directory",
         "constellation_wireframes",
         "roll_resolutions",
     ):
@@ -77,6 +78,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         runtime_names = set(tf.getnames())
     assert "data_package.json" in runtime_names
     assert "chapter_facts.json" in runtime_names
+    assert "perk_directory.json" in runtime_names
     assert "roll_text_evidence.json" not in runtime_names
 
     with tarfile.open(outputs.runtime_tar, "r:gz") as tf:

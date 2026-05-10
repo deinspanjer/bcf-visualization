@@ -201,7 +201,10 @@
       </div>
 
       <article class="inline-detail" id="chapter-detail-panel" hidden>
-        <h2>Selected chapter</h2>
+        <div class="panel-title-row">
+          <h2>Selected chapter</h2>
+          <button id="chapter-detail-close" class="panel-close" type="button" aria-label="Close selected chapter" title="Close selected chapter">×</button>
+        </div>
         <div class="meta" id="this-chapter-meta"></div>
         <ul id="this-chapter-perks" class="perk-list"></ul>
       </article>
@@ -238,17 +241,17 @@
           <div class="legend-row"><span class="legend-marker"></span><span>mechanic change footnote</span></div>
         </div>
         <div>
-          <h2>Dot color</h2>
+          <h2>Marker color</h2>
           <div id="constellation-legend" class="swatch-grid"></div>
         </div>
         <div>
-          <h2>Dot meaning</h2>
-          <div class="legend-row"><span class="legend-dot solid"></span><span>solid: simulator hit</span></div>
-          <div class="legend-row"><span class="legend-dot dashed"></span><span>dashed: untracked acquisition</span></div>
-          <div class="legend-row"><span class="legend-dot gray"></span><span>gray: miss or unknown</span></div>
+          <h2>Marker meaning</h2>
+          <div class="legend-row"><span class="legend-dot solid"></span><span>diffraction star: simulator hit</span></div>
+          <div class="legend-row"><span class="legend-dot dashed"></span><span>dashed ring: untracked acquisition</span></div>
+          <div class="legend-row"><span class="legend-dot gray"></span><span>cool gray: miss or unknown</span></div>
         </div>
         <div>
-          <h2>Dot size</h2>
+          <h2>Marker size</h2>
           <div class="size-legend">
             <span class="size-dot" style="--dot-size: 6px"></span><span>100</span>
             <span class="size-dot" style="--dot-size: 9px"></span><span>300</span>

@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Roll marker star mockup</title>
+  <desc id="desc">High fidelity mockup of proposed scrubber roll markers: single star hits, binary and trinary multi-perk clusters, and free add-on satellites around star tips.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17191d"/>
+      <stop offset="0.55" stop-color="#20242b"/>
+      <stop offset="1" stop-color="#131519"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#fff" flood-opacity="0.18"/>
+    </filter>
+    <filter id="pin-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#fff" flood-opacity="0.42"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+    <radialGradient id="toolkits" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#75c5f1"/>
+      <stop offset="0.42" stop-color="#2f6f9f"/>
+      <stop offset="1" stop-color="#173a58"/>
+    </radialGradient>
+    <radialGradient id="quality" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#94e19c"/>
+      <stop offset="0.44" stop-color="#3d7c44"/>
+      <stop offset="1" stop-color="#1e4325"/>
+    </radialGradient>
+    <radialGradient id="knowledge" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#b2a7ff"/>
+      <stop offset="0.44" stop-color="#6a5acd"/>
+      <stop offset="1" stop-color="#31296f"/>
+    </radialGradient>
+    <radialGradient id="personal" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#b9dc84"/>
+      <stop offset="0.44" stop-color="#4f6f3b"/>
+      <stop offset="1" stop-color="#25371c"/>
+    </radialGradient>
+    <radialGradient id="capstone" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#ff9b9b"/>
+      <stop offset="0.44" stop-color="#b63b3b"/>
+      <stop offset="1" stop-color="#5f1e1e"/>
+    </radialGradient>
+    <radialGradient id="miss" cx="38%" cy="32%" r="72%">
+      <stop offset="0" stop-color="#d5d5d5"/>
+      <stop offset="0.45" stop-color="#7b7f86"/>
+      <stop offset="1" stop-color="#3d4249"/>
+    </radialGradient>
+    <g id="star">
+      <path d="M0,-18 L4.1,-5.7 L17.1,-5.6 L6.6,2.1 L10.6,14.5 L0,7.1 L-10.6,14.5 L-6.6,2.1 L-17.1,-5.6 L-4.1,-5.7 Z"/>
+    </g>
+    <g id="short-star">
+      <path d="M0,-16 L3.6,-5 L14.8,-4.9 L5.7,1.8 L9.2,12.7 L0,6.2 L-9.2,12.7 L-5.7,1.8 L-14.8,-4.9 L-3.6,-5 Z"/>
+    </g>
+    <g id="burst-dot">
+      <circle r="3.5"/>
+      <path d="M0,-7 V-10 M0,7 V10 M-7,0 H-10 M7,0 H10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </g>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .title { fill: #f4f1e8; font-size: 30px; font-weight: 650; letter-spacing: 0; }
+      .subtitle { fill: #aeb5bf; font-size: 16px; }
+      .track-label { fill: #88919d; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+      .caption { fill: #e8e1d1; font-size: 17px; font-weight: 650; }
+      .meta { fill: #aab2bd; font-size: 13px; }
+      .tiny { fill: #8f98a5; font-size: 11px; }
+      .axis { stroke: #4b535e; stroke-width: 1; }
+      .lane { fill: rgba(255,255,255,.035); stroke: rgba(255,255,255,.08); stroke-width: 1; }
+      .tick { stroke: rgba(255,255,255,.14); stroke-width: 1; }
+      .marker-shell { stroke: rgba(255,255,255,.78); stroke-width: 1.15; filter: url(#soft-shadow); }
+      .marker-pinned { stroke: #fff7d6; stroke-width: 1.6; filter: url(#pin-glow); }
+      .sat { stroke: rgba(255,255,255,.75); stroke-width: .8; filter: url(#soft-shadow); }
+      .ghost { fill: none; stroke: rgba(255,255,255,.58); stroke-width: 1.3; stroke-dasharray: 3 2; }
+      .hit-target { fill: rgba(255,255,255,.08); stroke: rgba(255,255,255,.16); stroke-width: 1; stroke-dasharray: 2 3; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="760" fill="url(#bg)"/>
+  <rect x="62" y="78" width="1276" height="442" rx="8" fill="#1b1f26" stroke="#343b46"/>
+  <text x="70" y="44" class="title">Scrubber roll marker refinement</text>
+  <text x="70" y="68" class="subtitle">Short-point stars keep clustered acquisitions anchored to one roll position while making paid bundles and free add-ons visible.</text>
+
+  <text x="88" y="118" class="track-label">hits</text>
+  <text x="88" y="332" class="track-label">misses / unknown</text>
+  <rect x="170" y="96" width="1110" height="166" rx="6" class="lane"/>
+  <rect x="170" y="306" width="1110" height="118" rx="6" class="lane"/>
+  <line x1="170" y1="179" x2="1280" y2="179" class="axis"/>
+  <line x1="170" y1="365" x2="1280" y2="365" class="axis"/>
+
+  <g class="ticks">
+    <line x1="230" y1="84" x2="230" y2="436" class="tick"/>
+    <line x1="390" y1="84" x2="390" y2="436" class="tick"/>
+    <line x1="552" y1="84" x2="552" y2="436" class="tick"/>
+    <line x1="730" y1="84" x2="730" y2="436" class="tick"/>
+    <line x1="894" y1="84" x2="894" y2="436" class="tick"/>
+    <line x1="1062" y1="84" x2="1062" y2="436" class="tick"/>
+    <line x1="1218" y1="84" x2="1218" y2="436" class="tick"/>
+  </g>
+
+  <g transform="translate(230 179)">
+    <circle r="18" class="hit-target"/>
+    <use href="#star" fill="url(#toolkits)" class="marker-shell"/>
+  </g>
+  <text x="198" y="470" class="caption">Single paid hit</text>
+  <text x="198" y="493" class="meta">one compact star, cost still maps to size</text>
+
+  <g transform="translate(390 179)">
+    <circle r="24" class="hit-target"/>
+    <g transform="translate(-7 0) rotate(-8)">
+      <use href="#star" fill="url(#quality)" class="marker-shell"/>
+    </g>
+    <g transform="translate(8 -2) rotate(10) scale(.92)">
+      <use href="#star" fill="url(#quality)" class="marker-shell"/>
+    </g>
+  </g>
+  <text x="350" y="470" class="caption">Binary star</text>
+  <text x="350" y="493" class="meta">two paid perks, same roll x-position</text>
+
+  <g transform="translate(552 179)">
+    <circle r="29" class="hit-target"/>
+    <g transform="translate(-10 5) rotate(-12) scale(.9)">
+      <use href="#star" fill="url(#knowledge)" class="marker-shell"/>
+    </g>
+    <g transform="translate(10 5) rotate(12) scale(.9)">
+      <use href="#star" fill="url(#knowledge)" class="marker-shell"/>
+    </g>
+    <g transform="translate(0 -9) rotate(2)">
+      <use href="#star" fill="url(#knowledge)" class="marker-pinned"/>
+    </g>
+  </g>
+  <text x="510" y="470" class="caption">Trinary star</text>
+  <text x="510" y="493" class="meta">three or more paid perks collapse into a tight cluster</text>
+
+  <g transform="translate(730 179)">
+    <circle r="30" class="hit-target"/>
+    <use href="#star" fill="url(#personal)" class="marker-shell"/>
+    <g class="sat" fill="#b9dc84">
+      <circle cx="0" cy="-27" r="3.6"/>
+      <circle cx="25" cy="-8" r="3.1"/>
+      <circle cx="-25" cy="-8" r="3.1"/>
+    </g>
+  </g>
+  <text x="682" y="470" class="caption">Free add-ons</text>
+  <text x="682" y="493" class="meta">satellites attach to star tips instead of becoming lane dots</text>
+
+  <g transform="translate(894 179)">
+    <circle r="33" class="hit-target"/>
+    <g transform="translate(-8 3) rotate(-10)">
+      <use href="#star" fill="url(#capstone)" class="marker-shell"/>
+    </g>
+    <g transform="translate(8 -4) rotate(12) scale(.96)">
+      <use href="#star" fill="url(#capstone)" class="marker-shell"/>
+    </g>
+    <g class="sat" fill="#ff9b9b">
+      <use href="#burst-dot" x="0" y="-31" color="#ffb2b2"/>
+      <circle cx="29" cy="4" r="3.4"/>
+      <circle cx="-25" cy="13" r="2.9"/>
+    </g>
+  </g>
+  <text x="838" y="470" class="caption">Multi + free</text>
+  <text x="838" y="493" class="meta">binary/trinary center with add-on bursts at the perimeter</text>
+
+  <g transform="translate(1062 179)">
+    <circle r="24" class="hit-target"/>
+    <use href="#star" fill="url(#toolkits)" class="marker-shell"/>
+    <use href="#short-star" class="ghost"/>
+  </g>
+  <text x="1012" y="470" class="caption">Untracked</text>
+  <text x="1012" y="493" class="meta">same language, dashed overlay preserves current meaning</text>
+
+  <g transform="translate(1218 365)">
+    <circle r="19" class="hit-target"/>
+    <path d="M0,-14 L14,0 L0,14 L-14,0 Z" fill="url(#miss)" stroke="rgba(255,255,255,.62)" stroke-width="1.1" filter="url(#soft-shadow)"/>
+  </g>
+  <text x="1164" y="470" class="caption">Miss / unknown</text>
+  <text x="1164" y="493" class="meta">subdued shape, still compact and clickable</text>
+
+  <rect x="62" y="570" width="1276" height="118" rx="8" fill="#15191f" stroke="#303844"/>
+  <text x="88" y="608" class="caption">Implementation notes</text>
+  <text x="88" y="635" class="meta">Markers remain button elements. The visible star can be CSS clip-path or an inline SVG mask; the larger dashed circle here represents the invisible touch target.</text>
+  <text x="88" y="660" class="meta">Layout uses one logical marker per roll. Paid bundles and free add-ons are decorative children of that marker, so scrubber rows no longer spread horizontally for clusters.</text>
+</svg>
