@@ -657,6 +657,37 @@ def test_last_viewed_chapter_persists_and_is_overridden(tmp_path) -> None:
     assert json.loads(state_path.read_text())["last_chapter"] == "1"
 
 
+def test_snapshot_writes_current_forge_curator_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot_path = tmp_path / ".forge_curator_snapshot.json"
+    monkeypatch.setattr(forge_app, "SNAPSHOT_PATH", snapshot_path)
+    app = _loaded_app("2", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    app.state.set_cursor_char(42)
+    app.state.set_regex(2, "Taylor|Queen")
+
+    app.action_snapshot()
+    first = json.loads(snapshot_path.read_text())
+
+    assert first["snapshot_kind"] == "forge_curator_tui"
+    assert first["chapter"]["chapter_num"] == "2"
+    assert first["chapter"]["full_title"] == cs.meta.full_title
+    assert first["cursor"]["char"] == 42
+    assert first["cursor"]["word_index"] == cs.cursor_word_index
+    assert first["regex"][2]["pattern"] == "Taylor|Queen"
+    assert first["prose"]["text"] == cs.prose.text
+
+    app._load_chapter("1")
+    app.action_snapshot()
+    second = json.loads(snapshot_path.read_text())
+
+    assert second["chapter"]["chapter_num"] == "1"
+    assert second["captured_at"] != first["captured_at"]
+
+
 def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 

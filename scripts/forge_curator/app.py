@@ -10,11 +10,14 @@ Vim-style cursor motions are inherited from the shared
 Run with::
 
     python -m scripts.forge_curator [--chapter X[.Y]]
+
+F12 writes the current TUI state to data/manual/.forge_curator_snapshot.json.
 """
 
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import re
 import subprocess
@@ -38,6 +41,9 @@ from scripts.forge_curator.persistence import CurationPersistence
 from scripts.forge_curator.state import ForgeCuratorState
 
 STATE_FILE = MANUAL / ".forge_curator_state.json"
+# Fixed location for the F12 snapshot. Repeated use overwrites this file so
+# "look at the snapshot" can mean one stable artifact.
+SNAPSHOT_PATH = MANUAL / ".forge_curator_snapshot.json"
 
 KNOWN_CONSTELLATIONS = [
     "Alchemy", "Capstone", "Clothing", "Crafting", "Knowledge",
@@ -746,6 +752,7 @@ class HelpScreen(ModalScreen):
             "  *       seed/select regex * with word under cursor\n"
             "  ]2 [2   regex 2 matches\n"
             "  ]3 [3   regex 3 matches\n"
+            "  F12     snapshot state to data/manual/.forge_curator_snapshot.json\n"
         )
         body.append("\nRegex bar\n", style="bold")
         body.append(
@@ -1126,6 +1133,7 @@ class ForgeCuratorApp(App):
         Binding("q", "quit_app", "quit", show=True),
         Binding("slash", "focus_regex_star", "/regex*"),
         Binding("u", "undo_last", "undo last action"),
+        Binding("f12", "snapshot", "snapshot", show=True),
     ]
 
     def __init__(
@@ -2067,6 +2075,92 @@ class ForgeCuratorApp(App):
         self._set_active_regex_slot(3)
         inp = self.query_one("#regex_4", Input)
         inp.focus()
+
+    def action_snapshot(self) -> None:
+        """Dump current TUI state to ``data/manual/.forge_curator_snapshot.json``."""
+        cs = self.state.chapter
+        snap: dict = {
+            "snapshot_version": 1,
+            "snapshot_kind": "forge_curator_tui",
+            "captured_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "chapter": None,
+            "cursor": None,
+            "passage_view": None,
+            "regex": [],
+            "rolls": [],
+            "derived": None,
+            "prose": None,
+            "active_regex_slot": self.active_regex_slot,
+            "pending_chord": self._pending_chord,
+            "pending_space_chord": self._pending_space_chord,
+            "last_curation_error": self._last_curation_error,
+        }
+        if cs is not None:
+            snap["chapter"] = {
+                "chapter_num": cs.meta.chapter_num,
+                "full_title": cs.meta.full_title,
+                "total_word_count": cs.meta.total_word_count,
+                "cp_earning_word_count": cs.meta.cp_earning_word_count,
+                "sections": cs.meta.sections,
+                "excluded_word_ranges": cs.meta.excluded_word_ranges,
+            }
+            snap["cursor"] = {
+                "char": cs.cursor_char,
+                "word_index": cs.cursor_word_index,
+                "total_words": cs.total_words,
+                "section_index": cs.section_index_at(cs.cursor_word_index),
+            }
+            snap["regex"] = [
+                {
+                    "slot": idx + 1,
+                    "pattern": hits.pattern,
+                    "error": hits.error,
+                    "word_indices": list(hits.word_indices),
+                    "char_spans": list(hits.char_spans),
+                }
+                for idx, hits in enumerate(cs.regex_hits[:4])
+            ]
+            snap["rolls"] = self._unified_rolls(cs)
+            snap["derived"] = {
+                "chapter_facts": cs.derived.chapter_facts,
+                "roll_facts": cs.derived.roll_facts,
+                "predicted_rolls": cs.derived.predicted_rolls,
+                "roll_outcomes": cs.derived.roll_outcomes,
+                "validation": cs.derived.validation,
+                "perks": cs.derived.perks,
+                "overrides": cs.derived.overrides,
+            }
+            snap["prose"] = {
+                "text": cs.prose.text,
+                "word_offsets": cs.prose.word_offsets,
+                "section_break_word_indices": cs.prose.section_break_word_indices,
+                "implicit_header_word_ranges": cs.prose.implicit_header_word_ranges,
+            }
+        try:
+            prose_view = self.query_one("#prose", PassageView)
+            selection = prose_view.selection
+            snap["passage_view"] = {
+                "cursor": prose_view.cursor,
+                "anchor": prose_view.anchor,
+                "visual_mode": prose_view.visual_mode,
+                "selection_start": selection[0] if selection else None,
+                "selection_end": selection[1] if selection else None,
+                "selected_text": prose_view.selected_text,
+            }
+        except Exception:
+            pass
+        try:
+            SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+            SNAPSHOT_PATH.write_text(
+                json.dumps(snap, indent=2, ensure_ascii=False, default=str),
+                encoding="utf-8",
+            )
+            self.notify(f"Snapshot -> {SNAPSHOT_PATH}")
+        except Exception as exc:
+            try:
+                self.notify(f"Snapshot failed: {exc}", severity="error")
+            except Exception:
+                pass
 
     # ----- chord-state hooks called by ``PassageView`` -----
 

@@ -8,3 +8,6 @@
 - If derived facts disagree, fix the derivation pipeline and schema, then regenerate data.
 - Tests must assert semantic invariants of the model, not UI symptoms.
 - Do not promise future process behavior in chat unless it is recorded in durable project instructions or implemented immediately.
+- If the user asks you to look at a Forge Curator TUI snapshot, load
+  `data/manual/.forge_curator_snapshot.json`; F12 in the TUI overwrites that
+  fixed snapshot file with the current state.
