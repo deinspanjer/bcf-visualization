@@ -179,6 +179,12 @@ async function loadJSON(base, path) {
 }
 
 async function loadPackageIndex() {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get(DATA_PACKAGE_PARAM);
+  const isLocal = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+  if (isLocal && !requested) {
+    return null;
+  }
   try {
     return await fetchJSON(`${PACKAGES_INDEX_URL}?v=${DATA_VERSION}`);
   } catch (err) {
@@ -736,6 +742,7 @@ function rollDotStyle(r, leftPct) {
     width: `${size}px`,
     height: `${size}px`,
     marginLeft: `${-(size / 2)}px`,
+    "--roll-size": `${size}px`,
     "--marker-color": rollDotColor(r),
   };
 }
