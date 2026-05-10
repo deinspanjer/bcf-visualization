@@ -132,9 +132,12 @@ const STORAGE_VERSION = "3";   // bumped when pre-roll changed from 100k to 5k
 // animations to settle before content arrives.
 const PRE_ROLL_WORDS = 5_000;
 const DEFAULT_SPEED = 10;
-const DEFAULT_ZOOM = 8;
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 32;
+const BASELINE_ZOOM_MULTIPLIER = 30;
+const FIT_ZOOM = 1 / BASELINE_ZOOM_MULTIPLIER;
+const DEFAULT_ZOOM = 1;
+const MIN_ZOOM = FIT_ZOOM;
+const MAX_ZOOM = 2;
+const ZOOM_STEP = 0.1;
 
 // Playback constants.
 const TICK_INTERVAL_MS = 50;   // 20fps
@@ -148,10 +151,33 @@ function el(tag, props, ...children) {
     for (const [k, v] of Object.entries(props)) {
       if (v == null) continue;
       if (k === "class") e.className = v;
-      else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+      else if (k === "style" && typeof v === "object") {
+        for (const [styleName, styleValue] of Object.entries(v)) {
+          if (styleValue == null) continue;
+          if (styleName.startsWith("--")) e.style.setProperty(styleName, styleValue);
+          else e.style[styleName] = styleValue;
+        }
+      }
       else if (k === "text") e.textContent = v;
       else if (k.startsWith("data-")) e.setAttribute(k, v);
       else e[k] = v;
+    }
+  }
+  for (const child of children) {
+    if (child == null) continue;
+    e.appendChild(typeof child === "string"
+      ? document.createTextNode(child) : child);
+  }
+  return e;
+}
+function svgEl(tag, props, ...children) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  if (props) {
+    for (const [k, v] of Object.entries(props)) {
+      if (v == null) continue;
+      if (k === "class") e.setAttribute("class", v);
+      else if (k === "text") e.textContent = v;
+      else e.setAttribute(k, v);
     }
   }
   for (const child of children) {
@@ -408,13 +434,18 @@ function layoutTimelineTracks() {
 
 function clampZoom(z) {
   if (!Number.isFinite(z)) return DEFAULT_ZOOM;
-  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(z)));
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.round(z * 100) / 100));
+}
+
+function normalizeStoredZoom(z) {
+  if (!Number.isFinite(z)) return DEFAULT_ZOOM;
+  return clampZoom(z > MAX_ZOOM ? z / BASELINE_ZOOM_MULTIPLIER : z);
 }
 
 function timelineWidthForZoom(zoom) {
   const container = $("scrubber-container");
   const baseWidth = container.clientWidth || container.getBoundingClientRect().width || 1;
-  return Math.max(baseWidth, Math.round(baseWidth * clampZoom(zoom)));
+  return Math.max(baseWidth, Math.round(baseWidth * BASELINE_ZOOM_MULTIPLIER * clampZoom(zoom)));
 }
 
 function applyTimelineZoom(state, options = {}) {
@@ -422,10 +453,10 @@ function applyTimelineZoom(state, options = {}) {
   state.zoom = zoom;
   const stack = $("track-stack");
   stack.style.width = `${timelineWidthForZoom(zoom)}px`;
-  stack.dataset.zoomDetail = zoom >= 16 ? "exact" : zoom >= 8 ? "high" : zoom >= 4 ? "medium" : "low";
+  stack.dataset.zoomDetail = zoom >= 0.54 ? "exact" : zoom >= 0.27 ? "high" : zoom >= 0.14 ? "medium" : "low";
   layoutTimelineTracks();
   $("timeline-zoom").value = String(zoom);
-  $("zoom-readout").textContent = zoom === 1 ? "fit" : `${zoom}×`;
+  $("zoom-readout").textContent = zoom <= FIT_ZOOM ? "fit" : `${zoom.toFixed(2).replace(/\.?0+$/, "")}×`;
   saveZoom(zoom);
   if (options.center) {
     state.scrollFollow.pausedManualLock = false;
@@ -699,14 +730,16 @@ function renderRollMarker(dot, roll) {
     marker.kind.startsWith("binary") ? 2 : 1;
   const offsets = sourceOffsets(sourceCount);
   offsets.forEach((offset, idx) => {
-    system.appendChild(el("span", {
+    const source = el("span", {
       class: `star-source ${colorKey} source-${idx + 1}`,
       style: {
         "--source-x": `${offset.x}px`,
         "--source-y": `${offset.y}px`,
         "--source-scale": String(offset.scale),
       },
-    }));
+    });
+    source.appendChild(renderStarSourceSvg(markerVisualCost(roll, marker)));
+    system.appendChild(source);
   });
 
   const companions = companionOffsets((roll.free_perks || []).length);
@@ -726,6 +759,88 @@ function renderRollMarker(dot, roll) {
     system.appendChild(el("span", { class: "star-untracked-ring" }));
   }
   dot.appendChild(system);
+}
+
+function markerVisualCost(roll, marker) {
+  return marker.cost ?? roll.rolled_perk_cost ?? roll.miss_cost_estimate ??
+    nextVisualCostAbove(roll.available_cp);
+}
+
+let starSourceSvgId = 0;
+
+function starRecipeForCost(cost) {
+  const base = cost >= 1000
+    ? { major: 16, minor: 16, length: 50, width: 1.18, minorLength: 40, minorWidth: 0.34, jitter: 10 }
+    : cost >= 800
+      ? { major: 12, minor: 10, length: 46, width: 1.05, minorLength: 32, minorWidth: 0.3, jitter: 8 }
+      : cost >= 600
+        ? { major: 8, minor: 8, length: 41, width: 0.95, minorLength: 27, minorWidth: 0.28, jitter: 6 }
+        : cost >= 400
+          ? { major: 6, minor: 4, length: 36, width: 0.86, minorLength: 20, minorWidth: 0.24, jitter: 4 }
+          : cost >= 300
+            ? { major: 4, minor: 4, length: 33, width: 0.78, minorLength: 17, minorWidth: 0.22, jitter: 3 }
+            : cost >= 200
+              ? { major: 4, minor: 0, length: 30, width: 0.72, minorLength: 0, minorWidth: 0, jitter: 0 }
+              : { major: 2, minor: 0, length: 26, width: 0.66, minorLength: 0, minorWidth: 0, jitter: 0 };
+  return {
+    ...base,
+    length: base.length * 1.06,
+    minorLength: base.minorLength * 1.18,
+  };
+}
+
+function starRayRects(recipe, gradientId, secondary = false) {
+  const count = secondary ? recipe.minor : recipe.major;
+  const length = secondary ? recipe.minorLength : recipe.length;
+  const width = secondary ? recipe.minorWidth : recipe.width;
+  const offset = secondary ? 360 / (recipe.major * 2) : 0;
+  return Array.from({ length: count }, (_, idx) => {
+    const angle = (360 / count) * idx + offset + (idx % 2 ? recipe.jitter : -recipe.jitter);
+    const finalLength = length * (secondary ? 1 : (idx % 3 === 0 ? 1.12 : 1));
+    return svgEl("rect", {
+      x: (-finalLength).toFixed(2),
+      y: (-width / 2).toFixed(2),
+      width: (finalLength * 2).toFixed(2),
+      height: width.toFixed(2),
+      rx: (width / 2).toFixed(2),
+      fill: `url(#${gradientId})`,
+      transform: `rotate(${angle.toFixed(2)})`,
+    });
+  });
+}
+
+function renderStarSourceSvg(cost) {
+  starSourceSvgId += 1;
+  const spikeId = `star-spike-gradient-${starSourceSvgId}`;
+  const recipe = starRecipeForCost(cost || 0);
+  const luminosity = cost >= 1000 ? 1.32 : cost >= 800 ? 1.2 : cost >= 600 ? 1.05 :
+    cost >= 400 ? 0.86 : cost >= 300 ? 0.76 : cost >= 200 ? 0.64 : 0.52;
+  return svgEl("svg", {
+    class: "star-source-svg",
+    viewBox: "-50 -50 100 100",
+    "aria-hidden": "true",
+    focusable: "false",
+  },
+    svgEl("defs", null,
+      svgEl("linearGradient", { id: spikeId, x1: "0", y1: "0", x2: "1", y2: "0" },
+        svgEl("stop", { offset: "0", "stop-color": "var(--spike-fade)" }),
+        svgEl("stop", { offset: ".28", "stop-color": "var(--spike-tint)", "stop-opacity": ".16" }),
+        svgEl("stop", { offset: ".46", "stop-color": "var(--star-core)", "stop-opacity": ".68" }),
+        svgEl("stop", { offset: ".5", "stop-color": "var(--star-core)", "stop-opacity": ".98" }),
+        svgEl("stop", { offset: ".54", "stop-color": "var(--star-core)", "stop-opacity": ".68" }),
+        svgEl("stop", { offset: ".72", "stop-color": "var(--spike-tint)", "stop-opacity": ".16" }),
+        svgEl("stop", { offset: "1", "stop-color": "var(--spike-fade)" }),
+      ),
+    ),
+    svgEl("g", { class: "star-svg-spikes star-svg-spikes-primary" },
+      ...starRayRects(recipe, spikeId),
+    ),
+    svgEl("g", { class: "star-svg-spikes star-svg-spikes-secondary" },
+      ...starRayRects(recipe, spikeId, true),
+    ),
+    svgEl("circle", { class: "star-svg-tint", r: (2.6 + luminosity * 1.8).toFixed(2) }),
+    svgEl("circle", { class: "star-svg-core", r: (1.2 + luminosity * 0.62).toFixed(2) }),
+  );
 }
 
 function rollClass(r) {
@@ -765,13 +880,27 @@ function sourceOffsets(count) {
 }
 
 function companionOffsets(count) {
+  if (count === 1) return [{ x: 8, y: 6, scale: 1 }];
+  if (count === 2) {
+    return [
+      { x: -7, y: 7, scale: 1 },
+      { x: 7, y: 7, scale: 0.94 },
+    ];
+  }
+  if (count === 3) {
+    return [
+      { x: 0, y: -9, scale: 1 },
+      { x: 8, y: 6, scale: 0.94 },
+      { x: -8, y: 6, scale: 0.88 },
+    ];
+  }
   const positions = [
-    { x: 0, y: -13, scale: 1 },
-    { x: 13, y: 0, scale: 0.86 },
-    { x: -9, y: -9, scale: 0.82 },
-    { x: 0, y: 13, scale: 0.78 },
-    { x: -13, y: 0, scale: 0.74 },
-    { x: 9, y: 9, scale: 0.7 },
+    { x: 0, y: -10, scale: 1 },
+    { x: 9, y: -3, scale: 0.94 },
+    { x: 6, y: 8, scale: 0.88 },
+    { x: -6, y: 8, scale: 0.82 },
+    { x: -9, y: -3, scale: 0.78 },
+    { x: 0, y: 0, scale: 0.72 },
   ];
   return positions.slice(0, count);
 }
@@ -793,13 +922,13 @@ function rollDotColor(r) {
 }
 
 const ROLL_COST_SIZES = [
-  [0, 4],
-  [100, 6],
-  [200, 8],
-  [300, 9],
-  [400, 10],
-  [600, 12],
-  [800, 14],
+  [0, 18],
+  [100, 22],
+  [200, 25],
+  [300, 28],
+  [400, 31],
+  [600, 36],
+  [800, 40],
 ];
 
 function sizeForCost(cost, fallback = 6) {
@@ -824,15 +953,15 @@ function nextVisualCostAbove(availableCp) {
 function rollDotSize(r) {
   const marker = rollMarkerModel(r);
   if (!marker.isMissLike) {
-    const base = sizeForCost(marker.cost, 8);
-    if (marker.paidCount >= 3) return Math.max(34, base + 22);
-    if (marker.paidCount === 2) return Math.max(30, base + 18);
-    if (marker.freeCount > 0) return Math.max(30, base + 18);
-    return Math.max(26, base + 16);
+    const base = sizeForCost(marker.cost, 24);
+    if (marker.paidCount >= 3) return Math.max(40, base + 8);
+    if (marker.paidCount === 2) return Math.max(36, base + 6);
+    if (marker.freeCount > 0) return Math.max(34, base + 4);
+    return base;
   }
   const missCost = r.rolled_perk_cost ?? r.miss_cost_estimate ??
     nextVisualCostAbove(r.available_cp);
-  return Math.max(24, sizeForCost(missCost, 8) + 14);
+  return Math.max(24, sizeForCost(missCost, 24));
 }
 
 function rollDotTitle(r, c) {
@@ -2486,11 +2615,11 @@ function attachZoomControls(state) {
     applyTimelineZoom(state, { center: true });
   });
   zoomOut.addEventListener("click", () => {
-    state.zoom = clampZoom(state.zoom - 1);
+    state.zoom = clampZoom(state.zoom - ZOOM_STEP);
     applyTimelineZoom(state, { center: true });
   });
   zoomIn.addEventListener("click", () => {
-    state.zoom = clampZoom(state.zoom + 1);
+    state.zoom = clampZoom(state.zoom + ZOOM_STEP);
     applyTimelineZoom(state, { center: true });
   });
   zoomFit.addEventListener("click", () => {
@@ -2591,7 +2720,7 @@ function loadStorage() {
     return {
       word: parseFloat(localStorage.getItem(LS_BOOKMARK)),
       speed: parseFloat(localStorage.getItem(LS_SPEED)) || DEFAULT_SPEED,
-      zoom: clampZoom(parseFloat(localStorage.getItem(LS_ZOOM))),
+      zoom: normalizeStoredZoom(parseFloat(localStorage.getItem(LS_ZOOM))),
     };
   } catch {
     return { word: NaN, speed: DEFAULT_SPEED, zoom: DEFAULT_ZOOM };

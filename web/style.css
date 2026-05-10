@@ -902,86 +902,70 @@ body.sky-focus-mode #zoom-controls {
   pointer-events: none;
 }
 .star-source {
-  width: calc(var(--roll-size, 30px) * 0.48);
-  height: calc(var(--roll-size, 30px) * 0.48);
-  min-width: 10px;
-  min-height: 10px;
-  max-width: 18px;
-  max-height: 18px;
+  width: calc(var(--roll-size, 30px) * 0.54);
+  height: calc(var(--roll-size, 30px) * 0.54);
+  min-width: 11px;
+  min-height: 11px;
+  max-width: 22px;
+  max-height: 22px;
   transform:
     translate(calc(-50% + var(--source-x, 0px)), calc(-50% + var(--source-y, 0px)))
     scale(var(--source-scale, 1));
   border-radius: 50%;
-  background:
-    radial-gradient(circle,
-      var(--star-core) 0 18%,
-      color-mix(in srgb, var(--star-core) 70%, var(--star-mid)) 19% 33%,
-      var(--star-mid) 34% 62%,
-      var(--star-edge) 100%);
-  box-shadow:
-    0 0 4px var(--star-core),
-    0 0 10px var(--star-mid),
-    0 0 18px color-mix(in srgb, var(--star-mid) 65%, transparent);
 }
-.star-source::before {
-  content: "";
+.star-source-svg {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: calc(var(--roll-size, 30px) * 2.1);
-  height: calc(var(--roll-size, 30px) * 2.1);
-  min-width: 44px;
-  min-height: 44px;
-  max-width: 76px;
-  max-height: 76px;
+  width: calc(var(--roll-size, 30px) * 3.25);
+  height: calc(var(--roll-size, 30px) * 3.25);
+  min-width: 58px;
+  min-height: 58px;
+  max-width: 132px;
+  max-height: 132px;
+  overflow: visible;
   transform: translate(-50%, -50%);
-  background:
-    linear-gradient(90deg,
-      var(--spike-fade) 0%,
-      var(--spike-tint) 38%,
-      var(--spike-main) 50%,
-      var(--spike-tint) 62%,
-      var(--spike-fade) 100%) center / 76% 2.4px no-repeat,
-    linear-gradient(0deg,
-      var(--spike-fade) 0%,
-      var(--spike-tint) 39%,
-      var(--spike-main) 50%,
-      var(--spike-tint) 61%,
-      var(--spike-fade) 100%) center / 76% 2.4px no-repeat,
-    linear-gradient(45deg,
-      var(--spike-fade) 0%,
-      color-mix(in srgb, var(--spike-tint) 65%, transparent) 42%,
-      color-mix(in srgb, var(--spike-main) 72%, transparent) 50%,
-      color-mix(in srgb, var(--spike-tint) 65%, transparent) 58%,
-      var(--spike-fade) 100%) center / 56% 1.2px no-repeat,
-    linear-gradient(-45deg,
-      var(--spike-fade) 0%,
-      color-mix(in srgb, var(--spike-tint) 65%, transparent) 42%,
-      color-mix(in srgb, var(--spike-main) 72%, transparent) 50%,
-      color-mix(in srgb, var(--spike-tint) 65%, transparent) 58%,
-      var(--spike-fade) 100%) center / 56% 1.2px no-repeat;
-  filter: drop-shadow(0 0 2px var(--spike-tint));
+  filter:
+    drop-shadow(0 0 0.9px var(--star-core))
+    drop-shadow(0 0 2.4px var(--star-mid));
+  opacity: 0.82;
 }
-.star-source::after {
-  content: "";
-  position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--star-core) 32%, transparent);
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--star-mid) 10%, transparent);
+.star-svg-spikes {
+  mix-blend-mode: screen;
+}
+.star-svg-spikes-primary {
+  opacity: 0.68;
+}
+.star-svg-spikes-secondary {
+  opacity: 0.32;
+}
+.star-svg-tint {
+  fill: var(--star-mid);
+  opacity: 0.12;
+}
+.star-svg-core {
+  fill: var(--star-core);
+  filter: drop-shadow(0 0 1.4px var(--star-core));
 }
 .star-companion {
-  width: 4px;
-  height: 4px;
+  width: 3.5px;
+  height: 3.5px;
   transform:
     translate(calc(-50% + var(--companion-x, 0px)), calc(-50% + var(--companion-y, 0px)))
     scale(var(--companion-scale, 1));
   border-radius: 50%;
-  background: var(--star-core);
+  background:
+    radial-gradient(circle,
+      var(--star-core) 0 32%,
+      var(--star-mid) 34% 100%);
+  outline: 0.75px solid rgba(10, 12, 16, 0.72);
+  border: 1px solid color-mix(in srgb, var(--star-mid) 78%, var(--star-core));
   box-shadow:
-    0 0 3px var(--star-core),
-    0 0 7px var(--star-mid);
-  z-index: 3;
+    0 0 1px var(--star-core),
+    0 0 2.8px var(--star-mid),
+    0 0 0 0.75px color-mix(in srgb, var(--star-mid) 38%, transparent);
+  opacity: 0.86;
+  z-index: 8;
 }
 .star-untracked-ring {
   width: 38px;
@@ -996,26 +980,14 @@ body.sky-focus-mode #zoom-controls {
   height: calc(var(--roll-size, 24px) * 0.44);
   opacity: 0.82;
 }
-.is-miss-like .star-source::before {
-  width: calc(var(--roll-size, 24px) * 1.9);
-  height: calc(var(--roll-size, 24px) * 1.9);
-  min-width: 38px;
-  min-height: 38px;
-  max-width: 56px;
-  max-height: 56px;
-  background:
-    linear-gradient(90deg,
-      var(--spike-fade) 0%,
-      var(--spike-tint) 40%,
-      var(--spike-main) 50%,
-      var(--spike-tint) 60%,
-      var(--spike-fade) 100%) center / 72% 1.7px no-repeat,
-    linear-gradient(0deg,
-      var(--spike-fade) 0%,
-      var(--spike-tint) 42%,
-      var(--spike-main) 50%,
-      var(--spike-tint) 58%,
-      var(--spike-fade) 100%) center / 72% 1.7px no-repeat;
+.is-miss-like .star-source-svg {
+  width: calc(var(--roll-size, 24px) * 2.35);
+  height: calc(var(--roll-size, 24px) * 2.35);
+  min-width: 50px;
+  min-height: 50px;
+  max-width: 78px;
+  max-height: 78px;
+  opacity: 0.78;
 }
 .roll-star-system.toolkits,
 .star-source.toolkits,

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Diffraction Marker Theme Matrix</title>
+  <style>
+    :root {
+      --bg: #0c0e12;
+      --panel: #171a20;
+      --cell: #0f1319;
+      --line: #2b313c;
+      --text: #f2f4f8;
+      --muted: #a8b0bd;
+      --r: #ff8aa8;
+      --g: #8ee596;
+      --b: #71cef9;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.42 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+    .intro {
+      max-width: 1060px;
+      margin: 0 0 22px;
+      color: var(--muted);
+    }
+    .theme {
+      margin: 0 0 26px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .theme h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .theme p {
+      margin: 4px 0 14px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 52px repeat(10, minmax(74px, 1fr));
+      gap: 5px;
+      align-items: stretch;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .head,
+    .row-label,
+    .sample-cell {
+      min-height: 74px;
+      border: 1px solid #242a33;
+      border-radius: 5px;
+      background: var(--cell);
+    }
+    .head {
+      min-height: 28px;
+      padding: 5px 4px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      letter-spacing: .04em;
+    }
+    .corner {
+      background: transparent;
+      border-color: transparent;
+    }
+    .row-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .sample-cell {
+      position: relative;
+      min-width: 74px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, transparent 49.6%, rgba(255,255,255,.045) 50%, transparent 50.4%),
+        linear-gradient(180deg, transparent 50%, rgba(255,255,255,.055) 50.6%, transparent 51.2%),
+        #0c1016;
+    }
+    .sample-code {
+      position: absolute;
+      left: 6px;
+      bottom: 5px;
+      color: rgba(220, 226, 235, .64);
+      font-size: 10px;
+      letter-spacing: .02em;
+    }
+    .marker {
+      --color: var(--b);
+      --lum: .6;
+      --size: 28px;
+      position: absolute;
+      left: 50%;
+      top: 45%;
+      width: var(--size);
+      height: var(--size);
+      transform: translate(-50%, -50%);
+      overflow: visible;
+    }
+    .star {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: calc(var(--size) * .22);
+      height: calc(var(--size) * .22);
+      transform: translate(-50%, -50%);
+      overflow: visible;
+    }
+    .star.bin-a { transform: translate(calc(-50% - 6px), calc(-50% + 2px)) scale(.86); }
+    .star.bin-b { transform: translate(calc(-50% + 7px), calc(-50% - 2px)) scale(.8); }
+    .star.tri-a { transform: translate(calc(-50% - 8px), calc(-50% + 4px)) scale(.72); }
+    .star.tri-b { transform: translate(calc(-50% + 8px), calc(-50% + 4px)) scale(.72); }
+    .star.tri-c { transform: translate(-50%, calc(-50% - 8px)) scale(.82); }
+    .star svg {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: calc(var(--size) * var(--spread, 3));
+      height: calc(var(--size) * var(--spread, 3));
+      min-width: 46px;
+      min-height: 46px;
+      max-width: 112px;
+      max-height: 112px;
+      overflow: visible;
+      transform: translate(-50%, -50%);
+      opacity: var(--opacity, .76);
+      filter:
+        drop-shadow(0 0 calc(var(--lum) * var(--white-glow, .9px)) #fff)
+        drop-shadow(0 0 calc(var(--lum) * var(--color-glow, 2.8px)) var(--color));
+    }
+    .primary { opacity: var(--primary-opacity, .74); mix-blend-mode: screen; }
+    .secondary { opacity: var(--secondary-opacity, .22); mix-blend-mode: screen; }
+    .pin { fill: #fff; filter: drop-shadow(0 0 1.2px #fff); }
+    .tint { fill: var(--color); opacity: var(--tint-opacity, .18); }
+    .satellite {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 3.2px;
+      height: 3.2px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: .85;
+      box-shadow: 0 0 2px #fff, 0 0 4px var(--color);
+    }
+    .sat-1 { transform: translate(-50%, calc(-50% - 15px)); }
+    .sat-2 { transform: translate(calc(-50% + 15px), -50%) scale(.86); }
+    .sat-3 { transform: translate(calc(-50% - 11px), calc(-50% - 11px)) scale(.8); }
+
+    .theme-thin {
+      --spread: 3.05;
+      --primary-opacity: .76;
+      --secondary-opacity: .15;
+      --white-glow: .7px;
+      --color-glow: 1.9px;
+      --tint-opacity: .12;
+    }
+    .theme-sun {
+      --spread: 3.35;
+      --primary-opacity: .68;
+      --secondary-opacity: .32;
+      --white-glow: .8px;
+      --color-glow: 2.4px;
+      --tint-opacity: .12;
+    }
+    .theme-sharp {
+      --spread: 2.8;
+      --primary-opacity: .86;
+      --secondary-opacity: .08;
+      --white-glow: .45px;
+      --color-glow: 1.15px;
+      --tint-opacity: .08;
+    }
+    .theme-luminous {
+      --spread: 3.2;
+      --primary-opacity: .48;
+      --secondary-opacity: .22;
+      --white-glow: 1.3px;
+      --color-glow: 5px;
+      --tint-opacity: .1;
+      --opacity: .68;
+    }
+    .theme-prismatic {
+      --spread: 3.45;
+      --primary-opacity: .6;
+      --secondary-opacity: .34;
+      --white-glow: .65px;
+      --color-glow: 2.2px;
+      --tint-opacity: .1;
+    }
+
+    @media (max-width: 920px) {
+      body { padding: 18px; }
+      .grid { grid-template-columns: 46px repeat(10, 74px); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Diffraction Marker Theme Matrix</h1>
+  <p class="intro">
+    Each theme keeps the same columns and color rows. Columns encode structure
+    and cost: <code>*</code> single, <code>!</code> one add-on,
+    <code>%</code> binary, <code>@</code> three add-ons. Numbers are cost
+    buckets.
+  </p>
+
+  <main id="themes"></main>
+
+  <script>
+    const colorRows = [
+      { key: "r", label: "r", css: "var(--r)" },
+      { key: "g", label: "g", css: "var(--g)" },
+      { key: "b", label: "b", css: "var(--b)" },
+    ];
+
+    const columns = [
+      { code: "*1", cost: 100, structure: "single" },
+      { code: "*2", cost: 200, structure: "single" },
+      { code: "*4", cost: 400, structure: "single" },
+      { code: "*6", cost: 600, structure: "single" },
+      { code: "*8", cost: 800, structure: "single" },
+      { code: "!1", cost: 100, structure: "sat1" },
+      { code: "%4", cost: 400, structure: "binary" },
+      { code: "@3", cost: 300, structure: "sat3" },
+      { code: "%2", cost: 200, structure: "binary" },
+      { code: "@10", cost: 1000, structure: "sat3" },
+    ];
+
+    const themes = [
+      {
+        cls: "theme-thin",
+        title: "Theme 1 / thin aperture rays",
+        desc: "Very small core, cost mainly changes sparse aperture-blade rays.",
+      },
+      {
+        cls: "theme-sun",
+        title: "Theme 2 / many-blade sunstar",
+        desc: "Cost ramps up ray count and secondary rays for the Speyer-like sunstar feel.",
+      },
+      {
+        cls: "theme-sharp",
+        title: "Theme 3 / crisp low-bloom blades",
+        desc: "Minimal glow and very sharp rays; useful if the real track stays dense.",
+      },
+      {
+        cls: "theme-luminous",
+        title: "Theme 4 / luminosity-first points",
+        desc: "Dimmer rays and stronger point brightness to encode cost through light intensity.",
+      },
+      {
+        cls: "theme-prismatic",
+        title: "Theme 5 / irregular prismatic rays",
+        desc: "More asymmetric ray lengths and jitter for a less mechanical telescope-star look.",
+      },
+    ];
+
+    function luminosity(cost) {
+      if (cost >= 1000) return 1.32;
+      if (cost >= 800) return 1.2;
+      if (cost >= 600) return 1.05;
+      if (cost >= 400) return .86;
+      if (cost >= 300) return .76;
+      if (cost >= 200) return .64;
+      return .52;
+    }
+
+    function markerSize(cost, structure) {
+      let base = cost >= 1000 ? 32 : cost >= 800 ? 31 : cost >= 600 ? 30 : cost >= 400 ? 28 : cost >= 300 ? 27 : cost >= 200 ? 26 : 24;
+      if (structure === "binary") base += 4;
+      if (structure === "trinary") base += 6;
+      if (structure === "sat3") base += 3;
+      return base;
+    }
+
+    function recipe(cost, themeClass) {
+      const base = cost >= 1000
+        ? { major: 12, minor: 12, length: 47, width: 1.1, minorLength: 32, minorWidth: .34, jitter: 10 }
+        : cost >= 800
+          ? { major: 10, minor: 10, length: 44, width: 1.05, minorLength: 29, minorWidth: .32, jitter: 8 }
+          : cost >= 600
+            ? { major: 8, minor: 8, length: 40, width: .98, minorLength: 25, minorWidth: .3, jitter: 6 }
+            : cost >= 400
+              ? { major: 6, minor: 6, length: 36, width: .9, minorLength: 21, minorWidth: .28, jitter: 4 }
+              : cost >= 300
+                ? { major: 5, minor: 5, length: 32, width: .82, minorLength: 18, minorWidth: .26, jitter: 3 }
+                : cost >= 200
+                  ? { major: 4, minor: 4, length: 29, width: .75, minorLength: 14, minorWidth: .24, jitter: 2 }
+                  : { major: 3, minor: 3, length: 26, width: .68, minorLength: 11, minorWidth: .22, jitter: 0 };
+      if (themeClass === "theme-thin") return { ...base, minor: Math.min(base.minor, 3), width: base.width * .7, minorWidth: base.minorWidth * .65, length: base.length * .9 };
+      if (themeClass === "theme-sun") return { ...base, major: base.major + 2, minor: base.minor + 2, length: base.length * 1.06, minorLength: base.minorLength * 1.18 };
+      if (themeClass === "theme-sharp") return { ...base, minor: Math.min(base.minor, 4), width: base.width * .55, minorWidth: base.minorWidth * .5, length: base.length * .82 };
+      if (themeClass === "theme-luminous") return { ...base, width: base.width * .62, minorWidth: base.minorWidth * .55, length: base.length * .78, minorLength: base.minorLength * .92 };
+      if (themeClass === "theme-prismatic") return { ...base, length: base.length * 1.08, minorLength: base.minorLength * 1.35, jitter: base.jitter + 9 };
+      return base;
+    }
+
+    let nextId = 0;
+
+    function rayRects(r, gradientId, secondary = false) {
+      const count = secondary ? r.minor : r.major;
+      const length = secondary ? r.minorLength : r.length;
+      const width = secondary ? r.minorWidth : r.width;
+      const offset = secondary ? 360 / (r.major * 2) : 0;
+      return Array.from({ length: count }, (_, idx) => {
+        const angle = (360 / count) * idx + offset + (idx % 2 ? r.jitter : -r.jitter);
+        const finalLength = length * (secondary ? 1 : (idx % 3 === 0 ? 1.12 : 1));
+        return `<rect x="${-finalLength}" y="${-width / 2}" width="${finalLength * 2}" height="${width}" rx="${width / 2}" fill="url(#${gradientId})" transform="rotate(${angle.toFixed(2)})"/>`;
+      }).join("");
+    }
+
+    function starSvg(color, cost, themeClass) {
+      nextId += 1;
+      const grad = `ray-${nextId}`;
+      const r = recipe(cost, themeClass);
+      const lum = luminosity(cost);
+      return `
+        <svg viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="${grad}" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="transparent"/>
+              <stop offset=".34" stop-color="${color}" stop-opacity=".075"/>
+              <stop offset=".48" stop-color="#fff" stop-opacity=".58"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".92"/>
+              <stop offset=".52" stop-color="#fff" stop-opacity=".58"/>
+              <stop offset=".66" stop-color="${color}" stop-opacity=".075"/>
+              <stop offset="1" stop-color="transparent"/>
+            </linearGradient>
+          </defs>
+          <g class="primary">${rayRects(r, grad)}</g>
+          <g class="secondary">${rayRects(r, grad, true)}</g>
+          <circle class="tint" r="${2.6 + lum * 1.8}"/>
+          <circle class="pin" r="${1.2 + lum * .62}"/>
+        </svg>
+      `;
+    }
+
+    function starsFor(column, color, themeClass) {
+      if (column.structure === "binary") {
+        return `
+          <span class="star bin-a">${starSvg(color, column.cost, themeClass)}</span>
+          <span class="star bin-b">${starSvg(color, column.cost, themeClass)}</span>
+        `;
+      }
+      if (column.structure === "trinary") {
+        return `
+          <span class="star tri-a">${starSvg(color, column.cost, themeClass)}</span>
+          <span class="star tri-b">${starSvg(color, column.cost, themeClass)}</span>
+          <span class="star tri-c">${starSvg(color, column.cost, themeClass)}</span>
+        `;
+      }
+      return `<span class="star">${starSvg(color, column.cost, themeClass)}</span>`;
+    }
+
+    function satellitesFor(column) {
+      const count = column.structure === "sat3" ? 3 : column.structure === "sat1" ? 1 : 0;
+      return Array.from({ length: count }, (_, idx) => `<span class="satellite sat-${idx + 1}"></span>`).join("");
+    }
+
+    function sampleCell(row, column, themeClass) {
+      return `
+        <div class="sample-cell">
+          <span class="marker" style="--color:${row.css};--lum:${luminosity(column.cost)};--size:${markerSize(column.cost, column.structure)}px">
+            ${starsFor(column, row.css, themeClass)}
+            ${satellitesFor(column)}
+          </span>
+          <span class="sample-code">${row.key}${column.code}</span>
+        </div>
+      `;
+    }
+
+    function themeSection(theme) {
+      const heads = [`<div class="head corner"></div>`, ...columns.map(c => `<div class="head">${c.code}</div>`)].join("");
+      const rows = colorRows.map(row => `
+        <div class="row-label">${row.label}</div>
+        ${columns.map(column => sampleCell(row, column, theme.cls)).join("")}
+      `).join("");
+      return `
+        <section class="theme ${theme.cls}">
+          <h2>${theme.title}</h2>
+          <p>${theme.desc}</p>
+          <div class="grid">${heads}${rows}</div>
+        </section>
+      `;
+    }
+
+    document.getElementById("themes").innerHTML = themes.map(themeSection).join("");
+  </script>
+</body>
+</html>
