@@ -325,6 +325,31 @@
         }
       ],
       "narrative_evidence": ""
+    },
+    "4": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "4",
+          "mention_word_position": 186,
+          "display_position_policy": "mention",
+          "narrative_evidence": "That was when I felt a constellation approach within the Celestial Forge. I still had extra reach from my last connection and it had grown further since then. A link solidified to a small mote in the 'Knowledge' constellation.\n\nThe ability I latched onto was called 'Not a Stupid Grunt'."
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "4",
+          "mention_word_position": 1888,
+          "display_position_policy": "mention",
+          "narrative_evidence": "the approach of the Knowledge constellation within the Celestial Forge. My power failed to latch onto the nearest mote"
+        }
+      ],
+      "narrative_evidence": ""
     }
   }
 }
