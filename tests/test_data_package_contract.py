@@ -4,6 +4,7 @@ import hashlib
 import json
 import subprocess
 import tarfile
+import urllib.error
 from pathlib import Path
 import pytest
 
@@ -179,6 +180,208 @@ def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> Non
         / "bcf-visualization-runtime-v20260509.10-ch194-120.1"
         / "data_package.json"
     ).is_file()
+
+
+def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    outputs_a = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist-a",
+        package_date="20260509",
+        build_number=10,
+        source_commit="test-commit-a",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+    outputs_b = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist-b",
+        package_date="20260509",
+        build_number=11,
+        source_commit="test-commit-b",
+        generated_at="2026-05-09T13:00:00Z",
+    )
+
+    index_path = data_release.prepare_pages(
+        runtime_tars=[outputs_a.runtime_tar, outputs_b.runtime_tar],
+        site_dir=tmp_path / "site",
+        default_package_id="bcf-visualization-runtime-v20260509.10-ch194-120.1",
+        smoke_status_by_package_id={
+            "bcf-visualization-runtime-v20260509.10-ch194-120.1": "passed",
+            "bcf-visualization-runtime-v20260509.11-ch194-120.1": "failed",
+        },
+        smoke_run_url="https://github.com/deinspanjer/bcf-visualization/actions/runs/1",
+    )
+
+    index = _load_json(index_path)
+    assert [
+        (pkg["package_id"], pkg["smoke_status"], pkg["smoke_run_url"])
+        for pkg in index["packages"]
+    ] == [
+        (
+            "bcf-visualization-runtime-v20260509.10-ch194-120.1",
+            "passed",
+            "https://github.com/deinspanjer/bcf-visualization/actions/runs/1",
+        ),
+        (
+            "bcf-visualization-runtime-v20260509.11-ch194-120.1",
+            "failed",
+            "https://github.com/deinspanjer/bcf-visualization/actions/runs/1",
+        ),
+    ]
+
+
+def test_prepare_pages_rejects_invalid_smoke_status(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    outputs = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist",
+        package_date="20260509",
+        build_number=10,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    with pytest.raises(ValueError, match="unsupported smoke_status"):
+        data_release.prepare_pages(
+            runtime_tars=[outputs.runtime_tar],
+            site_dir=tmp_path / "site",
+            smoke_status_by_package_id={
+                "bcf-visualization-runtime-v20260509.10-ch194-120.1": "burning",
+            },
+        )
+
+
+def test_prepare_pages_preserves_existing_package_smoke_metadata(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    outputs = data_release.build_packages(
+        source_dir=DERIVED,
+        output_dir=tmp_path / "dist",
+        package_date="20260509",
+        build_number=10,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    index_path = data_release.prepare_pages(
+        runtime_tars=[outputs.runtime_tar],
+        site_dir=tmp_path / "site",
+        package_metadata_by_package_id={
+            "bcf-visualization-runtime-v20260509.10-ch194-120.1": {
+                "smoke_status": "failed",
+                "smoke_run_url": "https://example.test/old-smoke",
+            }
+        },
+    )
+
+    package = _load_json(index_path)["packages"][0]
+    assert package["smoke_status"] == "failed"
+    assert package["smoke_run_url"] == "https://example.test/old-smoke"
+
+
+def test_download_pages_runtime_tars_uses_deployed_packages_index(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import data_release
+
+    payload = {
+        "default_package_id": "bcf-visualization-runtime-v20260509.11-ch194-120.1",
+        "packages": [
+            {
+                "package_id": "bcf-visualization-runtime-v20260509.10-ch194-120.1",
+                "release_tag": "bcf-visualization-data-v20260509.10-ch194-120.1",
+                "smoke_status": "failed",
+                "smoke_run_url": "https://example.test/old-smoke",
+            },
+            {
+                "package_id": "bcf-visualization-runtime-v20260509.11-ch194-120.1",
+                "release_tag": "bcf-visualization-data-v20260509.11-ch194-120.1",
+            },
+        ],
+    }
+    calls: list[list[str]] = []
+
+    class FakeResponse:
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps(payload).encode("utf-8")
+
+    def fake_run(cmd: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        asset = cmd[5]
+        (tmp_path / "downloads" / asset).write_text("runtime\n")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(data_release.urllib.request, "urlopen", lambda *args, **kwargs: FakeResponse())
+    monkeypatch.setattr(data_release.subprocess, "run", fake_run)
+
+    paths = data_release.download_pages_runtime_tars(
+        packages_url="https://example.test/data/packages.json",
+        output_dir=tmp_path / "downloads",
+        metadata_output=tmp_path / "metadata.json",
+    )
+
+    assert [path.name for path in paths] == [
+        "bcf-visualization-runtime-v20260509.10-ch194-120.1.tar.gz",
+        "bcf-visualization-runtime-v20260509.11-ch194-120.1.tar.gz",
+    ]
+    assert [cmd[3] for cmd in calls] == [
+        "bcf-visualization-data-v20260509.10-ch194-120.1",
+        "bcf-visualization-data-v20260509.11-ch194-120.1",
+    ]
+    metadata = _load_json(tmp_path / "metadata.json")
+    assert metadata["default_package_id"] == (
+        "bcf-visualization-runtime-v20260509.11-ch194-120.1"
+    )
+    assert metadata["packages"][0]["smoke_status"] == "failed"
+    assert metadata["packages"][0]["smoke_run_url"] == "https://example.test/old-smoke"
+
+
+def test_download_pages_runtime_tars_can_fallback_when_pages_index_is_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import data_release
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        asset = cmd[5]
+        (tmp_path / "downloads" / asset).write_text("runtime\n")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(
+        data_release.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(urllib.error.URLError("offline")),
+    )
+    monkeypatch.setattr(data_release.subprocess, "run", fake_run)
+
+    paths = data_release.download_pages_runtime_tars(
+        packages_url="https://example.test/data/packages.json",
+        output_dir=tmp_path / "downloads",
+        fallback_tag="bcf-visualization-data-v20260509.10-ch194-120.1",
+        fallback_asset="bcf-visualization-runtime-v20260509.10-ch194-120.1.tar.gz",
+        metadata_output=tmp_path / "metadata.json",
+    )
+
+    assert [path.name for path in paths] == [
+        "bcf-visualization-runtime-v20260509.10-ch194-120.1.tar.gz"
+    ]
+    assert calls[0][3] == "bcf-visualization-data-v20260509.10-ch194-120.1"
+    metadata = _load_json(tmp_path / "metadata.json")
+    assert metadata["default_package_id"] == (
+        "bcf-visualization-runtime-v20260509.10-ch194-120.1"
+    )
 
 
 def test_cleanup_release_dry_run_protects_workflow_and_deployed_tags(

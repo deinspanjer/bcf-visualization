@@ -32,6 +32,7 @@ CONTRACT = "bcf-visualization-data"
 CONTRACT_VERSION = 1
 MANIFEST_SCHEMA_VERSION = 1
 PACKAGE_PREFIX = "bcf-visualization"
+SMOKE_STATUSES = {"passed", "failed", "unknown"}
 
 RUNTIME_REQUIRED = ["chapter_facts"]
 RUNTIME_OPTIONAL = ["constellation_wireframes", "roll_resolutions"]
@@ -497,6 +498,9 @@ def prepare_pages(
     runtime_tars: list[Path],
     site_dir: Path,
     default_package_id: str | None = None,
+    smoke_status_by_package_id: dict[str, str] | None = None,
+    smoke_run_url: str | None = None,
+    package_metadata_by_package_id: dict[str, dict] | None = None,
     max_site_mb: int = 900,
 ) -> Path:
     if not runtime_tars:
@@ -505,6 +509,12 @@ def prepare_pages(
     packages_dir = data_dir / "packages"
     packages_dir.mkdir(parents=True, exist_ok=True)
 
+    smoke_status_by_package_id = smoke_status_by_package_id or {}
+    for package_id, status in smoke_status_by_package_id.items():
+        if status not in SMOKE_STATUSES:
+            raise ValueError(f"unsupported smoke_status for {package_id}: {status}")
+
+    package_metadata_by_package_id = package_metadata_by_package_id or {}
     packages: list[dict] = []
     for tar_path in runtime_tars:
         with tempfile.TemporaryDirectory(prefix="bcf-pages-package-") as tmp:
@@ -516,7 +526,14 @@ def prepare_pages(
             if package_dir.exists():
                 shutil.rmtree(package_dir)
             shutil.copytree(tmp_dir, package_dir)
-            packages.append({
+            existing_metadata = package_metadata_by_package_id.get(package_id, {})
+            smoke_status = smoke_status_by_package_id.get(
+                package_id,
+                existing_metadata.get("smoke_status", "unknown"),
+            )
+            if smoke_status not in SMOKE_STATUSES:
+                raise ValueError(f"unsupported smoke_status for {package_id}: {smoke_status}")
+            package_index_entry = {
                 "package_id": package_id,
                 "package_prefix": manifest.get("package_prefix"),
                 "package_kind": manifest.get("package_kind"),
@@ -531,8 +548,15 @@ def prepare_pages(
                 "story_chapter_num": manifest.get("story_chapter_num"),
                 "story_chapter_title": manifest.get("story_chapter_title"),
                 "version_label": manifest.get("version_label", package_id),
+                "smoke_status": smoke_status,
                 "path": f"data/packages/{package_id}",
-            })
+            }
+            package_smoke_run_url = existing_metadata.get("smoke_run_url")
+            if package_id in smoke_status_by_package_id and smoke_run_url:
+                package_smoke_run_url = smoke_run_url
+            if package_smoke_run_url:
+                package_index_entry["smoke_run_url"] = package_smoke_run_url
+            packages.append(package_index_entry)
 
     default_package_id = default_package_id or packages[0]["package_id"]
     default_package = packages_dir / default_package_id
@@ -646,6 +670,93 @@ def _deployed_packages_tags(url: str) -> dict[str, list[str]]:
     return _packages_index_tags(payload, f"deployed Pages packages index {url}")
 
 
+def _runtime_asset_for_package(package: dict) -> str:
+    package_id = package.get("package_id")
+    if not isinstance(package_id, str) or not PACKAGE_ID_RE.match(package_id):
+        raise ValueError(f"unsafe package id: {package_id}")
+    return f"{package_id}.tar.gz"
+
+
+def download_pages_runtime_tars(
+    *,
+    packages_url: str,
+    output_dir: Path,
+    fallback_tag: str | None = None,
+    fallback_asset: str | None = None,
+    metadata_output: Path | None = None,
+) -> list[Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    downloaded: list[Path] = []
+    metadata: dict = {
+        "packages_url": packages_url,
+        "default_package_id": None,
+        "packages": [],
+    }
+    try:
+        with urllib.request.urlopen(packages_url, timeout=20) as response:
+            index = json.loads(response.read().decode("utf-8"))
+        packages = index.get("packages")
+        if not isinstance(packages, list) or not packages:
+            raise ValueError("deployed packages index has no packages")
+        metadata["default_package_id"] = index.get("default_package_id")
+        for package in packages:
+            if not isinstance(package, dict):
+                continue
+            tag = package.get("release_tag")
+            if not isinstance(tag, str) or not DATA_RELEASE_RE.match(tag):
+                continue
+            asset = _runtime_asset_for_package(package)
+            subprocess.run(
+                ["gh", "release", "download", tag, "--pattern", asset, "--dir", str(output_dir)],
+                cwd=ROOT,
+                check=True,
+            )
+            path = output_dir / asset
+            if path.is_file():
+                downloaded.append(path)
+                metadata["packages"].append({
+                    "package_id": package.get("package_id"),
+                    "release_tag": tag,
+                    "asset": asset,
+                    "path": str(path),
+                    "smoke_status": package.get("smoke_status", "unknown"),
+                    "smoke_run_url": package.get("smoke_run_url"),
+                })
+    except (OSError, urllib.error.URLError, json.JSONDecodeError, ValueError, subprocess.CalledProcessError) as exc:
+        print(f"WARNING: could not download deployed Pages runtime packages: {exc}")
+
+    if not downloaded and fallback_tag and fallback_asset:
+        subprocess.run(
+            [
+                "gh",
+                "release",
+                "download",
+                fallback_tag,
+                "--pattern",
+                fallback_asset,
+                "--dir",
+                str(output_dir),
+            ],
+            cwd=ROOT,
+            check=True,
+        )
+        path = output_dir / fallback_asset
+        if path.is_file():
+            downloaded.append(path)
+            package_id = fallback_asset.removesuffix(".tar.gz")
+            metadata["default_package_id"] = package_id
+            metadata["packages"].append({
+                "package_id": package_id,
+                "release_tag": fallback_tag,
+                "asset": fallback_asset,
+                "path": str(path),
+            })
+
+    if metadata_output:
+        _write_json(metadata_output, metadata)
+    return downloaded
+
+
 def _merge_protected(
     target: dict[str, list[str]],
     source: dict[str, list[str]],
@@ -729,6 +840,19 @@ def main() -> None:
     p_pages.add_argument("--site-dir", type=_path, required=True)
     p_pages.add_argument("--runtime-tar", type=_path, action="append", required=True)
     p_pages.add_argument("--default-package-id")
+    p_pages.add_argument(
+        "--package-smoke-status",
+        action="append",
+        default=[],
+        metavar="PACKAGE_ID=STATUS",
+        help="smoke status for a runtime package in the Pages index",
+    )
+    p_pages.add_argument("--smoke-run-url")
+    p_pages.add_argument(
+        "--package-metadata-file",
+        type=_path,
+        help="existing packages metadata whose smoke status should be preserved",
+    )
     p_pages.add_argument("--max-site-mb", type=int, default=900)
 
     p_publish = sub.add_parser("publish", help="publish package assets as a GitHub Release")
@@ -741,6 +865,19 @@ def main() -> None:
     p_download.add_argument("--tag", required=True)
     p_download.add_argument("--asset", required=True)
     p_download.add_argument("--output-dir", type=_path, default=DERIVED)
+
+    p_download_pages = sub.add_parser(
+        "download-pages-runtimes",
+        help="download runtime tarballs referenced by the deployed Pages packages index",
+    )
+    p_download_pages.add_argument(
+        "--packages-url",
+        default=DEFAULT_DEPLOYED_PACKAGES_URL,
+    )
+    p_download_pages.add_argument("--output-dir", type=_path, required=True)
+    p_download_pages.add_argument("--fallback-tag")
+    p_download_pages.add_argument("--fallback-asset")
+    p_download_pages.add_argument("--metadata-output", type=_path)
 
     p_cleanup = sub.add_parser("cleanup", help="dry-run or delete old data releases")
     p_cleanup.add_argument("--keep-tag", action="append", default=[])
@@ -798,10 +935,27 @@ def main() -> None:
             build_number=args.build_number,
         ))
     elif args.cmd == "prepare-pages":
+        smoke_status_by_package_id = {}
+        for item in args.package_smoke_status:
+            if "=" not in item:
+                raise SystemExit(
+                    "--package-smoke-status must be formatted as PACKAGE_ID=STATUS"
+                )
+            package_id, status = item.split("=", 1)
+            smoke_status_by_package_id[package_id] = status
+        package_metadata_by_package_id = {}
+        if args.package_metadata_file:
+            existing_index = _read_json(args.package_metadata_file)
+            for package in existing_index.get("packages", []):
+                if isinstance(package, dict) and package.get("package_id"):
+                    package_metadata_by_package_id[package["package_id"]] = package
         out = prepare_pages(
             runtime_tars=args.runtime_tar,
             site_dir=args.site_dir,
             default_package_id=args.default_package_id,
+            smoke_status_by_package_id=smoke_status_by_package_id,
+            smoke_run_url=args.smoke_run_url,
+            package_metadata_by_package_id=package_metadata_by_package_id,
             max_site_mb=args.max_site_mb,
         )
         print(out)
@@ -809,6 +963,16 @@ def main() -> None:
         publish_release(tag=args.tag, assets=args.asset, title=args.title, draft=args.draft)
     elif args.cmd == "download-dev":
         download_dev_bundle(tag=args.tag, asset=args.asset, output_dir=args.output_dir)
+    elif args.cmd == "download-pages-runtimes":
+        paths = download_pages_runtime_tars(
+            packages_url=args.packages_url,
+            output_dir=args.output_dir,
+            fallback_tag=args.fallback_tag,
+            fallback_asset=args.fallback_asset,
+            metadata_output=args.metadata_output,
+        )
+        for path in paths:
+            print(path)
     elif args.cmd == "cleanup":
         cleanup_releases(
             keep_tags=set(args.keep_tag),

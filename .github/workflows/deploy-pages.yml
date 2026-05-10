@@ -91,6 +91,7 @@ jobs:
           fi
           test -f _site/data/packages.json
           test -f _site/data/default/data_package.json
+          python3 scripts/smoke_pages_site.py --site-dir _site
           ls -la _site/
 
       - uses: actions/configure-pages@v6

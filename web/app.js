@@ -1,5 +1,5 @@
 import {
-  dataVersionLabel,
+  dataVersionOptionLabel,
   validateDataDocument,
   validateDataPackageManifest,
 } from "./data-contract.js";
@@ -235,15 +235,8 @@ async function loadDataPackage(base) {
   return { base, manifest, contract };
 }
 
-function dataCreditLabel(pkg) {
-  const date = pkg?.package_date;
-  const build = pkg?.build_number;
-  const ordinal = pkg?.story_chapter_ordinal;
-  const chapterNum = pkg?.story_chapter_num;
-  if (date && build != null && ordinal != null && chapterNum) {
-    return `v${date}.${build}, story ch ${ordinal} / ${chapterNum}`;
-  }
-  return dataVersionLabel(pkg).replace(/^BCF data\s+/, "v");
+function dataCreditLabel(pkg, isDefault = false) {
+  return dataVersionOptionLabel(pkg, isDefault).replace(/^BCF data\s+/, "v");
 }
 
 async function loadContractJSON(dataPackage, name, { optional = false } = {}) {
@@ -280,12 +273,12 @@ function attachDataPackageSelector(packageIndex, activePackageId, activeManifest
   if (packages.length <= 1) {
     selector.appendChild(el("span", {
       class: "data-package-static",
-      text: dataCreditLabel(activePackage),
+      text: dataCreditLabel(activePackage, activePackage?.package_id === defaultId),
     }));
   } else {
     const select = el("select", { id: "data-package-select", "aria-label": "Data version" });
     for (const pkg of packages) {
-      const label = pkg.package_id === defaultId ? `${dataCreditLabel(pkg)} (default)` : dataCreditLabel(pkg);
+      const label = dataCreditLabel(pkg, pkg.package_id === defaultId);
       select.appendChild(el("option", {
         value: pkg.package_id,
         text: label,

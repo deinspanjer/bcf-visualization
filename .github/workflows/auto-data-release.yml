@@ -1,0 +1,189 @@
+name: Auto data release and Pages deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/manual/**'
+      - 'data/labeled/**'
+      - 'data/derived/_schemas/**'
+      - 'data/raw/Brocktons_Celestial_Forge_Reference.xlsx'
+      - 'data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx'
+      - 'data/raw/info_posts/**'
+      - 'data/raw/threadmark_index/**'
+      - 'data/raw/tvtropes_wog.mht'
+      - 'data/raw/wiki/**'
+      - 'scripts/parse_*.py'
+      - 'scripts/extract_*.py'
+      - 'scripts/find_*.py'
+      - 'scripts/validate_*.py'
+      - 'scripts/derive_*.py'
+      - 'scripts/build_*.py'
+      - 'scripts/data_release.py'
+      - 'scripts/smoke_pages_site.py'
+      - '.github/workflows/auto-data-release.yml'
+      - '.github/workflows/data-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: auto-data-release-pages
+  cancel-in-progress: false
+
+env:
+  DEFAULT_DATA_BUNDLE_TAG: bcf-visualization-data-v20260510.6-ch194-120.1
+  DEFAULT_DATA_DEV_ASSET: bcf-visualization-data-v20260510.6-ch194-120.1.tar.gz
+  DEFAULT_DATA_RUNTIME_ASSET: bcf-visualization-runtime-v20260510.6-ch194-120.1.tar.gz
+  DEPLOYED_PACKAGES_URL: https://deinspanjer.github.io/bcf-visualization/data/packages.json
+  PRIVATE_SOURCE_REPO: deinspanjer/bcf-visualization-private-source
+  PRIVATE_SOURCE_REF: source-v20260510.1
+  SMOKE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  build-smoke-release-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Checkout private source files
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.PRIVATE_SOURCE_REPO }}
+          ref: ${{ env.PRIVATE_SOURCE_REF }}
+          path: data/private-source
+          ssh-key: ${{ secrets.BCF_PRIVATE_SOURCE_DEPLOY_KEY }}
+
+      - name: Build candidate data bundles
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f data/derived/chapter_facts.json ]; then
+            python3 scripts/data_release.py download-dev \
+              --tag "$DEFAULT_DATA_BUNDLE_TAG" \
+              --asset "$DEFAULT_DATA_DEV_ASSET"
+          fi
+          python3 -m pip install -r requirements.txt
+          if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
+            mkdir -p data/raw
+            cp data/private-source/Brocktons_Celestial_Forge.epub \
+              data/raw/Brocktons_Celestial_Forge.epub
+          else
+            python3 scripts/download_bcf_epub.py
+          fi
+          python3 scripts/derive_roll_facts.py
+          python3 scripts/build_chapter_facts.py
+          DATE="$(date -u +%Y%m%d)"
+          BUILD="$GITHUB_RUN_NUMBER"
+          python3 scripts/data_release.py package \
+            --output-dir .data-release \
+            --date "$DATE" \
+            --build-number "$BUILD" \
+            --source-commit "$GITHUB_SHA"
+          TAG="$(python3 scripts/data_release.py version-tag \
+            --date "$DATE" \
+            --build-number "$BUILD")"
+          RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
+          DEV_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-data-*.tar.gz' -print -quit)"
+          PACKAGE_ID="$(python3 - "$RUNTIME_TAR" <<'PY'
+          import json, sys, tarfile
+          with tarfile.open(sys.argv[1], "r:gz") as tf:
+              print(json.load(tf.extractfile("data_package.json"))["package_id"])
+          PY
+          )"
+          {
+            echo "tag=$TAG"
+            echo "runtime_tar=$RUNTIME_TAR"
+            echo "dev_tar=$DEV_TAR"
+            echo "package_id=$PACKAGE_ID"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download currently deployed runtime packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/data_release.py download-pages-runtimes \
+            --packages-url "$DEPLOYED_PACKAGES_URL" \
+            --output-dir .pages-runtimes \
+            --fallback-tag "$DEFAULT_DATA_BUNDLE_TAG" \
+            --fallback-asset "$DEFAULT_DATA_RUNTIME_ASSET" \
+            --metadata-output .pages-runtimes/packages.json
+
+      - name: Stage candidate Pages site
+        run: |
+          mkdir -p _site-candidate
+          cp .nojekyll index.html _site-candidate/
+          cp -r web      _site-candidate/
+          cp -r figures  _site-candidate/
+          python3 scripts/data_release.py prepare-pages \
+            --site-dir _site-candidate \
+            $(find .pages-runtimes -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print | sed 's#^#--runtime-tar #') \
+            --runtime-tar "${{ steps.build.outputs.runtime_tar }}" \
+            --default-package-id "${{ steps.build.outputs.package_id }}" \
+            --package-metadata-file .pages-runtimes/packages.json \
+            --package-smoke-status "${{ steps.build.outputs.package_id }}=unknown" \
+            --smoke-run-url "$SMOKE_RUN_URL"
+
+      - name: Install browser smoke dependencies
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium
+
+      - name: Smoke test candidate data
+        id: smoke
+        continue-on-error: true
+        run: |
+          python3 scripts/smoke_pages_site.py --site-dir _site-candidate --browser
+
+      - name: Publish candidate data release
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMOKE_STATUS: ${{ steps.smoke.outcome == 'success' && 'passed' || 'failed' }}
+        run: |
+          gh release create "${{ steps.build.outputs.tag }}" \
+            "${{ steps.build.outputs.runtime_tar }}" \
+            "${{ steps.build.outputs.dev_tar }}" \
+            .data-release/SHA256SUMS \
+            --title "BCF data ${{ steps.build.outputs.tag }}" \
+            --notes "Versioned BCF derived data bundle ${{ steps.build.outputs.tag }}. Smoke status: $SMOKE_STATUS. Run: $SMOKE_RUN_URL."
+
+      - name: Stage final Pages site
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        env:
+          SMOKE_STATUS: ${{ steps.smoke.outcome == 'success' && 'passed' || 'failed' }}
+        run: |
+          PREVIOUS_DEFAULT_ID="$(python3 -c 'import json; print(json.load(open(".pages-runtimes/packages.json")).get("default_package_id") or "")')"
+          DEFAULT_PACKAGE_ID="${{ steps.build.outputs.package_id }}"
+          if [ "$SMOKE_STATUS" != "passed" ] && [ -n "$PREVIOUS_DEFAULT_ID" ]; then
+            DEFAULT_PACKAGE_ID="$PREVIOUS_DEFAULT_ID"
+          fi
+          mkdir -p _site
+          cp .nojekyll index.html _site/
+          cp -r web      _site/
+          cp -r figures  _site/
+          python3 scripts/data_release.py prepare-pages \
+            --site-dir _site \
+            $(find .pages-runtimes -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print | sed 's#^#--runtime-tar #') \
+            --runtime-tar "${{ steps.build.outputs.runtime_tar }}" \
+            --default-package-id "$DEFAULT_PACKAGE_ID" \
+            --package-metadata-file .pages-runtimes/packages.json \
+            --package-smoke-status "${{ steps.build.outputs.package_id }}=$SMOKE_STATUS" \
+            --smoke-run-url "$SMOKE_RUN_URL"
+          python3 scripts/smoke_pages_site.py --site-dir _site
+
+      - uses: actions/configure-pages@v6
+        if: ${{ always() && steps.build.outcome == 'success' }}
+
+      - uses: actions/upload-pages-artifact@v5
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        with:
+          path: _site
+
+      - name: Deploy Pages
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        uses: actions/deploy-pages@v5

@@ -57,3 +57,14 @@ export function dataVersionLabel(pkg) {
 
   return pkg.package_id || "Data version unknown";
 }
+
+export function dataVersionOptionLabel(pkg, isDefault = false) {
+  const suffixes = [];
+  const smokeStatus = pkg && typeof pkg === "object" ? pkg.smoke_status : null;
+  if (smokeStatus === "failed") suffixes.push("smoke failed");
+  else if (smokeStatus === "passed") suffixes.push("smoke passed");
+  if (isDefault) suffixes.push("default");
+
+  const label = dataVersionLabel(pkg);
+  return suffixes.length ? `${label} (${suffixes.join(", ")})` : label;
+}

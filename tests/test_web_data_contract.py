@@ -109,3 +109,29 @@ def test_web_contract_helper_falls_back_to_story_metadata_label() -> None:
       }));
     """
     assert _node_eval(source) == "BCF data 20260509.7, story ch 194 / 120.1"
+
+
+def test_web_contract_helper_marks_smoke_failed_data_label() -> None:
+    source = """
+      import { dataVersionOptionLabel } from './web/data-contract.js';
+      console.log(dataVersionOptionLabel({
+        version_label: 'BCF data 20260509.7, story ch 194 / 120.1',
+        smoke_status: 'failed',
+      }, false));
+    """
+    assert _node_eval(source) == (
+        "BCF data 20260509.7, story ch 194 / 120.1 (smoke failed)"
+    )
+
+
+def test_web_contract_helper_marks_default_after_smoke_status() -> None:
+    source = """
+      import { dataVersionOptionLabel } from './web/data-contract.js';
+      console.log(dataVersionOptionLabel({
+        version_label: 'BCF data 20260509.7, story ch 194 / 120.1',
+        smoke_status: 'passed',
+      }, true));
+    """
+    assert _node_eval(source) == (
+        "BCF data 20260509.7, story ch 194 / 120.1 (smoke passed, default)"
+    )
