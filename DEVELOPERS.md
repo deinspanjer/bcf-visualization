@@ -82,9 +82,7 @@ Hydrate a fresh checkout from the validated maintainer bundle before
 running Forge Curator, data-invariant tests, or release packaging:
 
 ```sh
-python3 scripts/data_release.py download-dev \
-  --tag bcf-visualization-data-v20260509.4-ch194-120.1 \
-  --asset bcf-visualization-data-v20260509.4-ch194-120.1.tar.gz
+python3 scripts/data_release.py download-dev
 ```
 
 Codex app environments hydrate data during setup. The local environment
@@ -131,6 +129,12 @@ through the Pages workflow's normal `GITHUB_TOKEN` release download.
 Publish the release before using it as a pinned Pages bundle.
 
 To hydrate a fresh checkout from a maintainer bundle:
+
+```sh
+python3 scripts/data_release.py download-dev
+```
+
+To hydrate from a specific pinned bundle:
 
 ```sh
 python3 scripts/data_release.py download-dev \

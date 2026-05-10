@@ -105,6 +105,108 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     assert dev_manifest["files"]["chapter_last_edited"]["schema_version"] is None
 
 
+def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    derived = tmp_path / "derived"
+    derived.mkdir()
+    chapter_facts = {
+        "schema_version": 1,
+        "chapters": [
+            {"chapter_num": "1", "full_title": "1 Opening"},
+        ],
+    }
+    (derived / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
+    data_release.write_current_runtime_manifest(
+        source_dir=derived,
+        package_date="20260509",
+        build_number=7,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+    stale_manifest = _load_json(derived / "data_package.json")
+
+    chapter_facts["chapters"][0]["full_title"] = "1 Updated"
+    (derived / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
+
+    data_release.refresh_current_runtime_manifest(source_dir=derived)
+
+    manifest = _load_json(derived / "data_package.json")
+    assert manifest["package_date"] == "20260509"
+    assert manifest["build_number"] == 7
+    assert manifest["source_commit"] == "test-commit"
+    assert manifest["files"]["chapter_facts"]["sha256"] != (
+        stale_manifest["files"]["chapter_facts"]["sha256"]
+    )
+    assert manifest["files"]["chapter_facts"]["sha256"] == hashlib.sha256(
+        (derived / "chapter_facts.json").read_bytes()
+    ).hexdigest()
+
+
+def test_download_dev_defaults_to_latest_data_release(monkeypatch: pytest.MonkeyPatch) -> None:
+    from scripts import data_release
+
+    releases = [
+        {"tagName": "not-a-data-release", "isDraft": False},
+        {
+            "tagName": "bcf-visualization-data-v20260510.6-ch194-120.1",
+            "isDraft": False,
+        },
+        {
+            "tagName": "bcf-visualization-data-v20260510.5-ch194-120.1",
+            "isDraft": False,
+        },
+    ]
+
+    def fake_check_output(cmd: list[str], **kwargs) -> str:
+        assert cmd[:3] == ["gh", "release", "list"]
+        assert "--exclude-drafts" in cmd
+        assert "--order" in cmd
+        assert "desc" in cmd
+        assert kwargs["cwd"] == data_release.ROOT
+        return json.dumps(releases)
+
+    monkeypatch.setattr(data_release.subprocess, "check_output", fake_check_output)
+
+    tag, asset = data_release.resolve_dev_bundle_selection(None, None)
+
+    assert tag == "bcf-visualization-data-v20260510.6-ch194-120.1"
+    assert asset == "bcf-visualization-data-v20260510.6-ch194-120.1.tar.gz"
+
+
+def test_download_dev_derives_asset_from_explicit_tag() -> None:
+    from scripts import data_release
+
+    tag, asset = data_release.resolve_dev_bundle_selection(
+        "bcf-visualization-data-v20260510.6-ch194-120.1",
+        None,
+    )
+
+    assert tag == "bcf-visualization-data-v20260510.6-ch194-120.1"
+    assert asset == "bcf-visualization-data-v20260510.6-ch194-120.1.tar.gz"
+
+
+def test_download_dev_latest_fails_when_no_data_release_exists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import data_release
+
+    monkeypatch.setattr(
+        data_release.subprocess,
+        "check_output",
+        lambda *args, **kwargs: json.dumps([
+            {"tagName": "unrelated-v1", "isDraft": False},
+            {
+                "tagName": "bcf-visualization-data-v20260510.6-ch194-120.1",
+                "isDraft": True,
+            },
+        ]),
+    )
+
+    with pytest.raises(RuntimeError, match="no published bcf-visualization data release"):
+        data_release.resolve_dev_bundle_selection(None, None)
+
+
 def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) -> None:
     from scripts import data_release
 

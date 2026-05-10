@@ -40,6 +40,7 @@ from collections import Counter
 from pathlib import Path
 
 from _common import write_validated_json
+from data_release import refresh_current_runtime_manifest
 from find_roll_locations import _build_chapter_index, _split_sections
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -779,6 +780,7 @@ def main() -> None:
     }
 
     write_validated_json(OUT, payload, "chapter_facts")
+    refresh_current_runtime_manifest(source_dir=ROOT / "data" / "derived")
 
     # Console summary
     print(f"wrote {OUT.relative_to(ROOT)}: {len(out_chapters)} chapters")

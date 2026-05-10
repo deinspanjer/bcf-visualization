@@ -362,6 +362,26 @@ def write_current_runtime_manifest(
     return out
 
 
+def refresh_current_runtime_manifest(*, source_dir: Path = DERIVED) -> Path:
+    existing_path = source_dir / "data_package.json"
+    existing = _read_json(existing_path) if existing_path.exists() else {}
+    build_number = existing.get("build_number", 1)
+    if not isinstance(build_number, int):
+        build_number = int(build_number)
+    package_date = existing.get("package_date")
+    if not isinstance(package_date, str) or not package_date:
+        package_date = _today()
+    source_commit = existing.get("source_commit")
+    if not isinstance(source_commit, str) or not source_commit:
+        source_commit = None
+    return write_current_runtime_manifest(
+        source_dir=source_dir,
+        package_date=package_date,
+        build_number=build_number,
+        source_commit=source_commit,
+    )
+
+
 def _copy_bundle_files(source_dir: Path, staging_dir: Path, manifest: dict) -> None:
     _write_json(staging_dir / "data_package.json", manifest)
     for meta in manifest["files"].values():
@@ -490,7 +510,7 @@ def _safe_extract(tar_path: Path, dest: Path) -> None:
             target = (dest / member.name).resolve()
             if dest_resolved not in target.parents and target != dest_resolved:
                 raise ValueError(f"unsafe tar member path: {member.name}")
-        tf.extractall(dest)
+        tf.extractall(dest, filter="data")
 
 
 def prepare_pages(
@@ -621,6 +641,41 @@ def download_dev_bundle(*, tag: str, asset: str, output_dir: Path = DERIVED) -> 
                     shutil.copytree(path, dest)
                 else:
                     shutil.copy2(path, dest)
+
+
+def latest_dev_release_tag(*, limit: int = 50) -> str:
+    raw = subprocess.check_output(
+        [
+            "gh",
+            "release",
+            "list",
+            "--exclude-drafts",
+            "--order",
+            "desc",
+            "--limit",
+            str(limit),
+            "--json",
+            "tagName,isDraft",
+        ],
+        cwd=ROOT,
+        text=True,
+    )
+    releases = json.loads(raw)
+    for release in releases:
+        tag = release.get("tagName") if isinstance(release, dict) else None
+        if (
+            isinstance(tag, str)
+            and DATA_RELEASE_RE.match(tag)
+            and not release.get("isDraft")
+        ):
+            return tag
+    raise RuntimeError(f"no published {PACKAGE_PREFIX} data release found")
+
+
+def resolve_dev_bundle_selection(tag: str | None, asset: str | None) -> tuple[str, str]:
+    selected_tag = tag or latest_dev_release_tag()
+    selected_asset = asset or f"{selected_tag}.tar.gz"
+    return selected_tag, selected_asset
 
 
 def _add_protected_tag(protected: dict[str, list[str]], tag: str | None, reason: str) -> None:
@@ -862,8 +917,8 @@ def main() -> None:
     p_publish.add_argument("--draft", action="store_true")
 
     p_download = sub.add_parser("download-dev", help="download and unpack a dev-derived bundle")
-    p_download.add_argument("--tag", required=True)
-    p_download.add_argument("--asset", required=True)
+    p_download.add_argument("--tag")
+    p_download.add_argument("--asset")
     p_download.add_argument("--output-dir", type=_path, default=DERIVED)
 
     p_download_pages = sub.add_parser(
@@ -962,7 +1017,9 @@ def main() -> None:
     elif args.cmd == "publish":
         publish_release(tag=args.tag, assets=args.asset, title=args.title, draft=args.draft)
     elif args.cmd == "download-dev":
-        download_dev_bundle(tag=args.tag, asset=args.asset, output_dir=args.output_dir)
+        tag, asset = resolve_dev_bundle_selection(args.tag, args.asset)
+        print(f"downloading {asset} from {tag}")
+        download_dev_bundle(tag=tag, asset=asset, output_dir=args.output_dir)
     elif args.cmd == "download-pages-runtimes":
         paths = download_pages_runtime_tars(
             packages_url=args.packages_url,
