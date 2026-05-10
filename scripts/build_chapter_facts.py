@@ -174,6 +174,65 @@ def _range_overlap_len(
     return sum(max(0, min(r_end, end) - max(r_start, start)) for r_start, r_end in ranges)
 
 
+def _story_section_word_count(
+    *,
+    word_count: int,
+    section_start: int,
+    section_end: int,
+    marker_kind: str,
+    classification: str | None,
+    excluded_ranges: list[tuple[int, int]],
+) -> int:
+    """Words that belong on the visualization's story-word axis.
+
+    ``chapter_sections.json`` preserves raw EPUB section counts for curator
+    navigation. ``chapter_facts.json`` is the web runtime contract, so its
+    word axis excludes title/header words, author notes, and the abilities
+    footer/perk recap sections.
+    """
+    if marker_kind in {"abilities", "author_note"}:
+        return 0
+    if classification == "non_mc_meta":
+        return 0
+    excluded_in_section = _range_overlap_len(
+        excluded_ranges,
+        section_start,
+        section_end,
+    )
+    return max(0, word_count - excluded_in_section)
+
+
+def _chapter_story_word_count(
+    *,
+    chapter_num: str,
+    full_title: str,
+    sec_meta: dict,
+    manual_header_ranges: dict[str, list[tuple[int, int]]],
+) -> int:
+    excluded_ranges = [
+        (int(r[0]), int(r[1]))
+        for r in sec_meta.get("excluded_word_ranges", [])
+        if len(r) == 2 and int(r[1]) > int(r[0])
+    ]
+    excluded_ranges.extend(manual_header_ranges.get(chapter_num, []))
+    total = 0
+    sec_word_start = 0
+    for i, s in enumerate(sec_meta["sections"]):
+        word_count = int(s["word_count"])
+        sec_word_end = sec_word_start + word_count
+        marker_kind = parse_marker_kind(s.get("header"), full_title)
+        total += _story_section_word_count(
+            word_count=word_count,
+            section_start=sec_word_start,
+            section_end=sec_word_end,
+            marker_kind=marker_kind,
+            classification=s.get("classification"),
+            excluded_ranges=excluded_ranges,
+        )
+        sec_word_start = sec_word_end
+    return total
+
+
 def _manual_header_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:
     """Load manual header corrections as chapter-local word ranges.
 
@@ -205,9 +264,22 @@ def main() -> None:
 
     sections_data = json.loads(SECTIONS.read_text())
     sections_by_chap = {c["chapter_num"]: c for c in sections_data["chapters"]}
-
     classifications = json.loads(CLASSIFICATIONS.read_text())["classifications"]
     manual_header_ranges = _manual_header_ranges_by_chapter()
+    chapter_story_words_by_num = {
+        c["chapter_num"]: _chapter_story_word_count(
+            chapter_num=c["chapter_num"],
+            full_title=c["full_title"],
+            sec_meta=sections_by_chap[c["chapter_num"]],
+            manual_header_ranges=manual_header_ranges,
+        )
+        for c in chapters
+    }
+    chapter_story_starts: dict[str, int] = {}
+    running_story_words = 0
+    for c in chapters:
+        chapter_story_starts[c["chapter_num"]] = running_story_words
+        running_story_words += chapter_story_words_by_num[c["chapter_num"]]
     roll_facts_doc = json.loads(ROLL_FACTS.read_text())
     roll_validation_doc = json.loads(ROLL_VALIDATION.read_text())
     obtained_doc = json.loads(OBTAINED_PERKS.read_text())
@@ -297,6 +369,7 @@ def main() -> None:
 
         # ---------- sections ----------
         sections_out: list[dict] = []
+        cp_to_story_points: list[tuple[int, int, int, int]] = []
         pov_set: set[str] = set()
         marker_kinds_seen: list[str] = []
         struct_markers_aggregate: set[str] = set()
@@ -307,6 +380,8 @@ def main() -> None:
         ]
         excluded_ranges.extend(manual_header_ranges.get(cn, []))
         sec_word_start = 0
+        story_word_cursor = 0
+        cp_word_cursor = 0
         for i, s in enumerate(sec_meta["sections"]):
             cls = classifications.get(f"{cn}@{i}", {})
             counts_for_cp = bool(cls.get("counts_for_cp", False))
@@ -322,6 +397,14 @@ def main() -> None:
                 if counts_for_cp else 0
             )
             mk = parse_marker_kind(s.get("header"), c["full_title"])
+            story_word_count = _story_section_word_count(
+                word_count=word_count,
+                section_start=sec_word_start,
+                section_end=sec_word_end,
+                marker_kind=mk,
+                classification=s.get("classification"),
+                excluded_ranges=excluded_ranges,
+            )
             pov = parse_pov_character(s.get("header"), c["full_title"])
             if pov:
                 pov_set.add(pov)
@@ -335,7 +418,7 @@ def main() -> None:
                 "header": s.get("header"),
                 "marker_kind": mk,
                 "pov_character": pov,
-                "word_count": word_count,
+                "word_count": story_word_count,
                 "cp_earning_word_count": cp_word_count,
                 "counts_for_cp": counts_for_cp,
                 "classification": s.get("classification"),
@@ -346,11 +429,21 @@ def main() -> None:
                 "in_world_start_time_of_day": None,    # stubbed
                 "in_world_end_time_of_day": None,      # stubbed
             })
+            if cp_word_count > 0:
+                cp_to_story_points.append((
+                    cp_word_cursor,
+                    cp_word_cursor + cp_word_count,
+                    story_word_cursor,
+                    story_word_cursor + story_word_count,
+                ))
             sec_word_start = sec_word_end
+            story_word_cursor += story_word_count
+            cp_word_cursor += cp_word_count
 
         # ---------- rolls + attribution ----------
         chapter_cp_start = cum_cp_words
         chapter_cp_words = sum(s["cp_earning_word_count"] for s in sections_out)
+        chapter_story_words = sum(s["word_count"] for s in sections_out)
         chap_roll_facts = rolls_by_chapter.get(cn, [])
         rolls_out: list[dict] = []
         hits = 0
@@ -368,6 +461,42 @@ def main() -> None:
                 return None
             fraction = (index + 1) / (total + 1)
             return int(round(chapter_cp_start + chapter_cp_words * fraction))
+
+        def _story_local_from_cp_local(cp_local: int | None) -> int | None:
+            if cp_local is None:
+                return None
+            cp_local = max(0, int(cp_local))
+            for cp_start, cp_end, story_start, story_end in cp_to_story_points:
+                if cp_start <= cp_local <= cp_end:
+                    if cp_end == cp_start:
+                        return story_start
+                    frac = (cp_local - cp_start) / (cp_end - cp_start)
+                    return int(round(story_start + frac * (story_end - story_start)))
+            if cp_to_story_points:
+                last_cp_end, last_story_end = cp_to_story_points[-1][1], cp_to_story_points[-1][3]
+                if cp_local >= last_cp_end:
+                    return last_story_end
+            return min(cp_local, chapter_story_words)
+
+        def _story_cumulative_for_roll(roll: dict) -> int | None:
+            display_chapter_num = str(roll.get("display_chapter_num") or cn)
+            local_pos = roll.get("display_word_position")
+            if roll.get("source_kind") == "trigger" and display_chapter_num == cn:
+                return cum_words
+            if local_pos is None:
+                return None
+            if display_chapter_num == cn:
+                story_local = (
+                    int(local_pos)
+                    if roll.get("display_position_policy") == "mention"
+                    else _story_local_from_cp_local(int(local_pos))
+                )
+                if story_local is None:
+                    return None
+                return cum_words + story_local
+            if roll.get("display_position_policy") == "mention":
+                return chapter_story_starts.get(display_chapter_num, 0) + int(local_pos)
+            return None
 
         def _section_index_for_roll(roll: dict) -> int | None:
             char_offset = roll.get("predicted_char_offset_in_chapter")
@@ -420,7 +549,7 @@ def main() -> None:
             if idx == 0:
                 banked_cp_at_start = roll.get("available_cp")
             banked_cp_at_end = roll.get("banked_cp_after_roll")
-            display_pos = roll.get("display_cumulative_word_offset")
+            display_pos = _story_cumulative_for_roll(roll)
             roll_record = {
                 "roll_number": roll["roll_number"],
                 "section_index": _section_index_for_roll(roll),
@@ -434,14 +563,14 @@ def main() -> None:
                 "display_position_policy": roll["display_position_policy"],
                 "display_chapter_num": roll["display_chapter_num"],
                 "display_word_position": roll["display_word_position"],
-                "display_cumulative_word_offset": roll["display_cumulative_word_offset"],
+                "display_cumulative_word_offset": display_pos,
                 "purchased_perk_id": roll["purchased_perk_id"],
                 "purchased_perks": roll.get("purchased_perks") or [],
                 "purchased_perk_cost_total": roll.get("purchased_perk_cost_total"),
                 "purchased_perk_jump": roll["purchased_perk_jump"],
                 "free_perks": roll["free_perks"],
                 "word_position": roll.get("word_position"),
-                "cumulative_word_offset": roll.get("cumulative_word_offset"),
+                "cumulative_word_offset": display_pos,
                 "predicted_word_position_epub": roll["predicted_word_position_epub"],
                 "display_word_position_epub": display_pos,
                 "predicted_char_offset_in_chapter": roll["predicted_char_offset_in_chapter"],
@@ -484,7 +613,7 @@ def main() -> None:
 
         # ---------- chapter row ----------
         last_ed = last_edited_by_chap.get(cn, {})
-        cum_words += sec_meta["total_word_count"]
+        cum_words += chapter_story_words
         cum_cp_words += chapter_cp_words
         cum_perks += paid_count_in_chap + free_count_in_chap
         cum_roll_constellations.update(chapter_roll_constellations)
@@ -533,7 +662,7 @@ def main() -> None:
                 "evidence": None,
             },
 
-            "total_word_count": sec_meta["total_word_count"],
+            "total_word_count": chapter_story_words,
             "cp_earning_word_count": chapter_cp_words,
             "rolls_count": len(rolls_out),
             "hits_count": hits,
@@ -583,22 +712,24 @@ def main() -> None:
                 first_discrepancy_chapter_num = chapter["chapter_num"]
             prior_discrepancy = True
 
-    # Resolve shadow_periods.shadow_end_chapter_num. predicted_rolls'
-    # word_position is cumulative CP-earning words across the EPUB, so
-    # we build a parallel cumulative-CP-words index for the lookup —
-    # mismatched units (CP-words vs total words) was a v0 bug.
-    chapter_cp_starts: dict[str, int] = {}
-    cum_cp = 0
+    # Resolve shadow_periods.shadow_end_chapter_num on the same story-word
+    # axis used by chapter_facts and the web scrubber.
+    chapter_story_starts_final: dict[str, int] = {}
+    cum_story = 0
     for c in out_chapters:
-        chapter_cp_starts[c["chapter_num"]] = cum_cp
-        cum_cp += c["cp_earning_word_count"]
+        chapter_story_starts_final[c["chapter_num"]] = cum_story
+        cum_story += c["total_word_count"]
     chap_order = [c["chapter_num"] for c in out_chapters]
 
-    def chapter_at(cp_word_pos: int) -> str | None:
+    def chapter_at(story_word_pos: int) -> str | None:
         for i, ch in enumerate(chap_order):
-            start = chapter_cp_starts[ch]
-            end = chapter_cp_starts[chap_order[i + 1]] if i + 1 < len(chap_order) else cum_cp
-            if start <= cp_word_pos < end:
+            start = chapter_story_starts_final[ch]
+            end = (
+                chapter_story_starts_final[chap_order[i + 1]]
+                if i + 1 < len(chap_order)
+                else cum_story
+            )
+            if start <= story_word_pos < end:
                 return ch
         return None
 
@@ -607,7 +738,7 @@ def main() -> None:
         # word positions. (regime-simulator-anchored shadows already
         # have their start position set.)
         if sp["trigger_word_position_epub"] is None:
-            sp["trigger_word_position_epub"] = chapter_cp_starts.get(
+            sp["trigger_word_position_epub"] = chapter_story_starts_final.get(
                 sp["trigger_chapter_num"], 0)
         if sp["shadow_end_word_position_epub"] is None:
             sp["shadow_end_word_position_epub"] = (
@@ -640,7 +771,7 @@ def main() -> None:
         "_deferred": [
             "in_world.* — stubbed; needs chapter→date derivation pass",
             "banked_cp_at_start/end — populated only where roll_facts has banked CP",
-            "shadow_periods.shadow_end_chapter_num approximate (uses total-word boundaries vs cp-word boundaries)",
+            "shadow_periods.shadow_end_chapter_num approximate (uses story-word shadow length)",
         ],
         "shadow_periods": shadow_periods,
         "in_world_timeline": in_world_timeline,

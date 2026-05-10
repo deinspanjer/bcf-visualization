@@ -17,9 +17,9 @@ import {
  *   coordinate system
  *   ─────────────────
  *   Word axis runs from -PRE_ROLL_WORDS (lead-in band) through 0 (start
- *   of chapter 1) to TOTAL_WORDS (end of last chapter). Roll positions
- *   use `display_word_position_epub` / `display_chapter_num` when present,
- *   falling back to predicted CP-word positions.
+ *   of chapter 1) to TOTAL_WORDS (end of last chapter). The runtime data
+ *   stores visualization positions on that same story-word axis; legacy
+ *   CP-word positions are mapped only as a fallback for incomplete rows.
  *
  *   playback
  *   ────────
@@ -337,8 +337,12 @@ function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal
   const displayChapterNum = roll.display_chapter_num || chapter.chapter_num;
   const span = model.chapterSpans[model.idxOf.get(displayChapterNum)] ||
     model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
-  const cpPosition = roll.display_word_position_epub ?? roll.predicted_word_position_epub;
+  if (roll.display_word_position_epub != null) {
+    return roll.display_word_position_epub;
+  }
+  const cpPosition = roll.predicted_word_position_epub;
   if (cpPosition == null) {
+    if (roll.source_kind === "trigger") return span.start_word;
     const chapterWidth = Math.max(1, span.end_word - span.start_word);
     const slot = (fallbackIndex + 1) / (fallbackTotal + 1);
     return span.start_word + chapterWidth * slot;
@@ -352,17 +356,6 @@ function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal
 }
 
 function shadowWordRange(model, facts, sp) {
-  function cpToTotal(cpPos) {
-    for (const span of model.chapterSpans) {
-      if (cpPos >= span.start_cp && cpPos <= span.end_cp) {
-        if (span.end_cp === span.start_cp) return span.start_word;
-        const f = (cpPos - span.start_cp) / (span.end_cp - span.start_cp);
-        return span.start_word + f * (span.end_word - span.start_word);
-      }
-    }
-    return cpPos < 0 ? 0 : model.totalWords;
-  }
-
   function purchaseWord(chapter, roll) {
     const fallbackRolls = chapter.rolls.filter(r => r.predicted_word_position_epub == null);
     const fallbackIndex = fallbackRolls.indexOf(roll);
@@ -371,8 +364,8 @@ function shadowWordRange(model, facts, sp) {
   }
 
   const triggerChapter = facts.chapters.find(c => c.chapter_num === sp.trigger_chapter_num);
-  const mappedStart = cpToTotal(sp.trigger_word_position_epub);
-  const mappedEnd = cpToTotal(sp.shadow_end_word_position_epub);
+  const mappedStart = sp.trigger_word_position_epub ?? 0;
+  const mappedEnd = sp.shadow_end_word_position_epub ?? mappedStart;
   let triggerWord = mappedStart;
   if (triggerChapter) {
     const triggerRoll = triggerChapter.rolls.find(r =>

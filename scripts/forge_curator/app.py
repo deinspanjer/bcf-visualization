@@ -2505,11 +2505,17 @@ class ForgeCuratorApp(App):
                 if int(roll.get("word_position") or 0) <= cp_word_idx:
                     target = roll
                 continue
-            if str(roll.get("target_chapter_num") or cs.meta.chapter_num) != str(
+            target_chapter = str(roll.get("target_chapter_num") or cs.meta.chapter_num)
+            display_chapter = str(roll.get("display_chapter_num") or cs.meta.chapter_num)
+            if target_chapter != str(cs.meta.chapter_num) and display_chapter != str(
                 cs.meta.chapter_num
             ):
                 continue
-            mechanical_word = roll.get("mechanical_word_position")
+            mechanical_word = (
+                roll.get("word_position")
+                if display_chapter == str(cs.meta.chapter_num)
+                else roll.get("mechanical_word_position")
+            )
             if mechanical_word is None:
                 mechanical_word = roll.get("word_position")
             if int(mechanical_word) <= cp_word_idx:

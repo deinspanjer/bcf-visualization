@@ -283,15 +283,14 @@ def test_gutter_marks_match_canonical_roll_fact_positions(
     assert cs is not None
     total = len(app.state.chapter.prose.word_offsets)
     expected = []
-    for roll in (cs.derived.chapter_facts or {}).get("rolls", []):
+    for roll in app._unified_rolls(cs):
         if (
             roll.get("source_kind") == "trigger"
             or roll.get("outcome") not in {"hit", "miss"}
             or roll.get("word_position") is None
-            or str(roll.get("mechanical_chapter_num")) != chapter_num
         ):
             continue
-        raw = app._raw_word_for_cp_offset(roll["word_position"])
+        raw = roll.get("raw_word_position")
         glyph = "H" if roll["outcome"] == "hit" else "M"
         expected.append((raw / total, glyph))
 
@@ -554,9 +553,10 @@ def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
     assert "Text: CP ineligible - header" in text
     assert "Total content:" in text
     assert "CP eligible:" in text
-    assert "deferred from ch 1 #2 (global #2)" in text
-    assert "#1 (global #3)" in text
-    assert "#2 (global #4)" in text
+    assert "#1 (global #2)" in text
+    assert "narrative deferred to ch 2" in text
+    assert "#2 (global #3)" in text
+    assert "#3 (global #4)" in text
     assert "hit" in text
     assert "Clothing - Fashion (200)" in text
     assert "Quality - Bling of War (100)" in text
@@ -851,8 +851,10 @@ def test_chapter_2_miss_quote_coordinates_target_first_roll(
     app._post_curation_refresh = lambda message, *, full=False: None
     cs = app.state.chapter
     assert cs is not None
-    start = cs.prose.word_offsets[3064][0]
-    end = cs.prose.word_offsets[3079][1] - 1
+    miss = next(r for r in app._unified_rolls(cs) if r["outcome"] == "miss")
+    start_word = miss["raw_word_position"]
+    start = cs.prose.word_offsets[start_word][0]
+    end = cs.prose.word_offsets[start_word + 15][1] - 1
     prose = SimpleNamespace(selection=(start, end), cursor=end)
     cs.cursor_char = prose.cursor
     monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
@@ -910,6 +912,13 @@ def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
         journal_dir_path=tmp_path / ".journals",
     )
     app._post_curation_refresh = lambda message, *, full=False: None
+    cs = app.state.chapter
+    assert cs is not None
+    fashion = next(
+        r for r in app._unified_rolls(cs)
+        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
+    )
+    cs.cursor_char = app.state.char_at_word_index(fashion["raw_word_position"])
 
     app._action_set_last_outcome("2", "miss")
 

@@ -37,7 +37,7 @@ def test_chapter_1_roll_attempt_index_excludes_trigger(tmp_path: Path) -> None:
     assert "#2 (global #1)" not in rendered
 
 
-def test_chapter_1_roll_list_includes_deferred_display_roll(tmp_path: Path) -> None:
+def test_chapter_1_roll_list_keeps_mechanical_deferred_roll(tmp_path: Path) -> None:
     app = _loaded_app("1", tmp_path)
     chapter_state = app.state.chapter
     assert chapter_state is not None
@@ -48,18 +48,18 @@ def test_chapter_1_roll_list_includes_deferred_display_roll(tmp_path: Path) -> N
     assert [r["roll_number"] for r in rolls] == [1, 2]
     assert rolls[1]["outcome"] == "hit"
     assert rolls[1]["mechanical_chapter_num"] == "1"
-    assert rolls[1]["display_chapter_num"] == "1"
+    assert rolls[1]["display_chapter_num"] == "2"
     assert rolls[1]["purchased_perks"][0]["name"] == "Fashion"
 
 
-def test_chapter_2_roll_list_starts_with_deferred_in_roll(tmp_path: Path) -> None:
+def test_chapter_2_roll_list_starts_with_displayed_deferred_roll(tmp_path: Path) -> None:
     app = _loaded_app("2", tmp_path)
     chapter_state = app.state.chapter
     assert chapter_state is not None
 
     rolls = app._unified_rolls(chapter_state)
 
-    assert rolls[0]["display_kind"] == "deferred_in"
+    assert rolls[0]["display_kind"] == "chapter_roll"
     assert rolls[0]["target_chapter_num"] == "1"
     assert rolls[0]["target_roll_index"] == 2
     assert rolls[0]["roll_number"] == 2
@@ -74,9 +74,9 @@ def test_chapter_2_stats_header_counts_deferred_in_roll(tmp_path: Path) -> None:
     app = _loaded_app("2", tmp_path)
     text = _render_stats_text(app)
 
-    assert "Rolls (4 predicted +1 deferred)" in text
-    assert "deferred from ch 1 #2 (global #2) hit" in text
-    assert "available CP at slot: 200" in text
+    assert "Rolls (4 predicted)" in text
+    assert "#1 (global #2) hit" in text
+    assert "narrative deferred to ch 2" in text
 
 
 def test_unified_rolls_ignore_manual_quote_until_derived_regenerated(
@@ -115,7 +115,7 @@ def test_chapter_2_roll_jumps_use_predicted_curated_and_quote_positions(
     quote_raw = app._roll_evidence_word_indices(chapter_state)[0]
 
     assert predicted_raw != curated_raw
-    assert quote_raw != curated_raw
+    assert quote_raw == curated_raw
 
     def jump_to_word(word_idx: int) -> None:
         chapter_state.cursor_char = app.state.char_at_word_index(word_idx)

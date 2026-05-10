@@ -91,6 +91,8 @@
           "outcome": "miss",
           "constellation": "Alchemy",
           "word_position": null,
+          "mention_word_position": 2100,
+          "display_position_policy": "mention",
           "narrative_evidence": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach."
         },
         {
@@ -101,8 +103,8 @@
           "constellation": "Clothing",
           "word_position": null,
           "mention_chapter_num": "2",
-          "mention_word_position": null,
-          "display_position_policy": "mechanical",
+          "mention_word_position": 879,
+          "display_position_policy": "mention",
           "narrative_evidence": "I felt myself latch on to a mote of power. It was from one of the smaller constellations and a little less powerful than the mote that I had missed on my previous attempt. As my connection solidified I felt my knowledge of the power and its constellation expand.\n\nThis was not a tinker power. This was something better. This was a brute power that required tinker support.\n\nThat constellation was called 'Clothing'. I didn't have a good sense of the other powers within it, but this power was called 'Fashion'."
         }
       ],

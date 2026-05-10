@@ -146,8 +146,11 @@ def test_chapter_1_fashion_is_deferred_to_chapter_2_roll_facts() -> None:
     assert fashion["mechanical_chapter_num"] == "1"
     assert fashion["roll_number"] == 2
     assert fashion["mechanical_cumulative_word_offset"] == 4000
-    assert fashion["display_position_policy"] == "mechanical"
-    assert fashion["display_chapter_num"] == "1"
+    assert fashion["mention_word_position"] == 879
+    assert fashion["display_position_policy"] == "mention"
+    assert fashion["display_chapter_num"] == "2"
+    assert fashion["display_word_position"] == 879
+    assert fashion["display_cumulative_word_offset"] == 5217
     assert fashion["word_position"] == fashion["display_word_position"]
     assert fashion["cumulative_word_offset"] == fashion["display_cumulative_word_offset"]
 
@@ -182,6 +185,10 @@ def test_chapter_facts_own_deferred_roll_by_mention_chapter() -> None:
         for r in ch1_rolls
     )
     assert fashion["mechanical_chapter_num"] == "1"
-    assert fashion["display_chapter_num"] == "1"
+    assert fashion["display_chapter_num"] == "2"
+    assert fashion["display_word_position"] == 879
+    assert fashion["display_word_position_epub"] == (
+        chapters["1"]["total_word_count"] + 879
+    )
     assert chapters["2"]["paid_perks_gained"] == 3
     assert chapters["2"]["perks_gained"] == 3
