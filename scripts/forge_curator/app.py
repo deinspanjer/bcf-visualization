@@ -596,7 +596,7 @@ class ActionsPanel(Static):
             "[bold]Annotation cleanup[/bold]\n"
             "  ⎵D  Remove annotation at word\n\n"
             "[bold]Navigation[/bold]\n"
-            "  ]] [[  chapter top/bottom\n"
+            "  ]] [[  next/prev chapter edge\n"
             "  ][ []  next/prev section\n"
             "  ]r [r  next/prev predicted roll\n"
             "  ]R [R  next/prev curated quote\n"
@@ -750,7 +750,7 @@ class HelpScreen(ModalScreen):
         )
         body.append("\nNavigation\n", style="bold")
         body.append(
-            "  ]] [[   chapter top/bottom\n"
+            "  ]] [[   next/prev chapter edge\n"
             "  ][ []   next/prev section\n"
             "  ]r [r   next/prev curated hit/miss\n"
             "  ]R [R   next/prev predicted roll\n"
@@ -2985,9 +2985,9 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return False
-        # ]] / [[  — chapter edges
+        # ]] / [[  — next/previous chapter, landing at chapter edge
         if key == prefix:
-            self._jump_chapter_edge(top=(prefix == "]"))
+            self._jump_chapter(forward=(prefix == "]"))
             return True
         # ][ / []  — section
         if (prefix == "]" and key == "[") or (prefix == "[" and key == "]"):
@@ -3034,11 +3034,18 @@ class ForgeCuratorApp(App):
 
     # ----- jump navigation -----
 
-    def _jump_chapter_edge(self, *, top: bool) -> None:
+    def _jump_chapter(self, *, forward: bool) -> None:
+        next_chapter = (
+            self.state.next_chapter() if forward else self.state.prev_chapter()
+        )
+        if next_chapter is None:
+            return
+        self._load_chapter(next_chapter)
         cs = self.state.chapter
         if cs is None or not cs.prose.word_offsets:
+            self.refresh_all_panels()
             return
-        target = 0 if top else len(cs.prose.word_offsets) - 1
+        target = 0 if forward else len(cs.prose.word_offsets) - 1
         self._jump_to_word(target)
 
     def _jump_to_word(self, word_idx: int) -> None:

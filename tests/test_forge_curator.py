@@ -333,8 +333,8 @@ async def test_b12_jump_roll_scrolls_into_view() -> None:
 
 
 @pytest.mark.asyncio
-async def test_keybind_redesign_chapter_edge_and_section_chords() -> None:
-    """]] / [[ jump to chapter edges; ][ navigates sections."""
+async def test_keybind_redesign_chapter_and_section_chords() -> None:
+    """]] / [[ navigate chapters and land at chapter edges; ][ navigates sections."""
     app = ForgeCuratorApp(start_chapter="1")
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
@@ -348,17 +348,17 @@ async def test_keybind_redesign_chapter_edge_and_section_chords() -> None:
         await pilot.pause()
         cs1 = app.state.chapter
         assert cs1 is not None
-        assert cs1.meta.chapter_num == ch0
+        assert cs1.meta.chapter_num != ch0
         assert cs1.cursor_word_index == 0
-        await pilot.press("]")
-        await pilot.press("]")
+        ch1 = cs1.meta.chapter_num
+        app._jump_to_word(100)
         await pilot.pause()
-        assert cs1.cursor_word_index == 0
         await pilot.press("[")
         await pilot.press("[")
         await pilot.pause()
         cs2 = app.state.chapter
         assert cs2 is not None
+        assert cs2.meta.chapter_num != ch1
         assert cs2.meta.chapter_num == ch0
         assert cs2.cursor_word_index == len(cs2.prose.word_offsets) - 1
         cs = app.state.chapter
