@@ -48,7 +48,7 @@ def test_regex_hits_preserve_full_match_char_span() -> None:
 def test_default_regex_patterns_are_word_bounded_and_match_expected_phrases() -> None:
     text = (
         "remote mote reach outreach constellation constellations "
-        "Celestial Forge the Forge The Forge my power my powers overpower"
+        "Celestial Forge the Forge The Forge my power My power my powers overpower"
     )
     state = ForgeCuratorState(data=object())  # type: ignore[arg-type]
     state.chapter = ChapterState(
@@ -93,5 +93,6 @@ def test_default_regex_patterns_are_word_bounded_and_match_expected_phrases() ->
         "the Forge",
         "The Forge",
         "my power",
+        "My power",
         "my powers",
     ]

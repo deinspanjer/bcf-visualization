@@ -1,5 +1,5 @@
 {
-  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, narrative_evidence}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "chapter_roll_overrides": {
     "65": {
       "rolls": [
@@ -11,7 +11,13 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Two of the motes were secured (PR multi-grab)."
+          "evidence_quotes": [
+            {
+              "text": "Two of the motes were secured (PR multi-grab).",
+              "mention_chapter_num": "65",
+              "mention_word_position": null
+            }
+          ]
         },
         {
           "perks": [
@@ -20,10 +26,15 @@
           "outcome": "hit",
           "constellation": "Toolkits",
           "word_position": null,
-          "narrative_evidence": "Workshop: Electronics is a separate Toolkits roll."
+          "evidence_quotes": [
+            {
+              "text": "Workshop: Electronics is a separate Toolkits roll.",
+              "mention_chapter_num": "65",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Two of the motes were secured (PR multi-grab); Workshop: Electronics is a separate Toolkits roll. Order verified against curator rolls.json (PR multi-grab roll_number 444, Workshop: Electronics 448). (ch 65)"
+      ]
     },
     "67": {
       "rolls": [
@@ -37,7 +48,13 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections."
+          "evidence_quotes": [
+            {
+              "text": "Two motes with another smaller one attached and another unrelated mote — four independent connections.",
+              "mention_chapter_num": "67",
+              "mention_word_position": null
+            }
+          ]
         },
         {
           "perks": [
@@ -46,7 +63,13 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Then The Pond."
+          "evidence_quotes": [
+            {
+              "text": "Then The Pond.",
+              "mention_chapter_num": "67",
+              "mention_word_position": null
+            }
+          ]
         },
         {
           "perks": [
@@ -55,10 +78,15 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Then Pilot Simulator."
+          "evidence_quotes": [
+            {
+              "text": "Then Pilot Simulator.",
+              "mention_chapter_num": "67",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Two motes with another smaller one attached and another unrelated mote — four independent connections; then The Pond; then Pilot Simulator. Ch 67's curator-listed order (Pilot Simulator first) disagrees with narrative."
+      ]
     },
     "97": {
       "rolls": [
@@ -70,7 +98,13 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Secured two connections (PR multi-grab)."
+          "evidence_quotes": [
+            {
+              "text": "Secured two connections (PR multi-grab).",
+              "mention_chapter_num": "97",
+              "mention_word_position": null
+            }
+          ]
         },
         {
           "perks": [
@@ -79,10 +113,15 @@
           "outcome": "hit",
           "constellation": "Size",
           "word_position": null,
-          "narrative_evidence": "Then Nano-Forge."
+          "evidence_quotes": [
+            {
+              "text": "Then Nano-Forge.",
+              "mention_chapter_num": "97",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "secured two connections (PR multi-grab); then Nano-Forge. (ch 97)"
+      ]
     },
     "1": {
       "rolls": [
@@ -93,7 +132,13 @@
           "word_position": null,
           "mention_word_position": 2100,
           "display_position_policy": "mention",
-          "narrative_evidence": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach."
+          "evidence_quotes": [
+            {
+              "text": "I could feel my passenger's excitement as my reach grew for the final grasp. A mote swung close from one of the mid-sized constellations. My power tried to grasp it, but the energy was too much. The flare of energy spun away and out of reach.",
+              "mention_chapter_num": "1",
+              "mention_word_position": 2100
+            }
+          ]
         },
         {
           "perks": [
@@ -105,10 +150,15 @@
           "mention_chapter_num": "2",
           "mention_word_position": 879,
           "display_position_policy": "mention",
-          "narrative_evidence": "I felt myself latch on to a mote of power. It was from one of the smaller constellations and a little less powerful than the mote that I had missed on my previous attempt. As my connection solidified I felt my knowledge of the power and its constellation expand.\n\nThis was not a tinker power. This was something better. This was a brute power that required tinker support.\n\nThat constellation was called 'Clothing'. I didn't have a good sense of the other powers within it, but this power was called 'Fashion'."
+          "evidence_quotes": [
+            {
+              "text": "I felt myself latch on to a mote of power. It was from one of the smaller constellations and a little less powerful than the mote that I had missed on my previous attempt. As my connection solidified I felt my knowledge of the power and its constellation expand.\n\nThis was not a tinker power. This was something better. This was a brute power that required tinker support.\n\nThat constellation was called 'Clothing'. I didn't have a good sense of the other powers within it, but this power was called 'Fashion'.",
+              "mention_chapter_num": "2",
+              "mention_word_position": 879
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Ch 1: Workshop, Access Key, and Entrance Hall were granted at the trigger event (with Joe receiving his power), before any roll fires. The first predicted roll is the narrated miss. The second predicted roll fires at the end of chapter 1 but is narrated/listed in chapter 2 as Fashion."
+      ]
     },
     "100": {
       "rolls": [
@@ -122,10 +172,15 @@
           "outcome": "hit",
           "constellation": "Knowledge",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions into one Knowledge roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions into one Knowledge roll.",
+              "mention_chapter_num": "100",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "103": {
       "rolls": [
@@ -134,7 +189,13 @@
           "outcome": "miss",
           "constellation": "Toolkits",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table records this as a Toolkits miss."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table records this as a Toolkits miss.",
+              "mention_chapter_num": "103",
+              "mention_word_position": null
+            }
+          ]
         },
         {
           "perks": [
@@ -144,10 +205,15 @@
           "outcome": "hit",
           "constellation": "Quality",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft as one 300 CP Quality roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft as one 300 CP Quality roll.",
+              "mention_chapter_num": "103",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "104": {
       "rolls": [
@@ -165,7 +231,13 @@
           "outcome": "hit",
           "constellation": "Toolkits",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table records the eight Entryway/Entrance Hall acquisitions as a single x8 roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table records the eight Entryway/Entrance Hall acquisitions as a single x8 roll.",
+              "mention_chapter_num": "104",
+              "mention_word_position": null
+            }
+          ]
         },
         {
           "perks": [
@@ -174,10 +246,15 @@
           "outcome": "hit",
           "constellation": "Resources and Durability",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table records Firestorm as a Resources and Durability hit."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table records Firestorm as a Resources and Durability hit.",
+              "mention_chapter_num": "104",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "106": {
       "rolls": [
@@ -189,10 +266,15 @@
           "outcome": "hit",
           "constellation": "Quality",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing as one Quality roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing as one Quality roll.",
+              "mention_chapter_num": "106",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "109": {
       "rolls": [
@@ -205,10 +287,15 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less as one 500 CP roll. The source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality after its perks were exhausted."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less as one 500 CP roll. The source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality after its perks were exhausted.",
+              "mention_chapter_num": "109",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "112": {
       "rolls": [
@@ -220,10 +307,15 @@
           "outcome": "hit",
           "constellation": "Quality",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing and Unnatural Skill acquisitions as one Quality roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing and Unnatural Skill acquisitions as one Quality roll.",
+              "mention_chapter_num": "112",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "114": {
       "rolls": [
@@ -236,10 +328,15 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades as one 200 CP Personal Reality roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades as one 200 CP Personal Reality roll.",
+              "mention_chapter_num": "114",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "116.2": {
       "rolls": [
@@ -251,10 +348,15 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": null,
-          "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection as one 100 CP Personal Reality roll."
+          "evidence_quotes": [
+            {
+              "text": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection as one 100 CP Personal Reality roll.",
+              "mention_chapter_num": "116.2",
+              "mention_word_position": null
+            }
+          ]
         }
-      ],
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table."
+      ]
     },
     "2": {
       "rolls": [
@@ -266,7 +368,13 @@
           "mention_chapter_num": "2",
           "mention_word_position": 3064,
           "display_position_policy": "mention",
-          "narrative_evidence": "I felt my power try and fail to latch onto a mote from a new constellation."
+          "evidence_quotes": [
+            {
+              "text": "I felt my power try and fail to latch onto a mote from a new constellation.",
+              "mention_chapter_num": "2",
+              "mention_word_position": 3064
+            }
+          ]
         },
         {
           "perks": [],
@@ -276,7 +384,13 @@
           "mention_chapter_num": "2",
           "mention_word_position": 4967,
           "display_position_policy": "mention",
-          "narrative_evidence": "One of the largest constellations was swinging towards me and my power latched onto a small mote from it. I took a moment to focus on the new power. The constellation was 'Quality' and this particular power was called 'Bling of War'."
+          "evidence_quotes": [
+            {
+              "text": "One of the largest constellations was swinging towards me and my power latched onto a small mote from it. I took a moment to focus on the new power. The constellation was 'Quality' and this particular power was called 'Bling of War'.",
+              "mention_chapter_num": "2",
+              "mention_word_position": 4967
+            }
+          ]
         },
         {
           "perks": [],
@@ -286,10 +400,15 @@
           "mention_chapter_num": "2",
           "mention_word_position": 6958,
           "display_position_policy": "mention",
-          "narrative_evidence": "It was the same constellation I had failed to connect to with my first attempt. This time my power was strong enough to latch onto a mote as they flew past. Unlike last time this took every ounce of my stored energy to secure the link. Finally I had the connection and could tell what that constellation was.\n\nIt was the 'Alchemy' constellation and the mote I had connected to was 'Evermore Alchemist'."
+          "evidence_quotes": [
+            {
+              "text": "It was the same constellation I had failed to connect to with my first attempt. This time my power was strong enough to latch onto a mote as they flew past. Unlike last time this took every ounce of my stored energy to secure the link. Finally I had the connection and could tell what that constellation was.\n\nIt was the 'Alchemy' constellation and the mote I had connected to was 'Evermore Alchemist'.",
+              "mention_chapter_num": "2",
+              "mention_word_position": 6958
+            }
+          ]
         }
-      ],
-      "narrative_evidence": ""
+      ]
     },
     "3": {
       "rolls": [
@@ -301,7 +420,13 @@
           "mention_chapter_num": "3",
           "mention_word_position": 1274,
           "display_position_policy": "mention",
-          "narrative_evidence": "My power latched on to one of the smaller motes and secured a connection. The constellation was 'Vehicles' and the mote was called 'Black Thumb'."
+          "evidence_quotes": [
+            {
+              "text": "My power latched on to one of the smaller motes and secured a connection. The constellation was 'Vehicles' and the mote was called 'Black Thumb'.",
+              "mention_chapter_num": "3",
+              "mention_word_position": 1274
+            }
+          ]
         },
         {
           "perks": [],
@@ -311,7 +436,13 @@
           "mention_chapter_num": "3",
           "mention_word_position": 5566,
           "display_position_policy": "mention",
-          "narrative_evidence": "During the fight with Oni Lee my power had failed to latch onto one of the larger motes from the Vehicle constellation."
+          "evidence_quotes": [
+            {
+              "text": "During the fight with Oni Lee my power had failed to latch onto one of the larger motes from the Vehicle constellation.",
+              "mention_chapter_num": "3",
+              "mention_word_position": 5566
+            }
+          ]
         },
         {
           "perks": [],
@@ -321,10 +452,15 @@
           "mention_chapter_num": "3",
           "mention_word_position": 5588,
           "display_position_policy": "mention",
-          "narrative_evidence": "This time it connected with a small mote from what turned out to be the 'Time' constellation."
+          "evidence_quotes": [
+            {
+              "text": "This time it connected with a small mote from what turned out to be the 'Time' constellation.",
+              "mention_chapter_num": "3",
+              "mention_word_position": 5588
+            }
+          ]
         }
-      ],
-      "narrative_evidence": ""
+      ]
     },
     "4": {
       "rolls": [
@@ -336,7 +472,13 @@
           "mention_chapter_num": "4",
           "mention_word_position": 186,
           "display_position_policy": "mention",
-          "narrative_evidence": "That was when I felt a constellation approach within the Celestial Forge. I still had extra reach from my last connection and it had grown further since then. A link solidified to a small mote in the 'Knowledge' constellation.\n\nThe ability I latched onto was called 'Not a Stupid Grunt'."
+          "evidence_quotes": [
+            {
+              "text": "That was when I felt a constellation approach within the Celestial Forge. I still had extra reach from my last connection and it had grown further since then. A link solidified to a small mote in the 'Knowledge' constellation.\n\nThe ability I latched onto was called 'Not a Stupid Grunt'.",
+              "mention_chapter_num": "4",
+              "mention_word_position": 186
+            }
+          ]
         },
         {
           "perks": [],
@@ -346,7 +488,13 @@
           "mention_chapter_num": "4",
           "mention_word_position": 1888,
           "display_position_policy": "mention",
-          "narrative_evidence": "the approach of the Knowledge constellation within the Celestial Forge. My power failed to latch onto the nearest mote"
+          "evidence_quotes": [
+            {
+              "text": "the approach of the Knowledge constellation within the Celestial Forge. My power failed to latch onto the nearest mote",
+              "mention_chapter_num": "4",
+              "mention_word_position": 1888
+            }
+          ]
         },
         {
           "perks": [],
@@ -356,7 +504,13 @@
           "mention_chapter_num": "4",
           "mention_word_position": 5010,
           "display_position_policy": "mention",
-          "narrative_evidence": "The Celestial Forge moved and focused on one of the arrays of powers. The Toolkits constellation was swinging towards me and my power latched onto a small mote, securing the connection. It was called Laboratorium."
+          "evidence_quotes": [
+            {
+              "text": "The Celestial Forge moved and focused on one of the arrays of powers. The Toolkits constellation was swinging towards me and my power latched onto a small mote, securing the connection. It was called Laboratorium.",
+              "mention_chapter_num": "4",
+              "mention_word_position": 5010
+            }
+          ]
         },
         {
           "perks": [],
@@ -366,7 +520,13 @@
           "mention_chapter_num": "4",
           "mention_word_position": 7367,
           "display_position_policy": "mention",
-          "narrative_evidence": "The next morning I woke up to the feeling of the Knowledge constellation in the Celestial Forge swinging by me. My power's reach was the strongest it had ever been and was just enough to latch on to a mid-sized mote. The ability was called 'Grease Monkey'."
+          "evidence_quotes": [
+            {
+              "text": "The next morning I woke up to the feeling of the Knowledge constellation in the Celestial Forge swinging by me. My power's reach was the strongest it had ever been and was just enough to latch on to a mid-sized mote. The ability was called 'Grease Monkey'.",
+              "mention_chapter_num": "4",
+              "mention_word_position": 7367
+            }
+          ]
         },
         {
           "perks": [],
@@ -376,10 +536,15 @@
           "mention_chapter_num": "4",
           "mention_word_position": 9427,
           "display_position_policy": "mention",
-          "narrative_evidence": "While I was waiting my power completely failed to grab a mote from one of the constellations I had yet to identify."
+          "evidence_quotes": [
+            {
+              "text": "While I was waiting my power completely failed to grab a mote from one of the constellations I had yet to identify.",
+              "mention_chapter_num": "4",
+              "mention_word_position": 9427
+            }
+          ]
         }
       ],
-      "narrative_evidence": "",
       "model_validation_resolution": {
         "status": "resolved",
         "resolved_issue_codes": [
@@ -399,10 +564,15 @@
           "mention_chapter_num": "5",
           "mention_word_position": 4444,
           "display_position_policy": "mention",
-          "narrative_evidence": "A new constellation approached and my power was latching onto a mote from it. It turned out to be the 'Crafting' constellation and the mote was 'Smithing'."
+          "evidence_quotes": [
+            {
+              "text": "A new constellation approached and my power was latching onto a mote from it. It turned out to be the 'Crafting' constellation and the mote was 'Smithing'.",
+              "mention_chapter_num": "5",
+              "mention_word_position": 4444
+            }
+          ]
         }
-      ],
-      "narrative_evidence": ""
+      ]
     },
     "6": {
       "rolls": [
@@ -414,8 +584,14 @@
           "mention_chapter_num": "6",
           "mention_word_position": 1672,
           "display_position_policy": "mention",
-          "narrative_evidence": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
-          "curator_note": null
+          "curator_note": null,
+          "evidence_quotes": [
+            {
+              "text": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 1672
+            }
+          ]
         },
         {
           "perks": [],
@@ -425,11 +601,77 @@
           "mention_chapter_num": "6",
           "mention_word_position": 4289,
           "display_position_policy": "mention",
-          "narrative_evidence": "a new constellation spun past in the Celestial Forge without my power linking to it.",
+          "curator_note": null,
+          "evidence_quotes": [
+            {
+              "text": "a new constellation spun past in the Celestial Forge without my power linking to it.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 4289
+            }
+          ]
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "6",
+          "mention_word_position": 6898,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "My power managed to link to a mote from a new constellation. The 'Magic' constellation.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 6898
+            },
+            {
+              "text": "This particular ability was called 'Enchanting'.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 6969
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "6",
+          "mention_word_position": 7719,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "While I worked my power failed to connect to another mote from the magic constellation. It spun off and my reach continued to build.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 7719
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "6",
+          "mention_word_position": 8696,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "another constellation swung close in the Celestial Forge. This one was called 'Size'",
+              "mention_chapter_num": "6",
+              "mention_word_position": 8696
+            },
+            {
+              "text": "The ability was called 'Nanite Sciences'",
+              "mention_chapter_num": "6",
+              "mention_word_position": 8721
+            }
+          ],
           "curator_note": null
         }
-      ],
-      "narrative_evidence": ""
+      ]
     }
   }
 }

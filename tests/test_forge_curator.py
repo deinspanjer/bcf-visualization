@@ -26,6 +26,7 @@ from scripts.forge_curator.app import (
     PassageView,
     PerkPicker,
     RollEvidencePicker,
+    RollVisualizationPicker,
     StatsPanel,
     ActionsPanel,
     RegexBar,
@@ -611,7 +612,7 @@ def test_chapter_4_unpredicted_roll_without_explicit_anchor_stays_unslotted(
         if r.get("roll_sequence_in_chapter") == 5
         and str(r.get("mechanical_chapter_num")) == "4"
     )
-    fifth_fact["narrative_evidence"] = None
+    fifth_fact["evidence_quotes"] = []
     for field in (
         "word_position",
         "display_word_position",
@@ -660,7 +661,8 @@ def test_chapter_4_fifth_roll_evidence_is_anchored_at_quote_start(
         if roll.get("target_roll_index") == 5
     )
 
-    quote_start = cs.prose.text.find(str(fifth["narrative_evidence"]))
+    quote = fifth["evidence_quotes"][0]["text"]
+    quote_start = cs.prose.text.find(quote)
     assert quote_start >= 0
     quote_word = forge_app._word_index_for_char_offset(
         cs.prose.word_offsets, quote_start
@@ -684,7 +686,9 @@ def test_chapter_4_unpredicted_roll_requires_explicit_anchor_for_marker(
         if r.get("roll_sequence_in_chapter") == 5
         and str(r.get("mechanical_chapter_num")) == "4"
     )
-    fifth_fact["narrative_evidence"] = quote
+    fifth_fact["evidence_quotes"] = [
+        {"text": quote, "mention_chapter_num": "4", "mention_word_position": 100}
+    ]
     for field in (
         "word_position",
         "display_word_position",
@@ -697,7 +701,7 @@ def test_chapter_4_unpredicted_roll_requires_explicit_anchor_for_marker(
     fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
 
     assert fifth["roll_number"] == 14
-    assert fifth["narrative_evidence"] == quote
+    assert fifth["evidence_quotes"][0]["text"] == quote
     assert fifth["raw_word_position"] is None
     assert fifth["word_position"] == cs.meta.cp_earning_word_count
 
@@ -707,9 +711,10 @@ def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None
     cs = app.state.chapter
     assert cs is not None
     quote = next(
-        r["narrative_evidence"]
+        r["evidence_quotes"][0]["text"]
         for r in cs.derived.roll_facts
         if r.get("roll_number") == 2
+        and r.get("evidence_quotes")
     )
     quote_start = cs.prose.text.find(quote)
     assert quote_start >= 0
@@ -725,14 +730,41 @@ def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None
     } in spans
 
 
+def test_saved_roll_evidence_highlights_multiple_quote_spans(tmp_path: Path) -> None:
+    app = _loaded_app("2", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    first = "I felt myself latch on to a mote of power."
+    second = "This was not a tinker power."
+    roll = next(r for r in cs.derived.roll_facts if r.get("roll_number") == 2)
+    roll["evidence_quotes"] = [
+        {"text": first, "mention_chapter_num": "2", "mention_word_position": 879},
+        {"text": second, "mention_chapter_num": "2", "mention_word_position": 902},
+    ]
+
+    spans = app._compute_prose_spans()
+
+    for quote in (first, second):
+        quote_start = cs.prose.text.find(quote)
+        assert quote_start >= 0
+        assert {
+            "start": quote_start,
+            "end": quote_start + len(quote),
+            "layer": "A",
+            "style": QUOTE_HIGHLIGHT_STYLE,
+            "priority": 20,
+        } in spans
+
+
 def test_roll_evidence_gutter_mark_survives_chapter_navigation(tmp_path: Path) -> None:
     app = _loaded_app("2", tmp_path)
     cs = app.state.chapter
     assert cs is not None
     quote = next(
-        r["narrative_evidence"]
+        r["evidence_quotes"][0]["text"]
         for r in cs.derived.roll_facts
         if r.get("roll_number") == 2
+        and r.get("evidence_quotes")
     )
     quote_start = cs.prose.text.find(quote)
     assert quote_start >= 0
@@ -832,12 +864,65 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
         chapter_roll_overrides_path=path,
         journal_dir_path=tmp_path / ".journals",
     )
-    persistence.update_rolls_at_indices("2", [1, 3], narrative_evidence="same quote")
+    persistence.append_roll_evidence_at_indices(
+        "2",
+        [1, 3],
+        text="same quote",
+        mention_chapter_num="2",
+        mention_word_position=42,
+    )
     rolls = persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"]
     assert len(rolls) == 3
-    assert rolls[0]["narrative_evidence"] == "same quote"
-    assert rolls[1]["narrative_evidence"] is None
-    assert rolls[2]["narrative_evidence"] == "same quote"
+    assert rolls[0]["evidence_quotes"] == [
+        {"text": "same quote", "mention_chapter_num": "2", "mention_word_position": 42}
+    ]
+    assert rolls[1]["evidence_quotes"] == []
+    assert rolls[2]["evidence_quotes"] == [
+        {"text": "same quote", "mention_chapter_num": "2", "mention_word_position": 42}
+    ]
+
+
+def test_append_roll_evidence_deduplicates_and_preserves_first_anchor(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    path = tmp_path / "chapter_roll_overrides.json"
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="first quote",
+        mention_chapter_num="2",
+        mention_word_position=10,
+    )
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="first quote",
+        mention_chapter_num="2",
+        mention_word_position=10,
+    )
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="second quote",
+        mention_chapter_num="2",
+        mention_word_position=20,
+    )
+
+    roll = persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"][0]
+    assert roll["evidence_quotes"] == [
+        {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
+        {"text": "second quote", "mention_chapter_num": "2", "mention_word_position": 20},
+    ]
+    assert roll["mention_chapter_num"] == "2"
+    assert roll["mention_word_position"] == 10
+    assert roll["display_position_policy"] == "mention"
 
 
 def test_anchor_roll_without_quote_writes_source_marker_metadata(tmp_path: Path) -> None:
@@ -856,7 +941,7 @@ def test_anchor_roll_without_quote_writes_source_marker_metadata(tmp_path: Path)
 
     rolls = json.loads(path.read_text())["chapter_roll_overrides"]["4"]["rolls"]
     fifth = rolls[4]
-    assert fifth["narrative_evidence"] is None
+    assert fifth["evidence_quotes"] == []
     assert fifth["mention_chapter_num"] == "4"
     assert fifth["mention_word_position"] == app._cp_earning_word_offset(9500)
     assert fifth["display_position_policy"] == "source_marker"
@@ -912,6 +997,145 @@ def test_roll_evidence_picker_space_action_toggles_focused_roll() -> None:
     assert str(button.label).startswith("(x) #1")
 
 
+def test_roll_stat_line_repeats_q_for_each_evidence_quote(tmp_path: Path) -> None:
+    app = _loaded_app("2", tmp_path)
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "roll_number": 7,
+            "outcome": "hit",
+            "constellation": "Clothing",
+            "available_cp": 100,
+            "purchased_perks": [{"name": "Fashion", "cost": 100}],
+            "evidence_quotes": [
+                {"text": "first", "mention_chapter_num": "2", "mention_word_position": 10},
+                {"text": "second", "mention_chapter_num": "2", "mention_word_position": 20},
+            ],
+        },
+        ">",
+    )
+
+    assert "hit QQ" in line
+
+
+def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("6", tmp_path)
+    line = app._format_roll_stat_line(
+        {
+            "index": 4,
+            "target_roll_index": 3,
+            "roll_number": 19,
+            "outcome": "hit",
+            "constellation": "Magic",
+            "available_cp": 200,
+            "purchased_perks": [{"name": "Magic: Enchanting", "cost": 200}],
+            "evidence_quotes": [
+                {
+                    "text": "quote",
+                    "mention_chapter_num": "6",
+                    "mention_word_position": 6898,
+                },
+            ],
+        },
+        " ",
+    )
+
+    assert "# 3 (19)" in line
+    assert "# 4 (19)" not in line
+
+
+def test_roll_evidence_picker_label_uses_stable_target_index() -> None:
+    picker = RollEvidencePicker(
+        rolls=[
+            {
+                "index": 4,
+                "target_roll_index": 3,
+                "roll_number": 19,
+                "outcome": "hit",
+            },
+        ],
+        on_confirm=lambda _indices: None,
+    )
+
+    assert picker._roll_button_label(1, picker._rolls[0]).startswith("( ) #3")
+
+
+def test_roll_visualization_picker_can_select_quote_mechanical_and_cursor() -> None:
+    selected: list[dict] = []
+    picker = RollVisualizationPicker(
+        roll={
+            "mechanical_chapter_num": "2",
+            "mechanical_word_position": 100,
+            "evidence_quotes": [
+                {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
+                {"text": "second quote", "mention_chapter_num": "2", "mention_word_position": 20},
+            ],
+        },
+        cursor_chapter_num="2",
+        cursor_word_position=30,
+        on_select=selected.append,
+    )
+
+    picker._select("quote:1")
+    picker._select("mechanical")
+    picker._select("cursor")
+
+    assert selected == [
+        {
+            "mention_chapter_num": "2",
+            "mention_word_position": 20,
+            "display_position_policy": "mention",
+        },
+        {
+            "mention_chapter_num": "2",
+            "mention_word_position": None,
+            "display_position_policy": "mechanical",
+        },
+        {
+            "mention_chapter_num": "2",
+            "mention_word_position": 30,
+            "display_position_policy": "mention",
+        },
+    ]
+
+
+def test_curated_evidence_distance_uses_visualized_quote_then_first_quote(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("2", tmp_path)
+    first_quote = {
+        "text": "I felt myself latch on to a mote of power.",
+        "mention_chapter_num": "2",
+        "mention_word_position": 879,
+    }
+    second_quote = {
+        "text": "This was not a tinker power.",
+        "mention_chapter_num": "2",
+        "mention_word_position": 902,
+    }
+    roll = {
+        "source_kind": "roll",
+        "chapter_num": "2",
+        "mechanical_chapter_num": "2",
+        "display_cumulative_word_offset": 902,
+        "cumulative_word_offset": 902,
+        "mention_chapter_num": "2",
+        "mention_word_position": 902,
+        "display_position_policy": "mention",
+        "evidence_quotes": [first_quote, second_quote],
+    }
+    app.data.roll_facts["rolls"] = [roll]
+
+    assert app._curated_evidence_global_positions() == [902]
+
+    roll["display_position_policy"] = "mechanical"
+    roll["mention_word_position"] = None
+
+    assert app._curated_evidence_global_positions() == [879]
+
+
 def test_perk_picker_keyboard_bindings_toggle_and_confirm() -> None:
     bindings = {binding.key: binding.action for binding in PerkPicker.BINDINGS}
 
@@ -946,11 +1170,59 @@ def test_clear_roll_evidence_at_index(tmp_path) -> None:
         chapter_roll_overrides_path=path,
         journal_dir_path=tmp_path / ".journals",
     )
-    persistence.update_roll_at_index("2", 1, narrative_evidence="quote")
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="first quote",
+        mention_chapter_num="2",
+        mention_word_position=10,
+    )
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="second quote",
+        mention_chapter_num="2",
+        mention_word_position=20,
+    )
 
     assert persistence.clear_roll_evidence_at_index("2", 1)
     rolls = persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"]
-    assert rolls[0]["narrative_evidence"] is None
+    assert rolls[0]["evidence_quotes"] == []
+
+
+def test_remove_roll_evidence_quote_preserves_other_quotes(tmp_path: Path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    path = tmp_path / "chapter_roll_overrides.json"
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="first quote",
+        mention_chapter_num="2",
+        mention_word_position=10,
+    )
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="second quote",
+        mention_chapter_num="2",
+        mention_word_position=20,
+    )
+
+    assert persistence.remove_roll_evidence_quote_at_index(
+        "2",
+        1,
+        {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
+    )
+
+    roll = persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"][0]
+    assert roll["evidence_quotes"] == [
+        {"text": "second quote", "mention_chapter_num": "2", "mention_word_position": 20}
+    ]
 
 
 def test_save_quote_targets_selection_start_not_visual_cursor_end(
@@ -986,7 +1258,7 @@ def test_save_quote_targets_selection_start_not_visual_cursor_end(
     saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
         "chapter_roll_overrides"
     ]["2"]["rolls"]
-    assert saved[0]["narrative_evidence"]
+    assert saved[0]["evidence_quotes"]
     assert len(saved) == 1
 
 
@@ -1054,7 +1326,7 @@ def test_chapter_2_miss_quote_coordinates_target_first_roll(
     saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
         "chapter_roll_overrides"
     ]["2"]["rolls"]
-    assert saved[0]["narrative_evidence"]
+    assert saved[0]["evidence_quotes"]
     assert len(saved) == 1
 
 
@@ -1213,7 +1485,7 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
         r for r in app._unified_rolls(cs)
         if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
     )
-    quote_start = cs.prose.text.find(fashion["narrative_evidence"])
+    quote_start = cs.prose.text.find(fashion["evidence_quotes"][0]["text"])
     assert quote_start >= 0
     cs.cursor_char = quote_start
     monkeypatch.setattr(
@@ -1227,7 +1499,7 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
     rolls = json.loads(chapter_roll_overrides_path.read_text())[
         "chapter_roll_overrides"
     ]["1"]["rolls"]
-    assert rolls[1]["narrative_evidence"] is None
+    assert rolls[1]["evidence_quotes"] == []
 
 
 def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
@@ -1238,7 +1510,13 @@ def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
         chapter_roll_overrides_path=path,
         journal_dir_path=tmp_path / ".journals",
     )
-    persistence.update_roll_at_index("2", 1, narrative_evidence="quote")
+    persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="quote",
+        mention_chapter_num="2",
+        mention_word_position=1,
+    )
     app = _loaded_app("2", tmp_path)
     app.persistence = persistence
     calls: list[str] = []

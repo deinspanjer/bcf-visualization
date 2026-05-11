@@ -64,7 +64,7 @@ class HitInput:
     mention_chapter_num: str | None = None
     mention_word_position: int | None = None
     display_position_policy: str = "mechanical"
-    narrative_evidence: str | None = None
+    evidence_quotes: list[dict] = field(default_factory=list)
 
 
 @dataclass

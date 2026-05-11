@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import scripts.forge_curator.app as forge_app
 from scripts.forge_curator.app import ForgeCuratorApp, StatsPanel
 from scripts.forge_curator.persistence import CurationPersistence
 
@@ -110,12 +111,16 @@ def test_chapter_4_unpredicted_curator_roll_is_not_deferred(tmp_path: Path) -> N
     rolls = app._unified_rolls(chapter_state)
     extra_roll = next(r for r in rolls if r.get("roll_key") == "curator:0014")
 
-    expected_raw = int(chapter_state.meta.sections[0]["word_count"]) - 1
+    quote_word = forge_app._word_index_for_char_offset(
+        chapter_state.prose.word_offsets,
+        chapter_state.prose.text.find(extra_roll["evidence_quotes"][0]["text"]),
+    )
+    assert quote_word is not None
     assert extra_roll["display_kind"] == "chapter_roll"
     assert extra_roll["index"] == 5
     assert extra_roll["roll_number"] == 14
-    assert extra_roll["word_position"] == chapter_state.meta.cp_earning_word_count
-    assert extra_roll["raw_word_position"] == expected_raw
+    assert extra_roll["word_position"] == app._cp_earning_word_offset(int(quote_word))
+    assert extra_roll["raw_word_position"] == quote_word
 
 
 def test_unified_rolls_ignore_manual_quote_until_derived_regenerated(
@@ -129,14 +134,24 @@ def test_unified_rolls_ignore_manual_quote_until_derived_regenerated(
         journal_dir_path=tmp_path / ".journals",
     )
 
-    app.persistence.update_roll_at_index(
-        "2", 1, narrative_evidence="manual quote not yet derived"
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="manual quote not yet derived",
+        mention_chapter_num="2",
+        mention_word_position=1,
     )
     rolls = app._unified_rolls(chapter_state)
 
     assert rolls[1]["target_chapter_num"] == "2"
     assert rolls[1]["target_roll_index"] == 1
-    assert rolls[1].get("narrative_evidence") != "manual quote not yet derived"
+    assert rolls[1].get("evidence_quotes") != [
+        {
+            "text": "manual quote not yet derived",
+            "mention_chapter_num": "2",
+            "mention_word_position": 1,
+        }
+    ]
 
 
 def test_chapter_2_roll_jumps_use_predicted_curated_and_quote_positions(

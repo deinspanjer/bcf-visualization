@@ -7,6 +7,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
@@ -25,6 +27,7 @@ PREDICTED_JSON = ROOT / "data" / "derived" / "predicted_rolls.json"
 ROLL_FACTS_JSON = ROOT / "data" / "derived" / "roll_facts.json"
 ROLL_VALIDATION_JSON = ROOT / "data" / "derived" / "roll_validation.json"
 CHAPTER_FACTS_JSON = ROOT / "data" / "derived" / "chapter_facts.json"
+ROLL_FACTS_SCHEMA_JSON = ROOT / "data" / "derived" / "_schemas" / "roll_facts.schema.json"
 
 
 def _chapter_nums() -> list[str]:
@@ -88,6 +91,36 @@ def test_roll_validation_reports_global_roll_capacity_checks() -> None:
         assert (
             "known_attempts_exceed_predicted_slots" in issue_codes
         ) is (attempts > predicted)
+
+
+def test_roll_facts_use_evidence_quotes_contract() -> None:
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    schema = json.loads(ROLL_FACTS_SCHEMA_JSON.read_text())
+    validator = Draft202012Validator(schema)
+    quoted_roll = next(roll for roll in roll_facts if roll.get("evidence_quotes"))
+
+    assert "narrative_evidence" not in quoted_roll
+    assert quoted_roll["evidence_quotes"][0]["text"]
+
+    invalid_doc = {
+        "schema_version": 1,
+        "_source": "test",
+        "_method": "test",
+        "_caveat": "test",
+        "_counts": {
+            "rolls_emitted": 1,
+            "curator_rows": 1,
+            "interpolated_rows": 0,
+            "hits": 1,
+            "misses": 0,
+            "triggers": 0,
+            "free_perks": 0,
+        },
+        "rolls": [dict(quoted_roll, narrative_evidence="legacy scalar")],
+    }
+    errors = list(validator.iter_errors(invalid_doc))
+
+    assert any("Additional properties" in error.message for error in errors)
 
 
 def test_roll_validation_status_matches_blocking_model_issues() -> None:

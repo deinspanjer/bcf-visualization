@@ -162,7 +162,7 @@
         "predicted_word_position_epub", "display_word_position_epub",
         "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
-        "narrative_evidence",
+        "evidence_quotes",
         "available_cp", "banked_cp_after_roll",
         "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
         "roll_sequence_in_chapter", "rolls_in_chapter",
@@ -270,7 +270,10 @@
             "synthetic"
           ]
         },
-        "narrative_evidence": { "type": ["string", "null"] },
+        "evidence_quotes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_quote" }
+        },
         "available_cp": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
@@ -288,6 +291,21 @@
         "rolls_in_chapter":        { "type": "integer", "minimum": 1 },
         "fact_source":             { "enum": ["curator_rolls", "roll_outcomes"] },
         "source_kind":             { "enum": ["trigger", "roll", "miss", "interpolated"] }
+      }
+    },
+    "evidence_quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "mention_chapter_num", "mention_word_position"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "mention_chapter_num": {
+          "type": ["string", "null"],
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mention_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        }
       }
     },
     "chapter": {

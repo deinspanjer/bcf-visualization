@@ -65,7 +65,7 @@
         "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
         "predicted_word_position_epub", "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
-        "narrative_evidence", "raw", "source_row_index", "roll_sequence_in_chapter",
+        "evidence_quotes", "raw", "source_row_index", "roll_sequence_in_chapter",
         "rolls_in_chapter", "slot_source",
         "word_position", "cumulative_word_offset"
       ],
@@ -169,7 +169,10 @@
           ]
         },
         "raw": { "type": ["string", "null"] },
-        "narrative_evidence": { "type": ["string", "null"] },
+        "evidence_quotes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_quote" }
+        },
         "source_row_index": { "type": "integer", "minimum": 0 },
         "roll_sequence_in_chapter": { "type": "integer", "minimum": 1 },
         "rolls_in_chapter": { "type": "integer", "minimum": 1 },
@@ -182,6 +185,22 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        }
+      }
+    }
+    ,
+    "evidence_quote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "mention_chapter_num", "mention_word_position"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "mention_chapter_num": {
+          "type": ["string", "null"],
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mention_word_position": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         }
       }

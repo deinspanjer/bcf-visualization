@@ -65,31 +65,63 @@ def test_quote_only_override_preserves_existing_roll_shape() -> None:
     ]
     override = {
         "rolls": [
-            {"narrative_evidence": None},
-            {"narrative_evidence": "That could be me someday."},
+            {"evidence_quotes": []},
+            {
+                "evidence_quotes": [
+                    {
+                        "text": "That could be me someday.",
+                        "mention_chapter_num": "2",
+                        "mention_word_position": 123,
+                    },
+                    {
+                        "text": "A second proof passage.",
+                        "mention_chapter_num": "2",
+                        "mention_word_position": 456,
+                    },
+                ],
+            },
         ],
     }
 
     rows = _restructure_curator_rows("2", curator_rows, override)
 
     assert rows[0]["kind"] == "miss"
-    assert rows[0].get("_narrative_evidence") is None
+    assert rows[0].get("_evidence_quotes") == []
     assert rows[1]["kind"] == "roll"
     assert [p["name"] for p in rows[1]["perks"]] == ["Bling of War"]
     assert rows[1]["banked_after"] == 100
-    assert rows[1]["_narrative_evidence"] == "That could be me someday."
+    assert rows[1]["_evidence_quotes"] == [
+        {
+            "text": "That could be me someday.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 123,
+        },
+        {
+            "text": "A second proof passage.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 456,
+        },
+    ]
 
 
 def test_quote_only_override_is_not_structural() -> None:
     assert not _has_structural_roll_override({
         "rolls": [
-            {"narrative_evidence": None},
-            {"narrative_evidence": "That could be me someday."},
+            {"evidence_quotes": []},
+            {
+                "evidence_quotes": [
+                    {
+                        "text": "That could be me someday.",
+                        "mention_chapter_num": "2",
+                        "mention_word_position": 123,
+                    },
+                ],
+            },
         ],
     })
     assert _has_structural_roll_override({
         "rolls": [
-            {"narrative_evidence": None},
+            {"evidence_quotes": []},
             {"outcome": "miss"},
         ],
     })
@@ -98,7 +130,13 @@ def test_quote_only_override_is_not_structural() -> None:
             {
                 "mention_chapter_num": "2",
                 "display_position_policy": "mechanical",
-                "narrative_evidence": "same-chapter quote",
+                "evidence_quotes": [
+                    {
+                        "text": "same-chapter quote",
+                        "mention_chapter_num": "2",
+                        "mention_word_position": 123,
+                    },
+                ],
             },
         ],
     }, "2")
@@ -128,10 +166,16 @@ def test_quote_only_override_does_not_replace_multi_grab_units() -> None:
             "2": {
                 "rolls": [
                     {
-                        "narrative_evidence": (
-                            "I felt my power try and fail to latch onto a mote "
-                            "from a new constellation."
-                        ),
+                        "evidence_quotes": [
+                            {
+                                "text": (
+                                    "I felt my power try and fail to latch onto a mote "
+                                    "from a new constellation."
+                                ),
+                                "mention_chapter_num": "2",
+                                "mention_word_position": 10,
+                            },
+                        ],
                     },
                 ],
             },

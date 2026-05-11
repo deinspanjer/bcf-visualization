@@ -8,7 +8,7 @@ entry, so the working set on disk is always current.
 Override files (each is a single JSON document):
 
 - ``data/manual/chapter_roll_overrides.json`` — per-roll metadata
-  (outcome, constellation, perks, narrative_evidence, word_position).
+  (outcome, constellation, perks, evidence_quotes, word_position).
 - ``data/manual/author_notes.json`` — AN spans (per chapter + section).
 - ``data/manual/chapter_eligibility.json`` — chapter-level CP-eligibility
   toggle (when the user disables a chapter's contribution to CP).
@@ -147,7 +147,7 @@ class CurationPersistence:
         """Get or create the chapter_roll_overrides entry for ``chapter_num``."""
         cro = self.chapter_roll_overrides.setdefault("chapter_roll_overrides", {})
         if chapter_num not in cro:
-            cro[chapter_num] = {"rolls": [], "narrative_evidence": ""}
+            cro[chapter_num] = {"rolls": []}
         elif "rolls" not in cro[chapter_num]:
             cro[chapter_num]["rolls"] = []
         return cro[chapter_num]
@@ -184,10 +184,28 @@ class CurationPersistence:
                 "mention_chapter_num": None,
                 "mention_word_position": None,
                 "display_position_policy": None,
-                "narrative_evidence": None,
+                "evidence_quotes": [],
                 "curator_note": None,
             })
         return rolls[index - 1]
+
+    @staticmethod
+    def _quote_record(
+        text: str,
+        mention_chapter_num: str | None,
+        mention_word_position: int | None,
+    ) -> dict:
+        return {
+            "text": text,
+            "mention_chapter_num": (
+                str(mention_chapter_num)
+                if mention_chapter_num is not None else None
+            ),
+            "mention_word_position": (
+                int(mention_word_position)
+                if mention_word_position is not None else None
+            ),
+        }
 
     def update_roll_at_index(
         self,
@@ -197,7 +215,7 @@ class CurationPersistence:
         outcome: str | None = None,
         constellation: str | None = None,
         perks: list[str] | None = None,
-        narrative_evidence: str | None = None,
+        evidence_quotes: list[dict] | None = None,
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
         display_position_policy: str | None = None,
@@ -215,8 +233,8 @@ class CurationPersistence:
             roll["constellation"] = constellation
         if perks is not None:
             roll["perks"] = list(perks)
-        if narrative_evidence is not None:
-            roll["narrative_evidence"] = narrative_evidence
+        if evidence_quotes is not None:
+            roll["evidence_quotes"] = list(evidence_quotes)
         if mention_chapter_num is not None:
             roll["mention_chapter_num"] = str(mention_chapter_num)
         if mention_word_position is not None:
@@ -231,7 +249,7 @@ class CurationPersistence:
             before, deepcopy(self.chapter_roll_overrides),
             extra={"index": index, "outcome": outcome,
                    "constellation": constellation, "perks": perks,
-                   "narrative_evidence": narrative_evidence,
+                   "evidence_quotes": evidence_quotes,
                    "mention_chapter_num": mention_chapter_num,
                    "mention_word_position": mention_word_position,
                    "display_position_policy": display_position_policy,
@@ -239,17 +257,49 @@ class CurationPersistence:
         )
         return roll
 
-    def update_rolls_at_indices(
+    def append_roll_evidence_at_index(
+        self,
+        chapter_num: str,
+        index: int,
+        *,
+        text: str,
+        mention_chapter_num: str | None = None,
+        mention_word_position: int | None = None,
+    ) -> dict:
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        quotes = roll.setdefault("evidence_quotes", [])
+        record = self._quote_record(text, mention_chapter_num, mention_word_position)
+        was_empty = len(quotes) == 0
+        if record not in quotes:
+            quotes.append(record)
+        if was_empty:
+            if mention_chapter_num is not None:
+                roll["mention_chapter_num"] = str(mention_chapter_num)
+            if mention_word_position is not None:
+                roll["mention_word_position"] = int(mention_word_position)
+            roll["display_position_policy"] = "mention"
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "append_roll_evidence_at_index",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"index": int(index), "quote": record},
+        )
+        return roll
+
+    def append_roll_evidence_at_indices(
         self,
         chapter_num: str,
         indices: list[int],
         *,
-        narrative_evidence: str,
+        text: str,
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
-        display_position_policy: str | None = None,
     ) -> list[dict]:
-        """Save the same curated quote to multiple chapter-local rolls.
+        """Append the same curated quote to multiple chapter-local rolls.
 
         Missing rows are created as index-aligned stubs; untouched rows
         remain unchanged.
@@ -259,32 +309,70 @@ class CurationPersistence:
             return []
         before = deepcopy(self.chapter_roll_overrides)
         updated: list[dict] = []
+        record = self._quote_record(text, mention_chapter_num, mention_word_position)
         for index in clean_indices:
             roll = self.get_or_create_roll_at_index(chapter_num, index)
-            roll["narrative_evidence"] = narrative_evidence
-            if mention_chapter_num is not None:
-                roll["mention_chapter_num"] = str(mention_chapter_num)
-            if mention_word_position is not None:
-                roll["mention_word_position"] = int(mention_word_position)
-            if display_position_policy is not None:
-                roll["display_position_policy"] = display_position_policy
+            quotes = roll.setdefault("evidence_quotes", [])
+            was_empty = len(quotes) == 0
+            if record not in quotes:
+                quotes.append(record)
+            if was_empty:
+                if mention_chapter_num is not None:
+                    roll["mention_chapter_num"] = str(mention_chapter_num)
+                if mention_word_position is not None:
+                    roll["mention_word_position"] = int(mention_word_position)
+                roll["display_position_policy"] = "mention"
             updated.append(roll)
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
-            "update_rolls_at_indices",
+            "append_roll_evidence_at_indices",
             self.chapter_roll_overrides_path,
             str(chapter_num),
             before,
             deepcopy(self.chapter_roll_overrides),
             extra={
                 "indices": clean_indices,
-                "narrative_evidence": narrative_evidence,
-                "mention_chapter_num": mention_chapter_num,
-                "mention_word_position": mention_word_position,
-                "display_position_policy": display_position_policy,
+                "quote": record,
             },
         )
         return updated
+
+    def remove_roll_evidence_quote_at_index(
+        self, chapter_num: str, index: int, quote: dict,
+    ) -> bool:
+        entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(chapter_num))
+        )
+        rolls = (entry or {}).get("rolls") or []
+        if not (1 <= int(index) <= len(rolls)):
+            return False
+        roll = rolls[int(index) - 1]
+        quotes = roll.get("evidence_quotes") or []
+        if quote not in quotes:
+            return False
+        before = deepcopy(self.chapter_roll_overrides)
+        roll["evidence_quotes"] = [q for q in quotes if q != quote]
+        if (
+            not roll["evidence_quotes"]
+            and roll.get("display_position_policy") == "mention"
+            and str(roll.get("mention_chapter_num")) == str(quote.get("mention_chapter_num"))
+            and roll.get("mention_word_position") == quote.get("mention_word_position")
+        ):
+            roll["mention_chapter_num"] = None
+            roll["mention_word_position"] = None
+            roll["display_position_policy"] = None
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "remove_roll_evidence_quote_at_index",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"index": int(index), "quote": quote},
+        )
+        return True
 
     def clear_roll_evidence_at_index(self, chapter_num: str, index: int) -> bool:
         """Clear curated narrative evidence from an existing override row."""
@@ -297,10 +385,10 @@ class CurationPersistence:
         if not (1 <= int(index) <= len(rolls)):
             return False
         roll = rolls[int(index) - 1]
-        if not roll.get("narrative_evidence"):
+        if not roll.get("evidence_quotes"):
             return False
         before = deepcopy(self.chapter_roll_overrides)
-        roll["narrative_evidence"] = None
+        roll["evidence_quotes"] = []
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
             "clear_roll_evidence_at_index",
@@ -341,6 +429,39 @@ class CurationPersistence:
             deepcopy(self.chapter_roll_overrides),
             extra={
                 "index": index,
+                "mention_chapter_num": str(mention_chapter_num),
+                "mention_word_position": mention_word_position,
+                "display_position_policy": display_position_policy,
+            },
+        )
+        return roll
+
+    def set_roll_visualization_anchor(
+        self,
+        chapter_num: str,
+        index: int,
+        *,
+        mention_chapter_num: str,
+        mention_word_position: int | None,
+        display_position_policy: str,
+    ) -> dict:
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["mention_chapter_num"] = str(mention_chapter_num)
+        roll["mention_word_position"] = (
+            int(mention_word_position)
+            if mention_word_position is not None else None
+        )
+        roll["display_position_policy"] = display_position_policy
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "set_roll_visualization_anchor",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "index": int(index),
                 "mention_chapter_num": str(mention_chapter_num),
                 "mention_word_position": mention_word_position,
                 "display_position_policy": display_position_policy,
@@ -570,18 +691,19 @@ class CurationPersistence:
     def save_last_roll_quote(
         self, chapter_num: str, quote: str
     ) -> dict | None:
-        before = deepcopy(self.chapter_roll_overrides)
         roll = self._last_roll(str(chapter_num))
         if roll is None:
             return None
-        roll["narrative_evidence"] = quote
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
-        self._append_journal(
-            "save_last_roll_quote", self.chapter_roll_overrides_path, str(chapter_num),
-            before, deepcopy(self.chapter_roll_overrides),
-            extra={"quote_len": len(quote)},
+        return self.append_roll_evidence_at_index(
+            chapter_num,
+            len(
+                self.chapter_roll_overrides
+                .get("chapter_roll_overrides", {})
+                .get(str(chapter_num), {})
+                .get("rolls", [])
+            ),
+            text=quote,
         )
-        return roll
 
     def insert_roll(
         self,
@@ -590,7 +712,7 @@ class CurationPersistence:
         outcome: str = "miss",
         constellation: str = "",
         perks: list[str] | None = None,
-        narrative_evidence: str = "",
+        evidence_quotes: list[dict] | None = None,
     ) -> dict:
         """Insert a new roll at ``word_position`` (CP-words, chapter-local)."""
         before = deepcopy(self.chapter_roll_overrides)
@@ -600,7 +722,7 @@ class CurationPersistence:
             "outcome": outcome,
             "constellation": constellation,
             "word_position": word_position,
-            "narrative_evidence": narrative_evidence,
+            "evidence_quotes": list(evidence_quotes or []),
         }
         rolls = entry["rolls"]
         # Insert in word-position order; rolls without word_position go last.

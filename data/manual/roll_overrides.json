@@ -5,19 +5,37 @@
       "available_cp": 700,
       "banked_cp_after_roll": 100,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 700 CP, Alchemy, Trigram Knowledge and Manipulation, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 700 CP, Alchemy, Trigram Knowledge and Manipulation, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0640": {
       "available_cp": 300,
       "banked_cp_after_roll": 100,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 300 CP, Personal Reality, Temporal Controls."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 300 CP, Personal Reality, Temporal Controls.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0641": {
       "available_cp": 500,
       "banked_cp_after_roll": 200,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 500 CP, Workshop Equipment."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 500 CP, Workshop Equipment.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0642": {
       "available_cp": 200,
@@ -26,7 +44,13 @@
       "miss_cost_estimate": 300,
       "rolled_perk_cost": 300,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Personal Reality miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 200 CP Personal Reality miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0643": {
       "available_cp": 400,
@@ -35,7 +59,13 @@
       "miss_cost_estimate": 500,
       "rolled_perk_cost": 500,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Time miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 400 CP Time miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0644": {
       "available_cp": 600,
@@ -44,25 +74,49 @@
       "miss_cost_estimate": 700,
       "rolled_perk_cost": 700,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 600 CP Toolkits miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 600 CP Toolkits miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0645": {
       "available_cp": 400,
       "banked_cp_after_roll": 0,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions at 400 CP."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups the Star Trek Skills acquisitions at 400 CP.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0647": {
       "available_cp": 800,
       "banked_cp_after_roll": 600,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, VOWP Cellular Service, 200 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 800 CP, VOWP Cellular Service, 200 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0648": {
       "available_cp": 800,
       "banked_cp_after_roll": 200,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Chosen of Death."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 800 CP, Chosen of Death.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0649": {
       "available_cp": 400,
@@ -71,7 +125,13 @@
       "miss_cost_estimate": 500,
       "rolled_perk_cost": 500,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Toolkits miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 400 CP Toolkits miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0650": {
       "available_cp": 500,
@@ -80,26 +140,50 @@
       "miss_cost_estimate": 600,
       "rolled_perk_cost": 600,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 500 CP Time/Cultivation miss candidate."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 500 CP Time/Cultivation miss candidate.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0651": {
       "available_cp": 600,
       "banked_cp_after_roll": 300,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft at 600 CP, 300 total cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups Minor Blessing Demeter - Cultivation and Unnatural Skill: Naturecraft at 600 CP, 300 total cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0652": {
       "available_cp": 900,
       "banked_cp_after_roll": 500,
       "constellation": "Personal Reality",
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records Entryway x8 at 900 CP."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records Entryway x8 at 900 CP.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0653": {
       "available_cp": 700,
       "banked_cp_after_roll": 100,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 700 CP, Resources and Durability, Firestorm, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 700 CP, Resources and Durability, Firestorm, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0654": {
       "available_cp": 200,
@@ -108,7 +192,13 @@
       "miss_cost_estimate": 300,
       "rolled_perk_cost": 300,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Toolkits miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 200 CP Toolkits miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0655": {
       "available_cp": 200,
@@ -117,13 +207,25 @@
       "miss_cost_estimate": 300,
       "rolled_perk_cost": 300,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Vehicles miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 200 CP Vehicles miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0656": {
       "available_cp": 300,
       "banked_cp_after_roll": 0,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing at 300 CP."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups Minor Blessing Apollo - Medicine and Unnatural Skill: Healing at 300 CP.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0657": {
       "available_cp": 400,
@@ -132,25 +234,49 @@
       "miss_cost_estimate": 500,
       "rolled_perk_cost": 500,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Time miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 400 CP Time miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0659": {
       "available_cp": 400,
       "banked_cp_after_roll": 0,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 400 CP, Capstone, Bloodied Combat, 400 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 400 CP, Capstone, Bloodied Combat, 400 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0662": {
       "available_cp": 600,
       "banked_cp_after_roll": 500,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Maintenance System, 100 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 600 CP, Maintenance System, 100 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0663": {
       "available_cp": 700,
       "banked_cp_after_roll": 100,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 700 CP, Knowledge, Certified Tech, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 700 CP, Knowledge, Certified Tech, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0664": {
       "available_cp": 300,
@@ -159,26 +285,50 @@
       "miss_cost_estimate": 400,
       "rolled_perk_cost": 400,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 300 CP Magitech miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 300 CP Magitech miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0665": {
       "available_cp": 500,
       "banked_cp_after_roll": 0,
       "constellation": "Personal Reality",
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less at 500 CP. Source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups Basic Nutrition, A Little Less Basic, and A Lot Less at 500 CP. Source note says some late rows may say Clothing even though Clothing had been replaced by Personal Reality.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0666": {
       "available_cp": 800,
       "banked_cp_after_roll": 200,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Knowledge, Xenoarchaeologist, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 800 CP, Knowledge, Xenoarchaeologist, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0667": {
       "available_cp": 600,
       "banked_cp_after_roll": 100,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Knowledge, The Pleician Tome, 500 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 600 CP, Knowledge, The Pleician Tome, 500 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0668": {
       "available_cp": 300,
@@ -187,7 +337,13 @@
       "miss_cost_estimate": 400,
       "rolled_perk_cost": 400,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 300 CP Vehicles miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 300 CP Vehicles miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0669": {
       "available_cp": 500,
@@ -196,37 +352,73 @@
       "miss_cost_estimate": 600,
       "rolled_perk_cost": 600,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 500 CP Magitech miss."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 500 CP Magitech miss.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0671": {
       "available_cp": 700,
       "banked_cp_after_roll": 400,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing/Unnatural Skill row at 700 CP, 300 total cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups the Percy Jackson Minor Blessing/Unnatural Skill row at 700 CP, 300 total cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0672": {
       "available_cp": 600,
       "banked_cp_after_roll": 400,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Alchemy, Mixing Mixtures, 200 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 600 CP, Alchemy, Mixing Mixtures, 200 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0673": {
       "available_cp": 600,
       "banked_cp_after_roll": 0,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Time, Strong Spark, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 600 CP, Time, Strong Spark, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0674": {
       "available_cp": 500,
       "banked_cp_after_roll": 300,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades at 500 CP, 200 total cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups the Library collection upgrades at 500 CP, 200 total cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0675": {
       "available_cp": 700,
       "banked_cp_after_roll": 100,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table includes a 700 CP Magitech/Thundercats row."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table includes a 700 CP Magitech/Thundercats row.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0676": {
       "available_cp": 200,
@@ -235,7 +427,13 @@
       "miss_cost_estimate": 600,
       "rolled_perk_cost": 600,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 200 CP Magitech/Guru miss candidate."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 200 CP Magitech/Guru miss candidate.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0677": {
       "available_cp": 400,
@@ -244,25 +442,49 @@
       "miss_cost_estimate": 600,
       "rolled_perk_cost": 600,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 400 CP Magitech/Guru miss candidate."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 400 CP Magitech/Guru miss candidate.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0678": {
       "available_cp": 900,
       "banked_cp_after_roll": 800,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection at 900 CP, 100 total cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table groups Music Collection and Movie & TV Series Collection at 900 CP, 100 total cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0679": {
       "available_cp": 1000,
       "banked_cp_after_roll": 400,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 1000 CP, Vehicles, A New Age of Warfare, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 1000 CP, Vehicles, A New Age of Warfare, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0680": {
       "available_cp": 600,
       "banked_cp_after_roll": 0,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 600 CP, Magic, Blood Artisan Plus, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 600 CP, Magic, Blood Artisan Plus, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0682": {
       "available_cp": 600,
@@ -271,13 +493,25 @@
       "miss_cost_estimate": 800,
       "rolled_perk_cost": 800,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 600 CP Knowledge/The Maddest Science Yet! miss candidate."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 600 CP Knowledge/The Maddest Science Yet! miss candidate.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0683": {
       "available_cp": 800,
       "banked_cp_after_roll": 400,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Capstone, Box-tech, 400 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 800 CP, Capstone, Box-tech, 400 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0684": {
       "available_cp": 600,
@@ -286,13 +520,25 @@
       "miss_cost_estimate": 800,
       "rolled_perk_cost": 800,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table records a 600 CP Toolkits/Orb Design Plans miss candidate."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table records a 600 CP Toolkits/Orb Design Plans miss candidate.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     },
     "interpolated:0685": {
       "available_cp": 800,
       "banked_cp_after_roll": 200,
       "slot_source": "override",
-      "narrative_evidence": "Author-vetted 2026-05-09 roll table: 800 CP, Alchemy, Equivalent Exchange, 600 cost."
+      "evidence_quotes": [
+        {
+          "text": "Author-vetted 2026-05-09 roll table: 800 CP, Alchemy, Equivalent Exchange, 600 cost.",
+          "mention_chapter_num": null,
+          "mention_word_position": null
+        }
+      ]
     }
   },
   "chapter_overrides": {}

@@ -793,6 +793,7 @@ class HelpScreen(ModalScreen):
             "  <space>H         header span = current selection\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
+            "  <space>v         roll visualization position\n"
             "  <space>_         source-only roll anchor at cursor\n"
             "  <space>d         defer current roll evidence to next chapter\n"
             "  <space>D         remove annotation at current word\n"
@@ -1066,7 +1067,8 @@ class RollEvidencePicker(ModalScreen):
                 f"{marker} deferred from ch {roll.get('target_chapter_num')} "
                 f"#{roll.get('target_roll_index')} ({global_part})  {outcome}"
             )
-        return f"{marker} #{roll.get('index')} ({global_part})  {outcome}"
+        stable_index = ForgeCuratorApp._display_roll_identity(roll)
+        return f"{marker} #{stable_index} ({global_part})  {outcome}"
 
     def compose(self) -> ComposeResult:
         with Container():
@@ -1107,6 +1109,89 @@ class RollEvidencePicker(ModalScreen):
     def action_confirm_selection(self) -> None:
         self.app.pop_screen()
         self._on_confirm(sorted(self._selected))
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
+class RollVisualizationPicker(ModalScreen):
+    """Picker for choosing a roll's visualization anchor."""
+
+    DEFAULT_CSS = RollEvidencePicker.DEFAULT_CSS.replace(
+        "RollEvidencePicker", "RollVisualizationPicker"
+    )
+
+    BINDINGS = [
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(
+        self,
+        *,
+        roll: dict,
+        cursor_chapter_num: str,
+        cursor_word_position: int,
+        on_select,
+        **kw,
+    ):
+        super().__init__(**kw)
+        self._roll = roll
+        self._cursor_chapter_num = str(cursor_chapter_num)
+        self._cursor_word_position = int(cursor_word_position)
+        self._on_select = on_select
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Roll visualization position", classes="title")
+            for idx, quote in enumerate(self._roll.get("evidence_quotes") or []):
+                label = str(quote.get("text") or "").replace("\n", " ")
+                yield Button(f"Quote {idx + 1}: {label[:56]}", id=f"quote:{idx}")
+            yield Button("Predicted roll position", id="mechanical")
+            yield Button("Current cursor position", id="cursor")
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id:
+            self._select(event.button.id)
+
+    def _select(self, choice: str) -> None:
+        if choice.startswith("quote:"):
+            idx = int(choice.split(":", 1)[1])
+            quotes = self._roll.get("evidence_quotes") or []
+            if not (0 <= idx < len(quotes)):
+                return
+            quote = quotes[idx]
+            payload = {
+                "mention_chapter_num": str(
+                    quote.get("mention_chapter_num")
+                    or self._cursor_chapter_num
+                ),
+                "mention_word_position": quote.get("mention_word_position"),
+                "display_position_policy": "mention",
+            }
+        elif choice == "mechanical":
+            payload = {
+                "mention_chapter_num": str(
+                    self._roll.get("mechanical_chapter_num")
+                    or self._cursor_chapter_num
+                ),
+                "mention_word_position": None,
+                "display_position_policy": "mechanical",
+            }
+        elif choice == "cursor":
+            payload = {
+                "mention_chapter_num": self._cursor_chapter_num,
+                "mention_word_position": self._cursor_word_position,
+                "display_position_policy": "mention",
+            }
+        else:
+            return
+        try:
+            self.app.pop_screen()
+        except Exception:
+            pass
+        self._on_select(payload)
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -1339,20 +1424,21 @@ class ForgeCuratorApp(App):
         spans: list[tuple[int, int]] = []
         seen: set[tuple[int, int]] = set()
         for roll in self._unified_rolls(cs):
-            quote = roll.get("narrative_evidence")
-            if not quote:
-                continue
-            start = cs.prose.text.find(str(quote))
-            if start >= 0:
-                span = (start, start + len(str(quote)))
-            else:
-                raw = self._evidence_fallback_word_index(cs, roll)
-                if raw is None or not (0 <= raw < len(wo)):
+            for quote in self._roll_evidence_quotes(roll):
+                text = str(quote.get("text") or "")
+                if not text:
                     continue
-                span = wo[raw]
-            if span not in seen:
-                seen.add(span)
-                spans.append(span)
+                start = cs.prose.text.find(text)
+                if start >= 0:
+                    span = (start, start + len(text))
+                else:
+                    raw = self._evidence_fallback_word_index(cs, roll)
+                    if raw is None or not (0 <= raw < len(wo)):
+                        continue
+                    span = wo[raw]
+                if span not in seen:
+                    seen.add(span)
+                    spans.append(span)
         return spans
 
     def _roll_evidence_word_indices(self, cs) -> list[int]:
@@ -1725,18 +1811,61 @@ class ForgeCuratorApp(App):
     def _curated_evidence_global_positions(self) -> list[int]:
         positions: list[int] = []
         for roll in self.data.roll_facts.get("rolls", []):
-            if roll.get("source_kind") == "trigger" or not roll.get("narrative_evidence"):
+            if roll.get("source_kind") == "trigger" or not self._roll_evidence_quotes(roll):
                 continue
-            pos = (
-                roll.get("display_cumulative_word_offset")
-                if roll.get("display_cumulative_word_offset") is not None
-                else roll.get("cumulative_word_offset")
-            )
-            if pos is None:
-                pos = roll.get("mechanical_cumulative_word_offset")
+            pos = self._stats_evidence_global_position(roll)
             if pos is not None:
                 positions.append(int(pos))
         return sorted(set(positions))
+
+    def _stats_evidence_global_position(self, roll: dict) -> int | None:
+        quotes = self._roll_evidence_quotes(roll)
+        if not quotes:
+            return None
+        quote = None
+        if roll.get("display_position_policy") == "mention":
+            for candidate in quotes:
+                if (
+                    str(candidate.get("mention_chapter_num")) == str(roll.get("mention_chapter_num"))
+                    and candidate.get("mention_word_position") == roll.get("mention_word_position")
+                ):
+                    quote = candidate
+                    break
+        if quote is None:
+            quote = quotes[0]
+        return self._quote_global_position(roll, quote)
+
+    def _quote_global_position(self, roll: dict, quote: dict) -> int | None:
+        local = quote.get("mention_word_position")
+        if local is None:
+            return None
+        quote_chapter = str(quote.get("mention_chapter_num") or "")
+        bases = [
+            (
+                roll.get("display_chapter_num"),
+                roll.get("display_cumulative_word_offset"),
+                roll.get("display_word_position"),
+            ),
+            (
+                roll.get("mechanical_chapter_num"),
+                roll.get("mechanical_cumulative_word_offset"),
+                roll.get("mechanical_word_position"),
+            ),
+            (
+                roll.get("chapter_num"),
+                roll.get("cumulative_word_offset"),
+                roll.get("word_position"),
+            ),
+        ]
+        for chapter, cumulative, word in bases:
+            if (
+                chapter is not None
+                and str(chapter) == quote_chapter
+                and cumulative is not None
+                and word is not None
+            ):
+                return int(cumulative) - int(word) + int(local)
+        return int(local)
 
     def _distance_stats(
         self, story_cp_cursor: int, positions: list[int]
@@ -1977,6 +2106,10 @@ class ForgeCuratorApp(App):
             )
 
         rows = sorted(canonical_rows, key=_sort_key)
+        has_cross_chapter_visible_rows = any(
+            str(row.get("mechanical_chapter_num") or cn) != cn
+            for row in rows
+        )
         local_index = 0
         for row in rows:
             local_cp = self._local_cp_from_roll(cn, row)
@@ -2018,19 +2151,21 @@ class ForgeCuratorApp(App):
                 "purchased_perks": list(row.get("purchased_perks") or []),
                 "purchased_perk_cost_total": row.get("purchased_perk_cost_total"),
                 "source": row.get("fact_source") or row.get("source") or "canonical",
-                "narrative_evidence": row.get("narrative_evidence"),
+                "evidence_quotes": list(row.get("evidence_quotes") or []),
                 "target_chapter_num": str(
                     row.get("mechanical_chapter_num") or cn
                 ),
                 "target_roll_index": self._mechanical_roll_index(row),
                 "visible_chapter_num": cn,
+                "use_stable_target_identity": not has_cross_chapter_visible_rows,
             }
             result.append(entry)
         return result
 
     def _roll_evidence_marker(self, roll: dict) -> str:
-        if roll.get("narrative_evidence"):
-            return "Q"
+        evidence_quotes = self._roll_evidence_quotes(roll)
+        if evidence_quotes:
+            return "Q" * len(evidence_quotes)
         evidence_kind = str(roll.get("evidence_kind") or "")
         if evidence_kind in {"direct", "general_only", "forward_ref"} and (
             roll.get("anchor_char_offset_in_chapter") is not None
@@ -2044,6 +2179,13 @@ class ForgeCuratorApp(App):
         ):
             return "S"
         return "I"
+
+    @staticmethod
+    def _roll_evidence_quotes(roll: dict) -> list[dict]:
+        return [
+            q for q in (roll.get("evidence_quotes") or [])
+            if isinstance(q, dict) and q.get("text")
+        ]
 
     def _model_validation_summary(self, cs) -> str:
         model = (cs.derived.chapter_facts or {}).get("model_validation") or {}
@@ -2105,7 +2247,7 @@ class ForgeCuratorApp(App):
             and str(mention_chapter) != str(mechanical_chapter)
         ):
             detail_lines.insert(0, f"    narrative deferred to ch {mention_chapter}")
-        chapter_idx = int(roll.get("index") or roll.get("roll_sequence_in_chapter") or 0)
+        chapter_idx = self._display_roll_identity(roll)
         return "\n".join([
             (
                 f"  {marker} # {chapter_idx} "
@@ -2114,6 +2256,23 @@ class ForgeCuratorApp(App):
             ),
             *detail_lines,
         ])
+
+    @staticmethod
+    def _display_roll_identity(roll: dict) -> int:
+        visible_chapter = roll.get("visible_chapter_num") or roll.get("chapter_num")
+        target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
+        if (
+            roll.get("use_stable_target_identity", True)
+            and
+            roll.get("target_roll_index") is not None
+            and (
+                visible_chapter is None
+                or target_chapter is None
+                or str(visible_chapter) == str(target_chapter)
+            )
+        ):
+            return int(roll["target_roll_index"])
+        return int(roll.get("index") or roll.get("roll_sequence_in_chapter") or 0)
 
     def _miss_possible_suffix(self, roll: dict, min_cost) -> str:
         if min_cost is None:
@@ -2149,31 +2308,30 @@ class ForgeCuratorApp(App):
     def _evidence_block(self, cs) -> str:
         rows: list[str] = []
         for roll in self._unified_rolls(cs):
-            quote = roll.get("narrative_evidence")
-            if not quote:
-                continue
-            quote_start = cs.prose.text.find(str(quote))
-            if quote_start < 0:
-                continue
-            quote_word = _word_index_for_char_offset(
-                cs.prose.word_offsets, quote_start
-            )
-            roll_word = self._evidence_reference_word_index(cs, roll)
-            if quote_word is None or roll_word is None:
-                continue
-            quote_cp = self._cp_earning_word_offset(int(quote_word))
-            distance = int(quote_word) - int(roll_word)
-            target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
-            target_index = roll.get("target_roll_index") or roll.get("index") or "?"
-            global_num = roll.get("roll_number")
-            global_part = f"global #{global_num}" if global_num is not None else "global #?"
-            rows.extend([
-                f"  Q against ch {target_chapter} #{target_index} ({global_part})",
-                f"    word distance: {_fmt_signed_int(distance)}",
-                (
-                    f"    CP at quote start: {self._cp_at_cursor(quote_cp)}"
-                ),
-            ])
+            for quote_idx, quote in enumerate(self._roll_evidence_quotes(roll), start=1):
+                text = str(quote.get("text") or "")
+                quote_start = cs.prose.text.find(text)
+                if quote_start < 0:
+                    continue
+                quote_word = _word_index_for_char_offset(
+                    cs.prose.word_offsets, quote_start
+                )
+                roll_word = self._evidence_reference_word_index(cs, roll)
+                if quote_word is None or roll_word is None:
+                    continue
+                quote_cp = self._cp_earning_word_offset(int(quote_word))
+                distance = int(quote_word) - int(roll_word)
+                target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
+                target_index = roll.get("target_roll_index") or roll.get("index") or "?"
+                global_num = roll.get("roll_number")
+                global_part = f"global #{global_num}" if global_num is not None else "global #?"
+                rows.extend([
+                    f"  Q{quote_idx} against ch {target_chapter} #{target_index} ({global_part})",
+                    f"    word distance: {_fmt_signed_int(distance)}",
+                    (
+                        f"    CP at quote start: {self._cp_at_cursor(quote_cp)}"
+                    ),
+                ])
         return "\n".join(rows) if rows else "  (no evidence)"
 
     def _perks_this_chapter_block(self, cs) -> str:
@@ -2416,6 +2574,8 @@ class ForgeCuratorApp(App):
             self._action_save_quote(cn)
         elif ch == "Q":
             self._action_save_quote_multi(cn)
+        elif ch == "v":
+            self._action_pick_roll_visualization_position(cn)
         elif ch == "_":
             self._action_anchor_roll_without_quote(cn)
         elif ch == "d":
@@ -2714,10 +2874,11 @@ class ForgeCuratorApp(App):
             return
         roll_targets = self._roll_evidence_targets_at_selection_or_cursor()
         removed_roll_evidence = 0
-        for target_chapter, target_index in roll_targets:
-            if self.persistence.clear_roll_evidence_at_index(
+        for target_chapter, target_index, quote in roll_targets:
+            if self.persistence.remove_roll_evidence_quote_at_index(
                 target_chapter,
                 target_index,
+                quote,
             ):
                 removed_roll_evidence += 1
         word_idx = cs.cursor_word_index
@@ -2758,34 +2919,44 @@ class ForgeCuratorApp(App):
             return None
         return cs.prose.word_offsets[word_idx]
 
-    def _roll_evidence_targets_at_selection_or_cursor(self) -> list[tuple[str, int]]:
+    def _roll_evidence_targets_at_selection_or_cursor(self) -> list[tuple[str, int, dict]]:
         cs = self.state.chapter
         target_range = self._selection_or_cursor_char_range()
         if cs is None or target_range is None:
             return []
         lo, hi = target_range
-        targets: list[tuple[str, int]] = []
-        seen: set[tuple[str, int]] = set()
+        targets: list[tuple[str, int, dict]] = []
+        seen: set[tuple[str, int, str, str, str]] = set()
         for roll in self._unified_rolls(cs):
-            quote = roll.get("narrative_evidence")
             target_index = roll.get("target_roll_index")
-            if not quote or target_index is None:
+            if target_index is None:
                 continue
-            quote_text = str(quote)
-            start = cs.prose.text.find(quote_text)
-            if start >= 0:
-                span = (start, start + len(quote_text))
-            else:
-                raw = self._evidence_fallback_word_index(cs, roll)
-                if raw is None or not (0 <= raw < len(cs.prose.word_offsets)):
+            for quote in self._roll_evidence_quotes(roll):
+                quote_text = str(quote.get("text") or "")
+                start = cs.prose.text.find(quote_text)
+                if start >= 0:
+                    span = (start, start + len(quote_text))
+                else:
+                    raw = self._evidence_fallback_word_index(cs, roll)
+                    if raw is None or not (0 <= raw < len(cs.prose.word_offsets)):
+                        continue
+                    span = cs.prose.word_offsets[raw]
+                if max(lo, span[0]) >= min(hi, span[1]):
                     continue
-                span = cs.prose.word_offsets[raw]
-            if max(lo, span[0]) >= min(hi, span[1]):
-                continue
-            key = (str(roll.get("target_chapter_num") or cs.meta.chapter_num), int(target_index))
-            if key not in seen:
-                seen.add(key)
-                targets.append(key)
+                key = (
+                    str(roll.get("target_chapter_num") or cs.meta.chapter_num),
+                    int(target_index),
+                    quote_text,
+                    str(quote.get("mention_chapter_num")),
+                    str(quote.get("mention_word_position")),
+                )
+                if key not in seen:
+                    seen.add(key)
+                    targets.append((
+                        str(roll.get("target_chapter_num") or cs.meta.chapter_num),
+                        int(target_index),
+                        quote,
+                    ))
         return targets
 
     def _current_roll_target(self, *, word_idx: int | None = None) -> dict | None:
@@ -2896,13 +3067,12 @@ class ForgeCuratorApp(App):
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
         idx = int(target["target_roll_index"])
         mention_word = self._cp_earning_word_offset(target_word or 0)
-        self.persistence.update_roll_at_index(
+        self.persistence.append_roll_evidence_at_index(
             target_chapter,
             idx,
-            narrative_evidence=quote,
+            text=quote,
             mention_chapter_num=chapter_num,
             mention_word_position=mention_word,
-            display_position_policy="mention",
         )
         self._clear_prose_selection()
         self._post_curation_refresh(f"roll #{idx} quote saved ({len(quote)} chars)")
@@ -2960,19 +3130,49 @@ class ForgeCuratorApp(App):
                     if target_index is not None:
                         by_chapter.setdefault(target_chapter, []).append(int(target_index))
             for target_chapter, target_indices in by_chapter.items():
-                self.persistence.update_rolls_at_indices(
+                self.persistence.append_roll_evidence_at_indices(
                     target_chapter,
                     target_indices,
-                    narrative_evidence=quote,
+                    text=quote,
                     mention_chapter_num=chapter_num,
                     mention_word_position=mention_word,
-                    display_position_policy="mention",
                 )
             self._post_curation_refresh(
                 f"quote saved to rolls {', '.join(map(str, indices))}"
             )
 
         self.push_screen(RollEvidencePicker(rolls=rolls, on_confirm=on_confirm))
+
+    def _action_pick_roll_visualization_position(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        target = self._current_roll_target()
+        if target is None or target.get("target_roll_index") is None:
+            self._flash("roll position: no predicted roll at/before cursor")
+            return
+        target_chapter = str(target.get("target_chapter_num") or chapter_num)
+        idx = int(target["target_roll_index"])
+        cursor_word = self._cp_earning_word_offset(cs.cursor_word_index)
+
+        def on_select(payload: dict) -> None:
+            self.persistence.set_roll_visualization_anchor(
+                target_chapter,
+                idx,
+                mention_chapter_num=payload["mention_chapter_num"],
+                mention_word_position=payload["mention_word_position"],
+                display_position_policy=payload["display_position_policy"],
+            )
+            self._post_curation_refresh(f"roll #{idx} visualization position saved")
+
+        self.push_screen(
+            RollVisualizationPicker(
+                roll=target,
+                cursor_chapter_num=chapter_num,
+                cursor_word_position=cursor_word,
+                on_select=on_select,
+            )
+        )
 
     def _action_anchor_roll_without_quote(self, chapter_num: str) -> None:
         cs = self.state.chapter

@@ -436,7 +436,7 @@ def _build_scheduler_inputs() -> dict[str, dict]:
                 display_position_policy=(
                     u.get("display_position_policy") or "mechanical"
                 ),
-                narrative_evidence=u.get("narrative_evidence"),
+                evidence_quotes=list(u.get("evidence_quotes") or []),
             )
             for u in ch_units
         ]
@@ -520,12 +520,31 @@ def _has_structural_roll_override(
     )
 
 
+def _evidence_quotes(entry: dict | None) -> list[dict]:
+    if not entry:
+        return []
+    quotes: list[dict] = []
+    for quote in entry.get("evidence_quotes") or []:
+        if not isinstance(quote, dict) or not quote.get("text"):
+            continue
+        quotes.append({
+            "text": str(quote["text"]),
+            "mention_chapter_num": (
+                str(quote.get("mention_chapter_num"))
+                if quote.get("mention_chapter_num") is not None else None
+            ),
+            "mention_word_position": (
+                int(quote["mention_word_position"])
+                if quote.get("mention_word_position") is not None else None
+            ),
+        })
+    return quotes
+
+
 def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None:
     if not entry:
         return
-    evidence = entry.get("narrative_evidence")
-    if evidence:
-        payload["_narrative_evidence"] = evidence
+    payload["_evidence_quotes"] = _evidence_quotes(entry)
     if entry.get("mention_chapter_num") is not None:
         payload["_mention_chapter_num"] = _norm_chapter(
             entry.get("mention_chapter_num"), chapter_num
@@ -711,7 +730,7 @@ def _restructure_curator_rows(
                 "constellation_revealed": False,
                 "roll_number": template.get("roll_number"),
                 "raw": template.get("raw"),
-                "_narrative_evidence": _entry.get("narrative_evidence"),
+                "_evidence_quotes": _evidence_quotes(_entry),
             })
         return out_rows
     # Normalize override rolls to (paid_names_set, all_names_in_order_with_meta)
@@ -884,9 +903,7 @@ def _restructure_curator_rows(
                     row.get("roll_number") if is_last_for_host else None
                 ),
                 "raw": row.get("raw") if is_last_for_host else None,
-                "_narrative_evidence": (
-                    override_rolls_raw[ov_idx].get("narrative_evidence")
-                ),
+                "_evidence_quotes": _evidence_quotes(override_rolls_raw[ov_idx]),
             })
         non_trigger_index += 1
         # Sanity: final running balance should equal host_after for the
@@ -1042,7 +1059,7 @@ def _direct_override_rows(
             "_mention_chapter_num": mention_chapter,
             "_mention_word_position": entry.get("mention_word_position"),
             "_display_position_policy": display_policy,
-            "_narrative_evidence": entry.get("narrative_evidence"),
+            "_evidence_quotes": _evidence_quotes(entry),
             "kind": "miss" if outcome == "miss" else "roll",
             "perks": roll_perks,
             "banked_before": template.get("banked_before"),
@@ -1529,7 +1546,7 @@ def main() -> None:
                         purchased_perk_cost_total if outcome == "hit" else miss_estimate
                     ),
                     "miss_cost_estimate": miss_estimate,
-                    "narrative_evidence": row.get("_narrative_evidence"),
+                    "evidence_quotes": row.get("_evidence_quotes") or [],
                     "raw": row.get("raw"),
                     "roll_sequence_in_chapter": seq,
                     "rolls_in_chapter": total,
@@ -1800,9 +1817,9 @@ def main() -> None:
                     purchased_perk_cost_total if paid_meta else miss_estimate
                 ),
                 "miss_cost_estimate": miss_estimate,
-                "narrative_evidence": (
-                    assigned_hit.narrative_evidence
-                    if assigned_hit is not None else None
+                "evidence_quotes": (
+                    assigned_hit.evidence_quotes
+                    if assigned_hit is not None else []
                 ),
                 "raw": None,
                 "roll_sequence_in_chapter": seq,

@@ -577,7 +577,7 @@ def main() -> None:
                 "predicted_char_offset_in_chapter": roll["predicted_char_offset_in_chapter"],
                 "anchor_char_offset_in_chapter": roll["anchor_char_offset_in_chapter"],
                 "evidence_kind": roll["evidence_kind"],
-                "narrative_evidence": roll.get("narrative_evidence"),
+                "evidence_quotes": roll.get("evidence_quotes") or [],
                 "available_cp": roll["available_cp"],
                 "banked_cp_after_roll": roll["banked_cp_after_roll"],
                 "rolled_perk_name": roll["rolled_perk_name"],

@@ -21,11 +21,16 @@ Override schema (current, per-roll metadata)::
               "mention_chapter_num": "N",
               "mention_word_position": int|null,
               "display_position_policy": "mention"|"mechanical"|"section_start"|"source_marker"|"section_end",
-              "narrative_evidence": "..."
+              "evidence_quotes": [
+                {
+                  "text": "...",
+                  "mention_chapter_num": "N",
+                  "mention_word_position": int|null
+                }
+              ]
             },
             ...
           ],
-          "narrative_evidence": "..."
         }
       }
     }
@@ -75,7 +80,7 @@ def _normalise_roll_entry(entry) -> dict:
     ``word_position`` (int | None), ``mention_chapter_num`` (str | None),
     ``mention_word_position`` (int | None),
     ``display_position_policy`` (str | None),
-    ``narrative_evidence`` (str | None), ``curator_note`` (str | None).
+    ``evidence_quotes`` (list[dict]), ``curator_note`` (str | None).
     """
     if isinstance(entry, dict):
         perks = entry.get("perks") or []
@@ -90,7 +95,7 @@ def _normalise_roll_entry(entry) -> dict:
             ),
             "mention_word_position": entry.get("mention_word_position"),
             "display_position_policy": entry.get("display_position_policy"),
-            "narrative_evidence": entry.get("narrative_evidence"),
+            "evidence_quotes": list(entry.get("evidence_quotes") or []),
             "curator_note": entry.get("curator_note"),
         }
     raise ValueError(
@@ -108,10 +113,10 @@ def load_overrides(path: Path | None = None) -> dict:
         {
           "rolls": [
             {"perks": [...], "outcome": ..., "constellation": ...,
-             "word_position": ..., "narrative_evidence": ...},
+             "word_position": ..., "evidence_quotes": [...]},
             ...
           ],
-          "narrative_evidence": str | None,
+          "evidence_quotes": list[dict],
         }
 
     Missing file -> empty dict.
@@ -140,7 +145,7 @@ def load_overrides(path: Path | None = None) -> dict:
             normalised_rolls.append(roll)
         normalised[str(cn)] = {
             "rolls": normalised_rolls,
-            "narrative_evidence": entry.get("narrative_evidence", ""),
+            "evidence_quotes": list(entry.get("evidence_quotes") or []),
             "model_validation_resolution": entry.get("model_validation_resolution"),
         }
     return {"chapter_roll_overrides": normalised}
@@ -426,7 +431,7 @@ def merge_paid_units(
             "mention_chapter_num": mention_chapter,
             "mention_word_position": roll_entry.get("mention_word_position"),
             "display_position_policy": policy,
-            "narrative_evidence": roll_entry.get("narrative_evidence"),
+            "evidence_quotes": list(roll_entry.get("evidence_quotes") or []),
         }
 
     units: list[dict] = []
@@ -558,7 +563,7 @@ def merge_paid_units(
                     "mention_chapter_num": cn,
                     "mention_word_position": None,
                     "display_position_policy": "mechanical",
-                    "narrative_evidence": None,
+                    "evidence_quotes": [],
                     "_override_roll_index": None,
                 }
                 consumed_paid.add(id(perk))
