@@ -55,10 +55,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DATA_BUNDLE_TAG: ${{ inputs.data_bundle_tag }}
           DATA_RUNTIME_ASSET: ${{ inputs.data_runtime_asset }}
+          DEPLOYED_PACKAGES_URL: https://deinspanjer.github.io/bcf-visualization/data/packages.json
           DEFAULT_DATA_BUNDLE_TAG: bcf-visualization-data-v20260510.6-ch194-120.1
           DEFAULT_DATA_RUNTIME_ASSET: bcf-visualization-runtime-v20260510.6-ch194-120.1.tar.gz
         run: |
           mkdir -p .data-release
+          PREPARE_ARGS=(--site-dir _site)
           if [ -n "$DATA_BUNDLE_TAG" ]; then
             if [ -z "$DATA_RUNTIME_ASSET" ]; then
               echo "ERROR: data_runtime_asset is required when data_bundle_tag is set" >&2
@@ -68,11 +70,22 @@ jobs:
               --pattern "$DATA_RUNTIME_ASSET" \
               --dir .data-release
             RUNTIME_TAR=".data-release/$DATA_RUNTIME_ASSET"
+            PREPARE_ARGS+=(--runtime-tar "$RUNTIME_TAR")
           elif [ ! -f data/derived/chapter_facts.json ]; then
-            gh release download "$DEFAULT_DATA_BUNDLE_TAG" \
-              --pattern "$DEFAULT_DATA_RUNTIME_ASSET" \
-              --dir .data-release
-            RUNTIME_TAR=".data-release/$DEFAULT_DATA_RUNTIME_ASSET"
+            python3 scripts/data_release.py download-pages-runtimes \
+              --packages-url "$DEPLOYED_PACKAGES_URL" \
+              --output-dir .pages-runtimes \
+              --fallback-tag "$DEFAULT_DATA_BUNDLE_TAG" \
+              --fallback-asset "$DEFAULT_DATA_RUNTIME_ASSET" \
+              --metadata-output .pages-runtimes/packages.json
+            while IFS= read -r runtime_tar; do
+              PREPARE_ARGS+=(--runtime-tar "$runtime_tar")
+            done < <(find .pages-runtimes -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print | sort)
+            DEFAULT_PACKAGE_ID="$(python3 -c 'import json; print(json.load(open(".pages-runtimes/packages.json")).get("default_package_id") or "")')"
+            if [ -n "$DEFAULT_PACKAGE_ID" ]; then
+              PREPARE_ARGS+=(--default-package-id "$DEFAULT_PACKAGE_ID")
+            fi
+            PREPARE_ARGS+=(--package-metadata-file .pages-runtimes/packages.json)
           else
             python3 scripts/data_release.py package \
               --output-dir .data-release \
@@ -80,14 +93,11 @@ jobs:
               --build-number "$GITHUB_RUN_NUMBER" \
               --source-commit "$GITHUB_SHA"
             RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
+            PREPARE_ARGS+=(--runtime-tar "$RUNTIME_TAR")
           fi
-          python3 scripts/data_release.py prepare-pages \
-            --site-dir _site \
-            --runtime-tar "$RUNTIME_TAR"
+          python3 scripts/data_release.py prepare-pages "${PREPARE_ARGS[@]}"
           PACKAGE_ID="$(python3 -c 'import json; print(json.load(open("_site/data/packages.json"))["default_package_id"])')"
-          python3 scripts/data_release.py prepare-pages \
-            --site-dir _site \
-            --runtime-tar "$RUNTIME_TAR" \
+          python3 scripts/data_release.py prepare-pages "${PREPARE_ARGS[@]}" \
             --package-smoke-status "$PACKAGE_ID=passed"
           # Sanity check: nothing under data/raw/ should be in _site/
           if find _site -path '*data/raw*' -print -quit | grep -q .; then
@@ -96,8 +106,16 @@ jobs:
           fi
           test -f _site/data/packages.json
           test -f _site/data/default/data_package.json
-          python3 scripts/smoke_pages_site.py --site-dir _site
           ls -la _site/
+
+      - name: Install browser smoke dependencies
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium
+
+      - name: Smoke test staged site
+        run: |
+          python3 scripts/smoke_pages_site.py --site-dir _site --browser
 
       - uses: actions/configure-pages@v6
 
