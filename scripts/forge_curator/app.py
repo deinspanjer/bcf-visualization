@@ -19,12 +19,15 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import os
 import re
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
 
+from rich.console import Console
 from rich.text import Text
 from textual import events, on
 from textual.app import App, ComposeResult
@@ -198,18 +201,23 @@ class PassageView(BasePassageView):
 # ---------- gutter widget ---------------------------------------------------
 
 
-# Glyph colors used by gutter Rich styles, prose highlights, and RegexBar CSS.
+# Glyph colors used by gutter Rich styles and prose highlights.
 GLYPH_COLORS: dict[str, str] = {
     "═": "grey70",
     "R": "red",
     "H": "green",
-    "M": "orange1",
+    "M": "dark_orange",
     "A": "blue",
     "Q": "medium_purple1",
-    "1": "#ffaf00",
+    "1": "orange1",
     "2": "cyan",
     "3": "magenta",
     "*": "white",
+}
+GLYPH_CSS_COLORS: dict[str, str] = {
+    **GLYPH_COLORS,
+    # Textual CSS accepts "orange"; Rich's richer 256-color name is "orange1".
+    "1": "orange",
 }
 GLYPH_STYLES: dict[str, str] = {
     glyph: f"bold {color}" for glyph, color in GLYPH_COLORS.items()
@@ -249,6 +257,57 @@ ROLL_EVIDENCE_MARKERS = [
     ("S", "spreadsheet/log"),
     ("I", "inferred"),
 ]
+
+
+@dataclass(frozen=True)
+class TerminalCompatibility:
+    ok: bool
+    reasons: list[str]
+
+
+def check_terminal_compatibility(
+    *,
+    stream=None,
+    env: dict[str, str] | None = None,
+    color_system: str | None = None,
+) -> TerminalCompatibility:
+    """Return whether the current terminal can render Forge Curator safely."""
+    stream = stream if stream is not None else sys.stdout
+    env = env if env is not None else os.environ
+    reasons: list[str] = []
+    try:
+        is_tty = bool(stream.isatty())
+    except Exception:
+        is_tty = False
+    if not is_tty:
+        reasons.append("Forge Curator requires an interactive terminal.")
+    if env.get("NO_COLOR"):
+        reasons.append("NO_COLOR is set, so TUI highlight colors are disabled.")
+
+    term = env.get("TERM", "")
+    detected_color_system = color_system
+    if detected_color_system is None:
+        try:
+            detected_color_system = Console(file=stream).color_system
+        except Exception:
+            detected_color_system = None
+    has_256_color = detected_color_system in {"256", "truecolor"} or "256color" in term
+    if not has_256_color:
+        reasons.append(
+            "Forge Curator requires a 256-color terminal "
+            "(for example TERM=xterm-256color)."
+        )
+    return TerminalCompatibility(ok=not reasons, reasons=reasons)
+
+
+def _warn_terminal_compatibility(result: TerminalCompatibility) -> None:
+    print("Forge Curator terminal compatibility check failed:", file=sys.stderr)
+    for reason in result.reasons:
+        print(f"  - {reason}", file=sys.stderr)
+    print(
+        "Use a terminal with 256-color support and unset NO_COLOR before running the TUI.",
+        file=sys.stderr,
+    )
 
 # Lower rank values render first. A row can show up to five indicators
 # followed by a blank spacer column.
@@ -295,7 +354,7 @@ class GutterPanel(Static):
     }
     """
 
-    _CURSOR_ROW_STYLE = "reverse"
+    _CURSOR_ROW_STYLE = "on color(236)"
 
     def __init__(self, **kw):
         super().__init__("", **kw)
@@ -647,19 +706,19 @@ class RegexBar(Horizontal):
         text-style: bold underline;
     }}
     RegexBar > Input.regex-slot-1 {{
-        color: {GLYPH_COLORS["1"]};
+        color: {GLYPH_CSS_COLORS["1"]};
         text-style: bold;
     }}
     RegexBar > Input.regex-slot-2 {{
-        color: {GLYPH_COLORS["2"]};
+        color: {GLYPH_CSS_COLORS["2"]};
         text-style: bold;
     }}
     RegexBar > Input.regex-slot-3 {{
-        color: {GLYPH_COLORS["3"]};
+        color: {GLYPH_CSS_COLORS["3"]};
         text-style: bold;
     }}
     RegexBar > Input.regex-slot-4 {{
-        color: {GLYPH_COLORS["*"]};
+        color: {GLYPH_CSS_COLORS["*"]};
         text-style: bold;
     }}
     RegexBar Static.label {{
@@ -671,19 +730,19 @@ class RegexBar(Horizontal):
         text-style: bold underline;
     }}
     RegexBar Static.label.regex-slot-1 {{
-        color: {GLYPH_COLORS["1"]};
+        color: {GLYPH_CSS_COLORS["1"]};
         text-style: bold;
     }}
     RegexBar Static.label.regex-slot-2 {{
-        color: {GLYPH_COLORS["2"]};
+        color: {GLYPH_CSS_COLORS["2"]};
         text-style: bold;
     }}
     RegexBar Static.label.regex-slot-3 {{
-        color: {GLYPH_COLORS["3"]};
+        color: {GLYPH_CSS_COLORS["3"]};
         text-style: bold;
     }}
     RegexBar Static.label.regex-slot-4 {{
-        color: {GLYPH_COLORS["*"]};
+        color: {GLYPH_CSS_COLORS["*"]};
         text-style: bold;
     }}
     """
@@ -3555,6 +3614,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+    compatibility = check_terminal_compatibility()
+    if not compatibility.ok:
+        _warn_terminal_compatibility(compatibility)
+        raise SystemExit(2)
     app = ForgeCuratorApp(start_chapter=args.chapter)
     app.run()
 

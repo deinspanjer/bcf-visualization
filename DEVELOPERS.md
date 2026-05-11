@@ -85,6 +85,15 @@ running Forge Curator, data-invariant tests, or release packaging:
 python3 scripts/data_release.py download-dev
 ```
 
+`download-dev` stores the downloaded dev-bundle manifest separately as
+`data/derived/_dev_data_package.json` and writes `data_package.json` as
+the local runtime manifest consumed by the browser and tests. Check for
+mixed or stale local generated data with:
+
+```sh
+python3 scripts/data_release.py check-derived
+```
+
 Codex app environments hydrate data during setup. The local environment
 copies top-level generated JSON from another registered worktree, while
 the cloud environment downloads the deployed default Pages package into
@@ -272,6 +281,11 @@ client wrapper, smoke test, and Windows setup scripts are in place.
 `*_model_not_loaded` body until trained checkpoints exist. Use pytest
 for new verification. Run the full suite with `.venv/bin/pytest`, or a
 focused module with `.venv/bin/pytest tests/<module>.py`.
+Before reporting a change as complete, run the repo verification gate:
+
+```sh
+.venv/bin/python scripts/verify.py
+```
 For the operator workflow (Windows install, smoke test, what to do
 when a check fails), see the runbook below.
 

@@ -107,9 +107,12 @@ class PassageView(Widget, can_focus=True):
     visual_line_mode: reactive[bool] = reactive(False)
 
     # Rich style strings (not Textual CSS — `$accent` won't resolve in Rich).
-    cursor_style: reactive[str] = reactive("reverse")
+    # Keep these explicit: terminal reverse video can interact badly with
+    # semantic foreground colors on some terminals.
+    cursor_style: reactive[str] = reactive("bold black on color(229)")
     # ANSI color 24 = a steel-blue background that reads well on most terminals.
     selection_style: reactive[str] = reactive("on color(24)")
+    selection_plain_style: reactive[str] = reactive("white on color(24)")
 
     def __init__(self, text: str = "", **kwargs) -> None:
         super().__init__(**kwargs)
@@ -329,6 +332,26 @@ class PassageView(Widget, can_focus=True):
                     best_priority = priority
         return best_style
 
+    def _cell_style(
+        self,
+        *,
+        span_style: Optional[str],
+        selected: bool,
+        cursor: bool,
+    ) -> Optional[str]:
+        """Compose the visible style for one character cell.
+
+        Cursor wins outright with an explicit contrast pair. Selection keeps a
+        semantic foreground when one exists, but supplies a stable background.
+        """
+        if cursor:
+            return self.cursor_style
+        if selected:
+            if span_style is not None:
+                return f"{span_style} {self.selection_style}"
+            return self.selection_plain_style
+        return span_style
+
     def _cursor_primary_line(self) -> int:
         """Index of the visual line where the cursor should render.
 
@@ -379,17 +402,17 @@ class PassageView(Widget, can_focus=True):
             cursor_drawn_inline = False
             while i < end:
                 ch = text[i]
-                styles: list[str] = []
                 span_style = self._span_style_at(i)
-                if span_style is not None:
-                    styles.append(span_style)
-                if sel_lo <= i < sel_hi:
-                    styles.append(self.selection_style)
-                if i == self.cursor and li == primary_line:
-                    styles.append(self.cursor_style)
+                is_cursor = i == self.cursor and li == primary_line
+                if is_cursor:
                     cursor_drawn_inline = True
-                if styles:
-                    rich_text.append(ch, style=" ".join(styles))
+                style = self._cell_style(
+                    span_style=span_style,
+                    selected=sel_lo <= i < sel_hi,
+                    cursor=is_cursor,
+                )
+                if style is not None:
+                    rich_text.append(ch, style=style)
                 else:
                     rich_text.append(ch)
                 i += 1

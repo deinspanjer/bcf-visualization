@@ -32,6 +32,7 @@ from scripts.forge_curator.app import (
     RegexBar,
     GutterPanel,
     GutterMark,
+    GLYPH_CSS_COLORS,
     GLYPH_COLORS,
     GLYPH_STYLES,
     LEGEND,
@@ -49,6 +50,52 @@ from scripts.forge_curator.app import (
 # ---------------------------------------------------------------------------
 # Canonical word-coord conversions (App methods)
 # ---------------------------------------------------------------------------
+
+
+def test_terminal_compatibility_rejects_non_interactive_stream() -> None:
+    class _Stream:
+        def isatty(self) -> bool:
+            return False
+
+    result = forge_app.check_terminal_compatibility(
+        stream=_Stream(),
+        env={"TERM": "xterm-256color"},
+        color_system="256",
+    )
+
+    assert result.ok is False
+    assert any("interactive terminal" in reason for reason in result.reasons)
+
+
+def test_terminal_compatibility_rejects_no_color_and_weak_color() -> None:
+    class _Stream:
+        def isatty(self) -> bool:
+            return True
+
+    result = forge_app.check_terminal_compatibility(
+        stream=_Stream(),
+        env={"TERM": "xterm", "NO_COLOR": "1"},
+        color_system="standard",
+    )
+
+    assert result.ok is False
+    assert any("NO_COLOR" in reason for reason in result.reasons)
+    assert any("256-color" in reason for reason in result.reasons)
+
+
+def test_terminal_compatibility_accepts_256_color_terminal() -> None:
+    class _Stream:
+        def isatty(self) -> bool:
+            return True
+
+    result = forge_app.check_terminal_compatibility(
+        stream=_Stream(),
+        env={"TERM": "xterm-256color"},
+        color_system="256",
+    )
+
+    assert result.ok is True
+    assert result.reasons == []
 
 
 def test_cp_raw_word_roundtrip_ch97(tmp_path: Path) -> None:
@@ -269,7 +316,8 @@ async def test_gutter_minimap_renders_priority_cells() -> None:
 def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
     css = RegexBar.DEFAULT_CSS
     assert len(set(GLYPH_STYLES.values())) == len(GLYPH_STYLES)
-    assert GLYPH_COLORS["1"].startswith("#")
+    assert GLYPH_COLORS["1"] == "orange1"
+    assert GLYPH_CSS_COLORS["1"] == "orange"
     assert GLYPH_COLORS["1"] != "yellow"
     assert ROLL_HIGHLIGHT_STYLE == GLYPH_STYLES["R"]
     assert QUOTE_HIGHLIGHT_STYLE == GLYPH_STYLES["Q"]
@@ -281,8 +329,8 @@ def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
     )
     for glyph, slot in (("1", "1"), ("2", "2"), ("3", "3"), ("*", "4")):
         assert f"regex-slot-{slot}" in css
-        assert f"color: {GLYPH_COLORS[glyph]};" in css
-        assert css.count(f"color: {GLYPH_COLORS[glyph]};") == 2
+        assert f"color: {GLYPH_CSS_COLORS[glyph]};" in css
+        assert css.count(f"color: {GLYPH_CSS_COLORS[glyph]};") == 2
 
 
 @pytest.mark.asyncio

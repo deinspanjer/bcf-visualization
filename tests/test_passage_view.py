@@ -249,6 +249,31 @@ def test_selected_text_matches_substring() -> None:
     assert pv.selected_text == "Perfect Pitch."
 
 
+def test_selection_preserves_span_foreground_with_explicit_background() -> None:
+    pv = _make("hello", width=80)
+    pv.set_spans([{"start": 1, "end": 4, "style": "bold color(214)"}])
+    pv.anchor = 1
+    pv.cursor = 3
+
+    rendered = pv.render()
+
+    assert str(rendered.spans[1].style) == "bold color(214) on color(24)"
+
+
+def test_cursor_uses_explicit_contrast_pair_over_other_styles() -> None:
+    pv = _make("hello", width=80)
+    pv.set_spans([{"start": 1, "end": 4, "style": "bold color(214)"}])
+    pv.anchor = 1
+    pv.cursor = 2
+
+    rendered = pv.render()
+
+    cursor_span = next(
+        span for span in rendered.spans if span.start == 2 and span.end == 3
+    )
+    assert str(cursor_span.style) == "bold black on color(229)"
+
+
 # ---------------------------------------------------------------------------
 # Mouse drag flow (synthetic)
 # ---------------------------------------------------------------------------

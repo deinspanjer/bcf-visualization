@@ -36,6 +36,7 @@ SMOKE_STATUSES = {"passed", "failed", "unknown"}
 
 RUNTIME_REQUIRED = ["chapter_facts"]
 RUNTIME_OPTIONAL = ["constellation_wireframes", "roll_resolutions"]
+DEV_BUNDLE_MANIFEST_NAME = "_dev_data_package.json"
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(
     r"^(?:data-v\d{8}\.\d+|bcf-visualization-data-v\d{8}\.\d+-ch\d+-[A-Za-z0-9_.-]+)$"
@@ -109,7 +110,7 @@ def _write_json(path: Path, payload: dict) -> None:
 def _top_level_json_files(source_dir: Path) -> list[Path]:
     return sorted(
         path for path in source_dir.glob("*.json")
-        if path.name != "data_package.json"
+        if path.name not in {"data_package.json", DEV_BUNDLE_MANIFEST_NAME}
     )
 
 
@@ -382,6 +383,49 @@ def refresh_current_runtime_manifest(*, source_dir: Path = DERIVED) -> Path:
     )
 
 
+def check_local_derived_coherence(source_dir: Path = DERIVED) -> list[str]:
+    """Return problems that make local ignored derived data unsafe to test."""
+    problems: list[str] = []
+    manifest_path = source_dir / "data_package.json"
+    if not manifest_path.exists():
+        problems.append("data/derived/data_package.json is missing")
+        return problems
+    try:
+        manifest = _read_json(manifest_path)
+    except Exception as exc:
+        return [f"could not read data/derived/data_package.json: {exc}"]
+
+    if manifest.get("bundle_class") != "pages-runtime":
+        problems.append(
+            "data/derived/data_package.json is not a pages-runtime manifest; "
+            "run scripts/data_release.py manifest or download-dev again"
+        )
+    if manifest.get("package_kind") != "runtime":
+        problems.append(
+            "data/derived/data_package.json package_kind is not runtime; "
+            "run scripts/data_release.py manifest or download-dev again"
+        )
+    for name, meta in (manifest.get("files") or {}).items():
+        path = source_dir / str(meta.get("path", ""))
+        if not path.exists():
+            problems.append(f"manifest entry {name} points to missing {path.name}")
+            continue
+        digest = _sha256(path)
+        if meta.get("sha256") != digest:
+            problems.append(
+                f"manifest entry {name} has stale sha256; "
+                "run scripts/data_release.py manifest"
+            )
+    return problems
+
+
+def assert_local_derived_coherence(source_dir: Path = DERIVED) -> None:
+    problems = check_local_derived_coherence(source_dir)
+    if problems:
+        details = "\n  - ".join(problems)
+        raise RuntimeError(f"local derived data is stale or mixed:\n  - {details}")
+
+
 def _copy_bundle_files(source_dir: Path, staging_dir: Path, manifest: dict) -> None:
     _write_json(staging_dir / "data_package.json", manifest)
     for meta in manifest["files"].values():
@@ -616,6 +660,7 @@ def publish_release(*, tag: str, assets: list[Path], title: str | None, draft: b
 
 
 def download_dev_bundle(*, tag: str, asset: str, output_dir: Path = DERIVED) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="bcf-dev-derived-") as tmp:
         tmp_dir = Path(tmp)
         subprocess.run(
@@ -629,8 +674,12 @@ def download_dev_bundle(*, tag: str, asset: str, output_dir: Path = DERIVED) -> 
         with tempfile.TemporaryDirectory(prefix="bcf-dev-derived-extract-") as extract_tmp:
             extract_dir = Path(extract_tmp)
             _safe_extract(matches[0], extract_dir)
-            validate_package_dir(extract_dir, expected_bundle_class="dev-derived")
+            dev_manifest = validate_package_dir(
+                extract_dir, expected_bundle_class="dev-derived"
+            )
             for path in extract_dir.iterdir():
+                if path.name == "data_package.json":
+                    continue
                 dest = output_dir / path.name
                 if dest.exists():
                     if dest.is_dir():
@@ -641,6 +690,14 @@ def download_dev_bundle(*, tag: str, asset: str, output_dir: Path = DERIVED) -> 
                     shutil.copytree(path, dest)
                 else:
                     shutil.copy2(path, dest)
+            _write_json(output_dir / DEV_BUNDLE_MANIFEST_NAME, dev_manifest)
+            write_current_runtime_manifest(
+                source_dir=output_dir,
+                package_date=str(dev_manifest["package_date"]),
+                build_number=int(dev_manifest["build_number"]),
+                source_commit=str(dev_manifest["source_commit"]),
+                generated_at=str(dev_manifest["generated_at"]),
+            )
 
 
 def latest_dev_release_tag(*, limit: int = 50) -> str:
@@ -921,6 +978,9 @@ def main() -> None:
     p_download.add_argument("--asset")
     p_download.add_argument("--output-dir", type=_path, default=DERIVED)
 
+    p_check = sub.add_parser("check-derived", help="check local data/derived coherence")
+    p_check.add_argument("--source-dir", type=_path, default=DERIVED)
+
     p_download_pages = sub.add_parser(
         "download-pages-runtimes",
         help="download runtime tarballs referenced by the deployed Pages packages index",
@@ -1020,6 +1080,9 @@ def main() -> None:
         tag, asset = resolve_dev_bundle_selection(args.tag, args.asset)
         print(f"downloading {asset} from {tag}")
         download_dev_bundle(tag=tag, asset=asset, output_dir=args.output_dir)
+    elif args.cmd == "check-derived":
+        assert_local_derived_coherence(args.source_dir)
+        print("local derived data ok")
     elif args.cmd == "download-pages-runtimes":
         paths = download_pages_runtime_tars(
             packages_url=args.packages_url,

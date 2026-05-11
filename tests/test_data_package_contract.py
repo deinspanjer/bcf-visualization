@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import subprocess
 import tarfile
 import urllib.error
@@ -148,6 +149,79 @@ def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path:
     assert manifest["files"]["chapter_facts"]["sha256"] == hashlib.sha256(
         (derived / "chapter_facts.json").read_bytes()
     ).hexdigest()
+
+
+def test_download_dev_keeps_dev_manifest_separate_and_writes_runtime_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import data_release
+
+    source = tmp_path / "source"
+    dist = tmp_path / "dist"
+    output = tmp_path / "derived"
+    source.mkdir()
+    chapter_facts = {
+        "schema_version": 1,
+        "chapters": [
+            {"chapter_num": "1", "full_title": "1 Opening"},
+        ],
+    }
+    (source / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
+    outputs = data_release.build_packages(
+        source_dir=source,
+        output_dir=dist,
+        package_date="20260509",
+        build_number=7,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    def fake_run(cmd: list[str], **kwargs) -> None:
+        assert cmd[:3] == ["gh", "release", "download"]
+        target_dir = Path(cmd[-1])
+        target_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(outputs.dev_tar, target_dir / outputs.dev_tar.name)
+
+    monkeypatch.setattr(data_release.subprocess, "run", fake_run)
+
+    data_release.download_dev_bundle(
+        tag=outputs.release_tag,
+        asset=outputs.dev_tar.name,
+        output_dir=output,
+    )
+
+    runtime_manifest = _load_json(output / "data_package.json")
+    dev_manifest = _load_json(output / data_release.DEV_BUNDLE_MANIFEST_NAME)
+    assert runtime_manifest["package_kind"] == "runtime"
+    assert runtime_manifest["bundle_class"] == "pages-runtime"
+    assert dev_manifest["package_kind"] == "data"
+    assert dev_manifest["bundle_class"] == "dev-derived"
+    assert runtime_manifest["source_commit"] == "test-commit"
+    assert data_release.check_local_derived_coherence(output) == []
+
+
+def test_local_derived_coherence_flags_dev_manifest_in_runtime_slot(
+    tmp_path: Path,
+) -> None:
+    from scripts import data_release
+
+    derived = tmp_path / "derived"
+    derived.mkdir()
+    (derived / "chapter_facts.json").write_text(
+        json.dumps({"schema_version": 1, "chapters": []}) + "\n"
+    )
+    (derived / "data_package.json").write_text(
+        json.dumps({
+            "bundle_class": "dev-derived",
+            "package_kind": "data",
+            "files": {},
+        }) + "\n"
+    )
+
+    problems = data_release.check_local_derived_coherence(derived)
+
+    assert any("pages-runtime manifest" in problem for problem in problems)
+    assert any("package_kind is not runtime" in problem for problem in problems)
 
 
 def test_download_dev_defaults_to_latest_data_release(monkeypatch: pytest.MonkeyPatch) -> None:
