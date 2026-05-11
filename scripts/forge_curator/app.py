@@ -413,7 +413,18 @@ class StatsPanel(Static):
         chapter_cp_total = app._chapter_cp_total(cn, cs)
         story_cp_cursor = app._chapter_cp_start(cn) + cp_word_idx
         story_cp_total = app._story_cp_total()
-        since_last_roll, until_next_roll = app._roll_distance_stats(story_cp_cursor)
+        (
+            since_last_predicted_roll,
+            until_next_predicted_roll,
+        ) = app._predicted_roll_distance_stats(story_cp_cursor)
+        (
+            since_last_curated_roll,
+            until_next_curated_roll,
+        ) = app._curated_roll_distance_stats(story_cp_cursor)
+        (
+            since_last_curated_evidence,
+            until_next_curated_evidence,
+        ) = app._curated_evidence_distance_stats(story_cp_cursor)
 
         eligibility = app._eligibility_at_cursor(cs, word_idx, sec_idx)
         section_status = (
@@ -468,8 +479,12 @@ class StatsPanel(Static):
             f"  CP eligible:\n"
             f"    story {_fmt_int(story_cp_cursor)} / {_fmt_int(story_cp_total)}\n"
             f"    chapter {_fmt_int(cp_word_idx)} / {_fmt_int(chapter_cp_total)}\n"
-            f"  Since last roll: {_fmt_int(since_last_roll)}\n"
-            f"  Until next roll: {_fmt_int(until_next_roll)}\n\n"
+            f"  Since last predicted roll: {_fmt_int(since_last_predicted_roll)}\n"
+            f"  Since last curated roll: {_fmt_int(since_last_curated_roll)}\n"
+            f"  Since last curated evidence: {_fmt_int(since_last_curated_evidence)}\n"
+            f"  Until next predicted roll: {_fmt_int(until_next_predicted_roll)}\n"
+            f"  Until next curated roll: {_fmt_int(until_next_curated_roll)}\n"
+            f"  Until next curated evidence: {_fmt_int(until_next_curated_evidence)}\n\n"
             f"[bold]CP at cursor[/bold]\n"
             f"  Available: {_fmt_int(cp_stats['available'])}\n"
             f"  Gained:\n"
@@ -1681,7 +1696,7 @@ class ForgeCuratorApp(App):
             return int(roll["mention_word_position"])
         return self._local_cp_from_roll(chapter_num, roll)
 
-    def _all_roll_global_positions(self) -> list[int]:
+    def _curated_roll_global_positions(self) -> list[int]:
         positions: list[int] = []
         for roll in self.data.roll_facts.get("rolls", []):
             if roll.get("source_kind") == "trigger":
@@ -1697,13 +1712,59 @@ class ForgeCuratorApp(App):
                 positions.append(int(pos))
         return sorted(set(positions))
 
-    def _roll_distance_stats(self, story_cp_cursor: int) -> tuple[int, int | None]:
-        positions = self._all_roll_global_positions()
+    def _predicted_roll_global_positions(self) -> list[int]:
+        positions: list[int] = []
+        for roll in self.data.predicted.get("predicted", []):
+            pos = roll.get("word_position")
+            if pos is not None:
+                positions.append(int(pos))
+        return sorted(set(positions))
+
+    def _curated_evidence_global_positions(self) -> list[int]:
+        positions: list[int] = []
+        for roll in self.data.roll_facts.get("rolls", []):
+            if roll.get("source_kind") == "trigger" or not roll.get("narrative_evidence"):
+                continue
+            pos = (
+                roll.get("display_cumulative_word_offset")
+                if roll.get("display_cumulative_word_offset") is not None
+                else roll.get("cumulative_word_offset")
+            )
+            if pos is None:
+                pos = roll.get("mechanical_cumulative_word_offset")
+            if pos is not None:
+                positions.append(int(pos))
+        return sorted(set(positions))
+
+    def _distance_stats(
+        self, story_cp_cursor: int, positions: list[int]
+    ) -> tuple[int, int | None]:
         last = max((p for p in positions if p <= story_cp_cursor), default=0)
         nxt = min((p for p in positions if p > story_cp_cursor), default=None)
         since = max(0, story_cp_cursor - last)
         until = None if nxt is None else max(0, nxt - story_cp_cursor)
         return since, until
+
+    def _predicted_roll_distance_stats(
+        self, story_cp_cursor: int
+    ) -> tuple[int, int | None]:
+        return self._distance_stats(
+            story_cp_cursor, self._predicted_roll_global_positions()
+        )
+
+    def _curated_roll_distance_stats(
+        self, story_cp_cursor: int
+    ) -> tuple[int, int | None]:
+        return self._distance_stats(
+            story_cp_cursor, self._curated_roll_global_positions()
+        )
+
+    def _curated_evidence_distance_stats(
+        self, story_cp_cursor: int
+    ) -> tuple[int, int | None]:
+        return self._distance_stats(
+            story_cp_cursor, self._curated_evidence_global_positions()
+        )
 
     def _roll_cost(self, roll: dict) -> int:
         if roll.get("outcome") != "hit":

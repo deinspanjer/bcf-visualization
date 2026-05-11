@@ -176,8 +176,12 @@ def test_b5_b6_b7_stats_panel_ch97(tmp_path: Path) -> None:
     assert "Model:" in text
     assert "Total content:" in text
     assert "CP eligible:" in text
-    assert "Since last roll:" in text
-    assert "Until next roll:" in text
+    assert "Since last predicted roll:" in text
+    assert "Until next predicted roll:" in text
+    assert "Since last curated roll:" in text
+    assert "Until next curated roll:" in text
+    assert "Since last curated evidence:" in text
+    assert "Until next curated evidence:" in text
     assert "Available:" in text
     assert "Gained:" in text
     assert "Spent:" in text
@@ -206,6 +210,23 @@ def test_b8_cp_at_cursor_nonzero_after_first_roll(tmp_path: Path) -> None:
     assert cp_banked >= first_banked, (
         f"expected >= first_banked={first_banked}, got {cp_banked}"
     )
+
+
+def test_stats_roll_distances_disambiguate_predicted_curated_and_evidence(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("5", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    app.state.set_cursor_char(app.state.char_at_word_index(174))
+
+    cp_word_idx = app._cp_earning_word_offset(cs.cursor_word_index)
+    story_cp_cursor = app._chapter_cp_start(cs.meta.chapter_num) + cp_word_idx
+
+    assert story_cp_cursor == 28_061
+    assert app._predicted_roll_distance_stats(story_cp_cursor) == (61, 1_939)
+    assert app._curated_roll_distance_stats(story_cp_cursor) == (61, 5_939)
+    assert app._curated_evidence_distance_stats(story_cp_cursor) == (170, 857_939)
 
 
 def test_gutter_minimap_emits_an_and_roll_marks_for_ch97(tmp_path: Path) -> None:
@@ -446,8 +467,12 @@ def test_stats_panel_structured_status_rows_fit_content_width(tmp_path: Path) ->
         "  CP eligible:",
         "    story ",
         "    chapter ",
-        "  Since last roll:",
-        "  Until next roll:",
+        "  Since last predicted roll:",
+        "  Until next predicted roll:",
+        "  Since last curated roll:",
+        "  Until next curated roll:",
+        "  Since last curated evidence:",
+        "  Until next curated evidence:",
         "  Gained:",
         "  Spent:",
         "    total ",
