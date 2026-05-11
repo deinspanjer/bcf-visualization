@@ -403,6 +403,33 @@
         }
       ],
       "narrative_evidence": ""
+    },
+    "6": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "6",
+          "mention_word_position": 1672,
+          "display_position_policy": "mention",
+          "narrative_evidence": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "6",
+          "mention_word_position": 4289,
+          "display_position_policy": "mention",
+          "narrative_evidence": "a new constellation spun past in the Celestial Forge without my power linking to it.",
+          "curator_note": null
+        }
+      ],
+      "narrative_evidence": ""
     }
   }
 }
