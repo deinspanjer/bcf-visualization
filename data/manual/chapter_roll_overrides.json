@@ -687,6 +687,121 @@
           "curator_note": "source-only roll anchor"
         }
       ]
+    },
+    "7": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "7",
+          "mention_word_position": 75,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "I felt the Celestial Forge moving again, with my power connecting onto another mote.",
+              "mention_chapter_num": "7",
+              "mention_word_position": 75
+            },
+            {
+              "text": "My reach was bigger than before and had enough power to latch onto a mid-sized mote from a new constellation. This one was called \"Resources and Durability' and the power was called 'Built to Last'.",
+              "mention_chapter_num": "7",
+              "mention_word_position": 100
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "7",
+          "mention_word_position": 2270,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "On the way home my power failed to make a connection to one of the largest motes of the Vehicles constellation",
+              "mention_chapter_num": "7",
+              "mention_word_position": 2270
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "7",
+          "mention_word_position": 3355,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "I felt my power move again and connect to a small mote from the Quality constellation. This one was called Decadence",
+              "mention_chapter_num": "7",
+              "mention_word_position": 3355
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "7",
+          "mention_word_position": 7003,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "Eventually a failed link to the Vehicle constellation in the Celestial Forge drove me completely awake.",
+              "mention_chapter_num": "7",
+              "mention_word_position": 7003
+            }
+          ],
+          "curator_note": null
+        }
+      ]
+    },
+    "8": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "8",
+          "mention_word_position": 3152,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "My power activated again as I felt the Forge move. The Time constellation was approaching again and my power connected to a mote called 'Machinist'.",
+              "mention_chapter_num": "8",
+              "mention_word_position": 3152
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "8",
+          "mention_word_position": 6317,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "My power moved again and made another connection to the Resources and Durability constellation. The ability was called 'Rationing'.",
+              "mention_chapter_num": "8",
+              "mention_word_position": 6317
+            }
+          ],
+          "curator_note": null
+        }
+      ]
     }
   }
 }
