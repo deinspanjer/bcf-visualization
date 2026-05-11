@@ -603,6 +603,7 @@ class ActionsPanel(Static):
             "  ⎵q       quote = selection\n"
             "  ⎵Q       quote = selection, multiple rolls\n\n"
             "[bold]Roll metadata[/bold]\n"
+            "  ⎵_  Source-only roll anchor at cursor\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
             "  ⎵d  Defer evidence to next chapter\n"
@@ -792,6 +793,7 @@ class HelpScreen(ModalScreen):
             "  <space>H         header span = current selection\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
+            "  <space>_         source-only roll anchor at cursor\n"
             "  <space>d         defer current roll evidence to next chapter\n"
             "  <space>D         remove annotation at current word\n"
             "  <space>h / m     last roll = hit / miss\n"
@@ -1995,9 +1997,6 @@ class ForgeCuratorApp(App):
                     word_position = self._cp_earning_word_offset(raw_word_position)
                 else:
                     word_position = self._chapter_cp_total(cn, cs)
-                    raw_word_position = self._roll_marker_word_index_from_cp(
-                        cs, int(word_position)
-                    )
                 global_cp = self._chapter_cp_start(cn) + int(word_position)
             else:
                 display_kind = "chapter_roll"
@@ -2417,6 +2416,8 @@ class ForgeCuratorApp(App):
             self._action_save_quote(cn)
         elif ch == "Q":
             self._action_save_quote_multi(cn)
+        elif ch == "_":
+            self._action_anchor_roll_without_quote(cn)
         elif ch == "d":
             self._action_defer_roll_to_next_chapter(cn)
         elif ch == "D":
@@ -2972,6 +2973,27 @@ class ForgeCuratorApp(App):
             )
 
         self.push_screen(RollEvidencePicker(rolls=rolls, on_confirm=on_confirm))
+
+    def _action_anchor_roll_without_quote(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        target = self._current_roll_target()
+        if target is None or target.get("target_roll_index") is None:
+            self._flash("anchor roll: no predicted roll at/before cursor")
+            return
+        target_chapter = str(target.get("target_chapter_num") or chapter_num)
+        idx = int(target["target_roll_index"])
+        mention_word = self._cp_earning_word_offset(cs.cursor_word_index)
+        self.persistence.update_roll_at_index(
+            target_chapter,
+            idx,
+            mention_chapter_num=chapter_num,
+            mention_word_position=mention_word,
+            display_position_policy="source_marker",
+            curator_note="source-only roll anchor",
+        )
+        self._post_curation_refresh(f"roll #{idx} source anchor saved")
 
     def _next_chapter_num(self, chapter_num: str) -> str | None:
         order = self.data.chapter_order

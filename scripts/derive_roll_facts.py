@@ -506,6 +506,8 @@ def _is_metadata_only_roll_override(
         "mechanical",
         "mention",
         "section_start",
+        "source_marker",
+        "section_end",
     )
 
 
@@ -532,6 +534,58 @@ def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None
         payload["_mention_word_position"] = entry.get("mention_word_position")
     if entry.get("display_position_policy") is not None:
         payload["_display_position_policy"] = entry.get("display_position_policy")
+    if entry.get("curator_note") is not None:
+        payload["_curator_note"] = entry.get("curator_note")
+
+
+def _resolution_for_issue(override: dict | None, issue_code: str) -> dict | None:
+    resolution = (override or {}).get("model_validation_resolution") or {}
+    if resolution.get("status") != "resolved":
+        return None
+    resolved_codes = {
+        str(code)
+        for code in (resolution.get("resolved_issue_codes") or [])
+    }
+    if issue_code not in resolved_codes:
+        return None
+    return resolution
+
+
+def _apply_issue_resolutions(
+    issues: list[dict], override: dict | None
+) -> tuple[list[dict], list[str]]:
+    resolved_codes: list[str] = []
+    resolved_issues: list[dict] = []
+    for issue in issues:
+        resolution = _resolution_for_issue(override, str(issue.get("code")))
+        if resolution is None:
+            resolved_issues.append(issue)
+            continue
+        resolved_codes.append(str(issue["code"]))
+        patched = dict(issue)
+        patched["severity"] = "info"
+        patched["resolved"] = True
+        patched["resolution_reason_code"] = resolution.get("reason_code")
+        patched["resolution_note"] = resolution.get("note")
+        resolved_issues.append(patched)
+    return resolved_issues, resolved_codes
+
+
+def _explicit_extra_slot_position(
+    entry: dict | None, chapter_words: int
+) -> int | None:
+    if not isinstance(entry, dict):
+        return None
+    word_position = int_or_none(entry.get("word_position"))
+    if word_position is not None:
+        return word_position
+    mention_word_position = int_or_none(entry.get("mention_word_position"))
+    policy = entry.get("display_position_policy")
+    if policy in {"mention", "source_marker"} and mention_word_position is not None:
+        return mention_word_position
+    if policy == "section_end":
+        return max(0, int(chapter_words))
+    return None
 
 
 def _restructure_curator_rows(
@@ -1085,9 +1139,18 @@ def main() -> None:
             continue
         words = int(inp["chapter_words"])
         existing = {int(slot.word_position) for slot in inp["slots"]}
+        chapter_override = multi_overrides.get(cn) or {}
+        override_rolls = chapter_override.get("rolls") or []
         for offset in range(extra):
-            pos = max(1, words - (extra - 1 - offset))
-            while pos in existing and pos > 1:
+            override_index = len(inp["predicted_slots"]) + offset
+            pos = _explicit_extra_slot_position(
+                override_rolls[override_index] if override_index < len(override_rolls) else None,
+                words,
+            )
+            if pos is None:
+                continue
+            pos = max(0, min(words, int(pos)))
+            while pos in existing and pos > 0:
                 pos -= 1
             existing.add(pos)
             inp["slots"].append(SlotInput(
@@ -1095,7 +1158,7 @@ def main() -> None:
                 roll_trigger_cp_threshold=REGIMES[
                     regime_for_chapter(cn)
                 ]["cp_per_roll"],
-                source="curator_end",
+                source="curator_anchor",
             ))
         inp["slots"].sort(key=lambda slot: slot.word_position)
         inp["synthetic_slot_count"] = len(inp["slots"]) - len(inp["predicted_slots"])
@@ -1396,9 +1459,22 @@ def main() -> None:
                         else "mechanical"
                     )
                 mention_word_position = row.get("_mention_word_position")
-                if policy == "mention" and mention_word_position is not None:
+                if (
+                    policy in {"mention", "source_marker"}
+                    and mention_word_position is not None
+                ):
                     display_chapter_num = owner_chapter_num
                     display_word_position = int(mention_word_position)
+                    display_cum_word = (
+                        chapter_word_start_global.get(display_chapter_num, 0)
+                        + display_word_position
+                    )
+                elif policy == "section_end" and row["kind"] != "trigger":
+                    display_chapter_num = owner_chapter_num
+                    display_word_position = int(
+                        sched_inp["chapter_words"]
+                        if sched_inp is not None else 0
+                    )
                     display_cum_word = (
                         chapter_word_start_global.get(display_chapter_num, 0)
                         + display_word_position
@@ -1666,9 +1742,21 @@ def main() -> None:
                 assigned_hit.mention_word_position
                 if assigned_hit is not None else None
             )
-            if policy == "mention" and mention_word_position is not None:
+            if (
+                policy in {"mention", "source_marker"}
+                and mention_word_position is not None
+            ):
                 display_chapter_num = owner_chapter_num
                 display_word_position = int(mention_word_position)
+                display_cum_word = (
+                    chapter_word_start_global.get(display_chapter_num, 0)
+                    + display_word_position
+                )
+            elif policy == "section_end" and record["source_kind"] != "trigger":
+                display_chapter_num = owner_chapter_num
+                display_word_position = int(
+                    sched_inp["chapter_words"] if sched_inp is not None else 0
+                )
                 display_cum_word = (
                     chapter_word_start_global.get(display_chapter_num, 0)
                     + display_word_position
@@ -1855,13 +1943,20 @@ def main() -> None:
                 ),
             })
 
+        issues, resolved_issue_codes = _apply_issue_resolutions(
+            issues, multi_overrides.get(cn)
+        )
         blocking_codes = {
             "paid_rolls_exceed_predicted_slots",
             "known_attempts_exceed_predicted_slots",
             "cost_schedule_infeasible",
         }
-        has_discrepancy = any(
+        raw_has_discrepancy = any(
             issue["code"] in blocking_codes for issue in issues
+        )
+        has_discrepancy = any(
+            issue["code"] in blocking_codes and not issue.get("resolved")
+            for issue in issues
         )
         if cn in multi_overrides and _has_structural_roll_override(multi_overrides[cn]):
             source_priority = "vetted_curated"
@@ -1876,6 +1971,8 @@ def main() -> None:
             "chapter_num": cn,
             "status": "discrepancy" if has_discrepancy else "ok",
             "has_discrepancy": has_discrepancy,
+            "raw_has_discrepancy": raw_has_discrepancy,
+            "resolved_issue_codes": resolved_issue_codes,
             "source_priority": source_priority,
             "predicted_roll_count": predicted_count,
             "required_paid_roll_count": required_paid_count,

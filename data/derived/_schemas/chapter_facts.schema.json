@@ -195,7 +195,10 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "display_position_policy": {
-          "enum": ["mention", "mechanical", "section_start"]
+          "enum": [
+            "mention", "mechanical", "section_start",
+            "source_marker", "section_end"
+          ]
         },
         "display_chapter_num": {
           "type": "string",
@@ -381,7 +384,10 @@
       "properties": {
         "code":     { "type": "string", "minLength": 1 },
         "severity": { "enum": ["error", "warning", "info"] },
-        "message":  { "type": "string", "minLength": 1 }
+        "message":  { "type": "string", "minLength": 1 },
+        "resolved": { "type": "boolean" },
+        "resolution_reason_code": { "type": ["string", "null"] },
+        "resolution_note": { "type": ["string", "null"] }
       }
     },
     "model_validation": {
@@ -389,15 +395,16 @@
       "additionalProperties": false,
       "required": [
         "status", "current_discrepancy", "prior_discrepancy",
-        "first_discrepancy_chapter_num", "source_priority",
+        "raw_current_discrepancy", "first_discrepancy_chapter_num", "source_priority",
         "predicted_roll_count", "required_paid_roll_count",
         "known_attempt_count", "paid_roll_capacity_ok",
         "known_attempt_capacity_ok", "cost_schedule_ok",
-        "synthetic_slot_count", "issues"
+        "synthetic_slot_count", "resolved_issue_codes", "issues"
       ],
       "properties": {
         "status": { "enum": ["ok", "discrepancy", "unknown"] },
         "current_discrepancy": { "type": "boolean" },
+        "raw_current_discrepancy": { "type": "boolean" },
         "prior_discrepancy": { "type": "boolean" },
         "first_discrepancy_chapter_num": {
           "type": ["string", "null"],
@@ -413,6 +420,10 @@
         "known_attempt_capacity_ok": { "type": "boolean" },
         "cost_schedule_ok": { "type": "boolean" },
         "synthetic_slot_count": { "type": "integer", "minimum": 0 },
+        "resolved_issue_codes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
         "issues": {
           "type": "array",
           "items": { "$ref": "#/$defs/model_validation_issue" }

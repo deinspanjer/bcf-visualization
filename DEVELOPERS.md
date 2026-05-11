@@ -188,6 +188,28 @@ Serve locally with:
 
 Then open <http://127.0.0.1:8001/web/>.
 
+## Test design notes
+
+Forge Curator and release tests should protect domain contracts rather
+than freeze incidental presentation. Prefer assertions against helper
+methods and derived JSON semantics: predicted roll distances, curated
+roll distances, curated evidence distances, raw versus effective model
+discrepancy flags, resolved issue metadata, and package fields derived
+from the current `chapter_facts.json`.
+
+Avoid tests that only pin formatted stats text, comma grouping, line
+breaks, or exact UI copy unless that formatting is itself the product
+behavior. If a UI text test is necessary, keep it narrow and pair it
+with a semantic assertion that explains what behavior the text is
+protecting.
+
+Smoke and package tests should model real contract failures. Derive
+current-story expectations from generated data where possible instead
+of pinning package dates, release tags, latest chapter numbers, or
+other time-coupled literals. Require successful package smoke status
+for deployable bundles, and reject path escapes or missing runtime
+entrypoints explicitly.
+
 ## Documentation placement rules
 
 - `README.md`: high-level project description, source material,

@@ -601,6 +601,7 @@ def main() -> None:
         model_check = model_checks_by_chapter.get(cn, {
             "status": "unknown",
             "has_discrepancy": False,
+            "raw_has_discrepancy": False,
             "source_priority": "none",
             "predicted_roll_count": 0,
             "required_paid_roll_count": 0,
@@ -609,6 +610,7 @@ def main() -> None:
             "known_attempt_capacity_ok": True,
             "cost_schedule_ok": True,
             "synthetic_slot_count": 0,
+            "resolved_issue_codes": [],
             "issues": [],
         })
 
@@ -681,6 +683,9 @@ def main() -> None:
             "model_validation": {
                 "status": model_check["status"],
                 "current_discrepancy": bool(model_check["has_discrepancy"]),
+                "raw_current_discrepancy": bool(
+                    model_check.get("raw_has_discrepancy", model_check["has_discrepancy"])
+                ),
                 "prior_discrepancy": False,
                 "first_discrepancy_chapter_num": None,
                 "source_priority": model_check["source_priority"],
@@ -691,6 +696,7 @@ def main() -> None:
                 "known_attempt_capacity_ok": model_check["known_attempt_capacity_ok"],
                 "cost_schedule_ok": model_check["cost_schedule_ok"],
                 "synthetic_slot_count": model_check["synthetic_slot_count"],
+                "resolved_issue_codes": model_check.get("resolved_issue_codes", []),
                 "issues": model_check["issues"],
             },
             "constellation_progress": constellation_progress,

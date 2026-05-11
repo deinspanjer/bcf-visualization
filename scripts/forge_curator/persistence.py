@@ -185,6 +185,7 @@ class CurationPersistence:
                 "mention_word_position": None,
                 "display_position_policy": None,
                 "narrative_evidence": None,
+                "curator_note": None,
             })
         return rolls[index - 1]
 
@@ -200,6 +201,7 @@ class CurationPersistence:
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
         display_position_policy: str | None = None,
+        curator_note: str | None = None,
     ) -> dict:
         """Update an override roll at 1-based chapter-local ``index``.
 
@@ -221,6 +223,8 @@ class CurationPersistence:
             roll["mention_word_position"] = int(mention_word_position)
         if display_position_policy is not None:
             roll["display_position_policy"] = display_position_policy
+        if curator_note is not None:
+            roll["curator_note"] = curator_note
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
             "update_roll_at_index", self.chapter_roll_overrides_path, str(chapter_num),
@@ -230,7 +234,8 @@ class CurationPersistence:
                    "narrative_evidence": narrative_evidence,
                    "mention_chapter_num": mention_chapter_num,
                    "mention_word_position": mention_word_position,
-                   "display_position_policy": display_position_policy},
+                   "display_position_policy": display_position_policy,
+                   "curator_note": curator_note},
         )
         return roll
 

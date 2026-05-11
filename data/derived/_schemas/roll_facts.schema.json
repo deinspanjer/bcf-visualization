@@ -97,7 +97,10 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "display_position_policy": {
-          "enum": ["mention", "mechanical", "section_start"]
+          "enum": [
+            "mention", "mechanical", "section_start",
+            "source_marker", "section_end"
+          ]
         },
         "display_chapter_num": {
           "type": "string",

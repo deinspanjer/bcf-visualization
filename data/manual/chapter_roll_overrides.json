@@ -1,5 +1,5 @@
 {
-  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, narrative_evidence}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', or 'section_start'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, narrative_evidence}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "chapter_roll_overrides": {
     "65": {
       "rolls": [
@@ -375,11 +375,19 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 9427,
-          "display_position_policy": "mechanical",
+          "display_position_policy": "mention",
           "narrative_evidence": "While I was waiting my power completely failed to grab a mote from one of the constellations I had yet to identify."
         }
       ],
-      "narrative_evidence": ""
+      "narrative_evidence": "",
+      "model_validation_resolution": {
+        "status": "resolved",
+        "resolved_issue_codes": [
+          "known_attempts_exceed_predicted_slots"
+        ],
+        "reason_code": "post_publication_edit_extra_roll",
+        "note": "Chapter 4 appears to have been edited after the original roll schedule; all five narrated attempts are legitimate and the fifth is anchored by its direct miss evidence."
+      }
     },
     "5": {
       "rolls": [

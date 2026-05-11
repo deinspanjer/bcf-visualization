@@ -225,8 +225,8 @@ def test_stats_roll_distances_disambiguate_predicted_curated_and_evidence(
 
     assert story_cp_cursor == 28_061
     assert app._predicted_roll_distance_stats(story_cp_cursor) == (61, 1_939)
-    assert app._curated_roll_distance_stats(story_cp_cursor) == (61, 5_939)
-    assert app._curated_evidence_distance_stats(story_cp_cursor) == (170, 857_939)
+    assert app._curated_roll_distance_stats(story_cp_cursor) == (361, 4_274)
+    assert app._curated_evidence_distance_stats(story_cp_cursor) == (361, 4_274)
 
 
 def test_gutter_minimap_emits_an_and_roll_marks_for_ch97(tmp_path: Path) -> None:
@@ -598,7 +598,7 @@ def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
     assert "@cp" not in text
 
 
-def test_chapter_4_unpredicted_roll_without_evidence_anchors_to_last_word(
+def test_chapter_4_unpredicted_roll_without_explicit_anchor_stays_unslotted(
     tmp_path: Path,
 ) -> None:
     app = _loaded_app("4", tmp_path)
@@ -623,43 +623,54 @@ def test_chapter_4_unpredicted_roll_without_evidence_anchors_to_last_word(
 
     assert fifth["roll_number"] == 14
     assert fifth["display_kind"] == "chapter_roll"
-    assert fifth["raw_word_position"] == int(cs.meta.sections[0]["word_count"]) - 1
+    assert fifth["raw_word_position"] is None
+    assert fifth["word_position"] == cs.meta.cp_earning_word_count
 
 
-def test_chapter_4_end_of_section_roll_marker_does_not_land_in_bottom_section(
+def test_chapter_4_explicit_extra_roll_anchor_drives_roll_marker(
     tmp_path: Path,
 ) -> None:
     app = _loaded_app("4", tmp_path)
     cs = app.state.chapter
     assert cs is not None
 
-    story_section_last_word = int(cs.meta.sections[0]["word_count"]) - 1
+    fifth_fact = next(
+        r for r in cs.derived.roll_facts
+        if r.get("roll_sequence_in_chapter") == 5
+        and str(r.get("mechanical_chapter_num")) == "4"
+    )
+    marker_word = app._roll_marker_word_index_from_cp(
+        cs, int(fifth_fact["mention_word_position"])
+    )
     marker_indices = app._predicted_roll_word_indices(cs)
 
-    assert story_section_last_word in marker_indices
-    assert story_section_last_word + 1 not in marker_indices
+    assert marker_word in marker_indices
 
 
-def test_stats_evidence_block_reports_reference_distance_and_cp(
+def test_chapter_4_fifth_roll_evidence_is_anchored_at_quote_start(
     tmp_path: Path,
 ) -> None:
     app = _loaded_app("4", tmp_path)
     cs = app.state.chapter
     assert cs is not None
-    text = _render_stats_text(app)
+    fifth = next(
+        roll for roll in app._unified_rolls(cs)
+        if roll.get("target_roll_index") == 5
+    )
 
-    assert text.index("Rolls") < text.index("Evidence")
-    assert text.index("Evidence") < text.index("Perks this chapter")
-    assert "against ch 4 #5 (global #14)" in text
-    assert "word distance:" in text
-    assert "CP at quote start:" in text
-    assert "word distance: -1,541" in text
-    assert "word distance: +0" not in text
-    assert "word distance: -1,541\n    CP at quote start: 100" in text
-    assert "word distance: -1,541; CP at quote start: 100" not in text
+    quote_start = cs.prose.text.find(str(fifth["narrative_evidence"]))
+    assert quote_start >= 0
+    quote_word = forge_app._word_index_for_char_offset(
+        cs.prose.word_offsets, quote_start
+    )
+    reference_word = app._evidence_reference_word_index(cs, fifth)
+
+    assert fifth["roll_number"] == 14
+    assert quote_word == reference_word
+    assert app._cp_at_cursor(app._cp_earning_word_offset(int(quote_word))) == 100
 
 
-def test_chapter_4_unpredicted_roll_keeps_saved_evidence_separate_from_slot(
+def test_chapter_4_unpredicted_roll_requires_explicit_anchor_for_marker(
     tmp_path: Path,
 ) -> None:
     app = _loaded_app("4", tmp_path)
@@ -685,7 +696,7 @@ def test_chapter_4_unpredicted_roll_keeps_saved_evidence_separate_from_slot(
 
     assert fifth["roll_number"] == 14
     assert fifth["narrative_evidence"] == quote
-    assert fifth["raw_word_position"] == int(cs.meta.sections[0]["word_count"]) - 1
+    assert fifth["raw_word_position"] is None
     assert fifth["word_position"] == cs.meta.cp_earning_word_count
 
 
@@ -825,6 +836,29 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     assert rolls[0]["narrative_evidence"] == "same quote"
     assert rolls[1]["narrative_evidence"] is None
     assert rolls[2]["narrative_evidence"] == "same quote"
+
+
+def test_anchor_roll_without_quote_writes_source_marker_metadata(tmp_path: Path) -> None:
+    app = _loaded_app("4", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    path = tmp_path / "chapter_roll_overrides.json"
+    app.persistence = forge_app.CurationPersistence(
+        chapter_roll_overrides_path=path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    cs.cursor_char = cs.prose.word_offsets[9500][0]
+    app._post_curation_refresh = lambda _message: None  # type: ignore[method-assign]
+
+    app._action_anchor_roll_without_quote("4")
+
+    rolls = json.loads(path.read_text())["chapter_roll_overrides"]["4"]["rolls"]
+    fifth = rolls[4]
+    assert fifth["narrative_evidence"] is None
+    assert fifth["mention_chapter_num"] == "4"
+    assert fifth["mention_word_position"] == app._cp_earning_word_offset(9500)
+    assert fifth["display_position_policy"] == "source_marker"
+    assert fifth["curator_note"] == "source-only roll anchor"
 
 
 def test_roll_evidence_picker_labels_selected_rolls() -> None:

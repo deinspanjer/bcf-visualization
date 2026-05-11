@@ -20,7 +20,7 @@ Override schema (current, per-roll metadata)::
               "word_position": int|null,
               "mention_chapter_num": "N",
               "mention_word_position": int|null,
-              "display_position_policy": "mention"|"mechanical"|"section_start",
+              "display_position_policy": "mention"|"mechanical"|"section_start"|"source_marker"|"section_end",
               "narrative_evidence": "..."
             },
             ...
@@ -75,7 +75,7 @@ def _normalise_roll_entry(entry) -> dict:
     ``word_position`` (int | None), ``mention_chapter_num`` (str | None),
     ``mention_word_position`` (int | None),
     ``display_position_policy`` (str | None),
-    ``narrative_evidence`` (str | None).
+    ``narrative_evidence`` (str | None), ``curator_note`` (str | None).
     """
     if isinstance(entry, dict):
         perks = entry.get("perks") or []
@@ -91,6 +91,7 @@ def _normalise_roll_entry(entry) -> dict:
             "mention_word_position": entry.get("mention_word_position"),
             "display_position_policy": entry.get("display_position_policy"),
             "narrative_evidence": entry.get("narrative_evidence"),
+            "curator_note": entry.get("curator_note"),
         }
     raise ValueError(
         f"chapter_roll_overrides roll entry must be dict, "
@@ -140,6 +141,7 @@ def load_overrides(path: Path | None = None) -> dict:
         normalised[str(cn)] = {
             "rolls": normalised_rolls,
             "narrative_evidence": entry.get("narrative_evidence", ""),
+            "model_validation_resolution": entry.get("model_validation_resolution"),
         }
     return {"chapter_roll_overrides": normalised}
 
@@ -171,6 +173,8 @@ def _is_metadata_only_roll_entry(entry: dict, chapter_num: str) -> bool:
         "mechanical",
         "mention",
         "section_start",
+        "source_marker",
+        "section_end",
     )
 
 

@@ -99,10 +99,39 @@ def test_roll_validation_status_matches_blocking_model_issues() -> None:
     }
 
     for check in validation["chapter_checks"]:
-        issue_codes = {issue["code"] for issue in check["issues"]}
+        issue_codes = {
+            issue["code"]
+            for issue in check["issues"]
+            if not issue.get("resolved")
+        }
+        raw_issue_codes = {issue["code"] for issue in check["issues"]}
         has_discrepancy = bool(issue_codes & blocking)
         assert check["has_discrepancy"] is has_discrepancy
+        assert check["raw_has_discrepancy"] is bool(raw_issue_codes & blocking)
         assert check["status"] == ("discrepancy" if has_discrepancy else "ok")
+
+
+def test_chapter_4_extra_attempt_discrepancy_is_curator_resolved() -> None:
+    validation = json.loads(ROLL_VALIDATION_JSON.read_text())
+    check = next(
+        row for row in validation["chapter_checks"]
+        if str(row["chapter_num"]) == "4"
+    )
+    resolved = [
+        issue for issue in check["issues"]
+        if issue["code"] == "known_attempts_exceed_predicted_slots"
+    ]
+
+    assert check["predicted_roll_count"] == 4
+    assert check["known_attempt_count"] == 5
+    assert check["known_attempt_capacity_ok"] is False
+    assert check["raw_has_discrepancy"] is True
+    assert check["has_discrepancy"] is False
+    assert check["status"] == "ok"
+    assert check["resolved_issue_codes"] == ["known_attempts_exceed_predicted_slots"]
+    assert resolved and resolved[0]["severity"] == "info"
+    assert resolved[0]["resolved"] is True
+    assert resolved[0]["resolution_reason_code"] == "post_publication_edit_extra_roll"
 
 
 def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None:
@@ -129,3 +158,15 @@ def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None
             if first_discrepancy is None:
                 first_discrepancy = chapter_num
             prior_discrepancy = True
+
+
+def test_chapter_4_resolution_does_not_pollute_chapter_5_model_status() -> None:
+    chapters = {
+        str(chapter["chapter_num"]): chapter
+        for chapter in json.loads(CHAPTER_FACTS_JSON.read_text())["chapters"]
+    }
+
+    assert chapters["4"]["model_validation"]["current_discrepancy"] is False
+    assert chapters["4"]["model_validation"]["raw_current_discrepancy"] is True
+    assert chapters["5"]["model_validation"]["prior_discrepancy"] is False
+    assert chapters["5"]["model_validation"]["first_discrepancy_chapter_num"] is None
