@@ -71,10 +71,25 @@ def test_predicted_rolls_match_global_cp_simulator_and_regimes() -> None:
     assert actual == expected
 
 
+def test_curator_roll_numbers_preserve_source_attempt_identity() -> None:
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    numbered_curator_rolls = [
+        roll
+        for roll in roll_facts
+        if roll.get("source") == "curator_rolls"
+        and roll.get("source_kind") != "trigger"
+        and roll.get("roll_number") is not None
+    ]
+
+    assert [roll["roll_number"] for roll in numbered_curator_rolls[:14]] == list(
+        range(1, 15)
+    )
+
+
 def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> None:
     predicted, chapter_starts = _simulated_rolls()
-    predicted_by_roll_number = {
-        int(roll["roll_number"]): roll
+    predicted_by_position = {
+        int(roll["word_position"]): roll
         for roll in predicted
     }
 
@@ -102,7 +117,9 @@ def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> Non
                 "mechanical_cumulative_word_offset"
             ):
                 continue
-            predicted_roll = predicted_by_roll_number[int(roll_number)]
+            predicted_roll = predicted_by_position[
+                int(roll["predicted_word_position_epub"])
+            ]
             mechanical_chapter_num = str(
                 roll.get("mechanical_chapter_num") or roll["chapter_num"]
             )

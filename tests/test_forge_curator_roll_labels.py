@@ -44,7 +44,12 @@ def test_miss_roll_line_counts_possible_perks_at_missed_cost(tmp_path: Path) -> 
     chapter_state = app.state.chapter
     assert chapter_state is not None
 
-    miss = next(r for r in app._unified_rolls(chapter_state) if r["roll_number"] == 11)
+    miss = next(
+        r for r in app._unified_rolls(chapter_state)
+        if r["outcome"] == "miss"
+        and r["constellation"] == "Knowledge"
+        and r["miss_cost_estimate"] == 300
+    )
     rendered = app._format_roll_stat_line(miss, " ")
 
     assert "Knowledge - missed >= 300 CP (4 possible)" in rendered
@@ -55,7 +60,12 @@ def test_single_possible_miss_roll_line_names_the_perk(tmp_path: Path) -> None:
     chapter_state = app.state.chapter
     assert chapter_state is not None
 
-    miss = next(r for r in app._unified_rolls(chapter_state) if r["roll_number"] == 27)
+    miss = next(
+        r for r in app._unified_rolls(chapter_state)
+        if r["outcome"] == "miss"
+        and r["constellation"] == "Vehicles"
+        and r["miss_cost_estimate"] == 300
+    )
     rendered = app._format_roll_stat_line(miss, " ")
 
     assert "Vehicles - missed >= 300 CP (Valuable Memories)" in rendered
@@ -118,7 +128,7 @@ def test_chapter_4_unpredicted_curator_roll_is_not_deferred(tmp_path: Path) -> N
     assert quote_word is not None
     assert extra_roll["display_kind"] == "chapter_roll"
     assert extra_roll["index"] == 5
-    assert extra_roll["roll_number"] == 14
+    assert extra_roll["roll_number"] == 13
     assert extra_roll["word_position"] == app._cp_earning_word_offset(int(quote_word))
     assert extra_roll["raw_word_position"] == quote_word
 

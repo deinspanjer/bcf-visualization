@@ -624,7 +624,7 @@ def test_chapter_4_unpredicted_roll_without_explicit_anchor_stays_unslotted(
 
     fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
 
-    assert fifth["roll_number"] == 14
+    assert fifth["roll_number"] == 13
     assert fifth["display_kind"] == "chapter_roll"
     assert fifth["raw_word_position"] is None
     assert fifth["word_position"] == cs.meta.cp_earning_word_count
@@ -669,7 +669,7 @@ def test_chapter_4_fifth_roll_evidence_is_anchored_at_quote_start(
     )
     reference_word = app._evidence_reference_word_index(cs, fifth)
 
-    assert fifth["roll_number"] == 14
+    assert fifth["roll_number"] == 13
     assert quote_word == reference_word
     assert app._cp_at_cursor(app._cp_earning_word_offset(int(quote_word))) == 100
 
@@ -700,7 +700,7 @@ def test_chapter_4_unpredicted_roll_requires_explicit_anchor_for_marker(
 
     fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
 
-    assert fifth["roll_number"] == 14
+    assert fifth["roll_number"] == 13
     assert fifth["evidence_quotes"][0]["text"] == quote
     assert fifth["raw_word_position"] is None
     assert fifth["word_position"] == cs.meta.cp_earning_word_count

@@ -155,7 +155,7 @@ def test_chapter_1_fashion_is_deferred_to_chapter_2_roll_facts() -> None:
     assert fashion["cumulative_word_offset"] == fashion["display_cumulative_word_offset"]
 
 
-def test_chapter_4_unpredicted_miss_consumes_global_roll_number() -> None:
+def test_chapter_4_unpredicted_miss_preserves_source_roll_number() -> None:
     rolls = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
     ch4_rolls = [
         r for r in rolls
@@ -165,7 +165,7 @@ def test_chapter_4_unpredicted_miss_consumes_global_roll_number() -> None:
     fifth = next(r for r in ch4_rolls if r["roll_sequence_in_chapter"] == 5)
 
     assert fifth["outcome"] == "miss"
-    assert fifth["roll_number"] == 14
+    assert fifth["roll_number"] == 13
 
 
 def test_deferred_roll_validation_counts_mechanical_chapter() -> None:
