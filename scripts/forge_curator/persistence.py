@@ -10,8 +10,8 @@ Override files (each is a single JSON document):
 - ``data/manual/chapter_roll_overrides.json`` — per-roll metadata
   (outcome, constellation, perks, evidence_quotes, word_position).
 - ``data/manual/author_notes.json`` — AN spans (per chapter + section).
-- ``data/manual/chapter_eligibility.json`` — chapter-level CP-eligibility
-  toggle (when the user disables a chapter's contribution to CP).
+- ``data/manual/section_classifications.json`` — section-level
+  CP-eligibility truth used by derivation.
 - ``data/manual/header_corrections.json`` — markup spans excluded from
   word counts.
 
@@ -36,7 +36,7 @@ from scripts.forge_curator.data_loader import (
     MANUAL,
 )
 
-CHAPTER_ELIGIBILITY = MANUAL / "chapter_eligibility.json"
+SECTION_CLASSIFICATIONS = MANUAL / "section_classifications.json"
 JOURNAL_DIR = MANUAL / ".session_journals"
 
 
@@ -60,13 +60,15 @@ class CurationPersistence:
         *,
         chapter_roll_overrides_path: Path | None = None,
         author_notes_path: Path | None = None,
-        chapter_eligibility_path: Path | None = None,
+        section_classifications_path: Path | None = None,
         header_corrections_path: Path | None = None,
         journal_dir_path: Path | None = None,
     ) -> None:
         self.chapter_roll_overrides_path = chapter_roll_overrides_path or CHAPTER_ROLL_OVERRIDES
         self.author_notes_path = author_notes_path or AUTHOR_NOTES
-        self.chapter_eligibility_path = chapter_eligibility_path or CHAPTER_ELIGIBILITY
+        self.section_classifications_path = (
+            section_classifications_path or SECTION_CLASSIFICATIONS
+        )
         self.header_corrections_path = header_corrections_path or HEADER_CORRECTIONS
         self.journal_dir_path = journal_dir_path or JOURNAL_DIR
         # Load existing override docs (or empty stubs).
@@ -81,11 +83,11 @@ class CurationPersistence:
             self.author_notes_path,
             {"author_notes": []},
         )
-        self.chapter_eligibility = self._load_or_default(
-            self.chapter_eligibility_path,
+        self.section_classifications = self._load_or_default(
+            self.section_classifications_path,
             {
-                "_purpose": "Per-chapter CP eligibility override (default: on).",
-                "disabled_chapters": [],
+                "_source": "Forge Curator section eligibility curation.",
+                "classifications": {},
             },
         )
         self.header_corrections = self._load_or_default(
@@ -151,6 +153,31 @@ class CurationPersistence:
         elif "rolls" not in cro[chapter_num]:
             cro[chapter_num]["rolls"] = []
         return cro[chapter_num]
+
+    def _ensure_section_classification_entry(
+        self,
+        chapter_num: str,
+        section_index: int,
+        *,
+        header: str | None,
+        current_counts_for_cp: bool | None = None,
+    ) -> dict:
+        classifications = self.section_classifications.setdefault(
+            "classifications", {}
+        )
+        key = f"{chapter_num}@{int(section_index)}"
+        if key not in classifications:
+            classifications[key] = {
+                "chapter_num": str(chapter_num),
+                "section_index": int(section_index),
+                "header": header,
+                "counts_for_cp": (
+                    bool(current_counts_for_cp)
+                    if current_counts_for_cp is not None else True
+                ),
+                "reason": "curator-created section classification",
+            }
+        return classifications[key]
 
     def _last_roll(self, chapter_num: str) -> dict | None:
         entry = (
@@ -473,24 +500,44 @@ class CurationPersistence:
     # Action handlers — one per <space>X keybind.
     # ------------------------------------------------------------------
 
-    def toggle_chapter_eligibility(self, chapter_num: str) -> bool:
-        before = list(self.chapter_eligibility.get("disabled_chapters", []))
-        disabled = self.chapter_eligibility.setdefault("disabled_chapters", [])
+    def toggle_section_eligibility(
+        self,
+        chapter_num: str,
+        section_index: int,
+        *,
+        header: str | None,
+        current_counts_for_cp: bool | None = None,
+    ) -> bool:
+        before = deepcopy(self.section_classifications)
         cn = str(chapter_num)
-        if cn in disabled:
-            disabled.remove(cn)
-            now_disabled = False
-        else:
-            disabled.append(cn)
-            disabled.sort()
-            now_disabled = True
-        _atomic_write_json(self.chapter_eligibility_path, self.chapter_eligibility)
-        self._append_journal(
-            "toggle_chapter_eligibility", self.chapter_eligibility_path,
-            cn, {"disabled_chapters": before},
-            {"disabled_chapters": list(disabled)},
+        entry = self._ensure_section_classification_entry(
+            cn,
+            int(section_index),
+            header=header,
+            current_counts_for_cp=current_counts_for_cp,
         )
-        return now_disabled
+        previous_reason = str(entry.get("reason") or "")
+        now_eligible = not bool(entry.get("counts_for_cp", True))
+        entry["counts_for_cp"] = now_eligible
+        entry["reason"] = (
+            f"curator toggle: {'eligible' if now_eligible else 'ineligible'}"
+            + (f" (was: {previous_reason})" if previous_reason else "")
+        )
+        _atomic_write_json(
+            self.section_classifications_path, self.section_classifications
+        )
+        self._append_journal(
+            "toggle_section_eligibility",
+            self.section_classifications_path,
+            cn,
+            before,
+            deepcopy(self.section_classifications),
+            extra={
+                "section_index": int(section_index),
+                "counts_for_cp": now_eligible,
+            },
+        )
+        return now_eligible
 
     def mark_header_span(
         self, chapter_num: str, section_index: int,
@@ -797,8 +844,8 @@ class CurationPersistence:
             self.chapter_roll_overrides = before_state
         elif target_abs == self.author_notes_path or target_abs.name == "author_notes.json":
             self.author_notes = before_state
-        elif target_abs == self.chapter_eligibility_path or target_abs.name == "chapter_eligibility.json":
-            self.chapter_eligibility = before_state
+        elif target_abs == self.section_classifications_path or target_abs.name == "section_classifications.json":
+            self.section_classifications = before_state
         elif target_abs == self.header_corrections_path or target_abs.name == "header_corrections.json":
             self.header_corrections = before_state
         # Append an "undo" record so audit trail is preserved.

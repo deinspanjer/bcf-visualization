@@ -107,8 +107,8 @@
       "chapter_num": "6.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": true,
-      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Taylor')"
+      "counts_for_cp": false,
+      "reason": "curator: early interlude excluded from CP eligibility despite source-indicated roll"
     },
     "7@0": {
       "chapter_num": "7",

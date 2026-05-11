@@ -672,6 +672,21 @@
           "curator_note": null
         }
       ]
+    },
+    "6.1": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "6.1",
+          "mention_word_position": 1579,
+          "display_position_policy": "source_marker",
+          "evidence_quotes": [],
+          "curator_note": "source-only roll anchor"
+        }
+      ]
     }
   }
 }

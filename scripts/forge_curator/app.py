@@ -595,7 +595,7 @@ class ActionsPanel(Static):
         body = (
             "[bold]Actions[/bold] [dim](auto-save)[/dim]\n\n"
             "[bold]Chapter[/bold]\n"
-            "  ⎵e  Toggle chapter eligibility\n\n"
+            "  ⎵e  Toggle section eligibility\n\n"
             "[bold]Selection-based[/bold]\n"
             "  v / V    select char / line\n"
             "  ⎵a       AN = selection\n"
@@ -788,7 +788,7 @@ class HelpScreen(ModalScreen):
             "\nAction panel keybinds (disabled in Phase 1)\n", style="bold"
         )
         body.append(
-            "  <space>e         toggle chapter eligibility\n"
+            "  <space>e         toggle section eligibility\n"
             "  <space>a         AN = current selection\n"
             "  <space>H         header span = current selection\n"
             "  <space>q         roll quote = current selection\n"
@@ -1751,6 +1751,16 @@ class ForgeCuratorApp(App):
     def _local_cp_from_roll(self, chapter_num: str, roll: dict) -> int | None:
         return self._chapter_scoped_roll_value(chapter_num, roll, "word_position")
 
+    def _roll_display_raw_word_index(self, chapter_num: str, roll: dict) -> int | None:
+        if roll.get("display_position_policy") != "source_marker":
+            return None
+        if str(roll.get("mention_chapter_num")) != str(chapter_num):
+            return None
+        raw = roll.get("mention_word_position")
+        if raw is None:
+            return None
+        return int(raw)
+
     def _chapter_scoped_roll_value(
         self, chapter_num: str, roll: dict, field: str
     ) -> int | None:
@@ -2091,7 +2101,11 @@ class ForgeCuratorApp(App):
             )
 
         def _sort_key(row: dict) -> tuple[int, int, int, int]:
-            local_cp = self._local_cp_from_roll(cn, row)
+            display_raw = self._roll_display_raw_word_index(cn, row)
+            if display_raw is not None:
+                local_cp = self._cp_earning_word_offset(display_raw)
+            else:
+                local_cp = self._local_cp_from_roll(cn, row)
             if _is_deferred_in(row, local_cp):
                 bucket = 0
             elif local_cp is not None:
@@ -2112,7 +2126,12 @@ class ForgeCuratorApp(App):
         )
         local_index = 0
         for row in rows:
-            local_cp = self._local_cp_from_roll(cn, row)
+            display_raw = self._roll_display_raw_word_index(cn, row)
+            local_cp = (
+                self._cp_earning_word_offset(display_raw)
+                if display_raw is not None
+                else self._local_cp_from_roll(cn, row)
+            )
             is_deferred_in = _is_deferred_in(row, local_cp)
             is_unslotted_current = _is_unslotted_current_chapter(row, local_cp)
             if local_cp is None and not (is_deferred_in or is_unslotted_current):
@@ -2122,6 +2141,12 @@ class ForgeCuratorApp(App):
                 word_position = 0
                 raw_word_position = 0
                 global_cp = row.get("mechanical_cumulative_word_offset")
+            elif display_raw is not None:
+                display_kind = "chapter_roll"
+                local_index += 1
+                raw_word_position = display_raw
+                word_position = int(local_cp or 0)
+                global_cp = self._chapter_cp_start(cn) + int(word_position)
             elif is_unslotted_current:
                 display_kind = "chapter_roll"
                 local_index += 1
@@ -2557,7 +2582,7 @@ class ForgeCuratorApp(App):
             return
         cn = cs.meta.chapter_num
         if ch == "e":
-            self._action_toggle_chapter_eligibility(cn)
+            self._action_toggle_section_eligibility(cn)
         elif ch == "a":
             self._action_mark_an_from_selection(cn)
         elif ch == "H":
@@ -2705,10 +2730,27 @@ class ForgeCuratorApp(App):
         else:
             self.refresh_all_panels()
 
-    def _action_toggle_chapter_eligibility(self, chapter_num: str) -> None:
-        now_disabled = self.persistence.toggle_chapter_eligibility(chapter_num)
-        msg = "DISABLED" if now_disabled else "ENABLED"
-        self._flash(f"ch {chapter_num} CP eligibility: {msg}")
+    def _action_toggle_section_eligibility(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        section_index = cs.section_index_at(cs.cursor_word_index)
+        sections = cs.meta.sections or []
+        if not (0 <= section_index < len(sections)):
+            self._flash("section eligibility: no section at cursor")
+            return
+        section = sections[section_index]
+        now_eligible = self.persistence.toggle_section_eligibility(
+            chapter_num,
+            int(section_index),
+            header=section.get("header"),
+            current_counts_for_cp=bool(section.get("counts_for_cp", True)),
+        )
+        msg = "ENABLED" if now_eligible else "DISABLED"
+        self._post_curation_refresh(
+            f"ch {chapter_num} sec {section_index} CP eligibility: {msg}",
+            full=True,
+        )
 
     def _action_mark_an_from_selection(self, chapter_num: str) -> None:
         """Save the current visual selection as an Author Note span.
@@ -2983,10 +3025,15 @@ class ForgeCuratorApp(App):
                 cs.meta.chapter_num
             ):
                 continue
+            display_raw = self._roll_display_raw_word_index(cs.meta.chapter_num, roll)
             mechanical_word = (
-                roll.get("word_position")
-                if display_chapter == str(cs.meta.chapter_num)
-                else roll.get("mechanical_word_position")
+                self._cp_earning_word_offset(display_raw)
+                if display_raw is not None
+                else (
+                    roll.get("word_position")
+                    if display_chapter == str(cs.meta.chapter_num)
+                    else roll.get("mechanical_word_position")
+                )
             )
             if mechanical_word is None:
                 mechanical_word = roll.get("word_position")
@@ -3184,7 +3231,7 @@ class ForgeCuratorApp(App):
             return
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
         idx = int(target["target_roll_index"])
-        mention_word = self._cp_earning_word_offset(cs.cursor_word_index)
+        mention_word = cs.cursor_word_index
         self.persistence.update_roll_at_index(
             target_chapter,
             idx,

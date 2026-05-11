@@ -882,6 +882,104 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     ]
 
 
+def test_toggle_section_eligibility_updates_section_classification_only(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    classifications_path = tmp_path / "section_classifications.json"
+    classifications_path.write_text(json.dumps({
+        "_source": "test",
+        "classifications": {
+            "6.1@0": {
+                "chapter_num": "6.1",
+                "section_index": 0,
+                "header": None,
+                "counts_for_cp": True,
+                "reason": "implicit large MC story",
+            },
+        },
+    }))
+    chapter_eligibility_path = tmp_path / "chapter_eligibility.json"
+    persistence = CurationPersistence(
+        section_classifications_path=classifications_path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+
+    now_eligible = persistence.toggle_section_eligibility(
+        "6.1",
+        0,
+        header=None,
+    )
+
+    updated = json.loads(classifications_path.read_text())
+    entry = updated["classifications"]["6.1@0"]
+    assert now_eligible is False
+    assert entry["counts_for_cp"] is False
+    assert "curator toggle" in entry["reason"]
+    assert not chapter_eligibility_path.exists()
+
+
+def test_space_e_toggles_current_section_and_runs_full_derivation(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    classifications_path = tmp_path / "section_classifications.json"
+    classifications_path.write_text(json.dumps({
+        "_source": "test",
+        "classifications": {
+            "6.1@0": {
+                "chapter_num": "6.1",
+                "section_index": 0,
+                "header": None,
+                "counts_for_cp": True,
+                "reason": "implicit large MC story",
+            },
+        },
+    }))
+    app = _loaded_app("6.1", tmp_path)
+    app.persistence = CurationPersistence(
+        section_classifications_path=classifications_path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    refreshes: list[tuple[str, bool]] = []
+    app._post_curation_refresh = (
+        lambda message, *, full=False: refreshes.append((message, full))
+    )
+
+    app._action_toggle_section_eligibility("6.1")
+
+    entry = json.loads(classifications_path.read_text())["classifications"]["6.1@0"]
+    assert entry["counts_for_cp"] is False
+    assert refreshes == [("ch 6.1 sec 0 CP eligibility: DISABLED", True)]
+
+
+def test_source_anchor_in_ineligible_section_uses_raw_prose_position(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("6.1", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    cs = app.state.chapter
+    assert cs is not None
+    cs.cursor_char = cs.prose.word_offsets[1000][0]
+
+    app._action_anchor_roll_without_quote("6.1")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["6.1"]["rolls"][0]
+    assert app._cp_earning_word_offset(1000) == 0
+    assert saved["mention_word_position"] == 1000
+    assert saved["display_position_policy"] == "source_marker"
+
+
 def test_append_roll_evidence_deduplicates_and_preserves_first_anchor(
     tmp_path: Path,
 ) -> None:
@@ -943,7 +1041,7 @@ def test_anchor_roll_without_quote_writes_source_marker_metadata(tmp_path: Path)
     fifth = rolls[4]
     assert fifth["evidence_quotes"] == []
     assert fifth["mention_chapter_num"] == "4"
-    assert fifth["mention_word_position"] == app._cp_earning_word_offset(9500)
+    assert fifth["mention_word_position"] == 9500
     assert fifth["display_position_policy"] == "source_marker"
     assert fifth["curator_note"] == "source-only roll anchor"
 

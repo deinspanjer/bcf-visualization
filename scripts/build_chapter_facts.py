@@ -489,13 +489,13 @@ def main() -> None:
             if display_chapter_num == cn:
                 story_local = (
                     int(local_pos)
-                    if roll.get("display_position_policy") == "mention"
+                    if roll.get("display_position_policy") == "source_marker"
                     else _story_local_from_cp_local(int(local_pos))
                 )
                 if story_local is None:
                     return None
                 return cum_words + story_local
-            if roll.get("display_position_policy") == "mention":
+            if roll.get("display_position_policy") == "source_marker":
                 return chapter_story_starts.get(display_chapter_num, 0) + int(local_pos)
             return None
 
