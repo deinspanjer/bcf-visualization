@@ -206,7 +206,7 @@ GLYPH_COLORS: dict[str, str] = {
     "M": "orange1",
     "A": "blue",
     "Q": "medium_purple1",
-    "1": "yellow",
+    "1": "#ffaf00",
     "2": "cyan",
     "3": "magenta",
     "*": "white",

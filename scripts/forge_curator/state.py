@@ -25,8 +25,8 @@ class RegexHits:
 
 
 DEFAULT_REGEX_PATTERNS = (
-    "mote|reach|constellation",
-    "the Forge|my power",
+    r"\b(mote|reach|constellation)\b",
+    r"\b(Celestial Forge|[tT]he Forge|my powers?)\b",
 )
 
 

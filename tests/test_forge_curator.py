@@ -268,6 +268,8 @@ async def test_gutter_minimap_renders_priority_cells() -> None:
 def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
     css = RegexBar.DEFAULT_CSS
     assert len(set(GLYPH_STYLES.values())) == len(GLYPH_STYLES)
+    assert GLYPH_COLORS["1"].startswith("#")
+    assert GLYPH_COLORS["1"] != "yellow"
     assert ROLL_HIGHLIGHT_STYLE == GLYPH_STYLES["R"]
     assert QUOTE_HIGHLIGHT_STYLE == GLYPH_STYLES["Q"]
     assert REGEX_HIGHLIGHT_STYLES == (

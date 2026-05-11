@@ -197,6 +197,16 @@ roll distances, curated evidence distances, raw versus effective model
 discrepancy flags, resolved issue metadata, and package fields derived
 from the current `chapter_facts.json`.
 
+Review new tests as production code. A good test should make clear what
+regression it would catch and why that regression is meaningful. Avoid
+assertions that simply mirror the implementation just written; constants,
+string literals, formatting, and layout details should only be pinned when
+they are part of an explicit compatibility or product contract.
+
+Prefer tests that remain valid across reasonable refactors. Before handoff,
+summarize the intent of new tests in terms of the protected behavior, data
+contract, or model invariant rather than the edited function or constant.
+
 Avoid tests that only pin formatted stats text, comma grouping, line
 breaks, or exact UI copy unless that formatting is itself the product
 behavior. If a UI text test is necessary, keep it narrow and pair it
