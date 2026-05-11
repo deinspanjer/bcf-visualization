@@ -19,14 +19,21 @@ def _load_json(path: Path) -> dict:
 
 def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     manifest = _load_json(DERIVED / "data_package.json")
+    chapter_facts = _load_json(DERIVED / "chapter_facts.json")
+    chapters = chapter_facts["chapters"]
+    latest = chapters[-1]
 
     assert manifest["schema_version"] == 1
     assert manifest["package_prefix"] == "bcf-visualization"
     assert manifest["package_kind"] == "runtime"
-    assert manifest["package_date"] == "20260509"
-    assert manifest["story_chapter_ordinal"] == 194
-    assert manifest["story_chapter_num"] == "120.1"
-    assert manifest["version_label"] == "BCF data 20260509.1, story ch 194 / 120.1"
+    assert manifest["package_date"].isdigit()
+    assert len(manifest["package_date"]) == 8
+    assert manifest["story_chapter_ordinal"] == len(chapters)
+    assert manifest["story_chapter_num"] == str(latest["chapter_num"])
+    assert manifest["version_label"] == (
+        f"BCF data {manifest['package_date']}.{manifest['build_number']}, "
+        f"story ch {manifest['story_chapter_ordinal']} / {manifest['story_chapter_num']}"
+    )
     assert manifest["contract"] == "bcf-visualization-data"
     assert manifest["contract_version"] == 1
     assert manifest["bundle_class"] == "pages-runtime"

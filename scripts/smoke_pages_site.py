@@ -53,10 +53,20 @@ def validate_site(*, site_dir: Path) -> SmokeResult:
     package = _default_package(index)
     package_id = package.get("package_id")
     package_path = package.get("path")
+    smoke_status = package.get("smoke_status")
     if not isinstance(package_id, str) or not isinstance(package_path, str):
         raise RuntimeError("default package entry is missing package_id or path")
+    if smoke_status != "passed":
+        raise RuntimeError(
+            "default package smoke_status is not passed: "
+            f"{package_id} -> {smoke_status!r}"
+        )
 
-    package_dir = site_dir / package_path
+    package_dir = (site_dir / package_path).resolve()
+    try:
+        package_dir.relative_to(site_dir)
+    except ValueError as exc:
+        raise RuntimeError(f"default package path escapes staged site: {package_path}") from exc
     manifest = _read_json(package_dir / "data_package.json")
     required = manifest.get("entrypoints", {}).get("web", {}).get("required")
     files = manifest.get("files")

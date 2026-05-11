@@ -11,7 +11,13 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload) + "\n")
 
 
-def _write_minimal_site(site: Path, *, broken: bool = False) -> None:
+def _write_minimal_site(
+    site: Path,
+    *,
+    broken: bool = False,
+    smoke_status: str = "passed",
+    package_path: str = "data/packages/pkg-smoke",
+) -> None:
     (site / "web").mkdir(parents=True)
     (site / "web" / "index.html").write_text("<!doctype html><div id='app'></div>\n")
     package_id = "pkg-smoke"
@@ -23,8 +29,8 @@ def _write_minimal_site(site: Path, *, broken: bool = False) -> None:
             "packages": [
                 {
                     "package_id": package_id,
-                    "path": f"data/packages/{package_id}",
-                    "smoke_status": "unknown",
+                    "path": package_path,
+                    "smoke_status": smoke_status,
                 }
             ],
         },
@@ -77,4 +83,24 @@ def test_pages_smoke_rejects_missing_required_runtime_file(tmp_path: Path) -> No
     _write_minimal_site(site, broken=True)
 
     with pytest.raises(RuntimeError, match="required runtime file is missing"):
+        smoke_pages_site.validate_site(site_dir=site)
+
+
+def test_pages_smoke_rejects_default_package_without_passed_status(tmp_path: Path) -> None:
+    from scripts import smoke_pages_site
+
+    site = tmp_path / "site"
+    _write_minimal_site(site, smoke_status="unknown")
+
+    with pytest.raises(RuntimeError, match="smoke_status is not passed"):
+        smoke_pages_site.validate_site(site_dir=site)
+
+
+def test_pages_smoke_rejects_default_package_path_escape(tmp_path: Path) -> None:
+    from scripts import smoke_pages_site
+
+    site = tmp_path / "site"
+    _write_minimal_site(site, package_path="../outside")
+
+    with pytest.raises(RuntimeError, match="path escapes staged site"):
         smoke_pages_site.validate_site(site_dir=site)
