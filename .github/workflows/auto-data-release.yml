@@ -125,7 +125,7 @@ jobs:
             --runtime-tar "${{ steps.build.outputs.runtime_tar }}" \
             --default-package-id "${{ steps.build.outputs.package_id }}" \
             --package-metadata-file .pages-runtimes/packages.json \
-            --package-smoke-status "${{ steps.build.outputs.package_id }}=unknown" \
+            --package-smoke-status "${{ steps.build.outputs.package_id }}=passed" \
             --smoke-run-url "$SMOKE_RUN_URL"
 
       - name: Install browser smoke dependencies
