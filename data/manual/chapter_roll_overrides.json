@@ -380,6 +380,21 @@
         }
       ],
       "narrative_evidence": ""
+    },
+    "5": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "5",
+          "mention_word_position": 4444,
+          "display_position_policy": "mention",
+          "narrative_evidence": "A new constellation approached and my power was latching onto a mote from it. It turned out to be the 'Crafting' constellation and the mote was 'Smithing'."
+        }
+      ],
+      "narrative_evidence": ""
     }
   }
 }
