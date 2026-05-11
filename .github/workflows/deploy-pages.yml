@@ -84,6 +84,11 @@ jobs:
           python3 scripts/data_release.py prepare-pages \
             --site-dir _site \
             --runtime-tar "$RUNTIME_TAR"
+          PACKAGE_ID="$(python3 -c 'import json; print(json.load(open("_site/data/packages.json"))["default_package_id"])')"
+          python3 scripts/data_release.py prepare-pages \
+            --site-dir _site \
+            --runtime-tar "$RUNTIME_TAR" \
+            --package-smoke-status "$PACKAGE_ID=passed"
           # Sanity check: nothing under data/raw/ should be in _site/
           if find _site -path '*data/raw*' -print -quit | grep -q .; then
             echo "ERROR: _site contains data/raw content" >&2
