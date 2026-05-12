@@ -837,6 +837,16 @@ def test_actions_panel_lists_model_discrepancy_resolution() -> None:
     assert "Resolve model discrepancy" in text
 
 
+def test_actions_panel_lists_roll_display_controls() -> None:
+    actions = ActionsPanel()
+    actions.render_catalog()
+    rendered = getattr(actions, "_renderable", None) or actions.render()
+    text = str(rendered) if rendered is not None else ""
+
+    assert "⎵v  Roll display position" in text
+    assert "⎵d  Toggle evidence deferral to next chapter" in text
+
+
 def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None:
     app = _loaded_app("2", tmp_path)
     cs = app.state.chapter
@@ -1010,6 +1020,34 @@ def test_save_quote_to_multiple_rolls(tmp_path) -> None:
     assert rolls[1]["evidence_quotes"] == []
     assert rolls[2]["evidence_quotes"] == [
         {"text": "same quote", "mention_chapter_num": "2", "mention_word_position": 42}
+    ]
+
+
+def test_multi_quote_can_leave_deferred_mechanical_visualization(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    path = tmp_path / "chapter_roll_overrides.json"
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=path,
+        journal_dir_path=tmp_path / ".journals",
+    )
+    persistence.mark_roll_deferred_to_chapter("8.1", 1, "9")
+
+    persistence.append_roll_evidence_at_indices(
+        "8.1",
+        [1],
+        text="later quote",
+        mention_chapter_num="9",
+        mention_word_position=1561,
+        display_position_policy=None,
+    )
+
+    roll = json.loads(path.read_text())["chapter_roll_overrides"]["8.1"]["rolls"][0]
+    assert roll["mention_chapter_num"] == "9"
+    assert roll["mention_word_position"] is None
+    assert roll["display_position_policy"] == "mechanical"
+    assert roll["evidence_quotes"] == [
+        {"text": "later quote", "mention_chapter_num": "9", "mention_word_position": 1561}
     ]
 
 
@@ -1206,6 +1244,51 @@ def test_roll_evidence_picker_keyboard_bindings_toggle_and_confirm() -> None:
     assert bindings["enter"] == "confirm_selection"
 
 
+def test_roll_evidence_picker_can_leave_display_position_unchanged() -> None:
+    selected: list[tuple[list[int], str | None]] = []
+    picker = RollEvidencePicker(
+        rolls=[
+            {
+                "index": 1,
+                "roll_number": 7,
+                "outcome": "hit",
+            },
+        ],
+        on_confirm=lambda indices, display_policy: selected.append(
+            (indices, display_policy)
+        ),
+    )
+
+    picker._selected.add(1)
+    assert picker._display_position_policy == "mention"
+
+    picker._toggle_display_position_policy()
+    assert picker._display_position_policy is None
+
+    picker.action_confirm_selection()
+    assert selected == [([1], None)]
+
+
+def test_roll_evidence_picker_space_toggles_focused_display_policy() -> None:
+    picker = RollEvidencePicker(
+        rolls=[
+            {
+                "index": 1,
+                "roll_number": 7,
+                "outcome": "hit",
+            },
+        ],
+        on_confirm=lambda _indices, _display_policy: None,
+    )
+    button = Button(picker._display_position_label(), id="display_policy")
+    picker.focused = button
+
+    picker.action_toggle_focused_roll()
+
+    assert picker._display_position_policy is None
+    assert str(button.label) == "Display marker: unchanged"
+
+
 def test_roll_evidence_picker_space_action_toggles_focused_roll() -> None:
     picker = RollEvidencePicker(
         rolls=[
@@ -1245,6 +1328,37 @@ def test_roll_stat_line_repeats_q_for_each_evidence_quote(tmp_path: Path) -> Non
     )
 
     assert "hit QQ" in line
+
+
+def test_roll_stat_line_notes_non_default_display_position(tmp_path: Path) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "roll_number": 27,
+            "outcome": "miss",
+            "constellation": None,
+            "available_cp": 200,
+            "mechanical_chapter_num": "8.1",
+            "mechanical_word_position": 784,
+            "mention_chapter_num": "9",
+            "mention_word_position": 1561,
+            "display_position_policy": "mechanical",
+            "display_chapter_num": "8.1",
+            "display_word_position": 784,
+            "evidence_quotes": [
+                {
+                    "text": "a few failed connections",
+                    "mention_chapter_num": "9",
+                    "mention_word_position": 1561,
+                },
+            ],
+        },
+        " ",
+    )
+
+    assert "narrative deferred to ch 9" in line
+    assert "display at predicted roll position" in line
 
 
 def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
@@ -1297,9 +1411,12 @@ def test_roll_visualization_picker_can_select_quote_mechanical_and_cursor() -> N
         roll={
             "mechanical_chapter_num": "2",
             "mechanical_word_position": 100,
+            "mention_chapter_num": "3",
+            "mention_word_position": 20,
+            "display_position_policy": "mention",
             "evidence_quotes": [
                 {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
-                {"text": "second quote", "mention_chapter_num": "2", "mention_word_position": 20},
+                {"text": "second quote", "mention_chapter_num": "3", "mention_word_position": 20},
             ],
         },
         cursor_chapter_num="2",
@@ -1307,19 +1424,19 @@ def test_roll_visualization_picker_can_select_quote_mechanical_and_cursor() -> N
         on_select=selected.append,
     )
 
-    picker._select("quote:1")
+    picker._select("quote_1")
     picker._select("mechanical")
     picker._select("cursor")
 
     assert selected == [
         {
-            "mention_chapter_num": "2",
+            "mention_chapter_num": "3",
             "mention_word_position": 20,
             "display_position_policy": "mention",
         },
         {
-            "mention_chapter_num": "2",
-            "mention_word_position": None,
+            "mention_chapter_num": "3",
+            "mention_word_position": 20,
             "display_position_policy": "mechanical",
         },
         {
@@ -1327,6 +1444,33 @@ def test_roll_visualization_picker_can_select_quote_mechanical_and_cursor() -> N
             "mention_word_position": 30,
             "display_position_policy": "mention",
         },
+    ]
+
+
+def test_roll_visualization_picker_quote_buttons_use_valid_ids() -> None:
+    selected: list[dict] = []
+    picker = RollVisualizationPicker(
+        roll={
+            "mechanical_chapter_num": "2",
+            "mechanical_word_position": 100,
+            "evidence_quotes": [
+                {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
+            ],
+        },
+        cursor_chapter_num="2",
+        cursor_word_position=30,
+        on_select=selected.append,
+    )
+
+    button = Button("Quote 1", id="quote_0")
+    picker._select(button.id)
+
+    assert selected == [
+        {
+            "mention_chapter_num": "2",
+            "mention_word_position": 10,
+            "display_position_policy": "mention",
+        }
     ]
 
 
@@ -1627,6 +1771,33 @@ def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
         .get("rolls", [])
     )
     assert not ch2_rolls
+
+
+def test_deferred_roll_action_toggles_existing_deferral_off(tmp_path) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    from scripts.forge_curator.persistence import CurationPersistence
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app.persistence.mark_roll_deferred_to_chapter("8.1", 1, "9")
+    app.data.reload_from_disk()
+    cs = app._load_chapter("8.1")
+    app._post_curation_refresh = lambda message, *, full=False: None
+    first = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 1)
+    cs.cursor_char = app.state.char_at_word_index(first["raw_word_position"])
+
+    app._action_defer_roll_to_next_chapter("8.1")
+
+    roll = (
+        app.persistence.chapter_roll_overrides
+        .get("chapter_roll_overrides", {})
+        .get("8.1", {})
+        .get("rolls", [])[0]
+    )
+    assert roll["mention_chapter_num"] == "8.1"
+    assert roll["mention_word_position"] is None
+    assert roll["display_position_policy"] == "mechanical"
 
 
 def test_defer_roll_action_uses_lowercase_space_d(tmp_path) -> None:

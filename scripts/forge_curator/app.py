@@ -666,7 +666,8 @@ class ActionsPanel(Static):
             "  ⎵r  Resolve model discrepancy\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
-            "  ⎵d  Defer evidence to next chapter\n"
+            "  ⎵d  Toggle evidence deferral to next chapter\n"
+            "  ⎵v  Roll display position\n"
             "  ⎵c  Set constellation\n"
             "  ⎵p  Set perks\n\n"
             "[bold]Annotation cleanup[/bold]\n"
@@ -844,19 +845,17 @@ class HelpScreen(ModalScreen):
             "  Tab   cycle regex 1 -> 2 -> 3 -> *\n"
             "  Enter apply regex\n"
         )
-        body.append(
-            "\nAction panel keybinds (disabled in Phase 1)\n", style="bold"
-        )
+        body.append("\nAction panel keybinds\n", style="bold")
         body.append(
             "  <space>e         toggle section eligibility\n"
             "  <space>a         AN = current selection\n"
             "  <space>H         header span = current selection\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
-            "  <space>v         roll visualization position\n"
+            "  <space>v         roll display position\n"
             "  <space>r         resolve current model discrepancy\n"
             "  <space>_         source-only roll anchor at cursor\n"
-            "  <space>d         defer current roll evidence to next chapter\n"
+            "  <space>d         toggle roll evidence deferral to next chapter\n"
             "  <space>D         remove annotation at current word\n"
             "  <space>h / m     last roll = hit / miss\n"
             "  <space>c / p     constellation / perks pickers\n"
@@ -1117,6 +1116,7 @@ class RollEvidencePicker(ModalScreen):
         self._rolls = rolls
         self._on_confirm = on_confirm
         self._selected: set[int] = set()
+        self._display_position_policy: str | None = "mention"
 
     def _roll_button_label(self, index: int, roll: dict) -> str:
         marker = "(x)" if index in self._selected else "( )"
@@ -1140,12 +1140,16 @@ class RollEvidencePicker(ModalScreen):
                     id=f"roll_{idx}",
                     name=str(idx),
                 )
+            yield Button(self._display_position_label(), id="display_policy")
             yield Button("Confirm", id="confirm", variant="primary")
 
     @on(Button.Pressed)
     def _on_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "confirm":
             self.action_confirm_selection()
+            return
+        if event.button.id == "display_policy":
+            self._toggle_display_position_policy(event.button)
             return
         self._toggle_button(event.button)
 
@@ -1164,12 +1168,31 @@ class RollEvidencePicker(ModalScreen):
             button.label = self._roll_button_label(idx, self._rolls[idx - 1])
 
     def action_toggle_focused_roll(self) -> None:
-        if isinstance(self.focused, Button) and self.focused.id != "confirm":
-            self._toggle_button(self.focused)
+        if not isinstance(self.focused, Button) or self.focused.id == "confirm":
+            return
+        if self.focused.id == "display_policy":
+            self._toggle_display_position_policy(self.focused)
+            return
+        self._toggle_button(self.focused)
+
+    def _display_position_label(self) -> str:
+        if self._display_position_policy == "mention":
+            return "Display marker: quote"
+        return "Display marker: unchanged"
+
+    def _toggle_display_position_policy(self, button: Button | None = None) -> None:
+        self._display_position_policy = (
+            None if self._display_position_policy == "mention" else "mention"
+        )
+        if button is not None:
+            button.label = self._display_position_label()
 
     def action_confirm_selection(self) -> None:
-        self.app.pop_screen()
-        self._on_confirm(sorted(self._selected))
+        try:
+            self.app.pop_screen()
+        except Exception:
+            pass
+        self._on_confirm(sorted(self._selected), self._display_position_policy)
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -1207,7 +1230,7 @@ class RollVisualizationPicker(ModalScreen):
             yield Static("Roll visualization position", classes="title")
             for idx, quote in enumerate(self._roll.get("evidence_quotes") or []):
                 label = str(quote.get("text") or "").replace("\n", " ")
-                yield Button(f"Quote {idx + 1}: {label[:56]}", id=f"quote:{idx}")
+                yield Button(f"Quote {idx + 1}: {label[:56]}", id=f"quote_{idx}")
             yield Button("Predicted roll position", id="mechanical")
             yield Button("Current cursor position", id="cursor")
 
@@ -1217,8 +1240,8 @@ class RollVisualizationPicker(ModalScreen):
             self._select(event.button.id)
 
     def _select(self, choice: str) -> None:
-        if choice.startswith("quote:"):
-            idx = int(choice.split(":", 1)[1])
+        if choice.startswith("quote_"):
+            idx = int(choice.split("_", 1)[1])
             quotes = self._roll.get("evidence_quotes") or []
             if not (0 <= idx < len(quotes)):
                 return
@@ -1234,10 +1257,11 @@ class RollVisualizationPicker(ModalScreen):
         elif choice == "mechanical":
             payload = {
                 "mention_chapter_num": str(
-                    self._roll.get("mechanical_chapter_num")
+                    self._roll.get("mention_chapter_num")
+                    or self._roll.get("mechanical_chapter_num")
                     or self._cursor_chapter_num
                 ),
-                "mention_word_position": None,
+                "mention_word_position": self._roll.get("mention_word_position"),
                 "display_position_policy": "mechanical",
             }
         elif choice == "cursor":
@@ -2374,6 +2398,9 @@ class ForgeCuratorApp(App):
             and str(mention_chapter) != str(mechanical_chapter)
         ):
             detail_lines.insert(0, f"    narrative deferred to ch {mention_chapter}")
+        display_line = self._roll_display_policy_detail(roll)
+        if display_line:
+            detail_lines.insert(0, display_line)
         chapter_idx = self._display_roll_identity(roll)
         return "\n".join([
             (
@@ -2383,6 +2410,27 @@ class ForgeCuratorApp(App):
             ),
             *detail_lines,
         ])
+
+    @staticmethod
+    def _roll_display_policy_detail(roll: dict) -> str:
+        policy = roll.get("display_position_policy")
+        if not policy:
+            return ""
+        mention_word = roll.get("mention_word_position")
+        default_policy = "mention" if mention_word is not None else "mechanical"
+        if policy == default_policy:
+            return ""
+        if policy == "mechanical":
+            return "    display at predicted roll position"
+        if policy == "mention":
+            return "    display at quoted evidence"
+        if policy == "source_marker":
+            return "    display at source marker"
+        if policy == "section_start":
+            return "    display at section start"
+        if policy == "section_end":
+            return "    display at section end"
+        return f"    display policy: {policy}"
 
     @staticmethod
     def _display_roll_identity(roll: dict) -> int:
@@ -3266,7 +3314,10 @@ class ForgeCuratorApp(App):
             return
         self._clear_prose_selection()
 
-        def on_confirm(indices: list[int]) -> None:
+        def on_confirm(
+            indices: list[int],
+            display_position_policy: str | None,
+        ) -> None:
             if not indices:
                 self._flash("save quote: no rolls selected")
                 return
@@ -3287,6 +3338,7 @@ class ForgeCuratorApp(App):
                     text=quote,
                     mention_chapter_num=chapter_num,
                     mention_word_position=mention_word,
+                    display_position_policy=display_position_policy,
                 )
             self._post_curation_refresh(
                 f"quote saved to rolls {', '.join(map(str, indices))}"
@@ -3370,16 +3422,19 @@ class ForgeCuratorApp(App):
         if next_chapter is None:
             self._flash("defer evidence: no next chapter")
             return
-        self.persistence.mark_roll_deferred_to_chapter(
-            target_chapter,
-            idx,
-            next_chapter,
-            mention_word_position=None,
-            display_position_policy="mechanical",
-        )
-        self._post_curation_refresh(
-            f"roll #{idx} evidence deferred to ch {next_chapter}"
-        )
+        if str(target.get("mention_chapter_num")) == str(next_chapter):
+            self.persistence.clear_roll_deferral(target_chapter, idx)
+            message = f"roll #{idx} evidence deferral cleared"
+        else:
+            self.persistence.mark_roll_deferred_to_chapter(
+                target_chapter,
+                idx,
+                next_chapter,
+                mention_word_position=None,
+                display_position_policy="mechanical",
+            )
+            message = f"roll #{idx} evidence deferred to ch {next_chapter}"
+        self._post_curation_refresh(message)
 
     def _action_resolve_model_discrepancy(self, chapter_num: str) -> None:
         cs = self.state.chapter

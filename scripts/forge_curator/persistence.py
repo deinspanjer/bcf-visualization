@@ -292,6 +292,7 @@ class CurationPersistence:
         text: str,
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
+        display_position_policy: str | None = "mention",
     ) -> dict:
         before = deepcopy(self.chapter_roll_overrides)
         roll = self.get_or_create_roll_at_index(chapter_num, index)
@@ -300,12 +301,12 @@ class CurationPersistence:
         was_empty = len(quotes) == 0
         if record not in quotes:
             quotes.append(record)
-        if was_empty:
+        if was_empty and display_position_policy is not None:
             if mention_chapter_num is not None:
                 roll["mention_chapter_num"] = str(mention_chapter_num)
             if mention_word_position is not None:
                 roll["mention_word_position"] = int(mention_word_position)
-            roll["display_position_policy"] = "mention"
+            roll["display_position_policy"] = display_position_policy
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
             "append_roll_evidence_at_index",
@@ -325,6 +326,7 @@ class CurationPersistence:
         text: str,
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
+        display_position_policy: str | None = "mention",
     ) -> list[dict]:
         """Append the same curated quote to multiple chapter-local rolls.
 
@@ -343,12 +345,12 @@ class CurationPersistence:
             was_empty = len(quotes) == 0
             if record not in quotes:
                 quotes.append(record)
-            if was_empty:
+            if was_empty and display_position_policy is not None:
                 if mention_chapter_num is not None:
                     roll["mention_chapter_num"] = str(mention_chapter_num)
                 if mention_word_position is not None:
                     roll["mention_word_position"] = int(mention_word_position)
-                roll["display_position_policy"] = "mention"
+                roll["display_position_policy"] = display_position_policy
             updated.append(roll)
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
@@ -460,6 +462,24 @@ class CurationPersistence:
                 "mention_word_position": mention_word_position,
                 "display_position_policy": display_position_policy,
             },
+        )
+        return roll
+
+    def clear_roll_deferral(self, chapter_num: str, index: int) -> dict:
+        """Remove roll-level deferral and keep display at the mechanical slot."""
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["mention_chapter_num"] = str(chapter_num)
+        roll["mention_word_position"] = None
+        roll["display_position_policy"] = "mechanical"
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "clear_roll_deferral",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"index": int(index)},
         )
         return roll
 
