@@ -818,6 +818,61 @@
           "curator_note": null
         }
       ]
+    },
+    "8.1": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "9",
+          "mention_word_position": 1561,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "a few failed connections",
+              "mention_chapter_num": "9",
+              "mention_word_position": 1561
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "9",
+          "mention_word_position": 1561,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "a few failed connections",
+              "mention_chapter_num": "9",
+              "mention_word_position": 1561
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "9",
+          "mention_word_position": 1579,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "It was from the Clothing constellation and was actually one of two motes clustered together. By expending all of the reach I had developed my power was able to latch onto the larger of the two motes. The one I connected to was an object. I couldn't get a good sense of the other one, but I could tell it was the skills needed to work with what the larger mote provided. One mote for materials, one for crafting ability. That meant I would have to figure out how to use what I received without any help. With something this powerful it might be able to turn the tide in the coming chaos. That's why sleep was not an option. I had to get back to my workshop and start my analysis.\n\nI had to figure out what the hell I was supposed to do with a spool of Life Fibers.",
+              "mention_chapter_num": "9",
+              "mention_word_position": 1579
+            }
+          ],
+          "curator_note": null
+        }
+      ]
     }
   }
 }
