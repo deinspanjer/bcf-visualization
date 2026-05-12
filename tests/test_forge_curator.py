@@ -377,6 +377,41 @@ def test_gutter_marks_match_canonical_roll_fact_positions(
     assert actual == expected
 
 
+def test_gutter_predicted_roll_marks_use_prediction_slots_for_deferred_chapter(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    total = len(cs.prose.word_offsets)
+    expected = []
+    chapter_cp_start = app._chapter_cp_start("8.1")
+    for roll in cs.derived.predicted_rolls:
+        local_cp = int(roll["word_position"]) - chapter_cp_start
+        raw = app._roll_marker_word_index_from_cp(cs, local_cp)
+        assert raw is not None
+        expected.append((raw / total, "R"))
+
+    actual = [
+        (prop, glyph) for prop, glyph in app._compute_gutter_items()
+        if glyph == "R"
+    ]
+    assert actual == expected
+
+
+def test_deferred_quotes_do_not_emit_gutter_marks_in_mechanical_chapter(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("8.1", tmp_path)
+
+    quote_marks = [
+        mark for mark in app._compute_gutter_marks()
+        if mark.glyph == "Q"
+    ]
+
+    assert quote_marks == []
+
+
 @pytest.mark.asyncio
 async def test_b12_jump_roll_scrolls_into_view() -> None:
     """B12: ]r should scroll the prose so the cursor is in view."""

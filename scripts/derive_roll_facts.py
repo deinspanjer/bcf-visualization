@@ -994,12 +994,15 @@ def _direct_override_rows(
         })
 
     last_source_idx = non_trigger_templates[-1][0] if non_trigger_templates else 0
-    for override_idx, entry in enumerate(override.get("rolls") or []):
+    override_rolls = override.get("rolls") or []
+    row_count = max(len(non_trigger_templates), len(override_rolls))
+    for override_idx in range(row_count):
+        entry = override_rolls[override_idx] if override_idx < len(override_rolls) else None
         template = (
             non_trigger_templates[override_idx][1]
             if override_idx < len(non_trigger_templates) else {}
         )
-        if _is_metadata_only_roll_override(entry, chapter_num):
+        if entry is None or _is_metadata_only_roll_override(entry, chapter_num):
             if not template:
                 continue
             source_idx = (

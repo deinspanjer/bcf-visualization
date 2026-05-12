@@ -13,6 +13,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from multi_grab import load_overrides, merge_paid_units  # noqa: E402
+from derive_roll_facts import _direct_override_rows  # noqa: E402
 
 
 ROLL_FACTS_JSON = ROOT / "data" / "derived" / "roll_facts.json"
@@ -106,6 +107,60 @@ def test_merge_paid_units_moves_deferred_hit_to_mechanical_chapter() -> None:
     assert unit["display_position_policy"] == "mechanical"
     assert [p["perk_name"] for p in unit["paid"]] == ["Fashion"]
     assert [p["perk_name"] for p in unit["free_perks"]] == ["Free Tie"]
+
+
+def test_direct_deferred_metadata_preserves_unmentioned_source_rows() -> None:
+    curator_rows = [
+        (
+            10,
+            {
+                "kind": "miss",
+                "perks": [],
+                "banked_before": 200,
+                "banked_after": 200,
+                "roll_number": 27,
+                "raw": "Roll 27",
+            },
+        ),
+        (
+            11,
+            {
+                "kind": "miss",
+                "perks": [],
+                "banked_before": 300,
+                "banked_after": 400,
+                "roll_number": 28,
+                "raw": "Roll 28",
+            },
+        ),
+        (
+            12,
+            {
+                "kind": "roll",
+                "perks": [{"name": "Life Fiber Spool"}],
+                "banked_before": 400,
+                "banked_after": 0,
+                "roll_number": 29,
+                "raw": "Roll 29",
+            },
+        ),
+    ]
+    override = {
+        "rolls": [
+            {
+                "mention_chapter_num": "9",
+                "display_position_policy": "mechanical",
+            },
+        ],
+    }
+
+    rows = _direct_override_rows("8.1", curator_rows, override, {})
+
+    assert [row["roll_number"] for row in rows] == [27, 28, 29]
+    assert rows[0]["_mention_chapter_num"] == "9"
+    assert rows[0]["_display_position_policy"] == "mechanical"
+    assert "_mention_chapter_num" not in rows[1]
+    assert "_mention_chapter_num" not in rows[2]
 
 
 def test_merge_paid_units_ignores_unassigned_zero_cost_paid_perks() -> None:

@@ -1493,6 +1493,12 @@ class ForgeCuratorApp(App):
                 if start >= 0:
                     span = (start, start + len(text))
                 else:
+                    quote_chapter = quote.get("mention_chapter_num")
+                    if (
+                        quote_chapter is not None
+                        and str(quote_chapter) != cs.meta.chapter_num
+                    ):
+                        continue
                     raw = self._evidence_fallback_word_index(cs, roll)
                     if raw is None or not (0 <= raw < len(wo)):
                         continue
@@ -1514,7 +1520,26 @@ class ForgeCuratorApp(App):
 
     def _predicted_roll_word_indices(self, cs) -> list[int]:
         indices: list[int] = []
+        seen: set[int] = set()
         cn = cs.meta.chapter_num
+        chapter_cp_start = self._chapter_cp_start(cn)
+
+        def _add(local_cp: int | None) -> None:
+            if local_cp is None or local_cp < 0:
+                return
+            raw = self._roll_marker_word_index_from_cp(cs, local_cp)
+            if raw is not None and raw not in seen:
+                seen.add(raw)
+                indices.append(raw)
+
+        for roll in cs.derived.predicted_rolls:
+            if str(roll.get("chapter_num")) != cn:
+                continue
+            global_cp = roll.get("word_position")
+            if global_cp is None:
+                continue
+            _add(int(global_cp) - chapter_cp_start)
+
         for roll in (cs.derived.chapter_facts or {}).get("rolls", []):
             if str(roll.get("mechanical_chapter_num")) != cn:
                 continue
@@ -1522,9 +1547,7 @@ class ForgeCuratorApp(App):
             if wp is None:
                 wp = roll.get("word_position")
             if wp is not None:
-                raw = self._roll_marker_word_index_from_cp(cs, int(wp))
-                if raw is not None:
-                    indices.append(raw)
+                _add(int(wp))
         return indices
 
     def _roll_marker_word_index_from_cp(self, cs, cp_word_idx: int) -> int | None:
