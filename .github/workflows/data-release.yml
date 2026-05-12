@@ -86,6 +86,7 @@ jobs:
             else
               python3 scripts/download_bcf_epub.py
             fi
+            python3 scripts/predict_rolls.py
             python3 scripts/derive_roll_facts.py
             python3 scripts/build_chapter_facts.py
           fi

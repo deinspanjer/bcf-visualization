@@ -15,6 +15,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import urllib.error
@@ -416,7 +417,96 @@ def check_local_derived_coherence(source_dir: Path = DERIVED) -> list[str]:
                 f"manifest entry {name} has stale sha256; "
                 "run scripts/data_release.py manifest"
             )
+    problems.extend(_check_predicted_rolls_fresh(source_dir))
     return problems
+
+
+def _check_predicted_rolls_fresh(source_dir: Path) -> list[str]:
+    required = [
+        source_dir / "predicted_rolls.json",
+        source_dir / "chapters.json",
+        source_dir / "obtained_perks.json",
+        source_dir / "chapter_sections.json",
+        ROOT / "data" / "manual" / "section_classifications.json",
+    ]
+    if any(not path.exists() for path in required):
+        return []
+
+    scripts_dir = ROOT / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    try:
+        from dataclasses import asdict
+        from multi_grab import (
+            load_overrides as load_multi_grab_overrides,
+            merge_paid_units,
+            unit_principal_cost,
+            unit_total_cost,
+        )
+        import predict_rolls
+        from regime_simulator import load_regime_transitions
+    except Exception as exc:
+        return [f"could not import roll prediction freshness check: {exc}"]
+
+    original_paths = (
+        predict_rolls.CHAPTERS_JSON,
+        predict_rolls.OBTAINED_JSON,
+        predict_rolls.SECTIONS_JSON,
+        predict_rolls.OUT,
+    )
+    try:
+        predict_rolls.CHAPTERS_JSON = source_dir / "chapters.json"
+        predict_rolls.OBTAINED_JSON = source_dir / "obtained_perks.json"
+        predict_rolls.SECTIONS_JSON = source_dir / "chapter_sections.json"
+        predict_rolls.OUT = source_dir / "predicted_rolls.json"
+
+        chapters = sorted(
+            _read_json(source_dir / "chapters.json")["chapters"],
+            key=lambda c: tuple(c["sort_key"]),
+        )
+        obtained = sorted(
+            _read_json(source_dir / "obtained_perks.json")["perks"],
+            key=lambda p: p.get("epub_sequence", 0),
+        )
+        units, _stats = merge_paid_units(obtained, load_multi_grab_overrides())
+        paid_by_chapter: dict[str, list[dict]] = {}
+        for unit in units:
+            paid_by_chapter.setdefault(unit["chapter_num"], []).append({
+                "cost": unit_total_cost(unit),
+                "principal_cost": unit_principal_cost(unit),
+            })
+        expected, _starts, _ends, total_words = predict_rolls._simulate(
+            chapters,
+            paid_by_chapter,
+            predict_rolls._load_cp_words_per_chapter(),
+            load_regime_transitions(),
+        )
+        actual_doc = _read_json(source_dir / "predicted_rolls.json")
+        actual = actual_doc.get("predicted")
+        expected_dicts = [asdict(roll) for roll in expected]
+    except Exception as exc:
+        return [f"could not validate predicted_rolls freshness: {exc}"]
+    finally:
+        (
+            predict_rolls.CHAPTERS_JSON,
+            predict_rolls.OBTAINED_JSON,
+            predict_rolls.SECTIONS_JSON,
+            predict_rolls.OUT,
+        ) = original_paths
+
+    if actual != expected_dicts:
+        return [
+            "data/derived/predicted_rolls.json is stale relative to current "
+            "chapters, obtained perks, chapter sections, and manual section "
+            "classifications; run scripts/predict_rolls.py before deriving "
+            "roll_facts/chapter_facts"
+        ]
+    if actual_doc.get("_total_words_epub_exact") != total_words:
+        return [
+            "data/derived/predicted_rolls.json has a stale total word count; "
+            "run scripts/predict_rolls.py"
+        ]
+    return []
 
 
 def assert_local_derived_coherence(source_dir: Path = DERIVED) -> None:

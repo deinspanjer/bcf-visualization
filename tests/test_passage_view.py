@@ -9,6 +9,7 @@ directly because no parent app is observing them.
 from __future__ import annotations
 
 import pytest
+from rich.style import Style
 
 from nlp.tui.passage_view import PassageView
 
@@ -257,7 +258,7 @@ def test_selection_preserves_span_foreground_with_explicit_background() -> None:
 
     rendered = pv.render()
 
-    assert str(rendered.spans[1].style) == "bold color(214) on color(24)"
+    assert str(rendered.spans[1].style) == "bold color(214) on #303030"
 
 
 def test_cursor_uses_explicit_contrast_pair_over_other_styles() -> None:
@@ -271,7 +272,23 @@ def test_cursor_uses_explicit_contrast_pair_over_other_styles() -> None:
     cursor_span = next(
         span for span in rendered.spans if span.start == 2 and span.end == 3
     )
-    assert str(cursor_span.style) == "bold black on color(229)"
+    assert str(cursor_span.style) == "bold white on #005f87"
+
+
+def test_cursor_style_has_visible_foreground_without_background() -> None:
+    pv = _make("hello", width=80)
+
+    rendered = pv.render()
+    cursor_span = next(
+        span for span in rendered.spans if span.start == 0 and span.end == 1
+    )
+
+    style = Style.parse(str(cursor_span.style))
+    assert style.reverse is not True
+    assert style.color is not None
+    assert style.color.name == "white"
+    assert style.bgcolor is not None
+    assert style.bgcolor.name == "#005f87"
 
 
 # ---------------------------------------------------------------------------

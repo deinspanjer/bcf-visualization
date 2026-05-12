@@ -107,12 +107,11 @@ class PassageView(Widget, can_focus=True):
     visual_line_mode: reactive[bool] = reactive(False)
 
     # Rich style strings (not Textual CSS — `$accent` won't resolve in Rich).
-    # Keep these explicit: terminal reverse video can interact badly with
-    # semantic foreground colors on some terminals.
-    cursor_style: reactive[str] = reactive("bold black on color(229)")
-    # ANSI color 24 = a steel-blue background that reads well on most terminals.
-    selection_style: reactive[str] = reactive("on color(24)")
-    selection_plain_style: reactive[str] = reactive("white on color(24)")
+    # Keep the cursor foreground light: if a terminal drops or mishandles the
+    # background escape, the cursor cell still remains visible on dark themes.
+    cursor_style: reactive[str] = reactive("bold white on #005f87")
+    selection_style: reactive[str] = reactive("on #303030")
+    selection_plain_style: reactive[str] = reactive("white on #303030")
 
     def __init__(self, text: str = "", **kwargs) -> None:
         super().__init__(**kwargs)

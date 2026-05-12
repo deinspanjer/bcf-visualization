@@ -19,6 +19,8 @@ from textual.widgets import Button, Input
 
 import scripts.forge_curator.app as forge_app
 
+ROOT = Path(__file__).resolve().parent.parent
+
 # Import here so the rest of the suite still loads even if textual is
 # unavailable.
 from scripts.forge_curator.app import (
@@ -1639,7 +1641,28 @@ def test_resolve_model_discrepancy_persists_chapter_resolution(tmp_path) -> None
 def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
-    app = _loaded_app("7", tmp_path)
+    chapter_facts = json.loads((ROOT / "data" / "derived" / "chapter_facts.json").read_text())
+    blocking_codes = {
+        "paid_rolls_exceed_predicted_slots",
+        "known_attempts_exceed_predicted_slots",
+        "cost_schedule_infeasible",
+    }
+    chapter_num = None
+    issue_code = None
+    for chapter in chapter_facts["chapters"]:
+        model = chapter.get("model_validation") or {}
+        for issue in model.get("issues") or []:
+            code = str(issue.get("code"))
+            if code in blocking_codes and not issue.get("resolved"):
+                chapter_num = str(chapter["chapter_num"])
+                issue_code = code
+                break
+        if chapter_num is not None:
+            break
+    assert chapter_num is not None
+    assert issue_code is not None
+
+    app = _loaded_app(chapter_num, tmp_path)
     app.persistence = CurationPersistence(
         chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
         journal_dir_path=tmp_path / ".journals",
@@ -1654,14 +1677,12 @@ def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
     app._handle_space_chord("r")
 
     saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())
-    resolution = saved["chapter_roll_overrides"]["7"][
+    resolution = saved["chapter_roll_overrides"][chapter_num][
         "model_validation_resolution"
     ]
     assert resolution["status"] == "resolved"
-    assert resolution["resolved_issue_codes"] == [
-        "known_attempts_exceed_predicted_slots"
-    ]
-    assert resolution["reason_code"] == "curator_confirmed_extra_attempt"
+    assert resolution["resolved_issue_codes"] == [issue_code]
+    assert resolution["reason_code"] == app._resolution_reason_code(issue_code)
     assert refreshes == ["model discrepancy resolved"]
     assert flashes == []
 

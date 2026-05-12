@@ -224,6 +224,51 @@ def test_local_derived_coherence_flags_dev_manifest_in_runtime_slot(
     assert any("package_kind is not runtime" in problem for problem in problems)
 
 
+def test_local_derived_coherence_flags_stale_predicted_rolls(
+    tmp_path: Path,
+) -> None:
+    from scripts import data_release
+
+    derived = tmp_path / "derived"
+    derived.mkdir()
+    (derived / "data_package.json").write_text(
+        json.dumps({
+            "bundle_class": "pages-runtime",
+            "package_kind": "runtime",
+            "files": {},
+        }) + "\n"
+    )
+    (derived / "chapters.json").write_text(
+        json.dumps({
+            "chapters": [{
+                "chapter_num": "91.9",
+                "full_title": "91.9 Test",
+                "sort_key": [91, 9],
+            }],
+        }) + "\n"
+    )
+    (derived / "chapter_sections.json").write_text(
+        json.dumps({
+            "chapters": [{
+                "chapter_num": "91.9",
+                "full_title": "91.9 Test",
+                "sections": [{"word_count": 2000, "counts_for_cp": True}],
+                "excluded_word_ranges": [],
+            }],
+        }) + "\n"
+    )
+    (derived / "obtained_perks.json").write_text(
+        json.dumps({"perks": []}) + "\n"
+    )
+    (derived / "predicted_rolls.json").write_text(
+        json.dumps({"_total_words_epub_exact": 0, "predicted": []}) + "\n"
+    )
+
+    problems = data_release.check_local_derived_coherence(derived)
+
+    assert any("predicted_rolls.json" in problem for problem in problems)
+
+
 def test_download_dev_defaults_to_latest_data_release(monkeypatch: pytest.MonkeyPatch) -> None:
     from scripts import data_release
 
