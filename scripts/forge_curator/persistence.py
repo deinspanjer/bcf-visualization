@@ -496,6 +496,45 @@ class CurationPersistence:
         )
         return roll
 
+    def resolve_model_validation_issue(
+        self,
+        chapter_num: str,
+        *,
+        issue_code: str,
+        reason_code: str,
+        note: str,
+    ) -> dict:
+        """Mark a chapter-level model validation issue as curator-resolved."""
+        before = deepcopy(self.chapter_roll_overrides)
+        entry = self._ensure_chapter_entry(str(chapter_num))
+        existing = entry.get("model_validation_resolution") or {}
+        existing_codes = [
+            str(code)
+            for code in (existing.get("resolved_issue_codes") or [])
+        ]
+        resolved_codes = list(dict.fromkeys([*existing_codes, str(issue_code)]))
+        resolution = {
+            "status": "resolved",
+            "resolved_issue_codes": resolved_codes,
+            "reason_code": reason_code,
+            "note": note,
+        }
+        entry["model_validation_resolution"] = resolution
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "resolve_model_validation_issue",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "issue_code": str(issue_code),
+                "reason_code": reason_code,
+                "note": note,
+            },
+        )
+        return resolution
+
     # ------------------------------------------------------------------
     # Action handlers — one per <space>X keybind.
     # ------------------------------------------------------------------

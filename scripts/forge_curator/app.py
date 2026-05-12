@@ -663,6 +663,7 @@ class ActionsPanel(Static):
             "  ⎵Q       quote = selection, multiple rolls\n\n"
             "[bold]Roll metadata[/bold]\n"
             "  ⎵_  Source-only roll anchor at cursor\n"
+            "  ⎵r  Resolve model discrepancy\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
             "  ⎵d  Defer evidence to next chapter\n"
@@ -853,6 +854,7 @@ class HelpScreen(ModalScreen):
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
             "  <space>v         roll visualization position\n"
+            "  <space>r         resolve current model discrepancy\n"
             "  <space>_         source-only roll anchor at cursor\n"
             "  <space>d         defer current roll evidence to next chapter\n"
             "  <space>D         remove annotation at current word\n"
@@ -1520,12 +1522,14 @@ class ForgeCuratorApp(App):
             if wp is None:
                 wp = roll.get("word_position")
             if wp is not None:
-                indices.append(self._roll_marker_word_index_from_cp(cs, int(wp)))
+                raw = self._roll_marker_word_index_from_cp(cs, int(wp))
+                if raw is not None:
+                    indices.append(raw)
         return indices
 
-    def _roll_marker_word_index_from_cp(self, cs, cp_word_idx: int) -> int:
+    def _roll_marker_word_index_from_cp(self, cs, cp_word_idx: int) -> int | None:
         if not cs.prose.word_offsets:
-            return 0
+            return None
         raw = min(
             self._raw_word_for_cp_offset(cp_word_idx),
             len(cs.prose.word_offsets) - 1,
@@ -1535,15 +1539,26 @@ class ForgeCuratorApp(App):
             if self._eligibility_at_cursor(cs, raw, sec_idx)["text_eligible"]:
                 return raw
             raw -= 1
-        return raw
+        return None
 
     def _curated_roll_word_index(self, cs, roll: dict) -> int | None:
         if roll.get("display_kind") == "deferred_in":
             return None
         raw = roll.get("raw_word_position")
         if raw is not None:
-            return int(raw)
+            raw_idx = int(raw)
+            if self._is_structural_word_index(cs, raw_idx):
+                return None
+            return raw_idx
         return None
+
+    def _is_structural_word_index(self, cs, word_idx: int) -> bool:
+        if not (0 <= int(word_idx) < len(cs.prose.word_offsets)):
+            return True
+        for ws, we in self._canonical_excluded_word_ranges(cs.meta.chapter_num, cs):
+            if int(ws) <= int(word_idx) < int(we):
+                return True
+        return False
 
     def _evidence_fallback_word_index(self, cs, roll: dict) -> int | None:
         raw = self._curated_roll_word_index(cs, roll)
@@ -1818,7 +1833,12 @@ class ForgeCuratorApp(App):
         raw = roll.get("mention_word_position")
         if raw is None:
             return None
-        return int(raw)
+        raw_idx = int(raw)
+        cs = self.state.chapter
+        if cs is not None and str(cs.meta.chapter_num) == str(chapter_num):
+            if self._is_structural_word_index(cs, raw_idx):
+                return None
+        return raw_idx
 
     def _chapter_scoped_roll_value(
         self, chapter_num: str, roll: dict, field: str
@@ -2660,6 +2680,8 @@ class ForgeCuratorApp(App):
             self._action_save_quote_multi(cn)
         elif ch == "v":
             self._action_pick_roll_visualization_position(cn)
+        elif ch == "r":
+            self._action_resolve_model_discrepancy(cn)
         elif ch == "_":
             self._action_anchor_roll_without_quote(cn)
         elif ch == "d":
@@ -3335,6 +3357,69 @@ class ForgeCuratorApp(App):
         self._post_curation_refresh(
             f"roll #{idx} evidence deferred to ch {next_chapter}"
         )
+
+    def _action_resolve_model_discrepancy(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        model = (cs.derived.chapter_facts or {}).get("model_validation") or {}
+        blocking_codes = {
+            "paid_rolls_exceed_predicted_slots",
+            "known_attempts_exceed_predicted_slots",
+            "cost_schedule_infeasible",
+        }
+        issues = model.get("issues") or []
+        unresolved = [
+            str(issue.get("code"))
+            for issue in issues
+            if (
+                str(issue.get("code")) in blocking_codes
+                and not issue.get("resolved")
+            )
+        ]
+        if not unresolved:
+            self._flash("resolve discrepancy: no unresolved model discrepancy here")
+            return
+        for code in dict.fromkeys(unresolved):
+            self.persistence.resolve_model_validation_issue(
+                chapter_num,
+                issue_code=code,
+                reason_code=self._resolution_reason_code(code),
+                note=self._resolution_note(chapter_num, code, model),
+            )
+        self._post_curation_refresh("model discrepancy resolved")
+
+    @staticmethod
+    def _resolution_reason_code(issue_code: str) -> str:
+        if issue_code == "known_attempts_exceed_predicted_slots":
+            return "curator_confirmed_extra_attempt"
+        if issue_code == "paid_rolls_exceed_predicted_slots":
+            return "curator_confirmed_extra_paid_roll"
+        if issue_code == "cost_schedule_infeasible":
+            return "curator_confirmed_schedule_exception"
+        return "curator_confirmed_model_exception"
+
+    @staticmethod
+    def _resolution_note(chapter_num: str, issue_code: str, model: dict) -> str:
+        predicted = model.get("predicted_roll_count")
+        known = model.get("known_attempt_count")
+        paid = model.get("required_paid_roll_count")
+        if issue_code == "known_attempts_exceed_predicted_slots":
+            return (
+                f"Curator confirmed chapter {chapter_num} has {known} known "
+                f"attempts despite {predicted} predicted model slots."
+            )
+        if issue_code == "paid_rolls_exceed_predicted_slots":
+            return (
+                f"Curator confirmed chapter {chapter_num} has {paid} paid "
+                f"roll units despite {predicted} predicted model slots."
+            )
+        if issue_code == "cost_schedule_infeasible":
+            return (
+                f"Curator confirmed chapter {chapter_num} is an intentional "
+                "exception to the modeled CP schedule."
+            )
+        return f"Curator confirmed chapter {chapter_num} model exception."
 
     def _selected_quote(self, action_name: str) -> str | None:
         prose_view = self.query_one("#prose", PassageView)

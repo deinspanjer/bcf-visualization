@@ -754,6 +754,52 @@ def test_chapter_4_unpredicted_roll_requires_explicit_anchor_for_marker(
     assert fifth["word_position"] == cs.meta.cp_earning_word_count
 
 
+def test_roll_markers_skip_structural_header_but_keep_cp_ineligible_source_anchor(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("6.1", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    assert cs.meta.cp_earning_word_count == 0
+
+    roll_marks = [
+        mark for mark in app._compute_gutter_marks()
+        if mark.glyph in {"R", "H", "M", "Q"}
+    ]
+
+    assert app._predicted_roll_word_indices(cs) == []
+    assert ("R", 0) not in [(mark.glyph, mark.word_idx) for mark in roll_marks]
+    assert [("M", 1579)] == [
+        (mark.glyph, mark.word_idx) for mark in roll_marks
+    ]
+
+
+def test_roll_highlight_does_not_render_in_header(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("6.1", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    assert cs.prose.implicit_header_word_ranges
+
+    spans = app._compute_prose_spans()
+    roll_spans = [
+        span for span in spans
+        if span.get("style") == ROLL_HIGHLIGHT_STYLE
+    ]
+
+    assert roll_spans == []
+
+
+def test_actions_panel_lists_model_discrepancy_resolution() -> None:
+    actions = ActionsPanel()
+    actions.render_catalog()
+    rendered = getattr(actions, "_renderable", None) or actions.render()
+    text = str(rendered) if rendered is not None else ""
+
+    assert "Resolve model discrepancy" in text
+
+
 def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None:
     app = _loaded_app("2", tmp_path)
     cs = app.state.chapter
@@ -1559,6 +1605,65 @@ def test_defer_roll_action_uses_lowercase_space_d(tmp_path) -> None:
     app._handle_space_chord("D")
 
     assert calls == [("defer", "2"), ("delete_annotations", "2")]
+
+
+def test_resolve_model_discrepancy_persists_chapter_resolution(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+
+    resolution = persistence.resolve_model_validation_issue(
+        "7",
+        issue_code="known_attempts_exceed_predicted_slots",
+        reason_code="curator_confirmed_extra_attempt",
+        note="Curator confirmed the fourth narrated attempt is intentional.",
+    )
+
+    assert resolution == {
+        "status": "resolved",
+        "resolved_issue_codes": ["known_attempts_exceed_predicted_slots"],
+        "reason_code": "curator_confirmed_extra_attempt",
+        "note": "Curator confirmed the fourth narrated attempt is intentional.",
+    }
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())
+    assert (
+        saved["chapter_roll_overrides"]["7"]["model_validation_resolution"]
+        == resolution
+    )
+    assert saved["chapter_roll_overrides"]["7"]["rolls"] == []
+
+
+def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("7", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    refreshes: list[str] = []
+    flashes: list[str] = []
+    app._post_curation_refresh = (
+        lambda message, *, full=False: refreshes.append(message)
+    )
+    app._flash = lambda message: flashes.append(message)
+
+    app._handle_space_chord("r")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())
+    resolution = saved["chapter_roll_overrides"]["7"][
+        "model_validation_resolution"
+    ]
+    assert resolution["status"] == "resolved"
+    assert resolution["resolved_issue_codes"] == [
+        "known_attempts_exceed_predicted_slots"
+    ]
+    assert resolution["reason_code"] == "curator_confirmed_extra_attempt"
+    assert refreshes == ["model discrepancy resolved"]
+    assert flashes == []
 
 
 def test_remove_annotations_action_deletes_author_notes_and_headers_at_cursor(

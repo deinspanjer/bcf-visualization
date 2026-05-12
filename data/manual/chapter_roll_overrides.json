@@ -686,7 +686,15 @@
           "evidence_quotes": [],
           "curator_note": "source-only roll anchor"
         }
-      ]
+      ],
+      "model_validation_resolution": {
+        "status": "resolved",
+        "resolved_issue_codes": [
+          "known_attempts_exceed_predicted_slots"
+        ],
+        "reason_code": "curator_confirmed_extra_attempt",
+        "note": "Curator confirmed chapter 6.1 has 1 known attempts despite 0 predicted model slots."
+      }
     },
     "7": {
       "rolls": [
@@ -763,7 +771,15 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "model_validation_resolution": {
+        "status": "resolved",
+        "resolved_issue_codes": [
+          "known_attempts_exceed_predicted_slots"
+        ],
+        "reason_code": "curator_confirmed_extra_attempt",
+        "note": "Curator confirmed chapter 7 has 4 known attempts despite 3 predicted model slots."
+      }
     },
     "8": {
       "rolls": [
