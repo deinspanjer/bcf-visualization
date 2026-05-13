@@ -293,6 +293,31 @@
         "source_kind":             { "enum": ["trigger", "roll", "miss", "interpolated"] }
       }
     },
+    "skipped_predicted_roll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slot_index", "roll_number",
+        "mechanical_chapter_num", "mechanical_word_position",
+        "mechanical_cumulative_word_offset",
+        "predicted_word_position_epub", "reason"
+      ],
+      "properties": {
+        "slot_index": { "type": "integer", "minimum": 1 },
+        "roll_number": { "type": "integer", "minimum": 1 },
+        "mechanical_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "mechanical_word_position": { "type": "integer", "minimum": 0 },
+        "mechanical_cumulative_word_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "predicted_word_position_epub": { "type": "integer", "minimum": 0 },
+        "reason": { "enum": ["skipped_to_align_narrative"] }
+      }
+    },
     "evidence_quote": {
       "type": "object",
       "additionalProperties": false,
@@ -325,7 +350,7 @@
         "banked_cp_at_start", "banked_cp_at_end",
         "model_validation", "constellation_progress",
         "pov_characters", "structural_markers",
-        "sections", "rolls"
+        "sections", "skipped_predicted_rolls", "rolls"
       ],
       "properties": {
         "chapter_num":     { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
@@ -368,6 +393,10 @@
         "structural_markers": { "type": "array", "items": { "type": "string" } },
 
         "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
+        "skipped_predicted_rolls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/skipped_predicted_roll" }
+        },
         "rolls":    { "type": "array", "items": { "$ref": "#/$defs/roll" } }
       }
     },

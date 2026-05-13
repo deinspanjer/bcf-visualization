@@ -826,9 +826,23 @@
           "outcome": null,
           "constellation": null,
           "word_position": null,
-          "mention_chapter_num": "9",
-          "mention_word_position": 1561,
+          "mention_chapter_num": "8.1",
+          "mention_word_position": null,
           "display_position_policy": "mechanical",
+          "evidence_quotes": [],
+          "curator_note": null,
+          "skipped": true
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "9",
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "skipped": false,
+          "source_roll_number": 27,
           "evidence_quotes": [
             {
               "text": "a few failed connections",
@@ -843,9 +857,23 @@
           "outcome": null,
           "constellation": null,
           "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": true,
+          "evidence_quotes": [],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
           "mention_chapter_num": "9",
-          "mention_word_position": 1561,
+          "mention_word_position": null,
           "display_position_policy": "mechanical",
+          "skipped": false,
+          "source_roll_number": 28,
           "evidence_quotes": [
             {
               "text": "a few failed connections",
@@ -856,18 +884,239 @@
           "curator_note": null
         },
         {
+          "perks": [
+            "Life Fiber Spool"
+          ],
+          "outcome": "hit",
+          "constellation": "Clothing",
+          "word_position": null,
+          "mention_chapter_num": "9",
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "skipped": false,
+          "source_roll_number": 29,
+          "evidence_quotes": [
+            {
+              "text": "my power had latched on to the strongest mote it had managed so far. It was from the Clothing constellation",
+              "mention_chapter_num": "9",
+              "mention_word_position": 1565
+            },
+            {
+              "text": "Life Fibers",
+              "mention_chapter_num": "9",
+              "mention_word_position": 1728
+            }
+          ],
+          "curator_note": null
+        }
+      ]
+    },
+    "9": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_roll_number": 30,
+          "evidence_quotes": [
+            {
+              "text": "my forge had missed a couple of attempted connections",
+              "mention_chapter_num": "9",
+              "mention_word_position": 4399
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "curator_added": true,
+          "evidence_quotes": [
+            {
+              "text": "my forge had missed a couple of attempted connections",
+              "mention_chapter_num": "9",
+              "mention_word_position": 4399
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Garment Gloves"
+          ],
+          "outcome": "hit",
+          "constellation": "Clothing",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_roll_number": 31,
+          "evidence_quotes": [
+            {
+              "text": "the Clothing constellation swung by and made a link",
+              "mention_chapter_num": "9",
+              "mention_word_position": 4416
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Alchemy"
+          ],
+          "outcome": "hit",
+          "constellation": "Alchemy",
+          "word_position": null,
+          "mention_chapter_num": "9",
+          "mention_word_position": 7483,
+          "display_position_policy": "mention",
+          "skipped": false,
+          "source_roll_number": 32,
+          "evidence_quotes": [
+            {
+              "text": "It was the Alchemy constellation and my power latched to a tiny mote. The oddly named ability was called Kazooie Alchemy.",
+              "mention_chapter_num": "9",
+              "mention_word_position": 7483
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "10",
+          "mention_word_position": 294,
+          "display_position_policy": "mention",
+          "skipped": false,
+          "source_roll_number": 33,
+          "evidence_quotes": [
+            {
+              "text": "The Size constellation passed by without any successful connections.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 294
+            }
+          ],
+          "curator_note": null
+        }
+      ]
+    },
+    "10": {
+      "rolls": [
+        {
           "perks": [],
           "outcome": null,
           "constellation": null,
           "word_position": null,
-          "mention_chapter_num": "9",
-          "mention_word_position": 1579,
-          "display_position_policy": "mechanical",
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_roll_number": null,
           "evidence_quotes": [
             {
-              "text": "It was from the Clothing constellation and was actually one of two motes clustered together. By expending all of the reach I had developed my power was able to latch onto the larger of the two motes. The one I connected to was an object. I couldn't get a good sense of the other one, but I could tell it was the skills needed to work with what the larger mote provided. One mote for materials, one for crafting ability. That meant I would have to figure out how to use what I received without any help. With something this powerful it might be able to turn the tide in the coming chaos. That's why sleep was not an option. I had to get back to my workshop and start my analysis.\n\nI had to figure out what the hell I was supposed to do with a spool of Life Fibers.",
-              "mention_chapter_num": "9",
-              "mention_word_position": 1579
+              "text": "On my way back to the workshop I felt the Celestial Forge move and the last constellation I had yet to identify came into reach. My power was able to link to the smallest of the motes",
+              "mention_chapter_num": "10",
+              "mention_word_position": 1681
+            },
+            {
+              "text": "The final constellation was called Magitech.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 1729
+            },
+            {
+              "text": "The new ability I received was called Mechanist.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 1816
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "10",
+          "mention_word_position": 3676,
+          "display_position_policy": "mechanical",
+          "skipped": false,
+          "source_roll_number": null,
+          "evidence_quotes": [
+            {
+              "text": "This time it connected to a small mote from the Resources and Durability constellation. It was called Repair Savvy.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 3676
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "10",
+          "mention_word_position": 5214,
+          "display_position_policy": "mention",
+          "skipped": false,
+          "source_roll_number": null,
+          "evidence_quotes": [
+            {
+              "text": "During lunch my power missed a connection from the alchemy constellation and my reach continued to grow.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 5214
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "10",
+          "mention_word_position": 6755,
+          "display_position_policy": "mention",
+          "skipped": false,
+          "source_roll_number": 37,
+          "evidence_quotes": [
+            {
+              "text": "I felt the forge again. This time it was the Quality constellation and I connected to a small mote called Stylish Mechanic.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 6755
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "10",
+          "mention_word_position": 7928,
+          "display_position_policy": "mention",
+          "skipped": false,
+          "source_roll_number": 38,
+          "evidence_quotes": [
+            {
+              "text": "I felt my power fail to make a connection to the Alchemy constellation and ignored it, staying focused on the call.",
+              "mention_chapter_num": "10",
+              "mention_word_position": 7928
             }
           ],
           "curator_note": null

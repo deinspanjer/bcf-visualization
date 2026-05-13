@@ -115,6 +115,7 @@
         "chapter_attribution_disagreement": { "type": "boolean" },
         "source": { "enum": ["curator_rolls", "roll_outcomes"] },
         "source_kind": { "enum": ["trigger", "roll", "miss", "interpolated"] },
+        "curator_added": { "type": "boolean" },
         "outcome": { "enum": ["hit", "miss"] },
         "constellation": { "type": ["string", "null"] },
         "constellation_revealed": { "type": "boolean" },
