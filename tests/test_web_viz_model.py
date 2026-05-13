@@ -108,6 +108,18 @@ def test_roll_marker_model_classifies_paid_free_and_untracked_shapes() -> None:
     ]
 
 
+def test_skipped_predicted_roll_title_explains_narrative_alignment() -> None:
+    source = """
+      import { skippedPredictedRollTitle } from './web/viz-model.js';
+      const chapter = { chapter_num: '9' };
+      const marker = { slot_index: 2, roll_number: 35 };
+      console.log(skippedPredictedRollTitle(marker, chapter));
+    """
+    assert _node_eval(source) == (
+        "ch 9 · predicted roll #35 · skipped to align with narrative mentions"
+    )
+
+
 def test_constellation_progress_hides_late_constellations_until_opened() -> None:
     source = """
       import { buildConstellationProgressIndex } from './web/viz-model.js';

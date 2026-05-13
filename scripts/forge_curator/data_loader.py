@@ -20,11 +20,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parent.parent.parent
-EPUB_PATH = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge.epub"
+from scripts.data_paths import DERIVED, MANUAL, RAW, ROOT
 
-DERIVED = ROOT / "data" / "derived"
-MANUAL = ROOT / "data" / "manual"
+EPUB_PATH = RAW / "Brocktons_Celestial_Forge.epub"
 
 CHAPTER_SECTIONS = DERIVED / "chapter_sections.json"
 CHAPTERS = DERIVED / "chapters.json"

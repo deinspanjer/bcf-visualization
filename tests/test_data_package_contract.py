@@ -9,9 +9,9 @@ import urllib.error
 from pathlib import Path
 import pytest
 
+from scripts.data_paths import DERIVED
 
 ROOT = Path(__file__).resolve().parent.parent
-DERIVED = ROOT / "data" / "derived"
 
 
 def _load_json(path: Path) -> dict:

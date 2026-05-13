@@ -36,9 +36,9 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from pathlib import Path
 
 from _common import write_validated_json
+from data_paths import DERIVED, MANUAL, ROOT
 from multi_grab import (
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
@@ -55,13 +55,12 @@ from regime_simulator import (
     simulate_story,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
-CHAPTERS_JSON = ROOT / "data" / "derived" / "chapters.json"
-OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
-ROLLS_JSON = ROOT / "data" / "derived" / "rolls.json"
-SECTIONS_JSON = ROOT / "data" / "derived" / "chapter_sections.json"
-CLASSIFICATIONS_JSON = ROOT / "data" / "manual" / "section_classifications.json"
-OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
+CHAPTERS_JSON = DERIVED / "chapters.json"
+OBTAINED_JSON = DERIVED / "obtained_perks.json"
+ROLLS_JSON = DERIVED / "rolls.json"
+SECTIONS_JSON = DERIVED / "chapter_sections.json"
+CLASSIFICATIONS_JSON = MANUAL / "section_classifications.json"
+OUT = DERIVED / "predicted_rolls.json"
 
 
 # Regime model lives in scripts/regime_simulator.py; re-exported above.
@@ -70,7 +69,7 @@ OUT = ROOT / "data" / "derived" / "predicted_rolls.json"
 # ---------- per-chapter CP-earning word counts ------------------------------
 
 
-_HEADER_CORRECTIONS_JSON = ROOT / "data" / "manual" / "header_corrections.json"
+_HEADER_CORRECTIONS_JSON = MANUAL / "header_corrections.json"
 
 
 def _load_header_correction_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:

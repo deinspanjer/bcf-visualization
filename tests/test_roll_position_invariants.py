@@ -25,11 +25,12 @@ from predict_rolls import (  # noqa: E402
     _simulate,
 )
 from regime_simulator import load_regime_transitions  # noqa: E402
+from data_paths import DERIVED, MANUAL  # noqa: E402
 
 
-ROLL_FACTS_JSON = ROOT / "data" / "derived" / "roll_facts.json"
-CHAPTER_FACTS_JSON = ROOT / "data" / "derived" / "chapter_facts.json"
-CHAPTER_ROLL_OVERRIDES_JSON = ROOT / "data" / "manual" / "chapter_roll_overrides.json"
+ROLL_FACTS_JSON = DERIVED / "roll_facts.json"
+CHAPTER_FACTS_JSON = DERIVED / "chapter_facts.json"
+CHAPTER_ROLL_OVERRIDES_JSON = MANUAL / "chapter_roll_overrides.json"
 
 
 def _simulation_inputs() -> tuple[list[dict], dict[str, list[dict]], dict[str, int]]:

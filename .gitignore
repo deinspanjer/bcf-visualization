@@ -27,6 +27,7 @@ venv/
 .mypy_cache/
 .pytest_cache/
 .playwright-mcp/
+tests/.tmp-data/
 
 # Editors / OS
 .vscode/

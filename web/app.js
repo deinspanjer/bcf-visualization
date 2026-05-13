@@ -7,6 +7,7 @@ import {
   buildConstellationProgressIndex,
   paidRollPerks,
   rollMarkerModel,
+  skippedPredictedRollTitle,
 } from "./viz-model.js";
 
 /* Brockton's Celestial Forge — DAW scrubber app
@@ -694,6 +695,23 @@ function renderRollsTrack(model, facts) {
       dot._dotSize = rollDotSize(r);
       track.appendChild(dot);
     }
+    for (const marker of c.skipped_predicted_rolls || []) {
+      const wp = rollWordPosition(model, marker, c);
+      const leftPct = pctOf(model, wp);
+      const skip = el("button", {
+        type: "button",
+        class: "roll-skip-marker",
+        style: { left: `${leftPct.toFixed(4)}%` },
+        "data-chapter-num": c.chapter_num,
+        "data-roll-number": marker.roll_number ?? "",
+        title: skippedPredictedRollTitle(marker, c),
+        "aria-label": skippedPredictedRollTitle(marker, c),
+        text: "x",
+      });
+      skip._wordPos = wp;
+      skip._wordPct = leftPct;
+      track.appendChild(skip);
+    }
   }
 }
 
@@ -1032,6 +1050,7 @@ function renderMarkerMeaningLegend() {
     ["binary paid grab", legendStar("toolkits", 300, { sources: 2 })],
     ["trinary with add-ons", legendStar("toolkits", 400, { sources: 3, companions: 2 })],
     ["miss or unknown", legendStar("miss", 300, { miss: true })],
+    ["skipped to align narrative", el("span", { class: "legend-skip-marker", text: "x" })],
   ].forEach(([label, marker]) => {
     container.appendChild(el("div", { class: "legend-row marker-example-row" },
       marker,

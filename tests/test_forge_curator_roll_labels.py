@@ -34,7 +34,7 @@ def test_chapter_1_roll_attempt_index_excludes_trigger(tmp_path: Path) -> None:
     assert rolls[0]["index"] == 1
 
     rendered = app._format_roll_stat_line(rolls[0], "▸")
-    assert "# 1 (1) Avail CP 100 miss Q" in rendered
+    assert "# 1 (1) Avail CP 100 miss SQ" in rendered
     assert "available CP at prediction:" not in rendered
     assert "#2 (global #1)" not in rendered
 
@@ -93,7 +93,7 @@ def test_chapter_2_roll_list_starts_with_displayed_deferred_roll(tmp_path: Path)
 
     rolls = app._unified_rolls(chapter_state)
 
-    assert rolls[0]["display_kind"] == "chapter_roll"
+    assert rolls[0]["display_kind"] == "deferred_in"
     assert rolls[0]["target_chapter_num"] == "1"
     assert rolls[0]["target_roll_index"] == 2
     assert rolls[0]["roll_number"] == 2
@@ -108,9 +108,26 @@ def test_chapter_2_stats_header_counts_deferred_in_roll(tmp_path: Path) -> None:
     app = _loaded_app("2", tmp_path)
     text = _render_stats_text(app)
 
-    assert "Rolls (4 predicted)" in text
-    assert "# 1 (2) Avail CP 200 hit" in text
-    assert "narrative deferred to ch 2" in text
+    assert "Deferred rolls" in text
+    assert "deferred from ch 1 #2 (2) Avail CP 200 hit" in text
+    assert "Rolls (4 predicted, 3 source)" in text
+
+
+def test_direct_roll_override_preserves_source_accounting(tmp_path: Path) -> None:
+    app = _loaded_app("9", tmp_path)
+    chapter_state = app.state.chapter
+    assert chapter_state is not None
+
+    first_roll = next(
+        roll for roll in app._unified_rolls(chapter_state)
+        if roll.get("target_chapter_num") == "9"
+        and roll.get("target_roll_index") == 1
+    )
+
+    assert first_roll["roll_number"] == 30
+    assert first_roll["outcome"] == "miss"
+    assert first_roll["available_cp"] == 100
+    assert first_roll["banked_cp_after_roll"] == 100
 
 
 def test_chapter_4_unpredicted_curator_roll_is_not_deferred(tmp_path: Path) -> None:

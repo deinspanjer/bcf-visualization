@@ -37,25 +37,26 @@ import json
 import re
 import zipfile
 from collections import Counter
-from pathlib import Path
 
 from _common import write_validated_json
+from data_paths import DERIVED, MANUAL, RAW, ROOT
 from data_release import refresh_current_runtime_manifest
 from find_roll_locations import _build_chapter_index, _split_sections
 
-ROOT = Path(__file__).resolve().parent.parent
-EPUB = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge.epub"
-CHAPTERS = ROOT / "data" / "derived" / "chapters.json"
-SECTIONS = ROOT / "data" / "derived" / "chapter_sections.json"
-CLASSIFICATIONS = ROOT / "data" / "manual" / "section_classifications.json"
-HEADER_CORRECTIONS = ROOT / "data" / "manual" / "header_corrections.json"
-ROLL_FACTS = ROOT / "data" / "derived" / "roll_facts.json"
-ROLL_VALIDATION = ROOT / "data" / "derived" / "roll_validation.json"
-OBTAINED_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
-PERK_DIRECTORY = ROOT / "data" / "derived" / "perk_directory.json"
-LAST_EDITED = ROOT / "data" / "derived" / "chapter_last_edited.json"
-TIMELINE = ROOT / "data" / "derived" / "timeline.json"
-OUT = ROOT / "data" / "derived" / "chapter_facts.json"
+EPUB = RAW / "Brocktons_Celestial_Forge.epub"
+CHAPTERS = DERIVED / "chapters.json"
+SECTIONS = DERIVED / "chapter_sections.json"
+CLASSIFICATIONS = MANUAL / "section_classifications.json"
+HEADER_CORRECTIONS = MANUAL / "header_corrections.json"
+ROLL_FACTS = DERIVED / "roll_facts.json"
+ROLL_VALIDATION = DERIVED / "roll_validation.json"
+PREDICTED_ROLLS = DERIVED / "predicted_rolls.json"
+CHAPTER_ROLL_OVERRIDES = MANUAL / "chapter_roll_overrides.json"
+OBTAINED_PERKS = DERIVED / "obtained_perks.json"
+PERK_DIRECTORY = DERIVED / "perk_directory.json"
+LAST_EDITED = DERIVED / "chapter_last_edited.json"
+TIMELINE = DERIVED / "timeline.json"
+OUT = DERIVED / "chapter_facts.json"
 
 CONSTELLATION_ORDER = [
     "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
@@ -254,6 +255,63 @@ def _manual_header_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:
     return out
 
 
+def _load_chapter_roll_overrides() -> dict[str, dict]:
+    if not CHAPTER_ROLL_OVERRIDES.exists():
+        return {}
+    data = json.loads(CHAPTER_ROLL_OVERRIDES.read_text())
+    return {
+        str(chapter_num): override
+        for chapter_num, override
+        in data.get("chapter_roll_overrides", {}).items()
+        if isinstance(override, dict)
+    }
+
+
+def _predicted_rolls_by_chapter(predicted_doc: dict) -> dict[str, list[dict]]:
+    by_chapter: dict[str, list[dict]] = {}
+    for roll in predicted_doc.get("predicted", []):
+        chapter_num = str(roll.get("chapter_num"))
+        if not chapter_num:
+            continue
+        by_chapter.setdefault(chapter_num, []).append(roll)
+    for rolls in by_chapter.values():
+        rolls.sort(key=lambda roll: int(roll.get("word_position") or 0))
+    return by_chapter
+
+
+def _skipped_predicted_roll_markers(
+    chapter_num: str,
+    predicted_rolls: list[dict],
+    override: dict | None,
+    *,
+    chapter_cp_start: int,
+) -> list[dict]:
+    markers: list[dict] = []
+    if not override:
+        return markers
+    for slot_index, roll_override in enumerate(override.get("rolls") or [], start=1):
+        if not isinstance(roll_override, dict) or not roll_override.get("skipped"):
+            continue
+        predicted_index = slot_index - 1
+        if predicted_index < 0 or predicted_index >= len(predicted_rolls):
+            continue
+        predicted_roll = predicted_rolls[predicted_index]
+        predicted_word_position = int(predicted_roll["word_position"])
+        markers.append({
+            "slot_index": slot_index,
+            "roll_number": int(predicted_roll["roll_number"]),
+            "mechanical_chapter_num": str(chapter_num),
+            "mechanical_word_position": max(
+                0,
+                predicted_word_position - int(chapter_cp_start),
+            ),
+            "mechanical_cumulative_word_offset": predicted_word_position,
+            "predicted_word_position_epub": predicted_word_position,
+            "reason": "skipped_to_align_narrative",
+        })
+    return markers
+
+
 # ---------- main builder ---------------------------------------------------
 
 def main() -> None:
@@ -283,6 +341,9 @@ def main() -> None:
         running_story_words += chapter_story_words_by_num[c["chapter_num"]]
     roll_facts_doc = json.loads(ROLL_FACTS.read_text())
     roll_validation_doc = json.loads(ROLL_VALIDATION.read_text())
+    predicted_rolls_doc = json.loads(PREDICTED_ROLLS.read_text())
+    predicted_by_chapter = _predicted_rolls_by_chapter(predicted_rolls_doc)
+    chapter_roll_overrides = _load_chapter_roll_overrides()
     obtained_doc = json.loads(OBTAINED_PERKS.read_text())
     obtained_counts_by_chapter: dict[str, dict[str, int]] = {}
     for perk in obtained_doc.get("perks", []):
@@ -446,6 +507,12 @@ def main() -> None:
         chapter_cp_words = sum(s["cp_earning_word_count"] for s in sections_out)
         chapter_story_words = sum(s["word_count"] for s in sections_out)
         chap_roll_facts = rolls_by_chapter.get(cn, [])
+        skipped_predicted_rolls = _skipped_predicted_roll_markers(
+            cn,
+            predicted_by_chapter.get(cn, []),
+            chapter_roll_overrides.get(cn),
+            chapter_cp_start=chapter_cp_start,
+        )
         rolls_out: list[dict] = []
         hits = 0
         misses = 0
@@ -705,6 +772,7 @@ def main() -> None:
             "structural_markers": sorted(struct_markers_aggregate),
 
             "sections": sections_out,
+            "skipped_predicted_rolls": skipped_predicted_rolls,
             "rolls": rolls_out,
         })
 
@@ -786,7 +854,7 @@ def main() -> None:
     }
 
     write_validated_json(OUT, payload, "chapter_facts")
-    refresh_current_runtime_manifest(source_dir=ROOT / "data" / "derived")
+    refresh_current_runtime_manifest(source_dir=DERIVED)
 
     # Console summary
     print(f"wrote {OUT.relative_to(ROOT)}: {len(out_chapters)} chapters")

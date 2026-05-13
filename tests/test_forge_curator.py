@@ -18,6 +18,7 @@ from textual.css.query import NoMatches
 from textual.widgets import Button, Input
 
 import scripts.forge_curator.app as forge_app
+from scripts.data_paths import DERIVED, MANUAL
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -673,10 +674,10 @@ def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
     assert "Text: CP ineligible - header" in text
     assert "Total content:" in text
     assert "CP eligible:" in text
-    assert "# 1 (2) Avail CP 200 hit Q" in text
-    assert "narrative deferred to ch 2" in text
-    assert "# 2 (3) Avail CP 100 miss Q" in text
-    assert "# 3 (4) Avail CP 200 hit Q" in text
+    assert "# 1 (3) Avail CP 100 miss SQ" in text
+    assert "# 2 (4) Avail CP 200 hit SQ" in text
+    assert "# 3 (5) Avail CP 200 hit SQ" in text
+    assert "# 4 predicted" in text
     assert "hit" in text
     assert "Clothing - Fashion (200)" in text
     assert "Quality - Bling of War (100)" in text
@@ -915,7 +916,7 @@ def test_roll_evidence_gutter_mark_survives_chapter_navigation(tmp_path: Path) -
         "Q",
     )
 
-    assert "hit Q" in _render_stats_text(app)
+    assert "hit SQ" in _render_stats_text(app)
     assert expected in app._compute_gutter_items()
 
     app._load_chapter("3")
@@ -1361,6 +1362,39 @@ def test_roll_stat_line_notes_non_default_display_position(tmp_path: Path) -> No
     assert "display at predicted roll position" in line
 
 
+def test_roll_stat_line_notes_unchanged_quote_marker_stays_predicted(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("10", tmp_path)
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "roll_number": 34,
+            "outcome": "hit",
+            "constellation": "Magitech",
+            "available_cp": 200,
+            "mechanical_chapter_num": "10",
+            "mechanical_word_position": 1631,
+            "mention_chapter_num": "10",
+            "mention_word_position": None,
+            "display_position_policy": "mechanical",
+            "display_chapter_num": "10",
+            "display_word_position": 1631,
+            "purchased_perks": [{"name": "Mechanist", "cost": 100}],
+            "evidence_quotes": [
+                {
+                    "text": "The final constellation was called Magitech.",
+                    "mention_chapter_num": "10",
+                    "mention_word_position": 1729,
+                },
+            ],
+        },
+        " ",
+    )
+
+    assert "display at predicted roll position" in line
+
+
 def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
     tmp_path: Path,
 ) -> None:
@@ -1387,6 +1421,541 @@ def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
 
     assert "# 3 (19)" in line
     assert "# 4 (19)" not in line
+
+
+def test_chapter_9_stats_separates_deferred_and_open_predicted_slots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = _loaded_app("9", tmp_path)
+    monkeypatch.setattr(
+        app,
+        "_unified_rolls",
+        lambda _cs: [
+            {
+                "index": 1,
+                "target_roll_index": 1,
+                "target_chapter_num": "9",
+                "visible_chapter_num": "9",
+                "display_kind": "chapter_roll",
+                "word_position": 750,
+                "raw_word_position": 754,
+                "outcome": "miss",
+                "roll_number": 30,
+                "available_cp": 100,
+                "evidence_quotes": [],
+                "use_stable_target_identity": True,
+            },
+            {
+                "index": None,
+                "target_roll_index": 1,
+                "target_chapter_num": "8.1",
+                "visible_chapter_num": "9",
+                "display_kind": "deferred_in",
+                "word_position": 0,
+                "raw_word_position": 0,
+                "outcome": "miss",
+                "roll_number": 27,
+                "available_cp": 200,
+                "evidence_quotes": [],
+                "use_stable_target_identity": False,
+            },
+        ],
+    )
+    monkeypatch.setattr(
+        app,
+        "_open_predicted_slot_rolls",
+        lambda _cs: [
+            {
+                "index": 2,
+                "target_roll_index": 2,
+                "target_chapter_num": "9",
+                "visible_chapter_num": "9",
+                "display_kind": "predicted_slot",
+                "word_position": 2750,
+                "raw_word_position": 2754,
+                "outcome": "open",
+                "roll_number": 36,
+                "use_stable_target_identity": True,
+            },
+        ],
+    )
+    text = _render_stats_text(app)
+
+    assert "Deferred rolls" in text
+    assert "# 2 predicted" in text
+
+
+def test_displayed_cross_chapter_roll_stays_in_deferred_section(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("10", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.roll_facts = [
+        {
+            "roll_number": 999,
+            "chapter_num": "10",
+            "mechanical_chapter_num": "9",
+            "mechanical_word_position": 8750,
+            "mechanical_cumulative_word_offset": 78000,
+            "display_chapter_num": "10",
+            "display_word_position": 294,
+            "display_cumulative_word_offset": 78663,
+            "mention_chapter_num": "10",
+            "mention_word_position": 294,
+            "display_position_policy": "mention",
+            "source_kind": "miss",
+            "source": "curator_rolls",
+            "outcome": "miss",
+            "available_cp": 100,
+            "constellation": "Size",
+            "evidence_quotes": [],
+        }
+    ]
+
+    rolls = app._unified_rolls(cs)
+
+    assert len(rolls) == 1
+    assert rolls[0]["display_kind"] == "deferred_in"
+    assert rolls[0]["word_position"] == 294
+    assert rolls[0]["target_chapter_num"] == "9"
+
+
+def test_deferred_rolls_render_above_main_rolls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = _loaded_app("10", tmp_path)
+    deferred = {
+        "display_kind": "deferred_in",
+        "target_chapter_num": "9",
+        "target_roll_index": 5,
+        "word_position": 294,
+        "outcome": "miss",
+        "roll_number": 33,
+        "available_cp": 100,
+        "constellation": "Size",
+        "evidence_quotes": [],
+    }
+    current = {
+        "display_kind": "chapter_roll",
+        "target_chapter_num": "10",
+        "target_roll_index": 1,
+        "word_position": 1631,
+        "outcome": "hit",
+        "roll_number": 34,
+        "available_cp": 200,
+        "constellation": "Magitech",
+        "purchased_perks": [{"name": "Mechanist", "cost": 100}],
+        "evidence_quotes": [],
+        "use_stable_target_identity": True,
+    }
+    monkeypatch.setattr(app, "_unified_rolls", lambda _cs: [deferred, current])
+
+    text = _render_stats_text(app)
+
+    assert text.index("Deferred rolls") < text.index("Rolls")
+
+
+def test_space_m_on_selected_predicted_slot_creates_extra_miss_override(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("9", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    target = {
+        "display_kind": "predicted_slot",
+        "target_chapter_num": "9",
+        "target_roll_index": 5,
+    }
+    app._selected_roll_target_if_visible = lambda: target
+
+    app._select_roll_target(target)
+    app._action_set_last_outcome("9", "miss")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["9"]["rolls"]
+    assert saved[int(target["target_roll_index"]) - 1]["outcome"] == "miss"
+
+
+def test_space_s_marks_selected_predicted_slot_skipped(tmp_path: Path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("9", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._post_curation_refresh = lambda message, *, full=False: None
+    target = {
+        "display_kind": "predicted_slot",
+        "target_chapter_num": "9",
+        "target_roll_index": 5,
+    }
+    app._selected_roll_target_if_visible = lambda: target
+
+    app._select_roll_target(target)
+    app._handle_space_chord("s")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["9"]["rolls"]
+    assert saved[int(target["target_roll_index"]) - 1]["skipped"] is True
+    assert saved[int(target["target_roll_index"]) - 1]["outcome"] is None
+
+
+def test_source_roll_assignment_marks_selected_slot(tmp_path: Path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("9", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+
+    source = next(
+        row for row in app._source_roll_picker_rows("9")
+        if row["roll_number"] == 31
+    )
+    app.persistence.assign_source_roll_at_index("9", 3, int(source["roll_number"]))
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["9"]["rolls"]
+    assert saved[2]["source_roll_number"] == 31
+
+
+def test_source_roll_assignment_can_target_deferred_roll(tmp_path: Path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("10", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app._current_roll_target = lambda: {
+        "display_kind": "deferred_in",
+        "target_chapter_num": "9",
+        "target_roll_index": 5,
+    }
+    app._source_roll_picker_rows = lambda chapter_num: [
+        {"roll_number": 33, "outcome": "miss", "raw": "Roll 33: Size miss"}
+    ]
+    app._post_curation_refresh = lambda message, *, full=False: None
+    app.push_screen = lambda screen: screen._on_select(screen._rolls[0])
+
+    app._action_assign_source_roll("10")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["9"]["rolls"]
+    assert saved[4]["source_roll_number"] == 33
+
+
+def test_space_s_on_source_roll_marks_that_predicted_slot_skipped(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("8.1", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    cs = app.state.chapter
+    assert cs is not None
+    source_roll = app._unified_rolls(cs)[0]
+    app.refresh_all_panels = lambda: None
+    app._scroll_cursor_into_view = lambda: None
+    app._post_curation_refresh = lambda message, *, full=False: None
+
+    app._select_roll_target(source_roll)
+    app._handle_space_chord("s")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["8.1"]["rolls"]
+    assert saved[1]["skipped"] is True
+    assert saved[1]["outcome"] is None
+
+
+def test_skipped_predicted_slot_remains_visible_in_stats(tmp_path: Path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("9", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    cs = app.state.chapter
+    assert cs is not None
+    app._unified_rolls = lambda _cs: []
+    open_index = int(app._open_predicted_slot_rolls(cs)[0]["target_roll_index"])
+    app.persistence.mark_roll_skipped("9", open_index)
+
+    skipped = next(
+        roll for roll in app._open_predicted_slot_rolls(cs)
+        if roll["target_roll_index"] == open_index
+    )
+    line = app._format_roll_stat_line(skipped, " ")
+
+    assert skipped["skipped"] is True
+    assert "skipped" in line
+
+
+def test_rolls_stats_block_lists_every_predicted_slot(tmp_path: Path) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    text = _render_stats_text(app)
+
+    assert "Rolls (5 predicted" in text
+    assert "# 1 skipped" in text
+    assert "# 2 (27)" in text
+    assert "# 3 " in text
+    assert "# 4 " in text
+    assert "# 5 " in text
+    assert "Open predicted slots" not in text
+
+
+def test_source_rolls_keep_spreadsheet_marker_and_evidence_rows(tmp_path: Path) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    text = _render_stats_text(app)
+
+    assert "# 2 (27) Avail CP 200 miss SQ" in text
+    assert "# 4 (28) Avail CP 300 miss SQ" in text
+    assert "# 5 (29) Avail CP 400 hit SQQ" in text
+    assert "S against ch 8.1 #2 (global #27)" in text
+    assert "Roll 27 (200): ???" in text
+    assert "S against ch 8.1 #4 (global #28)" in text
+    assert "S against ch 8.1 #5 (global #29)" in text
+
+
+def test_external_roll_quote_evidence_is_listed_in_stats(tmp_path: Path) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    text = _render_stats_text(app)
+
+    assert "Q1 against ch 8.1 #2 (global #27)" in text
+    assert "Q1 against ch 8.1 #4 (global #28)" in text
+    assert "Q1 against ch 8.1 #5 (global #29)" in text
+    assert "Q2 against ch 8.1 #5 (global #29)" in text
+    assert "mention: ch 9 word 1,561" in text
+    assert "mention: ch 9 word 1,728" in text
+
+
+def test_roll_quote_picker_includes_deferred_in_targets(tmp_path: Path) -> None:
+    app = _loaded_app("10", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    deferred = {
+        "display_kind": "deferred_in",
+        "target_chapter_num": "9",
+        "target_roll_index": 5,
+        "word_position": 0,
+        "outcome": "miss",
+    }
+    current = {
+        "display_kind": "chapter_roll",
+        "target_chapter_num": "10",
+        "target_roll_index": 1,
+        "word_position": 1000,
+        "outcome": "miss",
+    }
+    skipped = {
+        "display_kind": "predicted_slot",
+        "target_chapter_num": "10",
+        "target_roll_index": 2,
+        "word_position": 2000,
+        "skipped": True,
+    }
+    app._unified_rolls = lambda _cs: [deferred, current]
+    app._roll_slot_rows = lambda _cs, unified=None: [current, skipped]
+
+    picker_targets = app._roll_evidence_picker_rolls(cs)
+
+    assert picker_targets[0].get("display_kind") == "deferred_in"
+    assert any(
+        roll.get("display_kind") == "deferred_in"
+        and roll.get("target_chapter_num") == "9"
+        and roll.get("target_roll_index") == 5
+        for roll in picker_targets
+    )
+
+
+def test_roll_quote_picker_includes_source_only_unpositioned_targets(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("10", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    current = {
+        "display_kind": "chapter_roll",
+        "target_chapter_num": "10",
+        "target_roll_index": 1,
+        "word_position": 1000,
+        "roll_number": 34,
+        "outcome": "hit",
+    }
+    source_only = {
+        "display_kind": "chapter_roll",
+        "target_chapter_num": "10",
+        "target_roll_index": 6,
+        "word_position": 8784,
+        "roll_number": 38,
+        "outcome": "miss",
+        "mechanical_word_position": None,
+        "display_word_position": None,
+    }
+    app._unified_rolls = lambda _cs: [current, source_only]
+    app._roll_slot_rows = lambda _cs, unified=None: [current]
+
+    picker_targets = app._roll_evidence_picker_rolls(cs)
+
+    assert any(
+        roll.get("roll_number") == 38
+        and roll.get("target_roll_index") == 6
+        for roll in picker_targets
+    )
+
+
+def test_beginning_quote_defaults_to_deferred_in_roll(tmp_path: Path) -> None:
+    app = _loaded_app("10", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    deferred = {
+        "display_kind": "deferred_in",
+        "target_chapter_num": "9",
+        "target_roll_index": 5,
+        "word_position": 0,
+        "outcome": "miss",
+    }
+    current = {
+        "display_kind": "chapter_roll",
+        "target_chapter_num": "10",
+        "target_roll_index": 1,
+        "word_position": 1000,
+        "display_chapter_num": "10",
+        "outcome": "miss",
+    }
+    app._unified_rolls = lambda _cs: [deferred, current]
+    app._roll_slot_rows = lambda _cs, unified=None: [current]
+
+    target = app._current_roll_evidence_target(word_idx=306)
+
+    assert target is not None
+    assert target.get("display_kind") == "deferred_in"
+    assert target.get("target_chapter_num") == "9"
+    assert target.get("target_roll_index") == 5
+
+
+def test_rolls_header_counts_source_curated_and_deferred_rows(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("9", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.predicted_rolls = [{} for _ in range(5)]
+    source_row = {
+        "display_kind": "chapter_roll",
+        "source": "curator_rolls",
+        "source_kind": "miss",
+    }
+    curated_row = {
+        "display_kind": "chapter_roll",
+        "source_kind": "miss",
+        "curator_added": True,
+    }
+    deferred_row = {
+        "display_kind": "deferred_in",
+        "source": "curator_rolls",
+        "source_kind": "miss",
+    }
+    app._unified_rolls = lambda _cs: [
+        source_row,
+        source_row,
+        source_row,
+        curated_row,
+        deferred_row,
+        deferred_row,
+        deferred_row,
+    ]
+
+    assert app._rolls_header_count(cs) == (
+        "5 predicted, 3 source, 1 curated"
+    )
+
+
+def test_source_roll_marker_accumulates_quote_evidence(tmp_path: Path) -> None:
+    app = _loaded_app("8.1", tmp_path)
+
+    assert app._roll_evidence_marker({
+        "source": "curator_rolls",
+        "source_kind": "miss",
+        "evidence_quotes": [{"text": "quote"}],
+    }) == "SQ"
+    assert app._roll_evidence_marker({
+        "source": "curator_rolls",
+        "source_kind": "roll",
+        "evidence_quotes": [{"text": "one"}, {"text": "two"}],
+    }) == "SQQ"
+    assert app._roll_evidence_marker({
+        "evidence_quotes": [{"text": "quote"}],
+    }) == "Q"
+
+
+def test_multi_quote_picker_targets_visible_slot_rows_not_source_row_indexes(
+    tmp_path: Path,
+) -> None:
+    app = _loaded_app("8.1", tmp_path)
+    cs = app.state.chapter
+    assert cs is not None
+    rows = app._roll_evidence_picker_rolls(cs)
+
+    assert [row.get("target_roll_index") for row in rows] == [2, 4, 5]
+    assert [row.get("roll_number") for row in rows] == [27, 28, 29]
+
+
+def test_curation_status_message_is_visible_in_stats(tmp_path: Path) -> None:
+    app = _loaded_app("9", tmp_path)
+    app.refresh_all_panels = lambda: None
+    app._scroll_cursor_into_view = lambda: None
+
+    app._flash("skip roll: select an open predicted slot first")
+
+    assert "skip roll: select an open predicted slot first" in _render_stats_text(app)
+
+
+def test_stats_click_selects_roll_action_target(tmp_path: Path) -> None:
+    app = _loaded_app("9", tmp_path)
+    app._unified_rolls = lambda _cs: []
+    stats = StatsPanel()
+    stats.render_stats(app.state, app)
+    target_line = next(
+        line
+        for line, target in stats._roll_line_targets.items()
+        if target.get("display_kind") == "predicted_slot"
+    )
+
+    stats.on_click(_FakeMouseEvent(0, target_line))
+
+    selected = app._selected_roll_target_if_visible()
+    assert selected is not None
+    assert selected["display_kind"] == "predicted_slot"
+
+
+def test_space_upper_r_runs_full_rebuild(tmp_path: Path) -> None:
+    app = _loaded_app("9", tmp_path)
+    refreshes: list[tuple[str, bool]] = []
+    app._post_curation_refresh = (
+        lambda message, *, full=False: refreshes.append((message, full))
+    )
+
+    app._handle_space_chord("R")
+
+    assert refreshes == [("full curation rebuild complete", True)]
 
 
 def test_roll_evidence_picker_label_uses_stable_target_index() -> None:
@@ -1734,7 +2303,7 @@ def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
 def test_chapter_1_stats_marks_fashion_as_narrative_deferred(tmp_path) -> None:
     app = _loaded_app("1", tmp_path)
     text = _render_stats_text(app)
-    assert "# 2 (2) Avail CP 200 hit Q" in text
+    assert "# 2 (2) Avail CP 200 hit SQ" in text
     assert "narrative deferred to ch 2" in text
     assert "Clothing - Fashion (200)" in text
 
@@ -1781,11 +2350,15 @@ def test_deferred_roll_action_toggles_existing_deferral_off(tmp_path) -> None:
         journal_dir_path=tmp_path / ".journals",
     )
     app.persistence.mark_roll_deferred_to_chapter("8.1", 1, "9")
-    app.data.reload_from_disk()
     cs = app._load_chapter("8.1")
     app._post_curation_refresh = lambda message, *, full=False: None
-    first = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 1)
-    cs.cursor_char = app.state.char_at_word_index(first["raw_word_position"])
+    app._selected_roll_target = {
+        "target_chapter_num": "8.1",
+        "target_roll_index": 1,
+        "display_kind": "chapter_roll",
+        "mention_chapter_num": "9",
+    }
+    app._selected_roll_target_if_visible = lambda: app._selected_roll_target
 
     app._action_defer_roll_to_next_chapter("8.1")
 
@@ -1847,7 +2420,7 @@ def test_resolve_model_discrepancy_persists_chapter_resolution(tmp_path) -> None
 def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
-    chapter_facts = json.loads((ROOT / "data" / "derived" / "chapter_facts.json").read_text())
+    chapter_facts = json.loads((DERIVED / "chapter_facts.json").read_text())
     blocking_codes = {
         "paid_rolls_exceed_predicted_slots",
         "known_attempts_exceed_predicted_slots",
@@ -1948,7 +2521,7 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
 
     chapter_roll_overrides_path = tmp_path / "chapter_roll_overrides.json"
     chapter_roll_overrides_path.write_text(
-        Path("data/manual/chapter_roll_overrides.json").read_text()
+        (MANUAL / "chapter_roll_overrides.json").read_text()
     )
 
     app = _loaded_app("2", tmp_path)

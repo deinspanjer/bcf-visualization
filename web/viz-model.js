@@ -40,6 +40,14 @@ export function rollMarkerModel(roll) {
   };
 }
 
+export function skippedPredictedRollTitle(marker, chapter) {
+  const chapterNum = chapter?.chapter_num ?? marker?.mechanical_chapter_num ?? "?";
+  const rollNumber = marker?.roll_number != null
+    ? `#${marker.roll_number}`
+    : `slot ${marker?.slot_index ?? "?"}`;
+  return `ch ${chapterNum} · predicted roll ${rollNumber} · skipped to align with narrative mentions`;
+}
+
 export function buildConstellationProgressIndex(
   facts,
   constellationOrder = DEFAULT_CONSTELLATION_ORDER,

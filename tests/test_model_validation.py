@@ -19,15 +19,16 @@ from multi_grab import (  # noqa: E402
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
 )
+from data_paths import DERIVED  # noqa: E402
 
 
-CHAPTERS_JSON = ROOT / "data" / "derived" / "chapters.json"
-OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
-PREDICTED_JSON = ROOT / "data" / "derived" / "predicted_rolls.json"
-ROLL_FACTS_JSON = ROOT / "data" / "derived" / "roll_facts.json"
-ROLL_VALIDATION_JSON = ROOT / "data" / "derived" / "roll_validation.json"
-CHAPTER_FACTS_JSON = ROOT / "data" / "derived" / "chapter_facts.json"
-ROLL_FACTS_SCHEMA_JSON = ROOT / "data" / "derived" / "_schemas" / "roll_facts.schema.json"
+CHAPTERS_JSON = DERIVED / "chapters.json"
+OBTAINED_JSON = DERIVED / "obtained_perks.json"
+PREDICTED_JSON = DERIVED / "predicted_rolls.json"
+ROLL_FACTS_JSON = DERIVED / "roll_facts.json"
+ROLL_VALIDATION_JSON = DERIVED / "roll_validation.json"
+CHAPTER_FACTS_JSON = DERIVED / "chapter_facts.json"
+ROLL_FACTS_SCHEMA_JSON = DERIVED / "_schemas" / "roll_facts.schema.json"
 
 
 def _chapter_nums() -> list[str]:

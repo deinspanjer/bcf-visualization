@@ -211,6 +211,8 @@ class CurationPersistence:
                 "mention_chapter_num": None,
                 "mention_word_position": None,
                 "display_position_policy": None,
+                "skipped": False,
+                "source_roll_number": None,
                 "evidence_quotes": [],
                 "curator_note": None,
             })
@@ -247,6 +249,8 @@ class CurationPersistence:
         mention_word_position: int | None = None,
         display_position_policy: str | None = None,
         curator_note: str | None = None,
+        skipped: bool | None = None,
+        source_roll_number: int | None = None,
     ) -> dict:
         """Update an override roll at 1-based chapter-local ``index``.
 
@@ -256,10 +260,13 @@ class CurationPersistence:
         roll = self.get_or_create_roll_at_index(chapter_num, index)
         if outcome is not None:
             roll["outcome"] = outcome
+            roll["skipped"] = False
         if constellation is not None:
             roll["constellation"] = constellation
         if perks is not None:
             roll["perks"] = list(perks)
+            if perks:
+                roll["skipped"] = False
         if evidence_quotes is not None:
             roll["evidence_quotes"] = list(evidence_quotes)
         if mention_chapter_num is not None:
@@ -270,6 +277,14 @@ class CurationPersistence:
             roll["display_position_policy"] = display_position_policy
         if curator_note is not None:
             roll["curator_note"] = curator_note
+        if skipped is not None:
+            roll["skipped"] = bool(skipped)
+            if skipped:
+                roll["outcome"] = None
+                roll["perks"] = []
+                roll["constellation"] = None
+        if source_roll_number is not None:
+            roll["source_roll_number"] = int(source_roll_number)
         _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
         self._append_journal(
             "update_roll_at_index", self.chapter_roll_overrides_path, str(chapter_num),
@@ -280,9 +295,26 @@ class CurationPersistence:
                    "mention_chapter_num": mention_chapter_num,
                    "mention_word_position": mention_word_position,
                    "display_position_policy": display_position_policy,
-                   "curator_note": curator_note},
+                   "curator_note": curator_note,
+                   "skipped": skipped,
+                   "source_roll_number": source_roll_number},
         )
         return roll
+
+    def assign_source_roll_at_index(
+        self, chapter_num: str, index: int, source_roll_number: int,
+    ) -> dict:
+        return self.update_roll_at_index(
+            chapter_num, index, source_roll_number=source_roll_number,
+        )
+
+    def mark_roll_skipped(self, chapter_num: str, index: int) -> dict:
+        """Mark a predicted slot as deliberately skipped.
+
+        This is metadata only: the derivation pipeline ignores skipped
+        placeholders when building paid roll facts.
+        """
+        return self.update_roll_at_index(chapter_num, index, skipped=True)
 
     def append_roll_evidence_at_index(
         self,

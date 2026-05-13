@@ -24,9 +24,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+try:
+    from data_paths import DERIVED, ROOT
+except ModuleNotFoundError:  # package import path used by tests
+    from scripts.data_paths import DERIVED, ROOT
 
-ROOT = Path(__file__).resolve().parent.parent
-DERIVED = ROOT / "data" / "derived"
 DIST = ROOT / "dist" / "data-packages"
 
 CONTRACT = "bcf-visualization-data"
@@ -475,17 +477,30 @@ def _check_predicted_rolls_fresh(source_dir: Path) -> list[str]:
                 "cost": unit_total_cost(unit),
                 "principal_cost": unit_principal_cost(unit),
             })
+        if source_dir.resolve() == DERIVED.resolve():
+            cp_words_by_chapter = predict_rolls._load_cp_words_per_chapter()
+        else:
+            cp_words_by_chapter = {
+                str(chapter.get("full_title") or chapter.get("chapter_num")): sum(
+                    int(section.get("word_count") or 0)
+                    for section in (chapter.get("sections") or [])
+                    if section.get("counts_for_cp", True)
+                )
+                for chapter in _read_json(source_dir / "chapter_sections.json").get(
+                    "chapters", []
+                )
+            }
         expected, _starts, _ends, total_words = predict_rolls._simulate(
             chapters,
             paid_by_chapter,
-            predict_rolls._load_cp_words_per_chapter(),
+            cp_words_by_chapter,
             load_regime_transitions(),
         )
         actual_doc = _read_json(source_dir / "predicted_rolls.json")
         actual = actual_doc.get("predicted")
         expected_dicts = [asdict(roll) for roll in expected]
     except Exception as exc:
-        return [f"could not validate predicted_rolls freshness: {exc}"]
+        return [f"could not validate predicted_rolls.json freshness: {exc}"]
     finally:
         (
             predict_rolls.CHAPTERS_JSON,

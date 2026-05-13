@@ -21,9 +21,9 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
-from pathlib import Path
 
 from _common import write_validated_json
+from data_paths import DERIVED, MANUAL, ROOT
 from multi_grab import (
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
@@ -44,18 +44,17 @@ from roll_scheduler import (
     schedule_chapter,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
-CURATOR_ROLLS = ROOT / "data" / "derived" / "rolls.json"
-ROLL_OUTCOMES = ROOT / "data" / "derived" / "roll_outcomes.json"
-PREDICTED_ROLLS = ROOT / "data" / "derived" / "predicted_rolls.json"
-OBTAINED_PERKS = ROOT / "data" / "derived" / "obtained_perks.json"
-CHAPTERS_JSON = ROOT / "data" / "derived" / "chapters.json"
-EVIDENCE = ROOT / "data" / "derived" / "roll_text_evidence.json"
-DIRECTORY = ROOT / "data" / "derived" / "perk_directory.json"
-OUTSTANDING = ROOT / "data" / "derived" / "outstanding_perks_by_chapter.json"
-ROLL_OVERRIDES = ROOT / "data" / "manual" / "roll_overrides.json"
-OUT = ROOT / "data" / "derived" / "roll_facts.json"
-VALIDATION_OUT = ROOT / "data" / "derived" / "roll_validation.json"
+CURATOR_ROLLS = DERIVED / "rolls.json"
+ROLL_OUTCOMES = DERIVED / "roll_outcomes.json"
+PREDICTED_ROLLS = DERIVED / "predicted_rolls.json"
+OBTAINED_PERKS = DERIVED / "obtained_perks.json"
+CHAPTERS_JSON = DERIVED / "chapters.json"
+EVIDENCE = DERIVED / "roll_text_evidence.json"
+DIRECTORY = DERIVED / "perk_directory.json"
+OUTSTANDING = DERIVED / "outstanding_perks_by_chapter.json"
+ROLL_OVERRIDES = MANUAL / "roll_overrides.json"
+OUT = DERIVED / "roll_facts.json"
+VALIDATION_OUT = DERIVED / "roll_validation.json"
 
 
 def sort_key_for_chapter(chapter_num: str) -> tuple[int, int]:
@@ -492,6 +491,12 @@ def _is_metadata_only_roll_override(
         return False
     if entry.get("outcome") in ("hit", "miss"):
         return False
+    if entry.get("skipped") not in (None, False):
+        return False
+    if entry.get("source_roll_number") is not None:
+        return False
+    if entry.get("curator_added"):
+        return False
     if entry.get("perks"):
         return False
     structural_fields = (
@@ -686,18 +691,20 @@ def _restructure_curator_rows(
 
     # Explicit miss-only overrides, such as Chapter 1's "both predicted
     # rolls are misses", should not be matched to a trigger or converted
-    # into zero-cost hit rows. Preserve any curator trigger rows, then
-    # emit the requested miss rows in override order.
+    # into zero-cost hit rows. Preserve existing source rows unless the
+    # override explicitly replaces them, and allow extra miss rows beyond
+    # the source list so predicted-but-unlisted attempts can be curated.
     if structural_override_indices and all(
         _explicit_outcome(entry) == "miss" and not _names_of(entry)
         for entry in (override_rolls_raw[idx] for idx in structural_override_indices)
     ):
         out_rows: list[dict] = []
-        miss_templates = [
+        non_trigger_templates = [
             (source_idx, row)
             for source_idx, row in curator_rows
-            if row.get("kind") == "miss"
+            if row.get("kind") != "trigger"
         ]
+        last_source_idx = non_trigger_templates[-1][0] if non_trigger_templates else 0
         for source_idx, row in curator_rows:
             if row.get("kind") != "trigger":
                 continue
@@ -713,12 +720,37 @@ def _restructure_curator_rows(
                 "roll_number": row.get("roll_number"),
                 "raw": row.get("raw"),
             })
-        for idx in structural_override_indices:
-            _entry = override_rolls_raw[idx]
-            source_idx, template = (
-                miss_templates[min(idx, len(miss_templates) - 1)]
-                if miss_templates else (-1, {})
+        row_count = max(len(non_trigger_templates), len(override_rolls_raw))
+        for idx in range(row_count):
+            entry = override_rolls_raw[idx] if idx < len(override_rolls_raw) else None
+            template = (
+                non_trigger_templates[idx][1]
+                if idx < len(non_trigger_templates) else {}
             )
+            source_idx = (
+                non_trigger_templates[idx][0]
+                if idx < len(non_trigger_templates) else last_source_idx
+            )
+            if entry is None or _is_metadata_only_roll_override(entry, chapter_num):
+                if not template:
+                    continue
+                payload = {
+                    "_source_idx": source_idx,
+                    "_override_origin": None,
+                    "kind": template.get("kind"),
+                    "perks": list(template.get("perks") or []),
+                    "banked_before": template.get("banked_before"),
+                    "banked_after": template.get("banked_after"),
+                    "constellation": template.get("constellation"),
+                    "constellation_revealed": template.get(
+                        "constellation_revealed", False
+                    ),
+                    "roll_number": template.get("roll_number"),
+                    "raw": template.get("raw"),
+                }
+                _apply_metadata(payload, entry, chapter_num)
+                out_rows.append(payload)
+                continue
             out_rows.append({
                 "_source_idx": source_idx,
                 "_override_origin": idx,
@@ -728,9 +760,15 @@ def _restructure_curator_rows(
                 "banked_after": template.get("banked_after"),
                 "constellation": None,
                 "constellation_revealed": False,
-                "roll_number": template.get("roll_number"),
-                "raw": template.get("raw"),
-                "_evidence_quotes": _evidence_quotes(_entry),
+                "roll_number": (
+                    template.get("roll_number")
+                    if idx < len(non_trigger_templates) else None
+                ),
+                "raw": (
+                    template.get("raw")
+                    if idx < len(non_trigger_templates) else None
+                ),
+                "_evidence_quotes": _evidence_quotes(entry),
             })
         return out_rows
     # Normalize override rolls to (paid_names_set, all_names_in_order_with_meta)
@@ -923,7 +961,11 @@ def _norm_chapter(value: str | None, fallback: str) -> str:
     return str(value) if value is not None else str(fallback)
 
 
-def _override_needs_direct_rows(chapter_num: str, override: dict) -> bool:
+def _override_needs_direct_rows(
+    chapter_num: str,
+    override: dict,
+    curator_rows: list[tuple[int, dict]] | None = None,
+) -> bool:
     """True when the override cannot be matched only against same-chapter
     curator hit rows.
 
@@ -932,8 +974,34 @@ def _override_needs_direct_rows(chapter_num: str, override: dict) -> bool:
     direct construction from obtained_perks instead.
     """
     for entry in override.get("rolls") or []:
+        if isinstance(entry, dict) and entry.get("skipped"):
+            return True
+        if isinstance(entry, dict) and entry.get("source_roll_number") is not None:
+            return True
         if _norm_chapter(entry.get("mention_chapter_num"), chapter_num) != str(chapter_num):
             return True
+    if curator_rows is not None:
+        structural_entries = [
+            entry for entry in override.get("rolls") or []
+            if not _is_metadata_only_roll_override(entry, chapter_num)
+        ]
+        if (
+            any(entry.get("outcome") == "miss" for entry in structural_entries)
+            and any(entry.get("outcome") == "hit" for entry in structural_entries)
+        ):
+            return True
+        hosted_names = {
+            _norm_name(p.get("name"))
+            for _idx, row in curator_rows
+            if row.get("kind") not in ("miss", "trigger")
+            for p in row.get("perks") or []
+        }
+        for entry in override.get("rolls") or []:
+            if _is_metadata_only_roll_override(entry, chapter_num):
+                continue
+            for name in entry.get("perks") or []:
+                if _norm_name(name) not in hosted_names:
+                    return True
     return False
 
 
@@ -962,6 +1030,7 @@ def _direct_override_rows(
     curator_rows: list[tuple[int, dict]],
     override: dict,
     obtained_lookup: dict[tuple[str, str], list[dict]],
+    source_templates_by_roll_number: dict[int, tuple[int, dict]] | None = None,
 ) -> list[dict]:
     """Build curator-equivalent rows directly from an index-aligned
     chapter override.
@@ -995,20 +1064,65 @@ def _direct_override_rows(
 
     last_source_idx = non_trigger_templates[-1][0] if non_trigger_templates else 0
     override_rolls = override.get("rolls") or []
-    row_count = max(len(non_trigger_templates), len(override_rolls))
-    for override_idx in range(row_count):
-        entry = override_rolls[override_idx] if override_idx < len(override_rolls) else None
-        template = (
-            non_trigger_templates[override_idx][1]
-            if override_idx < len(non_trigger_templates) else {}
+    source_cursor = 0
+    consumed_source_positions: set[int] = set()
+    template_by_roll_number = {
+        row.get("roll_number"): (pos, source_idx, row)
+        for pos, (source_idx, row) in enumerate(non_trigger_templates)
+        if row.get("roll_number") is not None
+    }
+    source_templates_by_roll_number = source_templates_by_roll_number or {}
+
+    def _next_source_template() -> tuple[int | None, dict]:
+        nonlocal source_cursor
+        while (
+            source_cursor < len(non_trigger_templates)
+            and source_cursor in consumed_source_positions
+        ):
+            source_cursor += 1
+        if source_cursor >= len(non_trigger_templates):
+            return last_source_idx, {}
+        consumed_source_positions.add(source_cursor)
+        source_idx, template = non_trigger_templates[source_cursor]
+        source_cursor += 1
+        return source_idx, template
+
+    def _source_template_for_entry(entry: dict | None) -> tuple[int | None, dict]:
+        source_roll_number = (
+            entry.get("source_roll_number")
+            if isinstance(entry, dict) else None
         )
+        if source_roll_number is not None:
+            found = template_by_roll_number.get(int(source_roll_number))
+            if found is not None:
+                pos, source_idx, template = found
+                consumed_source_positions.add(pos)
+                return source_idx, template
+            global_found = source_templates_by_roll_number.get(int(source_roll_number))
+            if global_found is not None:
+                return global_found
+        return _next_source_template()
+
+    for override_idx, entry in enumerate(override_rolls):
+        if isinstance(entry, dict) and entry.get("skipped"):
+            out_rows.append({
+                "_source_idx": last_source_idx,
+                "_override_origin": override_idx,
+                "_override_direct": True,
+                "kind": "skipped",
+                "perks": [],
+                "banked_before": None,
+                "banked_after": None,
+                "constellation": None,
+                "constellation_revealed": False,
+                "roll_number": None,
+                "raw": None,
+            })
+            continue
         if entry is None or _is_metadata_only_roll_override(entry, chapter_num):
+            source_idx, template = _source_template_for_entry(entry)
             if not template:
                 continue
-            source_idx = (
-                non_trigger_templates[override_idx][0]
-                if override_idx < len(non_trigger_templates) else last_source_idx
-            )
             payload = {
                 "_source_idx": source_idx,
                 "_override_origin": None,
@@ -1025,28 +1139,39 @@ def _direct_override_rows(
             _apply_metadata(payload, entry, chapter_num)
             out_rows.append(payload)
             continue
-        template = (
-            non_trigger_templates[override_idx][1]
-            if override_idx < len(non_trigger_templates) else {}
-        )
-        source_idx = (
-            non_trigger_templates[override_idx][0]
-            if override_idx < len(non_trigger_templates) else last_source_idx
-        )
+        if (
+            entry.get("curator_added")
+            and entry.get("source_roll_number") is None
+            and entry.get("outcome") == "miss"
+            and not entry.get("perks")
+        ):
+            source_idx, template = last_source_idx, {}
+            curator_added = True
+        else:
+            source_idx, template = _source_template_for_entry(entry)
+            curator_added = False
         mention_chapter = _norm_chapter(entry.get("mention_chapter_num"), chapter_num)
-        outcome = entry.get("outcome") or ("hit" if entry.get("perks") else "miss")
+        template_kind = template.get("kind")
+        outcome = entry.get("outcome") or (
+            "hit" if template_kind == "roll"
+            else "miss" if template_kind == "miss"
+            else "hit" if entry.get("perks") else "miss"
+        )
         roll_perks: list[dict] = []
-        for name in entry.get("perks") or []:
-            candidates = obtained_lookup.get((mention_chapter, _norm_name(name))) or []
-            if not candidates:
-                candidates = obtained_lookup.get((chapter_num, _norm_name(name))) or []
-            if not candidates:
-                raise ValueError(
-                    f"chapter_roll_overrides ch {chapter_num} roll #{override_idx} "
-                    f"references {name!r}, but obtained_perks has no matching "
-                    f"perk in chapter {mention_chapter} or {chapter_num}"
-                )
-            roll_perks.append(_obtained_as_roll_perk(candidates[0]))
+        if entry.get("perks"):
+            for name in entry.get("perks") or []:
+                candidates = obtained_lookup.get((mention_chapter, _norm_name(name))) or []
+                if not candidates:
+                    candidates = obtained_lookup.get((chapter_num, _norm_name(name))) or []
+                if not candidates:
+                    raise ValueError(
+                        f"chapter_roll_overrides ch {chapter_num} roll #{override_idx} "
+                        f"references {name!r}, but obtained_perks has no matching "
+                        f"perk in chapter {mention_chapter} or {chapter_num}"
+                    )
+                roll_perks.append(_obtained_as_roll_perk(candidates[0]))
+        elif outcome == "hit":
+            roll_perks = list(template.get("perks") or [])
 
         display_policy = entry.get("display_position_policy")
         if display_policy is None:
@@ -1055,10 +1180,11 @@ def _direct_override_rows(
                 if entry.get("mention_word_position") is not None
                 else "mechanical"
             )
-        out_rows.append({
+        payload = {
             "_source_idx": source_idx,
             "_override_origin": override_idx,
             "_override_direct": True,
+            "_curator_added": curator_added,
             "_mention_chapter_num": mention_chapter,
             "_mention_word_position": entry.get("mention_word_position"),
             "_display_position_policy": display_policy,
@@ -1067,13 +1193,33 @@ def _direct_override_rows(
             "perks": roll_perks,
             "banked_before": template.get("banked_before"),
             "banked_after": template.get("banked_after"),
-            "constellation": entry.get("constellation") or (
-                roll_perks[0].get("constellation") if roll_perks else None
+            "constellation": (
+                entry.get("constellation")
+                or (roll_perks[0].get("constellation") if roll_perks else None)
+                or template.get("constellation")
             ),
             "constellation_revealed": bool(entry.get("constellation")),
             "roll_number": template.get("roll_number"),
             "raw": template.get("raw"),
-        })
+        }
+        out_rows.append(payload)
+    for pos, (source_idx, template) in enumerate(non_trigger_templates):
+        if pos in consumed_source_positions:
+            continue
+        payload = {
+            "_source_idx": source_idx,
+            "_override_origin": None,
+            "_override_direct": False,
+            "kind": template.get("kind"),
+            "perks": list(template.get("perks") or []),
+            "banked_before": template.get("banked_before"),
+            "banked_after": template.get("banked_after"),
+            "constellation": template.get("constellation"),
+            "constellation_revealed": template.get("constellation_revealed", False),
+            "roll_number": template.get("roll_number"),
+            "raw": template.get("raw"),
+        }
+        out_rows.append(payload)
     return out_rows
 
 
@@ -1108,6 +1254,28 @@ def main() -> None:
     multi_overrides_doc = load_multi_grab_overrides()
     multi_overrides = multi_overrides_doc.get("chapter_roll_overrides") or {}
     obtained_lookup = _build_obtained_lookup(obtained_doc["perks"])
+    source_templates_by_roll_number = {
+        int(row["roll_number"]): (idx, row)
+        for idx, row in enumerate(curator_doc["rolls"])
+        if row.get("kind") in {"roll", "miss"}
+        and row.get("roll_number") is not None
+    }
+    cross_chapter_source_assignments: dict[int, str] = {}
+    for mechanical_chapter, override in multi_overrides.items():
+        for entry in override.get("rolls") or []:
+            source_roll_number = entry.get("source_roll_number")
+            if source_roll_number is None:
+                continue
+            try:
+                roll_number = int(source_roll_number)
+            except (TypeError, ValueError):
+                continue
+            template = source_templates_by_roll_number.get(roll_number)
+            if template is None:
+                continue
+            _idx, source_row = template
+            if str(source_row.get("chapter_num")) != str(mechanical_chapter):
+                cross_chapter_source_assignments[roll_number] = str(mechanical_chapter)
     deferred_consumed_by_mention_chapter: dict[str, set[str]] = {}
     for mechanical_chapter, override in multi_overrides.items():
         for entry in override.get("rolls") or []:
@@ -1131,6 +1299,12 @@ def main() -> None:
     curator_by_chapter: dict[str, list[tuple[int, dict]]] = {}
     for idx, row in enumerate(curator_doc["rolls"]):
         if row.get("kind") not in {"trigger", "roll", "miss"}:
+            continue
+        roll_number = row.get("roll_number")
+        if (
+            roll_number is not None
+            and int(roll_number) in cross_chapter_source_assignments
+        ):
             continue
         deferred_names = deferred_consumed_by_mention_chapter.get(
             str(row.get("chapter_num")), set()
@@ -1323,9 +1497,15 @@ def main() -> None:
             chapter_override = multi_overrides.get(chapter_num)
             if chapter_override is not None:
                 # Override beats curator: rebuild rows from override.
-                if _override_needs_direct_rows(chapter_num, chapter_override):
+                if _override_needs_direct_rows(
+                    chapter_num, chapter_override, rows_raw
+                ):
                     synthetic = _direct_override_rows(
-                        chapter_num, rows_raw, chapter_override, obtained_lookup,
+                        chapter_num,
+                        rows_raw,
+                        chapter_override,
+                        obtained_lookup,
+                        source_templates_by_roll_number,
                     )
                 else:
                     synthetic = _restructure_curator_rows(
@@ -1353,11 +1533,13 @@ def main() -> None:
                     for pred in sched_inp["predicted_rolls"]
                 }
             non_trigger_seq = 0
+            last_banked_after: int | None = None
             # Cross-check: compare curator outcomes vs scheduler decision.
             if sched and sched.feasible:
                 curator_outcomes = [
                     "hit" if r[1]["kind"] != "miss" else "miss"
                     for r in rows
+                    if r[1]["kind"] != "skipped"
                 ]
                 solver_outcomes = [a.outcome for a in sched.assignments]
                 # Trim the solver's decision to the curator-recorded count
@@ -1374,6 +1556,12 @@ def main() -> None:
                         "solver_slack": sched.slack,
                     })
             for seq, (source_idx, row) in enumerate(rows, start=1):
+                if row.get("kind") == "skipped":
+                    if sched_inp is not None:
+                        non_trigger_seq += 1
+                    else:
+                        non_trigger_seq += 1
+                    continue
                 roll_number = row.get("roll_number")
                 ev = evidence_by_roll.get(roll_number) if roll_number is not None else None
                 predicted_chapter_num = ev.get("chapter_num") if ev else None
@@ -1422,8 +1610,17 @@ def main() -> None:
                     if slot is not None and slot.source == "predicted":
                         pred_slot = pred_slot_by_local.get(int(slot.word_position))
                 if row.get("_override_direct") and assignment is not None:
-                    available_cp = assignment.available_cp
-                    banked_after = assignment.banked_cp_after_roll
+                    if available_cp is None and row.get("_curator_added"):
+                        available_cp = (
+                            int(last_banked_after)
+                            if last_banked_after is not None else 0
+                        ) + int(assignment.roll_trigger_cp_threshold)
+                    elif available_cp is None:
+                        available_cp = assignment.available_cp
+                    if banked_after is None and row.get("_curator_added"):
+                        banked_after = available_cp
+                    elif banked_after is None:
+                        banked_after = assignment.banked_cp_after_roll
                 canonical_roll_number = (
                     roll_number
                     if roll_number is not None
@@ -1552,7 +1749,11 @@ def main() -> None:
                         int(display_cum_word) if display_cum_word is not None else None
                     ),
                 })
+                if row.get("_curator_added"):
+                    record["curator_added"] = True
                 rolls.append(record)
+                if banked_after is not None:
+                    last_banked_after = int(banked_after)
             continue
 
         rows = outcome_by_chapter.get(chapter_num, [])

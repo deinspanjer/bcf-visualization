@@ -31,6 +31,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from data_paths import MANUAL
 
 # (words_per_100_cp, cp_per_roll). Author's notes for ch91 and ch97
 # define these.
@@ -77,10 +78,7 @@ class RegimeSegment:
     end_word_local: int | None  # chapter-local; None = to end of chapter
 
 
-_TRANSITIONS_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "data" / "manual" / "regime_transitions.json"
-)
+_TRANSITIONS_PATH = MANUAL / "regime_transitions.json"
 
 
 def load_regime_transitions(path: Path | None = None) -> list[dict]:

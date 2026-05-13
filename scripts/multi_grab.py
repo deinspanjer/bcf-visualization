@@ -67,11 +67,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from data_paths import MANUAL
 
-_OVERRIDES_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "data" / "manual" / "chapter_roll_overrides.json"
-)
+_OVERRIDES_PATH = MANUAL / "chapter_roll_overrides.json"
 def _normalise_roll_entry(entry) -> dict:
     """Coerce one roll-spec entry into the canonical dict shape.
 
@@ -80,7 +78,8 @@ def _normalise_roll_entry(entry) -> dict:
     ``word_position`` (int | None), ``mention_chapter_num`` (str | None),
     ``mention_word_position`` (int | None),
     ``display_position_policy`` (str | None),
-    ``evidence_quotes`` (list[dict]), ``curator_note`` (str | None).
+    ``evidence_quotes`` (list[dict]), ``curator_note`` (str | None),
+    ``skipped`` (bool).
     """
     if isinstance(entry, dict):
         perks = entry.get("perks") or []
@@ -97,6 +96,9 @@ def _normalise_roll_entry(entry) -> dict:
             "display_position_policy": entry.get("display_position_policy"),
             "evidence_quotes": list(entry.get("evidence_quotes") or []),
             "curator_note": entry.get("curator_note"),
+            "skipped": bool(entry.get("skipped", False)),
+            "source_roll_number": entry.get("source_roll_number"),
+            "curator_added": bool(entry.get("curator_added", False)),
         }
     raise ValueError(
         f"chapter_roll_overrides roll entry must be dict, "
@@ -392,6 +394,15 @@ def merge_paid_units(
             by_chapter[cn] = []
             chapter_order.append(cn)
         by_chapter[cn].append(perk)
+    for cn in chapter_roll_overrides:
+        cn = str(cn)
+        if cn not in by_chapter:
+            by_chapter[cn] = []
+            chapter_order.append(cn)
+    def _chapter_sort_key(chapter_num: str) -> tuple[int, int]:
+        parts = str(chapter_num).split(".")
+        return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+    chapter_order.sort(key=_chapter_sort_key)
 
     paid_global: dict[tuple[str, str], list[dict]] = {}
     free_global: dict[tuple[str, str], list[dict]] = {}
