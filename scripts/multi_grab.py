@@ -139,11 +139,7 @@ def load_overrides(path: Path | None = None) -> dict:
             if roll.get("mention_chapter_num") is None:
                 roll["mention_chapter_num"] = str(cn)
             if roll.get("display_position_policy") is None:
-                roll["display_position_policy"] = (
-                    "mention"
-                    if roll.get("mention_word_position") is not None
-                    else "mechanical"
-                )
+                roll["display_position_policy"] = "mechanical"
             normalised_rolls.append(roll)
         normalised[str(cn)] = {
             "rolls": normalised_rolls,
@@ -433,11 +429,7 @@ def merge_paid_units(
         )
         policy = roll_entry.get("display_position_policy")
         if policy is None:
-            policy = (
-                "mention"
-                if roll_entry.get("mention_word_position") is not None
-                else "mechanical"
-            )
+            policy = "mechanical"
         return {
             "mention_chapter_num": mention_chapter,
             "mention_word_position": roll_entry.get("mention_word_position"),

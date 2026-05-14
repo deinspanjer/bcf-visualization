@@ -75,7 +75,7 @@ def test_override_loader_defaults_deferred_roll_fields(tmp_path: Path) -> None:
     assert rolls[0]["display_position_policy"] == "mechanical"
     assert rolls[1]["mention_chapter_num"] == "6"
     assert rolls[1]["mention_word_position"] == 123
-    assert rolls[1]["display_position_policy"] == "mention"
+    assert rolls[1]["display_position_policy"] == "mechanical"
 
 
 def test_override_loader_preserves_skipped_roll_slots(tmp_path: Path) -> None:

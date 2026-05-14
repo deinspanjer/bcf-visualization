@@ -11,7 +11,8 @@ Run with::
 
     python -m scripts.forge_curator [--chapter X[.Y]]
 
-F12 writes the current TUI state to data/manual/.forge_curator_snapshot.json.
+F12 or Ctrl-S writes the current TUI state to
+data/manual/.forge_curator_snapshot.json.
 """
 
 from __future__ import annotations
@@ -44,7 +45,7 @@ from scripts.forge_curator.persistence import CurationPersistence
 from scripts.forge_curator.state import ForgeCuratorState
 
 STATE_FILE = MANUAL / ".forge_curator_state.json"
-# Fixed location for the F12 snapshot. Repeated use overwrites this file so
+# Fixed location for the TUI snapshot. Repeated use overwrites this file so
 # "look at the snapshot" can mean one stable artifact.
 SNAPSHOT_PATH = MANUAL / ".forge_curator_snapshot.json"
 
@@ -151,6 +152,19 @@ class PassageView(BasePassageView):
                 event.prevent_default()
                 event.stop()
                 return
+
+        # 5.5) Visual selection toggles are handled here so Forge-specific
+        # key interception does not depend on Textual's binding phase.
+        if ch == "v":
+            self.action_toggle_visual()
+            event.prevent_default()
+            event.stop()
+            return
+        if ch == "V":
+            self.action_toggle_visual_line()
+            event.prevent_default()
+            event.stop()
+            return
 
         # 6) Space alone arms the action leader chord (overrides the base
         #    PassageView's space=toggle_visual binding for forge_curator).
@@ -515,6 +529,7 @@ class StatsPanel(Static):
             roll for roll in unified
             if roll.get("display_kind") == "deferred_in"
         ]
+        deferred_rolls.extend(app._deferred_predicted_slot_rolls(cs, unified))
         selected_or_current = app._selected_or_default_roll_target()
 
         self._roll_line_targets: dict[int, dict] = {}
@@ -853,7 +868,9 @@ class HelpScreen(ModalScreen):
             "  e / E            end of word / WORD\n"
             "  0 / $            line start / end\n"
             "  g g / G          doc start / end\n"
+            "  Ctrl-B / Ctrl-F  page back / forward\n"
             "  f<c> F<c> t<c> T<c>  find char\n"
+            "  ; / ,            repeat find / reverse repeat\n"
             "  N motion         repeat motion N times\n"
             "  v / V / Esc      visual char / line / clear\n"
         )
@@ -876,7 +893,7 @@ class HelpScreen(ModalScreen):
             "  *       seed/select regex * with word under cursor\n"
             "  ]2 [2   regex 2 matches\n"
             "  ]3 [3   regex 3 matches\n"
-            "  F12     snapshot state to data/manual/.forge_curator_snapshot.json\n"
+            "  F12 / Ctrl-S  snapshot state to data/manual/.forge_curator_snapshot.json\n"
         )
         body.append("\nRegex bar\n", style="bold")
         body.append(
@@ -1148,22 +1165,36 @@ class SourceRollPicker(ModalScreen):
         Binding("q", "dismiss_picker", "cancel"),
     ]
 
-    def __init__(self, rolls: list[dict], on_select, **kw):
+    def __init__(self, rolls: list[dict], on_select, target_label: str, **kw):
         super().__init__(**kw)
         self._rolls = rolls
         self._on_select = on_select
+        self._target_label = target_label
 
     def compose(self) -> ComposeResult:
         with Container():
-            yield Static("Assign source roll to selected predicted slot", classes="title")
+            yield Static(
+                f"Assign source roll to {self._target_label}",
+                classes="title",
+            )
             for idx, roll in enumerate(self._rolls, start=1):
                 roll_number = roll.get("roll_number")
                 outcome = roll.get("outcome") or roll.get("source_kind") or "unknown"
+                perk = roll.get("rolled_perk_name")
+                constellation = roll.get("constellation")
+                detail = ""
+                if perk and constellation:
+                    detail = f"  {constellation} - {perk}"
+                elif constellation:
+                    detail = f"  {constellation}"
                 raw = str(roll.get("raw") or "").strip()
-                if len(raw) > 76:
-                    raw = raw[:73] + "..."
+                if raw:
+                    raw = f"  {raw}"
+                label = f"Roll {roll_number}: {outcome}{detail}{raw}"
+                if len(label) > 76:
+                    label = label[:73] + "..."
                 yield Button(
-                    f"Roll {roll_number}: {outcome}  {raw}",
+                    label,
                     id=f"source_roll_{idx}",
                     name=str(idx),
                 )
@@ -1177,6 +1208,353 @@ class SourceRollPicker(ModalScreen):
         if 1 <= idx <= len(self._rolls):
             self.app.pop_screen()
             self._on_select(self._rolls[idx - 1])
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
+class SourceAssignmentTargetPicker(ModalScreen):
+    """Single-select picker for choosing which roll slot receives a source."""
+
+    DEFAULT_CSS = """
+    SourceAssignmentTargetPicker {
+        align: center middle;
+    }
+    SourceAssignmentTargetPicker > Container {
+        width: 84;
+        height: auto;
+        max-height: 80%;
+        border: thick $accent;
+        background: $surface;
+        padding: 1 2;
+    }
+    SourceAssignmentTargetPicker Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    SourceAssignmentTargetPicker Button {
+        width: 100%;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(self, rolls: list[dict], on_select, **kw):
+        super().__init__(**kw)
+        self._rolls = rolls
+        self._on_select = on_select
+
+    @staticmethod
+    def _roll_button_label(roll: dict) -> str:
+        target = ForgeCuratorApp._roll_target_message_label(roll)
+        roll_number = roll.get("roll_number")
+        global_part = f"global #{roll_number}" if roll_number is not None else "global #?"
+        outcome = roll.get("outcome") or "open"
+        if roll.get("display_kind") == "deferred_in":
+            label = f"{target}: deferred ({global_part})  {outcome}"
+        else:
+            label = f"{target}: {global_part}  {outcome}"
+        perk = roll.get("rolled_perk_name")
+        constellation = roll.get("constellation")
+        if perk and constellation:
+            label = f"{label}  {constellation} - {perk}"
+        elif constellation:
+            label = f"{label}  {constellation}"
+        if roll.get("source_roll_number") is not None:
+            label = f"{label}  source Roll {roll.get('source_roll_number')}"
+        if len(label) > 76:
+            label = label[:73] + "..."
+        return label
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Choose target slot for source roll", classes="title")
+            for idx, roll in enumerate(self._rolls, start=1):
+                yield Button(
+                    self._roll_button_label(roll),
+                    id=f"source_target_{idx}",
+                    name=str(idx),
+                )
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        name = event.button.name
+        if not name:
+            return
+        idx = int(name)
+        if 1 <= idx <= len(self._rolls):
+            self.app.pop_screen()
+            self._on_select(self._rolls[idx - 1])
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
+class SourceLinkPicker(ModalScreen):
+    """Two-list picker for linking a target roll slot to source evidence."""
+
+    DEFAULT_CSS = """
+    SourceLinkPicker {
+        align: center middle;
+    }
+    SourceLinkPicker > Container {
+        width: 110;
+        height: auto;
+        max-height: 88%;
+        border: thick $accent;
+        background: $surface;
+        padding: 1 2;
+    }
+    SourceLinkPicker Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    SourceLinkPicker Static.column-title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+    }
+    SourceLinkPicker .column {
+        width: 1fr;
+        height: auto;
+    }
+    SourceLinkPicker OptionList.column-list {
+        height: 18;
+        border: none;
+        padding: 0;
+    }
+    SourceLinkPicker Button {
+        width: 100%;
+    }
+    SourceLinkPicker .selected {
+        background: $accent 50%;
+        text-style: bold;
+    }
+    SourceLinkPicker Static.selection-summary {
+        height: auto;
+        margin-bottom: 1;
+        color: $warning;
+    }
+    SourceLinkPicker Static.links {
+        margin-bottom: 1;
+        color: $text-muted;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(self, targets: list[dict], sources: list[dict], on_confirm, **kw):
+        super().__init__(**kw)
+        self._targets = targets
+        self._sources = sources
+        self._on_confirm = on_confirm
+        self._target_index: int | None = 1 if targets else None
+        self._source_index: int | None = 1 if sources else None
+
+    @staticmethod
+    def _target_label(roll: dict, *, selected: bool = False) -> str:
+        prefix = "TARGET > " if selected else "         "
+        target = ForgeCuratorApp._roll_target_message_label(roll)
+        roll_number = roll.get("roll_number")
+        outcome = roll.get("outcome") or "open"
+        if roll.get("display_kind") == "deferred_in":
+            label = f"{prefix}{target}  deferred  global {roll_number or '?'}  {outcome}"
+        else:
+            label = f"{prefix}{target}  global {roll_number or '?'}  {outcome}"
+        perk = roll.get("rolled_perk_name")
+        constellation = roll.get("constellation")
+        if perk and constellation:
+            label = f"{label}  {constellation} - {perk}"
+        elif constellation:
+            label = f"{label}  {constellation}"
+        if roll.get("source_roll_number") is not None:
+            label = f"{label}  source Roll {roll.get('source_roll_number')}"
+        return label[:73] + "..." if len(label) > 76 else label
+
+    @staticmethod
+    def _source_label(roll: dict, *, selected: bool = False) -> str:
+        prefix = "SOURCE > " if selected else "         "
+        roll_number = roll.get("roll_number")
+        outcome = roll.get("outcome") or roll.get("source_kind") or "unknown"
+        perk = roll.get("rolled_perk_name")
+        constellation = roll.get("constellation")
+        detail = ""
+        if perk and constellation:
+            detail = f"  {constellation} - {perk}"
+        elif constellation:
+            detail = f"  {constellation}"
+        label = f"{prefix}Roll {roll_number}: {outcome}{detail}"
+        return label[:73] + "..." if len(label) > 76 else label
+
+    def _existing_links_text(self) -> str:
+        by_roll = {
+            int(source["roll_number"]): source
+            for source in self._sources
+            if source.get("roll_number") is not None
+        }
+        lines: list[str] = []
+        for target in self._targets:
+            source_roll_number = target.get("source_roll_number")
+            if source_roll_number is None:
+                continue
+            try:
+                source_roll_number = int(source_roll_number)
+            except (TypeError, ValueError):
+                continue
+            if source_roll_number not in by_roll:
+                continue
+            lines.append(
+                f"{ForgeCuratorApp._roll_target_message_label(target)} "
+                f"──────── Roll {source_roll_number}"
+            )
+        return "\n".join(lines) if lines else "Existing links: none in this view."
+
+    def _selection_summary(self) -> str:
+        target = (
+            ForgeCuratorApp._roll_target_message_label(
+                self._targets[self._target_index - 1]
+            )
+            if self._target_index is not None
+            and 1 <= self._target_index <= len(self._targets)
+            else "none"
+        )
+        source = (
+            f"Roll {self._sources[self._source_index - 1].get('roll_number')}"
+            if self._source_index is not None
+            and 1 <= self._source_index <= len(self._sources)
+            else "none"
+        )
+        pending = (
+            f"{target} ──────── {source}"
+            if target != "none" and source != "none"
+            else "(choose one target and one source)"
+        )
+        return (
+            f"Selected target: {target}    Selected source: {source}\n"
+            f"Pending link: {pending}"
+        )
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Link target roll slot to source evidence", classes="title")
+            yield Static(self._existing_links_text(), classes="links")
+            yield Static(
+                self._selection_summary(),
+                id="source_link_summary",
+                classes="selection-summary",
+            )
+            with Horizontal():
+                with VerticalScroll(classes="column"):
+                    yield Static("Target slots", classes="column-title")
+                    target_options = OptionList(
+                        *[
+                            Option(
+                                self._target_label(
+                                    target,
+                                    selected=idx == self._target_index,
+                                ),
+                                id=f"target_{idx}",
+                            )
+                            for idx, target in enumerate(self._targets, start=1)
+                        ],
+                        id="source_link_targets",
+                        classes="column-list",
+                        compact=True,
+                    )
+                    target_options.highlighted = (
+                        self._target_index - 1
+                        if self._target_index is not None else None
+                    )
+                    yield target_options
+                with VerticalScroll(classes="column"):
+                    yield Static("Source roll evidence", classes="column-title")
+                    source_options = OptionList(
+                        *[
+                            Option(
+                                self._source_label(
+                                    source,
+                                    selected=idx == self._source_index,
+                                ),
+                                id=f"source_{idx}",
+                            )
+                            for idx, source in enumerate(self._sources, start=1)
+                        ],
+                        id="source_link_sources",
+                        classes="column-list",
+                        compact=True,
+                    )
+                    source_options.highlighted = (
+                        self._source_index - 1
+                        if self._source_index is not None else None
+                    )
+                    yield source_options
+            yield Button("Confirm", id="confirm", variant="primary")
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm":
+            self.action_confirm_selection()
+
+    @on(OptionList.OptionSelected)
+    def _on_option_selected(self, event: OptionList.OptionSelected) -> None:
+        if event.option_list.id == "source_link_targets":
+            self._target_index = int(event.option_index) + 1
+            self._refresh_option_prompts()
+        elif event.option_list.id == "source_link_sources":
+            self._source_index = int(event.option_index) + 1
+            self._refresh_option_prompts()
+
+    def _refresh_option_prompts(self) -> None:
+        try:
+            targets = self.query_one("#source_link_targets", OptionList)
+            for idx, target in enumerate(self._targets, start=1):
+                targets.replace_option_prompt_at_index(
+                    idx - 1,
+                    self._target_label(
+                        target,
+                        selected=idx == self._target_index,
+                    ),
+                )
+            sources = self.query_one("#source_link_sources", OptionList)
+            for idx, source in enumerate(self._sources, start=1):
+                sources.replace_option_prompt_at_index(
+                    idx - 1,
+                    self._source_label(
+                        source,
+                        selected=idx == self._source_index,
+                    ),
+                )
+        except Exception:
+            pass
+        try:
+            self.query_one("#source_link_summary", Static).update(
+                self._selection_summary()
+            )
+        except Exception:
+            pass
+
+    def action_confirm_selection(self) -> None:
+        if self._target_index is None or self._source_index is None:
+            return
+        if not (1 <= self._target_index <= len(self._targets)):
+            return
+        if not (1 <= self._source_index <= len(self._sources)):
+            return
+        self.app.pop_screen()
+        self._on_confirm(
+            self._targets[self._target_index - 1],
+            self._sources[self._source_index - 1],
+        )
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -1223,7 +1601,7 @@ class RollEvidencePicker(ModalScreen):
         self._rolls = rolls
         self._on_confirm = on_confirm
         self._selected: set[int] = set()
-        self._display_position_policy: str | None = "mention"
+        self._display_position_policy: str | None = None
 
     def _roll_button_label(self, index: int, roll: dict) -> str:
         marker = "(x)" if index in self._selected else "( )"
@@ -1285,11 +1663,11 @@ class RollEvidencePicker(ModalScreen):
     def _display_position_label(self) -> str:
         if self._display_position_policy == "mention":
             return "Display marker: quote"
-        return "Display marker: unchanged"
+        return "Display marker: predicted"
 
     def _toggle_display_position_policy(self, button: Button | None = None) -> None:
         self._display_position_policy = (
-            None if self._display_position_policy == "mention" else "mention"
+            "mention" if self._display_position_policy is None else None
         )
         if button is not None:
             button.label = self._display_position_label()
@@ -1436,6 +1814,7 @@ class ForgeCuratorApp(App):
         Binding("slash", "focus_regex_star", "/regex*"),
         Binding("u", "undo_last", "undo last action"),
         Binding("f12", "snapshot", "snapshot", show=True),
+        Binding("ctrl+s", "snapshot", "snapshot", show=False),
     ]
 
     def __init__(
@@ -1618,7 +1997,8 @@ class ForgeCuratorApp(App):
             return []
         spans: list[tuple[int, int]] = []
         seen: set[tuple[int, int]] = set()
-        for roll in self._unified_rolls(cs):
+        unified = self._unified_rolls(cs)
+        for roll in [*self._deferred_predicted_slot_rolls(cs, unified), *unified]:
             for quote in self._roll_evidence_quotes(roll):
                 text = str(quote.get("text") or "")
                 if not text:
@@ -2296,6 +2676,12 @@ class ForgeCuratorApp(App):
                 continue
             local_cp = int(global_cp) - chapter_cp_start
             raw = self._roll_marker_word_index_from_cp(cs, local_cp)
+            override = self._roll_override_entry(cn, idx)
+            mention_chapter = (
+                str(override.get("mention_chapter_num"))
+                if override and override.get("mention_chapter_num") is not None
+                else cn
+            )
             rows.append({
                 "index": idx,
                 "target_roll_index": idx,
@@ -2315,12 +2701,19 @@ class ForgeCuratorApp(App):
                 "display_chapter_num": cn,
                 "display_word_position": local_cp,
                 "display_cumulative_word_offset": int(global_cp),
+                "mention_chapter_num": mention_chapter,
+                "mention_word_position": (
+                    override.get("mention_word_position") if override else None
+                ),
+                "display_position_policy": (
+                    override.get("display_position_policy") if override else None
+                ),
                 "use_stable_target_identity": True,
                 "skipped": self._roll_override_skipped(cn, idx),
             })
         return rows
 
-    def _roll_override_skipped(self, chapter_num: str, index: int) -> bool:
+    def _roll_override_entry(self, chapter_num: str, index: int) -> dict | None:
         entry = (
             self.persistence.chapter_roll_overrides
             .get("chapter_roll_overrides", {})
@@ -2328,8 +2721,127 @@ class ForgeCuratorApp(App):
         )
         rolls = entry.get("rolls") or []
         if not (1 <= int(index) <= len(rolls)):
-            return False
-        return bool((rolls[int(index) - 1] or {}).get("skipped"))
+            return None
+        roll = rolls[int(index) - 1]
+        return roll if isinstance(roll, dict) else None
+
+    def _roll_override_skipped(self, chapter_num: str, index: int) -> bool:
+        entry = self._roll_override_entry(chapter_num, index)
+        return bool((entry or {}).get("skipped"))
+
+    def _predicted_roll_for_chapter_index(
+        self, chapter_num: str, index: int,
+    ) -> dict | None:
+        rows = [
+            roll for roll in self.data.predicted.get("predicted", [])
+            if str(roll.get("chapter_num")) == str(chapter_num)
+        ]
+        rows.sort(key=lambda roll: roll.get("word_position") or 0)
+        if not (1 <= int(index) <= len(rows)):
+            return None
+        return rows[int(index) - 1]
+
+    def _deferred_predicted_slot_rolls(
+        self, cs, unified: list[dict] | None = None,
+    ) -> list[dict]:
+        """Open predicted slots from prior chapters deferred into this chapter."""
+        cn = cs.meta.chapter_num
+        represented = {
+            (
+                str(roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")),
+                int(roll.get("target_roll_index") or 0),
+            )
+            for roll in (unified if unified is not None else self._unified_rolls(cs))
+            if roll.get("display_kind") == "deferred_in"
+            and roll.get("target_roll_index") is not None
+        }
+        rows: list[dict] = []
+        overrides = (
+            self.persistence.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+        )
+        display_cp = self._chapter_cp_start(cn)
+        for target_chapter, entry in overrides.items():
+            if str(target_chapter) == cn:
+                continue
+            for idx, override in enumerate(entry.get("rolls") or [], start=1):
+                if not isinstance(override, dict):
+                    continue
+                if str(override.get("mention_chapter_num") or "") != cn:
+                    continue
+                key = (str(target_chapter), int(idx))
+                if key in represented:
+                    continue
+                predicted = self._predicted_roll_for_chapter_index(target_chapter, idx)
+                if predicted is None:
+                    continue
+                global_cp = int(predicted.get("word_position") or 0)
+                local_cp = global_cp - self._chapter_cp_start(str(target_chapter))
+                row = {
+                    "index": None,
+                    "target_roll_index": idx,
+                    "target_chapter_num": str(target_chapter),
+                    "visible_chapter_num": cn,
+                    "display_kind": "deferred_in",
+                    "source": "prediction",
+                    "source_kind": "predicted_slot",
+                    "outcome": "open",
+                    "roll_number": predicted.get("roll_number"),
+                    "word_position": 0,
+                    "raw_word_position": 0,
+                    "global_cp_word": display_cp,
+                    "mechanical_chapter_num": str(target_chapter),
+                    "mechanical_word_position": local_cp,
+                    "mechanical_cumulative_word_offset": global_cp,
+                    "display_chapter_num": cn,
+                    "display_word_position": 0,
+                    "display_cumulative_word_offset": display_cp,
+                    "mention_chapter_num": cn,
+                    "mention_word_position": override.get("mention_word_position"),
+                    "display_position_policy": override.get("display_position_policy"),
+                    "evidence_quotes": list(override.get("evidence_quotes") or []),
+                    "use_stable_target_identity": False,
+                    "skipped": bool(override.get("skipped")),
+                }
+                source_roll_number = override.get("source_roll_number")
+                if source_roll_number is not None:
+                    row["source_roll_number"] = int(source_roll_number)
+                source_fact = self._roll_fact_for_roll_number(source_roll_number)
+                if source_fact is not None:
+                    for key in (
+                        "roll_number",
+                        "outcome",
+                        "constellation",
+                        "available_cp",
+                        "banked_cp_after_roll",
+                        "purchased_perks",
+                        "purchased_perk_cost_total",
+                        "rolled_perk_name",
+                        "rolled_perk_cost",
+                        "miss_cost_estimate",
+                        "free_perks",
+                        "raw",
+                    ):
+                        if source_fact.get(key) is not None:
+                            row[key] = source_fact.get(key)
+                    row["fact_source_kind"] = source_fact.get("source_kind")
+                rows.append(row)
+        return sorted(
+            rows,
+            key=lambda roll: (
+                self._chapter_sort_key(str(roll["target_chapter_num"])),
+                int(roll["target_roll_index"]),
+            ),
+        )
+
+    def _roll_fact_for_roll_number(self, roll_number) -> dict | None:
+        if roll_number is None:
+            return None
+        for roll in self.data.roll_facts.get("rolls", []):
+            if roll.get("roll_number") == roll_number:
+                return roll
+        return None
+
 
     def _predicted_slot_index_for_cp(self, cs, local_cp: int | None) -> int | None:
         if local_cp is None:
@@ -2393,6 +2905,7 @@ class ForgeCuratorApp(App):
             roll for roll in unified
             if roll.get("display_kind") == "deferred_in"
         ]
+        deferred_rows.extend(self._deferred_predicted_slot_rolls(cs, unified))
         current_rows: list[dict] = []
         seen_targets: set[tuple] = set()
         for roll in [
@@ -2453,10 +2966,14 @@ class ForgeCuratorApp(App):
         if cs is None or self._selected_roll_target is None:
             return None
         unified = self._unified_rolls(cs)
-        visible = [*self._roll_slot_rows(cs, unified), *[
-            roll for roll in unified
-            if roll.get("display_kind") == "deferred_in"
-        ]]
+        visible = [
+            *self._roll_slot_rows(cs, unified),
+            *[
+                roll for roll in unified
+                if roll.get("display_kind") == "deferred_in"
+            ],
+            *self._deferred_predicted_slot_rolls(cs, unified),
+        ]
         for roll in visible:
             if self._same_roll_target(roll, self._selected_roll_target):
                 return roll
@@ -2691,7 +3208,18 @@ class ForgeCuratorApp(App):
         if roll.get("display_kind") == "predicted_slot":
             chapter_idx = self._display_roll_identity(roll)
             word_position = roll.get("word_position")
-            status = "skipped" if roll.get("skipped") else "predicted"
+            mention_chapter = roll.get("mention_chapter_num")
+            target_chapter = roll.get("target_chapter_num")
+            if roll.get("skipped"):
+                status = "skipped"
+            elif (
+                mention_chapter is not None
+                and target_chapter is not None
+                and str(mention_chapter) != str(target_chapter)
+            ):
+                status = f"deferred to ch {mention_chapter}"
+            else:
+                status = "predicted"
             return (
                 f"  {marker} # {chapter_idx} {status} "
                 f"({global_num if global_num is not None else '?'}) "
@@ -2722,6 +3250,12 @@ class ForgeCuratorApp(App):
         if roll.get("display_kind") == "deferred_in":
             source_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
             source_idx = roll.get("target_roll_index") or "?"
+            if roll.get("source_kind") == "predicted_slot" and outcome == "open":
+                return (
+                    f"  {marker} deferred from ch {source_chapter} #{source_idx} "
+                    f"({global_num if global_num is not None else '?'}) "
+                    f"predicted {evidence}"
+                )
             return "\n".join([
                 (
                     f"  {marker} deferred from ch {source_chapter} #{source_idx} "
@@ -2737,7 +3271,12 @@ class ForgeCuratorApp(App):
             and mention_chapter is not None
             and str(mention_chapter) != str(mechanical_chapter)
         ):
-            detail_lines.insert(0, f"    narrative deferred to ch {mention_chapter}")
+            detail_lines.insert(
+                0,
+                self._cross_chapter_evidence_detail(
+                    str(mechanical_chapter), str(mention_chapter)
+                ),
+            )
         display_line = self._roll_display_policy_detail(roll)
         if display_line:
             detail_lines.insert(0, display_line)
@@ -2750,6 +3289,24 @@ class ForgeCuratorApp(App):
             ),
             *detail_lines,
         ])
+
+    @staticmethod
+    def _chapter_sort_key(chapter_num: str) -> tuple[int, int]:
+        major, _dot, minor = str(chapter_num).partition(".")
+        return (
+            int(major) if major.isdigit() else 10**9,
+            int(minor) if minor.isdigit() else 0,
+        )
+
+    @classmethod
+    def _cross_chapter_evidence_detail(
+        cls, mechanical_chapter: str, mention_chapter: str
+    ) -> str:
+        if cls._chapter_sort_key(mention_chapter) > cls._chapter_sort_key(
+            mechanical_chapter
+        ):
+            return f"    narrative deferred to ch {mention_chapter}"
+        return f"    narrative evidence from ch {mention_chapter}"
 
     @staticmethod
     def _roll_display_policy_detail(roll: dict) -> str:
@@ -3018,7 +3575,11 @@ class ForgeCuratorApp(App):
                 }
                 for idx, hits in enumerate(cs.regex_hits[:4])
             ]
-            snap["rolls"] = self._unified_rolls(cs)
+            unified = self._unified_rolls(cs)
+            snap["rolls"] = [
+                *self._deferred_predicted_slot_rolls(cs, unified),
+                *unified,
+            ]
             snap["derived"] = {
                 "chapter_facts": cs.derived.chapter_facts,
                 "roll_facts": cs.derived.roll_facts,
@@ -3532,6 +4093,7 @@ class ForgeCuratorApp(App):
                     roll for roll in unified
                     if roll.get("display_kind") == "deferred_in"
                 ],
+                *self._deferred_predicted_slot_rolls(cs, unified),
             ],
             key=lambda roll: (
                 int(roll.get("word_position") or 0),
@@ -3738,19 +4300,55 @@ class ForgeCuratorApp(App):
             unique.append(roll)
         return unique
 
+    def _source_assignment_target_rows(self, cs) -> list[dict]:
+        unified = self._unified_rolls(cs)
+        rows = [
+            *[
+                roll for roll in unified
+                if roll.get("display_kind") == "deferred_in"
+            ],
+            *self._deferred_predicted_slot_rolls(cs, unified),
+            *self._roll_slot_rows(cs, unified),
+        ]
+        out: list[dict] = []
+        seen: set[tuple] = set()
+        for roll in rows:
+            if roll.get("target_roll_index") is None:
+                continue
+            key = self._roll_target_key(roll)
+            if key is None or key in seen:
+                continue
+            seen.add(key)
+            out.append(roll)
+        return sorted(
+            out,
+            key=lambda roll: (
+                0 if roll.get("display_kind") == "deferred_in" else 1,
+                self._chapter_sort_key(str(
+                    roll.get("target_chapter_num")
+                    or roll.get("mechanical_chapter_num")
+                    or cs.meta.chapter_num
+                )),
+                int(roll.get("target_roll_index") or roll.get("index") or 0),
+            ),
+        )
+
     def _action_assign_source_roll(self, chapter_num: str) -> None:
-        target = self._current_roll_target()
-        if target is None or target.get("target_roll_index") is None:
-            self._flash("assign source: select a predicted or assigned roll slot first")
+        cs = self.state.chapter
+        if cs is None:
             return
-        target_chapter = str(target.get("target_chapter_num") or chapter_num)
-        idx = int(target["target_roll_index"])
+        targets = self._source_assignment_target_rows(cs)
+        if not targets:
+            self._flash("assign source: no roll slots in this chapter")
+            return
         rows = self._source_roll_picker_rows(chapter_num)
         if not rows:
             self._flash("assign source: no source rolls in this chapter")
             return
 
-        def on_select(source_roll: dict) -> None:
+        def assign_source_to_target(target: dict, source_roll: dict) -> None:
+            target_chapter = str(target.get("target_chapter_num") or chapter_num)
+            idx = int(target["target_roll_index"])
             source_roll_number = int(source_roll["roll_number"])
             self.persistence.assign_source_roll_at_index(
                 target_chapter, idx, source_roll_number,
@@ -3759,7 +4357,11 @@ class ForgeCuratorApp(App):
                 f"ch {target_chapter} roll #{idx} source = Roll {source_roll_number}"
             )
 
-        self.push_screen(SourceRollPicker(rows, on_select=on_select))
+        self.push_screen(SourceLinkPicker(
+            targets,
+            rows,
+            on_confirm=assign_source_to_target,
+        ))
 
     def _action_save_quote(self, chapter_num: str) -> None:
         quote = self._selected_quote("save quote")
@@ -3829,6 +4431,7 @@ class ForgeCuratorApp(App):
                 self._flash("save quote: no rolls selected")
                 return
             by_chapter: dict[str, list[int]] = {}
+            target_labels: list[str] = []
             for index in indices:
                 if 1 <= index <= len(rolls):
                     target_roll = rolls[index - 1]
@@ -3838,6 +4441,9 @@ class ForgeCuratorApp(App):
                     target_index = target_roll.get("target_roll_index")
                     if target_index is not None:
                         by_chapter.setdefault(target_chapter, []).append(int(target_index))
+                        label = self._roll_target_message_label(target_roll)
+                        if label not in target_labels:
+                            target_labels.append(label)
             for target_chapter, target_indices in by_chapter.items():
                 self.persistence.append_roll_evidence_at_indices(
                     target_chapter,
@@ -3848,10 +4454,24 @@ class ForgeCuratorApp(App):
                     display_position_policy=display_position_policy,
                 )
             self._post_curation_refresh(
-                f"quote saved to rolls {', '.join(map(str, indices))}"
+                f"quote saved to rolls {', '.join(target_labels)}"
             )
 
         self.push_screen(RollEvidencePicker(rolls=rolls, on_confirm=on_confirm))
+
+    @staticmethod
+    def _roll_target_message_label(roll: dict) -> str:
+        target_chapter = (
+            roll.get("target_chapter_num")
+            or roll.get("mechanical_chapter_num")
+            or roll.get("visible_chapter_num")
+            or roll.get("chapter_num")
+            or "?"
+        )
+        target_index = roll.get("target_roll_index") or roll.get("index")
+        if target_index is not None:
+            return f"ch {target_chapter} #{int(target_index)}"
+        return f"ch {target_chapter} #?"
 
     def _action_pick_roll_visualization_position(self, chapter_num: str) -> None:
         cs = self.state.chapter
@@ -4117,8 +4737,19 @@ class ForgeCuratorApp(App):
         char = self.state.char_at_word_index(word_idx)
         cs.cursor_char = char
         prose_view = self.query_one("#prose", PassageView)
+        saved_anchor = prose_view.anchor
+        saved_visual = prose_view.visual_mode
+        saved_visual_line = prose_view.visual_line_mode
         prose_view.cursor = char
+        prose_view.focus()
         self.refresh_all_panels()
+        if saved_visual or saved_visual_line:
+            prose_view = self.query_one("#prose", PassageView)
+            prose_view.cursor = char
+            prose_view.anchor = saved_anchor
+            prose_view.visual_mode = saved_visual
+            prose_view.visual_line_mode = saved_visual_line
+            prose_view.refresh()
         self._scroll_cursor_into_view()
 
     def _jump_section(self, *, forward: bool) -> None:

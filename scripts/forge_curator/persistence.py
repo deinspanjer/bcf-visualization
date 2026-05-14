@@ -304,6 +304,20 @@ class CurationPersistence:
     def assign_source_roll_at_index(
         self, chapter_num: str, index: int, source_roll_number: int,
     ) -> dict:
+        source_roll_number = int(source_roll_number)
+        for other_chapter, entry in (
+            self.chapter_roll_overrides.get("chapter_roll_overrides", {}).items()
+        ):
+            for other_index, roll in enumerate(entry.get("rolls") or [], start=1):
+                if (
+                    str(other_chapter) == str(chapter_num)
+                    and int(other_index) == int(index)
+                ):
+                    continue
+                if not isinstance(roll, dict):
+                    continue
+                if roll.get("source_roll_number") == source_roll_number:
+                    roll["source_roll_number"] = None
         return self.update_roll_at_index(
             chapter_num, index, source_roll_number=source_roll_number,
         )
@@ -324,7 +338,7 @@ class CurationPersistence:
         text: str,
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
-        display_position_policy: str | None = "mention",
+        display_position_policy: str | None = None,
     ) -> dict:
         before = deepcopy(self.chapter_roll_overrides)
         roll = self.get_or_create_roll_at_index(chapter_num, index)
@@ -358,7 +372,7 @@ class CurationPersistence:
         text: str,
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
-        display_position_policy: str | None = "mention",
+        display_position_policy: str | None = None,
     ) -> list[dict]:
         """Append the same curated quote to multiple chapter-local rolls.
 

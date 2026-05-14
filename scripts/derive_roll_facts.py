@@ -1175,11 +1175,7 @@ def _direct_override_rows(
 
         display_policy = entry.get("display_position_policy")
         if display_policy is None:
-            display_policy = (
-                "mention"
-                if entry.get("mention_word_position") is not None
-                else "mechanical"
-            )
+            display_policy = "mechanical"
         payload = {
             "_source_idx": source_idx,
             "_override_origin": override_idx,
@@ -1660,11 +1656,7 @@ def main() -> None:
                 )
                 policy = row.get("_display_position_policy")
                 if policy is None:
-                    policy = (
-                        "mention"
-                        if row.get("_mention_word_position") is not None
-                        else "mechanical"
-                    )
+                    policy = "mechanical"
                 mention_word_position = row.get("_mention_word_position")
                 if (
                     policy in {"mention", "source_marker"}
