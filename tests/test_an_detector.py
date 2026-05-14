@@ -21,7 +21,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from extract_chapter_sections import (  # noqa: E402
+    _classify_section,
     _detect_auto_header_words,
+    _split_sections,
     _text,
     _resolve_author_note_ranges,
     _word_count,
@@ -106,6 +108,26 @@ def test_strip_skips_head_title_markup() -> None:
 def test_implicit_repeated_chapter_title_words_are_auto_header() -> None:
     text = "2 Preparation\n\n2 Preparation\n\nMy watch alarm began to chime."
     assert _detect_auto_header_words(text, None, implicit_header="2 Preparation") == 4
+
+
+def test_plain_jumpchain_footer_splits_into_ineligible_section() -> None:
+    html = (
+        "<p>Story body.</p>"
+        "<p>Jumpchain abilities this chapter:</p>"
+        "<p>Useful Perk (Example) 100:</p>"
+        "<p>Perk text.</p>"
+    )
+
+    sections = _split_sections(html)
+
+    assert [section[0] for section in sections] == [
+        None,
+        "Jumpchain abilities this chapter:",
+    ]
+    footer_text = _text(html[sections[1][1]:sections[1][2]])
+    footer = _classify_section(sections[1][0], footer_text)
+    assert footer.classification == "non_mc_meta"
+    assert footer.counts_for_cp is False
 
 
 # --- simulator: CP subtraction -------------------------------------------

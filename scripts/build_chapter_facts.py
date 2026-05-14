@@ -417,11 +417,11 @@ def main() -> None:
 
     # Build per-chapter rows and accumulate running totals + shadow periods.
     out_chapters: list[dict] = []
-    cum_words = 0
-    cum_cp_words = 0
-    cum_perks = 0
-    cum_roll_constellations: Counter[str] = Counter()
-    cum_acquired_constellations: Counter[str] = Counter()
+    cumulative_story_words = 0
+    cumulative_cp_words = 0
+    cumulative_perks = 0
+    cumulative_roll_constellations: Counter[str] = Counter()
+    cumulative_acquired_constellations: Counter[str] = Counter()
     shadow_periods: list[dict] = []
 
     for c in chapters:
@@ -503,7 +503,7 @@ def main() -> None:
             cp_word_cursor += cp_word_count
 
         # ---------- rolls + attribution ----------
-        chapter_cp_start = cum_cp_words
+        chapter_cp_start = cumulative_cp_words
         chapter_cp_words = sum(s["cp_earning_word_count"] for s in sections_out)
         chapter_story_words = sum(s["word_count"] for s in sections_out)
         chap_roll_facts = rolls_by_chapter.get(cn, [])
@@ -550,7 +550,7 @@ def main() -> None:
             display_chapter_num = str(roll.get("display_chapter_num") or cn)
             local_pos = roll.get("display_word_position")
             if roll.get("source_kind") == "trigger" and display_chapter_num == cn:
-                return cum_words
+                return cumulative_story_words
             if local_pos is None:
                 return None
             if display_chapter_num == cn:
@@ -561,7 +561,7 @@ def main() -> None:
                 )
                 if story_local is None:
                     return None
-                return cum_words + story_local
+                return cumulative_story_words + story_local
             if roll.get("display_position_policy") == "source_marker":
                 return chapter_story_starts.get(display_chapter_num, 0) + int(local_pos)
             return None
@@ -683,18 +683,18 @@ def main() -> None:
 
         # ---------- chapter row ----------
         last_ed = last_edited_by_chap.get(cn, {})
-        cum_words += chapter_story_words
-        cum_cp_words += chapter_cp_words
-        cum_perks += paid_count_in_chap + free_count_in_chap
-        cum_roll_constellations.update(chapter_roll_constellations)
+        cumulative_story_words += chapter_story_words
+        cumulative_cp_words += chapter_cp_words
+        cumulative_perks += paid_count_in_chap + free_count_in_chap
+        cumulative_roll_constellations.update(chapter_roll_constellations)
         for acquired_chapter, by_constellation in acquired_by_chapter.items():
             if _chapter_key(acquired_chapter) == _chapter_key(cn):
-                cum_acquired_constellations.update(by_constellation)
+                cumulative_acquired_constellations.update(by_constellation)
         constellation_progress = []
         for name in CONSTELLATION_ORDER:
             total = int(constellation_totals.get(name, 0))
-            acquired = int(cum_acquired_constellations.get(name, 0))
-            count = int(cum_roll_constellations.get(name, 0))
+            acquired = int(cumulative_acquired_constellations.get(name, 0))
+            count = int(cumulative_roll_constellations.get(name, 0))
             visible = total > 0 and count > 0
             constellation_progress.append({
                 "name": name,
@@ -742,9 +742,9 @@ def main() -> None:
             "paid_perks_gained": paid_count_in_chap,
             "free_perks_gained": free_count_in_chap,
 
-            "cumulative_words_through_chapter": cum_words,
-            "cumulative_cp_earning_words": cum_cp_words,
-            "cumulative_perks_through_chapter": cum_perks,
+            "cumulative_words_through_chapter": cumulative_story_words,
+            "cumulative_cp_earning_words": cumulative_cp_words,
+            "cumulative_perks_through_chapter": cumulative_perks,
             "banked_cp_at_start": banked_cp_at_start,
             "banked_cp_at_end": banked_cp_at_end,
             "model_validation": {

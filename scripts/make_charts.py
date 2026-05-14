@@ -818,12 +818,12 @@ def chart_time_dilation() -> None:
 
     # Cumulative word count and elapsed real-world days per chapter
     pub_dt0 = dt.datetime.fromtimestamp(chapters[0]["publish_ts"])
-    cum_words: dict[str, int] = {}
+    cumulative_words_by_chapter: dict[str, int] = {}
     rw_days: dict[str, int] = {}
     running = 0
     for c in chapters:
         running += c["words_approx"]
-        cum_words[c["chapter_num"]] = running
+        cumulative_words_by_chapter[c["chapter_num"]] = running
         d = dt.datetime.fromtimestamp(c["publish_ts"])
         rw_days[c["chapter_num"]] = (d - pub_dt0).days
 
@@ -836,7 +836,7 @@ def chart_time_dilation() -> None:
         if not iso or iso < STORY_START_ISO:
             continue
         chap = _TIMELINE_CHAPTER_BY_DATE.get(iso)
-        if chap is None or chap not in cum_words:
+        if chap is None or chap not in cumulative_words_by_chapter:
             continue
         in_world_day = (dt.date.fromisoformat(iso) - story_start).days  # 0..17
         rows.append({
@@ -844,8 +844,8 @@ def chart_time_dilation() -> None:
             "in_world_date": iso,
             "chapter": chap,
             "rw_days": rw_days[chap],
-            "cum_words": cum_words[chap],
-            "events": e["events"],
+            "cumulative_words": cumulative_words_by_chapter[chap],
+            "events": e.get("events") or e.get("event_text", ""),
         })
     rows.sort(key=lambda r: r["in_world_day"])
 
@@ -880,18 +880,18 @@ def chart_time_dilation() -> None:
                "Real-world days since chapter 1 published",
                lambda v, _: f"{int(v):,}")
     draw_panel(axR,
-               (r["cum_words"] for r in rows),
+               (r["cumulative_words"] for r in rows),
                "Cumulative words in story",
                lambda v, _: f"{int(v/1e6*100)/100}M" if v >= 1e6 else f"{int(v/1000)}k")
 
     # Title with the punchline at the right scale
     last = rows[-1]
     ratio_days = last["rw_days"] / max(last["in_world_day"], 1)
-    ratio_words = last["cum_words"] / max(last["in_world_day"], 1)
+    ratio_words = last["cumulative_words"] / max(last["in_world_day"], 1)
     fig.suptitle(
         f"In-world time dilation: 17 narrated days unfold over "
         f"~{last['rw_days']} real-world days of writing and "
-        f"~{last['cum_words']/1e6:.1f}M words "
+        f"~{last['cumulative_words']/1e6:.1f}M words "
         f"(roughly {ratio_days:.0f} real-world days and {ratio_words/1e3:.0f}k words per in-world day)",
         fontsize=11, y=1.0, color="0.1",
     )

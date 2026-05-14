@@ -533,9 +533,21 @@ def _extract_perks_from_section(html: str) -> list[dict]:
 # ---------- main pipeline ---------------------------------------------------
 
 
-_MARKER_RE = re.compile(
-    r"<p[^>]*>\s*<strong[^>]*>([^<]+)</strong>\s*</p>", re.IGNORECASE,
+_PLAIN_SECTION_MARKER_RE = (
+    r"(?:Jumpchain abilities this chapter:?|New abilities for [^:<]+:?)"
 )
+
+_MARKER_RE = re.compile(
+    r"<p[^>]*>\s*(?:"
+    r"<strong[^>]*>(?P<strong>[^<]+)</strong>"
+    r"|(?P<plain>" + _PLAIN_SECTION_MARKER_RE + r")"
+    r")\s*</p>",
+    re.IGNORECASE,
+)
+
+
+def _marker_header(match: re.Match[str]) -> str:
+    return (match.group("strong") or match.group("plain") or "").strip()
 
 
 def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
@@ -560,7 +572,7 @@ def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
     for i, m in enumerate(markers):
         start = m.start()
         end = markers[i + 1].start() if i + 1 < len(markers) else len(html)
-        out.append((m.group(1).strip(), start, end))
+        out.append((_marker_header(m), start, end))
     return out
 
 
