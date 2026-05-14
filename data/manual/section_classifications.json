@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
-  "_count": 432,
+  "_count": 435,
   "_mc_sections": 142,
-  "_non_mc_sections": 290,
+  "_non_mc_sections": 293,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script.",
   "classifications": {
     "1@0": {
@@ -107,8 +107,8 @@
       "chapter_num": "6.1",
       "section_index": 0,
       "header": null,
-      "counts_for_cp": false,
-      "reason": "curator: early interlude excluded from CP eligibility despite source-indicated roll"
+      "counts_for_cp": true,
+      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: implicit with inline interlude 'Taylor')"
     },
     "7@0": {
       "chapter_num": "7",
@@ -242,6 +242,13 @@
       "header": null,
       "counts_for_cp": true,
       "reason": "implicit large MC story"
+    },
+    "15@1": {
+      "chapter_num": "15",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
     },
     "16@0": {
       "chapter_num": "16",
@@ -403,6 +410,13 @@
       "header": null,
       "counts_for_cp": true,
       "reason": "implicit large MC story"
+    },
+    "25@1": {
+      "chapter_num": "25",
+      "section_index": 1,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
     },
     "26@0": {
       "chapter_num": "26",
@@ -1481,6 +1495,13 @@
       "header": "65 Summit Aftermath",
       "counts_for_cp": true,
       "reason": "header matches chapter main title"
+    },
+    "65@2": {
+      "chapter_num": "65",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer"
     },
     "65.1@0": {
       "chapter_num": "65.1",
