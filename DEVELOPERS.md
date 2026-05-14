@@ -278,10 +278,15 @@ as fallbacks; the new layer is additive.
 client wrapper, smoke test, and Windows setup scripts are in place.
 `/health` and `/version` work on a fresh checkout; `/extract` and
 `/classify_section` return 503 with the documented
-`*_model_not_loaded` body until trained checkpoints exist. Use pytest
-for new verification. Run the full suite with `.venv/bin/pytest`, or a
-focused module with `.venv/bin/pytest tests/<module>.py`.
-Before reporting a change as complete, run the repo verification gate:
+`*_model_not_loaded` body until trained checkpoints exist. NLP tests are
+kept out of the default curation/data-flow gate and run separately:
+
+```sh
+.venv/bin/python scripts/verify_nlp.py
+```
+
+Before reporting a curation, data-flow, or static visualization change
+as complete, run the default repo verification gate:
 
 ```sh
 .venv/bin/python scripts/verify.py
