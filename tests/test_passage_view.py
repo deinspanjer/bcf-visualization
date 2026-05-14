@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import pytest
 from rich.style import Style
+from textual.app import App, ComposeResult
 
 from nlp.tui.passage_view import PassageView
 
@@ -117,6 +118,64 @@ def test_line_start_and_line_end() -> None:
     assert pv.cursor == 6
     pv.action_line_end()
     assert pv.cursor == 11
+
+
+def test_page_motions_move_by_visible_lines_and_preserve_column(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pv = _make("abcdefghijklmnopqrstuvwxyz0123456789", width=5)
+    monkeypatch.setattr(pv, "_page_line_count", lambda: 3)
+    pv.cursor = 1
+
+    pv.action_cursor_page_down()
+
+    assert pv.cursor == 16
+
+    pv.action_cursor_page_up()
+
+    assert pv.cursor == 1
+
+
+def test_page_motions_clamp_at_document_edges(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pv = _make("abcdefghijkl", width=5)
+    monkeypatch.setattr(pv, "_page_line_count", lambda: 20)
+
+    pv.action_cursor_page_down()
+    assert pv.cursor == len(pv.text)
+
+    pv.cursor = 0
+    pv.action_cursor_page_up()
+    assert pv.cursor == 0
+
+
+@pytest.mark.asyncio
+async def test_ctrl_page_key_bindings_drive_page_motions() -> None:
+    class PassageHarness(App):
+        def compose(self) -> ComposeResult:
+            yield PassageView("abcdefghij" * 40, id="passage")
+
+        def on_mount(self) -> None:
+            self.query_one("#passage", PassageView).focus()
+
+    app = PassageHarness()
+    async with app.run_test(size=(20, 6)) as pilot:
+        pv = app.query_one("#passage", PassageView)
+        pv.cursor = 1
+        pv._recompute_lines()
+        start_line = pv._line_index(pv.cursor)
+        page_lines = pv._page_line_count()
+
+        await pilot.press("ctrl+f")
+        await pilot.pause()
+
+        assert pv._line_index(pv.cursor) == start_line + page_lines
+
+        await pilot.press("ctrl+b")
+        await pilot.pause()
+
+        assert pv.cursor == 1
 
 
 # ---------------------------------------------------------------------------
@@ -462,6 +521,71 @@ def test_T_until_char_back() -> None:
     pv.cursor = 18
     _send(pv, "T", "b")
     assert pv.cursor == 11  # one after the "b" we found
+
+
+def test_semicolon_repeats_last_find_char_motion() -> None:
+    pv = _make("a-b-c-d-e")
+
+    _send(pv, "f", "-", ";")
+
+    assert pv.cursor == 3
+
+
+def test_comma_repeats_last_find_char_motion_in_opposite_direction() -> None:
+    pv = _make("a-b-c-d-e")
+
+    _send(pv, "f", "-", ";", ",")
+
+    assert pv.cursor == 1
+
+
+def test_semicolon_repeats_until_motion_without_sticking() -> None:
+    pv = _make("ax ax ax")
+
+    _send(pv, "t", "x")
+    assert pv.cursor == 0
+
+    _send(pv, ";")
+
+    assert pv.cursor == 3
+
+
+def test_comma_reverses_backward_until_motion() -> None:
+    pv = _make("ax ax ax")
+    pv.cursor = 6
+
+    _send(pv, "T", "x")
+    assert pv.cursor == 5
+
+    _send(pv, ",")
+
+    assert pv.cursor == 6
+
+
+def test_find_repeat_extends_visual_selection() -> None:
+    pv = _make("a-b-c-d-e")
+    pv.cursor = 0
+    pv.action_toggle_visual()
+
+    _send(pv, "f", "-", ";")
+
+    assert pv.visual_mode is True
+    assert pv.anchor == 0
+    assert pv.cursor == 3
+    assert pv.selection == (0, 4)
+
+
+def test_reverse_find_repeat_extends_visual_selection() -> None:
+    pv = _make("a-b-c-d-e")
+    pv.cursor = 6
+    pv.action_toggle_visual()
+
+    _send(pv, "F", "-", ",")
+
+    assert pv.visual_mode is True
+    assert pv.anchor == 6
+    assert pv.cursor == 7
+    assert pv.selection == (6, 8)
 
 
 def test_3fx_count_with_find() -> None:

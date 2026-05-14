@@ -8,6 +8,7 @@ plain ``Static`` previously used to display the passage. It supports:
 * Mouse click-and-drag to select a range.
 * Vim-style keyboard motions when the widget has focus:
     h/j/k/l, Left/Down/Up/Right
+    Ctrl-B / Ctrl-F (page back / forward)
     w / W  (word / WORD forward)
     b      (word back)
     e / E  (end of word / WORD)
@@ -15,6 +16,7 @@ plain ``Static`` previously used to display the passage. It supports:
     g g (top), G (bottom)
     f<c>/F<c>  find char forward/back on current visual line
     t<c>/T<c>  until char forward/back on current visual line
+    ; / ,      repeat last find-char motion / repeat in opposite direction
     <count><motion>  repeat motion (e.g. ``3w`` = three words forward)
     v / Space (toggle visual mode), Escape (clear visual mode + selection)
 
@@ -84,6 +86,8 @@ class PassageView(Widget, can_focus=True):
         Binding("down", "move_down", "down", show=False),
         Binding("k", "move_up", "up", show=False),
         Binding("up", "move_up", "up", show=False),
+        Binding("ctrl+b", "cursor_page_up", "page up", show=False),
+        Binding("ctrl+f", "cursor_page_down", "page down", show=False),
         Binding("w", "word_forward", "word forward", show=False),
         Binding("W", "WORD_forward", "WORD forward", show=False),
         Binding("b", "word_back", "word back", show=False),
@@ -132,6 +136,9 @@ class PassageView(Widget, can_focus=True):
         # Pending two-key operator: ``"f"``, ``"F"``, ``"t"``, ``"T"`` waits
         # for the next character. ``None`` when no operator is pending.
         self._pending_op: Optional[str] = None
+        # Last completed find-char motion for Vim-style ; / , repeats.
+        self._last_find_op: Optional[str] = None
+        self._last_find_char: Optional[str] = None
         # Pending text-object scope ``"a"`` (around) or ``"i"`` (inner).
         # Only armed inside visual / visual-line mode; cleared when a
         # following ``w/W/s/p`` completes the selection.
@@ -156,6 +163,8 @@ class PassageView(Widget, can_focus=True):
         self._pending_g = False
         self._pending_count = ""
         self._pending_op = None
+        self._last_find_op = None
+        self._last_find_char = None
         self._dragging = False
         self._recompute_lines()
         self.refresh()
@@ -621,6 +630,8 @@ class PassageView(Widget, can_focus=True):
                 return
             forward = op in ("f", "t")
             until = op in ("t", "T")
+            self._last_find_op = op
+            self._last_find_char = ch
             for _ in range(count):
                 target = self._step_find_char(ch, forward=forward, until=until)
                 if target is None:
@@ -657,6 +668,12 @@ class PassageView(Widget, can_focus=True):
             event.stop()
             return
 
+        if ch in (";", ","):
+            self._repeat_find_char(reverse=(ch == ","))
+            event.prevent_default()
+            event.stop()
+            return
+
         # gg chord. The first 'g' arms _pending_g; the second jumps to top.
         if key == "g":
             self.action_g_chord()
@@ -671,6 +688,7 @@ class PassageView(Widget, can_focus=True):
         # leaking a stale count into a later motion the user didn't intend.
         _MOTION_KEYS = {
             "h", "l", "j", "k", "w", "W", "b", "e", "E", "G",
+            "ctrl+b", "ctrl+f",
             "left", "right", "up", "down",
             "dollar_sign",  # $
         }
@@ -778,21 +796,59 @@ class PassageView(Widget, can_focus=True):
         """
         if not ch or not self._lines:
             return None
+        return self._step_find_char_from_cursor(
+            ch, forward=forward, until=until, repeated_until=False
+        )
+
+    def _step_find_char_from_cursor(
+        self,
+        ch: str,
+        *,
+        forward: bool,
+        until: bool,
+        repeated_until: bool,
+    ) -> Optional[int]:
+        """Compute a find-char target from the current cursor position."""
         text = self.text
         li = self._line_index(self.cursor)
         line_start, line_end = self._lines[li]
         if forward:
             # Search strictly after the cursor on this line.
-            search_from = self.cursor + 1
+            search_from = self.cursor + (2 if repeated_until and until else 1)
             for i in range(search_from, line_end):
                 if text[i] == ch:
                     return i - 1 if until else i
             return None
         # Backward search — strictly before the cursor on this line.
-        for i in range(self.cursor - 1, line_start - 1, -1):
+        search_from = self.cursor - (2 if repeated_until and until else 1)
+        for i in range(search_from, line_start - 1, -1):
             if text[i] == ch:
                 return i + 1 if until else i
         return None
+
+    def _repeat_find_char(self, *, reverse: bool) -> None:
+        """Repeat the last ``f/F/t/T`` search; comma reverses direction."""
+        self._pending_g = False
+        op = self._last_find_op
+        ch = self._last_find_char
+        count = self._consume_count()
+        if op is None or ch is None:
+            return
+        forward = op in ("f", "t")
+        if reverse:
+            forward = not forward
+        until = op in ("t", "T")
+        for _ in range(count):
+            target = self._step_find_char_from_cursor(
+                ch,
+                forward=forward,
+                until=until,
+                repeated_until=True,
+            )
+            if target is None:
+                break
+            self._set_cursor(target)
+        self.refresh()
 
     # ------------------------------------------------------------------
     # Action handlers (keyboard)
@@ -834,6 +890,43 @@ class PassageView(Widget, can_focus=True):
         count = self._consume_count()
         col = self._column(self.cursor)
         target_li = self._line_index(self.cursor) - count
+        if target_li <= 0:
+            pstart, pend = self._lines[0]
+            self._maybe_extend(min(pstart + col, pend))
+            return
+        pstart, pend = self._lines[target_li]
+        self._maybe_extend(min(pstart + col, pend))
+
+    def _page_line_count(self) -> int:
+        """Return the number of visual lines in the visible passage page."""
+        parent_height = getattr(getattr(self, "parent", None), "size", None)
+        height = getattr(parent_height, "height", 0) or self.size.height or 0
+        return max(1, int(height))
+
+    def action_cursor_page_down(self) -> None:
+        """Move cursor down one visible page (Ctrl-F). Honors count prefix."""
+        self._pending_g = False
+        if not self._lines:
+            self._consume_count()
+            return
+        count = self._consume_count()
+        col = self._column(self.cursor)
+        target_li = self._line_index(self.cursor) + (self._page_line_count() * count)
+        if target_li >= len(self._lines):
+            self._maybe_extend(len(self.text))
+            return
+        nstart, nend = self._lines[target_li]
+        self._maybe_extend(min(nstart + col, nend))
+
+    def action_cursor_page_up(self) -> None:
+        """Move cursor up one visible page (Ctrl-B). Honors count prefix."""
+        self._pending_g = False
+        if not self._lines:
+            self._consume_count()
+            return
+        count = self._consume_count()
+        col = self._column(self.cursor)
+        target_li = self._line_index(self.cursor) - (self._page_line_count() * count)
         if target_li <= 0:
             pstart, pend = self._lines[0]
             self._maybe_extend(min(pstart + col, pend))
