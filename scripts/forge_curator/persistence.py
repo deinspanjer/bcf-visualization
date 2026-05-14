@@ -322,6 +322,49 @@ class CurationPersistence:
             chapter_num, index, source_roll_number=source_roll_number,
         )
 
+    def ensure_roll_count(self, chapter_num: str, count: int) -> None:
+        for index in range(1, int(count) + 1):
+            self.get_or_create_roll_at_index(chapter_num, index)
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+
+    def mark_source_roll_deferred_to_chapter(
+        self,
+        chapter_num: str,
+        index: int,
+        target_chapter_num: str,
+    ) -> dict:
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["source_deferred_to_chapter"] = str(target_chapter_num)
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "mark_source_roll_deferred_to_chapter",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "index": index,
+                "target_chapter_num": str(target_chapter_num),
+            },
+        )
+        return roll
+
+    def clear_source_roll_deferral(self, chapter_num: str, index: int) -> dict:
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["source_deferred_to_chapter"] = None
+        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._append_journal(
+            "clear_source_roll_deferral",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"index": index},
+        )
+        return roll
+
     def mark_roll_skipped(self, chapter_num: str, index: int) -> dict:
         """Mark a predicted slot as deliberately skipped.
 

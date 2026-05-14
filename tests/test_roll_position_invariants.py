@@ -31,6 +31,7 @@ from data_paths import DERIVED, MANUAL  # noqa: E402
 ROLL_FACTS_JSON = DERIVED / "roll_facts.json"
 CHAPTER_FACTS_JSON = DERIVED / "chapter_facts.json"
 CHAPTER_ROLL_OVERRIDES_JSON = MANUAL / "chapter_roll_overrides.json"
+CURATOR_ROLLS_JSON = DERIVED / "rolls.json"
 
 
 def _simulation_inputs() -> tuple[list[dict], dict[str, list[dict]], dict[str, int]]:
@@ -160,3 +161,91 @@ def test_unpredicted_curator_roll_uses_explicit_curated_anchor() -> None:
     assert roll["mechanical_word_position"] == expected_anchor
     assert roll["display_word_position"] == expected_anchor
     assert roll["word_position"] == expected_anchor
+
+
+def test_deferred_source_assignment_is_one_roll_with_two_chapter_projections() -> None:
+    _predicted, chapter_starts = _simulated_rolls()
+    overrides = json.loads(CHAPTER_ROLL_OVERRIDES_JSON.read_text())[
+        "chapter_roll_overrides"
+    ]
+    source_rolls: dict[tuple[str, int], dict] = {}
+    source_seq_by_chapter: dict[str, int] = {}
+    for row in json.loads(CURATOR_ROLLS_JSON.read_text())["rolls"]:
+        if row.get("kind") not in {"roll", "miss"}:
+            continue
+        chapter_num = str(row["chapter_num"])
+        seq = source_seq_by_chapter.get(chapter_num, 0) + 1
+        source_seq_by_chapter[chapter_num] = seq
+        source_rolls[(chapter_num, seq)] = row
+
+    scenario = None
+    for source_chapter, chapter_override in overrides.items():
+        for source_index, source_override in enumerate(
+            chapter_override.get("rolls") or [], start=1
+        ):
+            target_chapter = source_override.get("source_deferred_to_chapter")
+            if target_chapter is None:
+                continue
+            source_row = source_rolls.get((str(source_chapter), source_index))
+            if source_row is None or source_row.get("roll_number") is None:
+                continue
+            source_roll_number = int(source_row["roll_number"])
+            target_rolls = overrides.get(str(target_chapter), {}).get("rolls") or []
+            target_index = next(
+                (
+                    idx
+                    for idx, target_override in enumerate(target_rolls, start=1)
+                    if target_override.get("source_roll_number") == source_roll_number
+                ),
+                None,
+            )
+            if target_index is None:
+                continue
+            quote = next(
+                (
+                    q for q in source_override.get("evidence_quotes") or []
+                    if str(q.get("mention_chapter_num")) == str(source_chapter)
+                    and q.get("mention_word_position") is not None
+                ),
+                None,
+            )
+            scenario = (
+                str(source_chapter),
+                source_index,
+                str(target_chapter),
+                target_index,
+                source_roll_number,
+                quote,
+            )
+            break
+        if scenario is not None:
+            break
+
+    assert scenario is not None
+    (
+        source_chapter,
+        source_index,
+        target_chapter,
+        target_index,
+        source_roll_number,
+        quote,
+    ) = scenario
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    matches = [
+        roll for roll in roll_facts
+        if roll.get("roll_number") == source_roll_number
+    ]
+
+    assert len(matches) == 1
+    roll = matches[0]
+    assert roll["source_chapter_num"] == source_chapter
+    assert roll["source_roll_index"] == source_index
+    assert roll["mechanical_chapter_num"] == target_chapter
+    assert roll["roll_sequence_in_chapter"] == target_index
+    assert set(roll["visible_chapter_nums"]) >= {source_chapter, target_chapter}
+    assert roll["display_chapter_num"] == target_chapter
+    if quote is not None:
+        assert roll["source_word_position"] == quote["mention_word_position"]
+        assert roll["source_cumulative_word_offset"] == (
+            chapter_starts[source_chapter] + quote["mention_word_position"]
+        )

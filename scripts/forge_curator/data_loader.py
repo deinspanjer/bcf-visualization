@@ -391,6 +391,7 @@ class ForgeCuratorData:
                 str(r.get("chapter_num")) == cn
                 or str(r.get("mechanical_chapter_num")) == cn
                 or str(r.get("display_chapter_num")) == cn
+                or cn in {str(ch) for ch in r.get("visible_chapter_nums") or []}
             )
         ]
         rf.sort(key=lambda r: (

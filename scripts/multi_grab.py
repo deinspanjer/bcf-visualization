@@ -98,6 +98,10 @@ def _normalise_roll_entry(entry) -> dict:
             "curator_note": entry.get("curator_note"),
             "skipped": bool(entry.get("skipped", False)),
             "source_roll_number": entry.get("source_roll_number"),
+            "source_deferred_to_chapter": (
+                str(entry.get("source_deferred_to_chapter"))
+                if entry.get("source_deferred_to_chapter") is not None else None
+            ),
             "curator_added": bool(entry.get("curator_added", False)),
         }
     raise ValueError(

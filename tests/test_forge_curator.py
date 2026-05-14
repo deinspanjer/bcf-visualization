@@ -1913,7 +1913,11 @@ def test_source_roll_assignment_can_target_synthetic_deferred_slot(
             and roll.get("target_chapter_num") == "25"
             and roll.get("target_roll_index") == 7
         )
-        screen._on_confirm(target, screen._sources[0])
+        chosen_source = next(
+            roll for roll in screen._sources
+            if roll.get("roll_number") == 124
+        )
+        screen._on_confirm(target, chosen_source)
 
     app.push_screen = push_screen
 
@@ -1959,7 +1963,11 @@ def test_source_roll_assignment_chooses_target_before_source(
                 and roll.get("target_chapter_num") == "25"
                 and roll.get("target_roll_index") == 7
             )
-            screen._on_confirm(target, screen._sources[0])
+            chosen_source = next(
+                roll for roll in screen._sources
+                if roll.get("roll_number") == 124
+            )
+            screen._on_confirm(target, chosen_source)
 
     app.push_screen = push_screen
 
@@ -1990,6 +1998,140 @@ def test_source_roll_assignment_moves_duplicate_source_binding(
     ]
     assert rolls["17"]["rolls"][6]["source_roll_number"] == 75
     assert rolls["18"]["rolls"][0]["source_roll_number"] is None
+
+
+def test_defer_source_roll_makes_it_available_next_chapter(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("19", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    cs = app.state.chapter
+    assert cs is not None
+    target = next(
+        roll for roll in app._roll_slot_rows(cs)
+        if roll.get("target_roll_index") == 8
+    )
+    app._selected_roll_target_if_visible = lambda: target
+    app._post_curation_refresh = lambda message, *, full=False: None
+
+    app._action_defer_roll_to_next_chapter("19")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["19"]["rolls"][7]
+    assert saved["source_deferred_to_chapter"] == "20"
+    current_rows = app._roll_slot_rows(cs)
+    deferred_source = next(
+        roll for roll in current_rows
+        if roll.get("target_roll_index") == 8
+    )
+    assert deferred_source["source_deferred_to_chapter"] == "20"
+    assert (
+        "mechanical deferred to ch 20"
+        in app._format_roll_stat_line(deferred_source, " ")
+    )
+
+    next_app = _loaded_app("20", tmp_path)
+    next_app.persistence = app.persistence
+    source_rows = next_app._source_roll_picker_rows("20")
+    deferred = next(
+        row for row in source_rows
+        if row.get("roll_number") == 88
+    )
+    assert deferred["source_deferred_from_chapter"] == "19"
+    assert deferred["source_deferred_from_index"] == 8
+
+
+def test_deferred_source_roll_projects_into_source_and_mechanical_chapters(
+    tmp_path: Path,
+) -> None:
+    source_app = _loaded_app("19", tmp_path)
+    source_cs = source_app.state.chapter
+    assert source_cs is not None
+    source_row = next(
+        roll for roll in source_app._roll_slot_rows(source_cs)
+        if roll.get("roll_number") == 88
+    )
+    source_line = source_app._format_roll_stat_line(source_row, " ")
+
+    assert source_row["display_kind"] == "source_deferred"
+    assert source_row["target_roll_index"] == 8
+    assert source_row["source_chapter_num"] == "19"
+    assert source_row["source_roll_index"] == 8
+    assert source_row["mechanical_chapter_num"] == "20"
+    assert "mechanical deferred to ch 20" in source_line
+
+    mechanical_app = _loaded_app("20", tmp_path)
+    mechanical_cs = mechanical_app.state.chapter
+    assert mechanical_cs is not None
+    mechanical_row = next(
+        roll for roll in mechanical_app._roll_slot_rows(mechanical_cs)
+        if roll.get("target_roll_index") == 1
+    )
+    mechanical_line = mechanical_app._format_roll_stat_line(mechanical_row, " ")
+
+    assert mechanical_row["roll_number"] == 88
+    assert mechanical_row["display_kind"] == "chapter_roll"
+    assert mechanical_row["source_chapter_num"] == "19"
+    assert mechanical_row["source_roll_index"] == 8
+    assert "source/narrative from ch 19 #8" in mechanical_line
+
+
+def test_source_roll_assignment_copies_deferred_source_evidence_and_preserves_rows(
+    tmp_path: Path,
+) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    app = _loaded_app("20", tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    app.persistence.mark_source_roll_deferred_to_chapter("19", 8, "20")
+    source = next(
+        row for row in app._source_roll_picker_rows("20")
+        if row.get("roll_number") == 88
+    )
+    app._source_roll_picker_rows = lambda chapter_num: [
+        source,
+        *[
+            row for row in app.data.roll_facts.get("rolls", [])
+            if str(row.get("chapter_num")) == "20"
+            and row.get("source_kind") != "trigger"
+            and row.get("roll_number") is not None
+        ],
+    ]
+    app._post_curation_refresh = lambda message, *, full=False: None
+
+    def push_screen(screen):
+        target = next(
+            roll for roll in screen._targets
+            if roll.get("target_chapter_num") == "20"
+            and roll.get("target_roll_index") == 1
+        )
+        chosen_source = next(
+            roll for roll in screen._sources
+            if roll.get("source_deferred_from_chapter") == "19"
+            and roll.get("roll_number") == 88
+        )
+        screen._on_confirm(target, chosen_source)
+
+    app.push_screen = push_screen
+
+    app._action_assign_source_roll("20")
+
+    rolls = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["20"]["rolls"]
+    assert len(rolls) >= 5
+    assert rolls[0]["source_roll_number"] == 88
+    assert rolls[0]["evidence_quotes"] == source["evidence_quotes"]
+    assert all(roll.get("source_roll_number") is None for roll in rolls[1:5])
 
 
 def test_space_s_on_source_roll_marks_that_predicted_slot_skipped(
@@ -2855,19 +2997,21 @@ def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
         "cost_schedule_infeasible",
     }
     chapter_num = None
-    issue_code = None
+    issue_codes = None
     for chapter in chapter_facts["chapters"]:
         model = chapter.get("model_validation") or {}
-        for issue in model.get("issues") or []:
-            code = str(issue.get("code"))
-            if code in blocking_codes and not issue.get("resolved"):
-                chapter_num = str(chapter["chapter_num"])
-                issue_code = code
-                break
-        if chapter_num is not None:
+        unresolved = [
+            str(issue.get("code"))
+            for issue in model.get("issues") or []
+            if str(issue.get("code")) in blocking_codes
+            and not issue.get("resolved")
+        ]
+        if unresolved:
+            chapter_num = str(chapter["chapter_num"])
+            issue_codes = list(dict.fromkeys(unresolved))
             break
     assert chapter_num is not None
-    assert issue_code is not None
+    assert issue_codes is not None
 
     app = _loaded_app(chapter_num, tmp_path)
     app.persistence = CurationPersistence(
@@ -2888,8 +3032,8 @@ def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
         "model_validation_resolution"
     ]
     assert resolution["status"] == "resolved"
-    assert resolution["resolved_issue_codes"] == [issue_code]
-    assert resolution["reason_code"] == app._resolution_reason_code(issue_code)
+    assert resolution["resolved_issue_codes"] == issue_codes
+    assert resolution["reason_code"] == app._resolution_reason_code(issue_codes[-1])
     assert refreshes == ["model discrepancy resolved"]
     assert flashes == []
 

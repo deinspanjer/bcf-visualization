@@ -156,6 +156,9 @@
         "mention_chapter_num", "mention_word_position",
         "display_position_policy", "display_chapter_num",
         "display_word_position", "display_cumulative_word_offset",
+        "source_chapter_num", "source_roll_index",
+        "source_word_position", "source_cumulative_word_offset",
+        "visible_chapter_nums",
         "purchased_perk_id", "purchased_perks", "purchased_perk_cost_total",
         "purchased_perk_jump", "free_perks",
         "word_position", "cumulative_word_offset",
@@ -209,6 +212,27 @@
         },
         "display_cumulative_word_offset": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "source_chapter_num": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "source_roll_index": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "source_word_position": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "source_cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "visible_chapter_nums": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "uniqueItems": true
         },
         "purchased_perk_id":            { "type": ["string", "null"] },
         "purchased_perks": {

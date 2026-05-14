@@ -546,6 +546,18 @@ def _evidence_quotes(entry: dict | None) -> list[dict]:
     return quotes
 
 
+def _first_quote_word_position(
+    entry: dict | None, chapter_num: str,
+) -> int | None:
+    for quote in _evidence_quotes(entry):
+        if str(quote.get("mention_chapter_num")) != str(chapter_num):
+            continue
+        word_position = quote.get("mention_word_position")
+        if word_position is not None:
+            return int(word_position)
+    return None
+
+
 def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None:
     if not entry:
         return
@@ -560,6 +572,10 @@ def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None
         payload["_display_position_policy"] = entry.get("display_position_policy")
     if entry.get("curator_note") is not None:
         payload["_curator_note"] = entry.get("curator_note")
+    if entry.get("source_deferred_to_chapter") is not None:
+        payload["_source_deferred_to_chapter"] = str(
+            entry.get("source_deferred_to_chapter")
+        )
 
 
 def _resolution_for_issue(override: dict | None, issue_code: str) -> dict | None:
@@ -1015,6 +1031,61 @@ def _build_obtained_lookup(obtained_perks: list[dict]) -> dict[tuple[str, str], 
     return lookup
 
 
+def _source_roll_occurrences(
+    curator_rolls: list[dict],
+    multi_overrides: dict,
+    chapter_word_start_global: dict[str, int] | None = None,
+) -> dict[int, dict]:
+    chapter_word_start_global = chapter_word_start_global or {}
+    non_trigger_seq_by_chapter: dict[str, int] = {}
+    out: dict[int, dict] = {}
+    for row in curator_rolls:
+        if row.get("kind") not in {"roll", "miss"}:
+            continue
+        roll_number = row.get("roll_number")
+        if roll_number is None:
+            continue
+        chapter_num = str(row.get("chapter_num"))
+        seq = non_trigger_seq_by_chapter.get(chapter_num, 0) + 1
+        non_trigger_seq_by_chapter[chapter_num] = seq
+        override_rolls = (
+            (multi_overrides.get(chapter_num) or {}).get("rolls") or []
+        )
+        override = (
+            override_rolls[seq - 1]
+            if 0 <= seq - 1 < len(override_rolls)
+            and isinstance(override_rolls[seq - 1], dict)
+            else None
+        )
+        word_position = None
+        if override is not None and override.get("mention_word_position") is not None:
+            word_position = int(override["mention_word_position"])
+        if word_position is None:
+            word_position = _first_quote_word_position(override, chapter_num)
+        cumulative = (
+            chapter_word_start_global.get(chapter_num, 0) + word_position
+            if word_position is not None else None
+        )
+        out.setdefault(int(roll_number), {
+            "source_chapter_num": chapter_num,
+            "source_roll_index": seq,
+            "source_word_position": word_position,
+            "source_cumulative_word_offset": cumulative,
+            "source_deferred_to_chapter": (
+                str(override.get("source_deferred_to_chapter"))
+                if override is not None
+                and override.get("source_deferred_to_chapter") is not None
+                else None
+            ),
+        })
+    return out
+
+
+def _visible_chapter_nums(*values: str | None) -> list[str]:
+    chapters = {str(value) for value in values if value is not None}
+    return sorted(chapters, key=sort_key_for_chapter)
+
+
 def _obtained_as_roll_perk(perk: dict) -> dict:
     return {
         "name": perk.get("perk_name") or perk.get("name"),
@@ -1136,6 +1207,13 @@ def _direct_override_rows(
                 "roll_number": template.get("roll_number"),
                 "raw": template.get("raw"),
             }
+            if isinstance(entry, dict):
+                if entry.get("source_roll_number") is not None:
+                    payload["_source_roll_number"] = int(entry["source_roll_number"])
+                if entry.get("source_deferred_to_chapter") is not None:
+                    payload["_source_deferred_to_chapter"] = str(
+                        entry["source_deferred_to_chapter"]
+                    )
             _apply_metadata(payload, entry, chapter_num)
             out_rows.append(payload)
             continue
@@ -1198,6 +1276,12 @@ def _direct_override_rows(
             "roll_number": template.get("roll_number"),
             "raw": template.get("raw"),
         }
+        if entry.get("source_roll_number") is not None:
+            payload["_source_roll_number"] = int(entry["source_roll_number"])
+        if entry.get("source_deferred_to_chapter") is not None:
+            payload["_source_deferred_to_chapter"] = str(
+                entry["source_deferred_to_chapter"]
+            )
         out_rows.append(payload)
     for pos, (source_idx, template) in enumerate(non_trigger_templates):
         if pos in consumed_source_positions:
@@ -1357,6 +1441,11 @@ def main() -> None:
     chapter_word_start_global = {
         cn: inp["chapter_word_start"] for cn, inp in scheduler_inputs.items()
     }
+    source_occurrences_by_roll_number = _source_roll_occurrences(
+        curator_doc["rolls"],
+        multi_overrides,
+        chapter_word_start_global,
+    )
     scheduler_results: dict = {}
     strict_scheduler_results: dict = {}
     strict_infeasible_by_chapter: dict[str, dict] = {}
@@ -1596,8 +1685,10 @@ def main() -> None:
                 slot = None
                 pred_slot = None
                 assignment = None
+                local_roll_index = None
                 if row["kind"] != "trigger":
                     slot_idx = non_trigger_seq
+                    local_roll_index = slot_idx + 1
                     non_trigger_seq += 1
                     if sched_inp is not None and slot_idx < len(sched_inp["slots"]):
                         slot = sched_inp["slots"][slot_idx]
@@ -1697,6 +1788,27 @@ def main() -> None:
                     else None
                 )
                 principal_name = paid_meta["name"] if paid_meta else None
+                source_info = (
+                    source_occurrences_by_roll_number.get(int(canonical_roll_number))
+                    if canonical_roll_number is not None else None
+                )
+                source_chapter_num = str(
+                    (source_info or {}).get("source_chapter_num")
+                    or owner_chapter_num
+                )
+                source_roll_index = (source_info or {}).get("source_roll_index")
+                if source_roll_index is None:
+                    source_roll_index = local_roll_index
+                source_word_position = (source_info or {}).get("source_word_position")
+                source_cumulative_word_offset = (
+                    (source_info or {}).get("source_cumulative_word_offset")
+                )
+                visible_chapters = _visible_chapter_nums(
+                    owner_chapter_num,
+                    chapter_num,
+                    display_chapter_num,
+                    source_chapter_num,
+                )
                 record.update({
                     "mechanical_chapter_num": chapter_num,
                     "mechanical_word_position": word_position_local,
@@ -1714,6 +1826,20 @@ def main() -> None:
                     "display_cumulative_word_offset": (
                         int(display_cum_word) if display_cum_word is not None else None
                     ),
+                    "source_chapter_num": source_chapter_num,
+                    "source_roll_index": (
+                        int(source_roll_index)
+                        if source_roll_index is not None else None
+                    ),
+                    "source_word_position": (
+                        int(source_word_position)
+                        if source_word_position is not None else None
+                    ),
+                    "source_cumulative_word_offset": (
+                        int(source_cumulative_word_offset)
+                        if source_cumulative_word_offset is not None else None
+                    ),
+                    "visible_chapter_nums": visible_chapters,
                     "constellation": constellation,
                     "constellation_revealed": bool(row.get("constellation_revealed", False)),
                     "available_cp": available_cp,
@@ -1972,6 +2098,27 @@ def main() -> None:
                 display_chapter_num = chapter_num
                 display_word_position = word_position_local
                 display_cum_word = cum_word
+            current_roll_number = record.get("roll_number")
+            source_info = (
+                source_occurrences_by_roll_number.get(int(current_roll_number))
+                if current_roll_number is not None else None
+            )
+            source_chapter_num = str(
+                (source_info or {}).get("source_chapter_num") or owner_chapter_num
+            )
+            source_roll_index = (source_info or {}).get("source_roll_index")
+            if source_roll_index is None and record["source_kind"] != "trigger":
+                source_roll_index = seq
+            source_word_position = (source_info or {}).get("source_word_position")
+            source_cumulative_word_offset = (
+                (source_info or {}).get("source_cumulative_word_offset")
+            )
+            visible_chapters = _visible_chapter_nums(
+                owner_chapter_num,
+                chapter_num,
+                display_chapter_num,
+                source_chapter_num,
+            )
             record.update({
                 "mechanical_chapter_num": chapter_num,
                 "mechanical_word_position": word_position_local,
@@ -1989,6 +2136,20 @@ def main() -> None:
                 "display_cumulative_word_offset": (
                     int(display_cum_word) if display_cum_word is not None else None
                 ),
+                "source_chapter_num": source_chapter_num,
+                "source_roll_index": (
+                    int(source_roll_index)
+                    if source_roll_index is not None else None
+                ),
+                "source_word_position": (
+                    int(source_word_position)
+                    if source_word_position is not None else None
+                ),
+                "source_cumulative_word_offset": (
+                    int(source_cumulative_word_offset)
+                    if source_cumulative_word_offset is not None else None
+                ),
+                "visible_chapter_nums": visible_chapters,
                 "constellation": constellation,
                 "constellation_revealed": False,
                 "available_cp": available_cp,

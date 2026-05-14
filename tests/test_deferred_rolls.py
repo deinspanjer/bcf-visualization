@@ -271,6 +271,7 @@ def test_direct_deferred_rows_can_use_cross_chapter_source_template() -> None:
             "constellation_revealed": False,
             "roll_number": 33,
             "raw": "Roll 33 (100): Size -> Miss -> (100)",
+            "_source_roll_number": 33,
         }
     ]
 
