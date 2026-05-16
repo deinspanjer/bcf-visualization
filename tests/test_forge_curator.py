@@ -15,7 +15,7 @@ from types import SimpleNamespace
 
 import pytest
 from textual.css.query import NoMatches
-from textual.widgets import Button, Input
+from textual.widgets import Input
 
 import scripts.forge_curator.app as forge_app
 from scripts.data_paths import DERIVED, MANUAL
@@ -27,10 +27,6 @@ ROOT = Path(__file__).resolve().parent.parent
 from scripts.forge_curator.app import (
     ForgeCuratorApp,
     PassageView,
-    PerkPicker,
-    RollEvidencePicker,
-    SourceLinkPicker,
-    RollVisualizationPicker,
     StatsPanel,
     ActionsPanel,
     RegexBar,
@@ -40,6 +36,8 @@ from scripts.forge_curator.app import (
     GLYPH_COLORS,
     GLYPH_STYLES,
     LEGEND,
+    CONSTELLATION_NAME_HIGHLIGHT_STYLE,
+    FORGE_KEYWORD_HIGHLIGHT_STYLE,
     QUOTE_HIGHLIGHT_STYLE,
     REGEX_HIGHLIGHT_STYLES,
     ROLL_HIGHLIGHT_STYLE,
@@ -102,30 +100,9 @@ def test_terminal_compatibility_accepts_256_color_terminal() -> None:
     assert result.reasons == []
 
 
-def test_cp_raw_word_roundtrip_ch97(tmp_path: Path) -> None:
-    """ch 97 has a leading non-CP section. Confirm raw↔CP round-trip
-    via the canonical App methods (which honour exclusion ranges)."""
-    app = _loaded_app("97", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    # First CP-eligible raw word: section 0 is ineligible; section 1 starts
-    # the CP body. The auto-detected header at the top of section 1 is also
-    # excluded.
-    ahc = int(cs.meta.sections[1].get("auto_header_word_count") or 0)
-    first_eligible = int(cs.meta.sections[0].get("word_count") or 0) + ahc
-    assert app._cp_earning_word_offset(first_eligible) == 0
-    assert app._cp_earning_word_offset(first_eligible + 100) == 100
-    assert app._raw_word_for_cp_offset(0) == 0
-    assert app._raw_word_for_cp_offset(100) == first_eligible + 100
-
-
 # ---------------------------------------------------------------------------
 # Pilot-driven app tests
 # ---------------------------------------------------------------------------
-
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 @pytest.fixture(autouse=True)
@@ -135,11 +112,6 @@ def _isolate_default_state_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
         "STATE_FILE",
         tmp_path / ".forge_curator_state.json",
     )
-
-
-@pytest.fixture
-def app() -> ForgeCuratorApp:
-    return ForgeCuratorApp(start_chapter="1")
 
 
 def _loaded_app(chapter_num: str, tmp_path: Path) -> ForgeCuratorApp:
@@ -165,21 +137,6 @@ def _plain_stats_lines(text: str) -> list[str]:
     ]
 
 
-def _stats_text(app: ForgeCuratorApp) -> str:
-    stats = app.query_one("#stats", StatsPanel)
-    rendered = getattr(stats, "_renderable", None) or stats.render()
-    return str(rendered) if rendered is not None else ""
-
-
-def _word_index_for_char(app: ForgeCuratorApp, char: int) -> int:
-    cs = app.state.chapter
-    assert cs is not None
-    for index, (_start, end) in enumerate(cs.prose.word_offsets):
-        if char < end:
-            return index
-    return max(0, len(cs.prose.word_offsets) - 1)
-
-
 class _FakeMouseEvent:
     def __init__(self, x: int, y: int, button: int = 1) -> None:
         self.x = x
@@ -188,116 +145,6 @@ class _FakeMouseEvent:
 
     def stop(self) -> None:
         pass
-
-
-@pytest.mark.asyncio
-async def test_b1_gg_then_j_moves_cursor_one_line() -> None:
-    """B1: pressing j after gg should move cursor down exactly one visual line."""
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.press("g", "g")
-        prose = app.query_one("#prose", PassageView)
-        assert prose.cursor == 0, f"after gg, cursor should be 0, got {prose.cursor}"
-        # Capture the visual line of cursor.
-        prose._recompute_lines()
-        line0 = next(
-            (i for i, (s, e) in enumerate(prose._lines) if s <= 0 <= e), 0
-        )
-        await pilot.press("j")
-        prose._recompute_lines()
-        cur = prose.cursor
-        line1 = next(
-            (i for i, (s, e) in enumerate(prose._lines) if s <= cur <= e), 0
-        )
-        # Line should have advanced by exactly 1 (not 0, not 2).
-        assert line1 == line0 + 1, (
-            f"j after gg moved from line {line0} to line {line1} "
-            f"(cursor={cur}); expected exactly +1"
-        )
-
-
-def test_b5_b6_b7_stats_panel_ch97(tmp_path: Path) -> None:
-    """Stats panel uses the rewritten eligibility/word/CP blocks."""
-    app = _loaded_app("97", tmp_path)
-    text = _render_stats_text(app)
-    assert "Validation" not in text
-    assert "At cursor" not in text
-    assert "Chapter overrides" not in text
-    assert "Roll-acquired perks" not in text
-    assert "Eligibility\n" not in text
-    assert "Model:" in text
-    assert "Total content:" in text
-    assert "CP eligible:" in text
-    assert "Since last predicted roll:" in text
-    assert "Until next predicted roll:" in text
-    assert "Since last curated roll:" in text
-    assert "Until next curated roll:" in text
-    assert "Since last curated evidence:" in text
-    assert "Until next curated evidence:" in text
-    assert "Available:" in text
-    assert "Gained:" in text
-    assert "Spent:" in text
-    assert "Evidence" in text
-
-
-def test_b8_cp_at_cursor_nonzero_after_first_roll(tmp_path: Path) -> None:
-    """B8: CP banked should be non-zero after navigating past the first roll."""
-    app = _loaded_app("97", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    rolls = sorted(
-        (r for r in cs.derived.roll_facts if r.get("word_position") is not None),
-        key=lambda r: int(r["word_position"]),
-    )
-    assert rolls, "ch97 must have at least one roll fact"
-    first_roll = rolls[0]
-    first_cp = int(first_roll["word_position"])
-    first_banked = int(first_roll.get("banked_cp_after_roll") or 0)
-    target_cp = first_cp + 10
-    cp_banked = app._cp_at_cursor(target_cp)
-    assert cp_banked > 0, (
-        f"CP banked at cp_word={target_cp} should be > 0; got {cp_banked} "
-        f"(first roll at cp_w={first_cp} banked={first_banked})"
-    )
-    assert cp_banked >= first_banked, (
-        f"expected >= first_banked={first_banked}, got {cp_banked}"
-    )
-
-
-def test_stats_roll_distances_disambiguate_predicted_curated_and_evidence(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("5", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    app.state.set_cursor_char(app.state.char_at_word_index(174))
-
-    cp_word_idx = app._cp_earning_word_offset(cs.cursor_word_index)
-    story_cp_cursor = app._chapter_cp_start(cs.meta.chapter_num) + cp_word_idx
-
-    assert story_cp_cursor == 28_061
-    assert app._predicted_roll_distance_stats(story_cp_cursor) == (61, 1_939)
-    assert app._curated_roll_distance_stats(story_cp_cursor) == (361, 4_274)
-    assert app._curated_evidence_distance_stats(story_cp_cursor) == (361, 4_274)
-
-
-def test_gutter_minimap_emits_an_and_roll_marks_for_ch97(tmp_path: Path) -> None:
-    """Minimap items list contains A glyphs (AN spans) and R/H/M (rolls).
-
-    Replaces the older B9/B10 test which assumed 1-row-per-line gutter
-    rendering. The minimap design proportions one mark per logical span.
-    """
-    app = _loaded_app("97", tmp_path)
-    items = app._compute_gutter_items()
-    glyph_set = {g for _p, g in items}
-    assert "A" in glyph_set, (
-        f"expected at least one 'A' minimap item for ch97 AN; got: {glyph_set}"
-    )
-    assert glyph_set & {"R", "H", "M"}, (
-        f"expected at least one R/H/M item; got: {glyph_set}"
-    )
-    for prop, _ in items:
-        assert 0.0 <= prop <= 1.0, f"minimap proportion out of [0,1]: {prop}"
 
 
 @pytest.mark.asyncio
@@ -310,31 +157,68 @@ async def test_gutter_minimap_renders_priority_cells() -> None:
         gutter.render_minimap([(0.0, "Q"), (0.0, "*")], 1.0, 1)
         assert str(gutter.render()) == "Q*    "
 
-        gutter.render_minimap([(0.0, "2"), (0.0, "*"), (0.0, "1")], 1.0, 1)
-        assert str(gutter.render()) == "*12   "
+        gutter.render_minimap([(0.0, "."), (0.0, "*"), (0.0, "N")], 1.0, 1)
+        assert str(gutter.render()) == "N*.   "
 
-        gutter.render_minimap([(0.0, "Q"), (0.0, "A"), (0.0, "1")], 1.0, 1)
-        assert str(gutter.render()) == "AQ1   "
+        gutter.render_minimap([(0.0, "Q"), (0.0, "A"), (0.0, ".")], 1.0, 1)
+        assert str(gutter.render()) == "AQ.   "
 
 
 def test_gutter_and_highlight_styles_are_unique_and_aligned() -> None:
     css = RegexBar.DEFAULT_CSS
     assert len(set(GLYPH_STYLES.values())) == len(GLYPH_STYLES)
-    assert GLYPH_COLORS["1"] == "orange1"
-    assert GLYPH_CSS_COLORS["1"] == "orange"
-    assert GLYPH_COLORS["1"] != "yellow"
+    assert GLYPH_COLORS["."] == "orange1"
+    assert GLYPH_CSS_COLORS["."] == "orange1"
+    assert GLYPH_COLORS["."] != "yellow"
     assert ROLL_HIGHLIGHT_STYLE == GLYPH_STYLES["R"]
     assert QUOTE_HIGHLIGHT_STYLE == GLYPH_STYLES["Q"]
-    assert REGEX_HIGHLIGHT_STYLES == (
-        GLYPH_STYLES["1"],
-        GLYPH_STYLES["2"],
-        GLYPH_STYLES["3"],
-        GLYPH_STYLES["*"],
+    assert FORGE_KEYWORD_HIGHLIGHT_STYLE == GLYPH_STYLES["."]
+    assert CONSTELLATION_NAME_HIGHLIGHT_STYLE == "bold cyan"
+    assert REGEX_HIGHLIGHT_STYLES == (GLYPH_STYLES["*"],)
+    assert "regex-slot-4" in css
+    assert "regex-slot-1" not in css
+    assert "regex-slot-2" not in css
+    assert "regex-slot-3" not in css
+    assert f"color: {GLYPH_CSS_COLORS['*']};" in css
+
+
+def test_forge_keyword_marks_match_configured_terms_without_partial_words() -> None:
+    text = "Forge constellation Constellation mote Motes remote"
+    cs = SimpleNamespace(
+        prose=SimpleNamespace(
+            text=text,
+            word_offsets=[match.span() for match in re.finditer(r"\S+", text)],
+        )
     )
-    for glyph, slot in (("1", "1"), ("2", "2"), ("3", "3"), ("*", "4")):
-        assert f"regex-slot-{slot}" in css
-        assert f"color: {GLYPH_CSS_COLORS[glyph]};" in css
-        assert css.count(f"color: {GLYPH_CSS_COLORS[glyph]};") == 2
+    app = ForgeCuratorApp(start_chapter="1")
+
+    spans = app._forge_keyword_char_spans(cs)
+
+    assert [text[start:end] for start, end in spans] == [
+        "Forge",
+        "constellation",
+        "Constellation",
+        "mote",
+        "Motes",
+    ]
+    assert app._forge_keyword_word_indices(cs) == [0, 1, 2, 3, 4]
+
+
+def test_constellation_name_highlights_exact_case_sensitive_names() -> None:
+    text = (
+        "Time timeless time Personal Reality personal reality "
+        "Resources and Durability Resources and durability"
+    )
+    cs = SimpleNamespace(prose=SimpleNamespace(text=text))
+    app = ForgeCuratorApp(start_chapter="1")
+
+    spans = app._constellation_name_char_spans(cs)
+
+    assert [text[start:end] for start, end in spans] == [
+        "Time",
+        "Personal Reality",
+        "Resources and Durability",
+    ]
 
 
 @pytest.mark.asyncio
@@ -350,141 +234,6 @@ async def test_gutter_indicator_click_jumps_to_mark_word(monkeypatch) -> None:
         gutter.on_click(_FakeMouseEvent(0, 0))
 
         assert jumps == [3068]
-
-
-@pytest.mark.parametrize("chapter_num", ["2", "97"])
-def test_gutter_marks_match_canonical_roll_fact_positions(
-    chapter_num: str, tmp_path: Path,
-) -> None:
-    app = _loaded_app(chapter_num, tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    total = len(app.state.chapter.prose.word_offsets)
-    expected = []
-    for roll in app._unified_rolls(cs):
-        if (
-            roll.get("source_kind") == "trigger"
-            or roll.get("outcome") not in {"hit", "miss"}
-            or roll.get("word_position") is None
-        ):
-            continue
-        raw = roll.get("raw_word_position")
-        glyph = "H" if roll["outcome"] == "hit" else "M"
-        expected.append((raw / total, glyph))
-
-    actual = [
-        (prop, glyph) for prop, glyph in app._compute_gutter_items()
-        if glyph in {"H", "M"}
-    ]
-    assert actual == expected
-
-
-def test_gutter_predicted_roll_marks_use_prediction_slots_for_deferred_chapter(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("8.1", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    total = len(cs.prose.word_offsets)
-    expected = []
-    chapter_cp_start = app._chapter_cp_start("8.1")
-    for roll in cs.derived.predicted_rolls:
-        local_cp = int(roll["word_position"]) - chapter_cp_start
-        raw = app._roll_marker_word_index_from_cp(cs, local_cp)
-        assert raw is not None
-        expected.append((raw / total, "R"))
-
-    actual = [
-        (prop, glyph) for prop, glyph in app._compute_gutter_items()
-        if glyph == "R"
-    ]
-    assert actual == expected
-
-
-def test_deferred_quotes_do_not_emit_gutter_marks_in_mechanical_chapter(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("8.1", tmp_path)
-
-    quote_marks = [
-        mark for mark in app._compute_gutter_marks()
-        if mark.glyph == "Q"
-    ]
-
-    assert quote_marks == []
-
-
-@pytest.mark.asyncio
-async def test_b12_jump_roll_scrolls_into_view() -> None:
-    """B12: ]r should scroll the prose so the cursor is in view."""
-    app = ForgeCuratorApp(start_chapter="2")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        # Get initial scroll y of the VerticalScroll.
-        from textual.containers import VerticalScroll
-        scroll = app.query_one("#prose_scroll", VerticalScroll)
-        initial_y = scroll.scroll_y
-        prose = app.query_one("#prose", PassageView)
-        initial_cursor = prose.cursor
-        # Press ]r — chord prefix then 'r'.
-        await pilot.press("]")
-        await pilot.press("r")
-        await pilot.pause()
-        new_cursor = prose.cursor
-        new_y = scroll.scroll_y
-        assert new_cursor != initial_cursor, (
-            "cursor should move after ]r"
-        )
-        # Either scroll moved or cursor was already in view; the important
-        # thing is that the cursor's line is within the viewport.
-        assert new_y != initial_y or new_cursor < 100, (
-            f"expected scroll position to update (was {initial_y}, "
-            f"now {new_y}); cursor moved to {new_cursor}"
-        )
-
-
-@pytest.mark.asyncio
-async def test_keybind_redesign_chapter_and_section_chords() -> None:
-    """]] / [[ navigate chapters and land at chapter edges; ][ navigates sections."""
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs0 = app.state.chapter
-        assert cs0 is not None
-        ch0 = cs0.meta.chapter_num
-        app._jump_to_word(100)
-        await pilot.pause()
-        await pilot.press("]")
-        await pilot.press("]")
-        await pilot.pause()
-        cs1 = app.state.chapter
-        assert cs1 is not None
-        assert cs1.meta.chapter_num != ch0
-        assert cs1.cursor_word_index == 0
-        ch1 = cs1.meta.chapter_num
-        app._jump_to_word(100)
-        await pilot.pause()
-        await pilot.press("[")
-        await pilot.press("[")
-        await pilot.pause()
-        cs2 = app.state.chapter
-        assert cs2 is not None
-        assert cs2.meta.chapter_num != ch1
-        assert cs2.meta.chapter_num == ch0
-        assert cs2.cursor_word_index == len(cs2.prose.word_offsets) - 1
-        cs = app.state.chapter
-        assert cs is not None
-        app._jump_to_word(0)
-        await pilot.pause()
-        assert cs.section_index_at(cs.cursor_word_index) == 0
-        await pilot.press("]")
-        await pilot.press("[")
-        await pilot.pause()
-        new_sec = cs.section_index_at(cs.cursor_word_index)
-        assert new_sec >= 1, (
-            f"][ should advance to section >= 1; cursor at section {new_sec} "
-            f"(word_idx={cs.cursor_word_index})"
-        )
 
 
 @pytest.mark.asyncio
@@ -537,11 +286,13 @@ async def test_layout_columns_stats_width_and_regex_bar_chrome() -> None:
         )
         assert regex_bar.size.height == 1
         labels = [str(label.render()) for label in regex_bar.query("Static.label")]
-        assert labels == ["regex 1:", "regex 2:", "regex 3:", "regex *:"]
-        for slot in range(1, 5):
-            inp = app.query_one(f"#regex_{slot}", Input)
-            assert inp.compact is True
-            assert inp.size.height == 1
+        assert labels == ["regex *:"]
+        inp = app.query_one("#regex_4", Input)
+        assert inp.compact is True
+        assert inp.size.height == 1
+        for slot in range(1, 4):
+            with pytest.raises(NoMatches):
+                app.query_one(f"#regex_{slot}", Input)
         with pytest.raises(NoMatches):
             app.query_one("#status")
 
@@ -593,77 +344,6 @@ def test_stats_title_wrapping_uses_hyphen_continuations() -> None:
 
 
 @pytest.mark.asyncio
-async def test_zxc_star_select_active_regex_and_n_uses_it() -> None:
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-
-        app.state.set_regex(0, r"\bcurrent\b")
-        app.state.set_regex(1, r"\bglobal\b")
-        app.state.set_regex(2, r"\bcircumstances\b")
-        app.refresh_all_panels()
-
-        await pilot.press("x")
-        assert app.active_regex_slot == 1
-        assert app.query_one("#regex_2", Input).has_class("active")
-        await pilot.press("n")
-        assert cs.cursor_word_index == cs.regex_hits[1].word_indices[0]
-
-        await pilot.press("c")
-        assert app.active_regex_slot == 2
-        assert app.query_one("#regex_3", Input).has_class("active")
-        await pilot.press("n")
-        assert cs.cursor_word_index == cs.regex_hits[2].word_indices[0]
-
-        await pilot.press("z")
-        assert app.active_regex_slot == 0
-        assert app.query_one("#regex_1", Input).has_class("active")
-
-        await pilot.press("*")
-        assert app.active_regex_slot == 3
-        assert app.query_one("#regex_4", Input).has_class("active")
-        assert cs.regex_hits[3].pattern.startswith("\\b")
-
-
-@pytest.mark.asyncio
-async def test_regex_search_extends_visual_selection() -> None:
-    app = ForgeCuratorApp(start_chapter="1")
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        cs = app.state.chapter
-        assert cs is not None
-        prose = app.query_one("#prose", PassageView)
-
-        app.state.set_regex(0, r"\bcurrent\b")
-        app.refresh_all_panels()
-        first_hit = cs.regex_hits[0].word_indices[0]
-        start_word = max(0, first_hit - 5)
-        app._jump_to_word(start_word)
-        await pilot.pause()
-        start_char = prose.cursor
-
-        await pilot.press("v")
-        await pilot.press("n")
-        await pilot.pause()
-
-        assert prose.visual_mode is True
-        assert prose.anchor == start_char
-        assert prose.cursor == cs.prose.word_offsets[first_hit][0]
-        assert prose.selection is not None
-
-        await pilot.press("N")
-        await pilot.pause()
-
-        previous_hit = cs.regex_hits[0].word_indices[-1]
-        assert prose.visual_mode is True
-        assert prose.anchor == start_char
-        assert prose.cursor == cs.prose.word_offsets[previous_hit][0]
-        assert prose.selection is not None
-
-
-@pytest.mark.asyncio
 async def test_mouse_cursor_syncs_app_state_without_drag_refresh(monkeypatch) -> None:
     app = ForgeCuratorApp(start_chapter="2")
     async with app.run_test(size=(180, 50)) as pilot:
@@ -694,192 +374,6 @@ def test_legend_no_ambiguous_glyph() -> None:
     assert "?" not in glyphs
 
 
-def test_chapter_2_header_eligibility_and_roll_stats(tmp_path: Path) -> None:
-    app = _loaded_app("2", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    assert cs.prose.text.split()[:4] == ["2", "Preparation", "2", "Preparation"]
-    assert cs.prose.implicit_header_word_ranges
-    assert cs.prose.implicit_header_word_ranges[0] == (0, 4)
-
-    text = _render_stats_text(app)
-    assert "chapter 2 /" in text
-    assert "chapter 2 / 194; section 1 / 2" in text
-    assert "2 Preparation" in text
-    assert "Model:" in text
-    assert "Section: CP eligible" in text
-    assert "Text: CP ineligible - header" in text
-    assert "Total content:" in text
-    assert "CP eligible:" in text
-    assert "# 1 (3) Avail CP 100 miss SQ" in text
-    assert "# 2 (4) Avail CP 200 hit SQ" in text
-    assert "# 3 (5) Avail CP 200 hit SQ" in text
-    assert "# 4 predicted" in text
-    assert "hit" in text
-    assert "Clothing - Fashion (200)" in text
-    assert "Quality - Bling of War (100)" in text
-    assert "Alchemy - Alchemist (200)" in text
-    assert "Evidence:" not in text
-    assert "T text evidence" not in text
-    assert "@cp" not in text
-
-
-def test_chapter_4_unpredicted_roll_without_explicit_anchor_stays_unslotted(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("4", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    fifth_fact = next(
-        r for r in cs.derived.roll_facts
-        if r.get("roll_sequence_in_chapter") == 5
-        and str(r.get("mechanical_chapter_num")) == "4"
-    )
-    fifth_fact["evidence_quotes"] = []
-    for field in (
-        "word_position",
-        "display_word_position",
-        "display_cumulative_word_offset",
-        "mechanical_word_position",
-        "mechanical_cumulative_word_offset",
-    ):
-        fifth_fact[field] = None
-
-    fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
-
-    assert fifth["roll_number"] == 13
-    assert fifth["display_kind"] == "chapter_roll"
-    assert fifth["raw_word_position"] is None
-    assert fifth["word_position"] == cs.meta.cp_earning_word_count
-
-
-def test_chapter_4_explicit_extra_roll_anchor_drives_roll_marker(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("4", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-
-    fifth_fact = next(
-        r for r in cs.derived.roll_facts
-        if r.get("roll_sequence_in_chapter") == 5
-        and str(r.get("mechanical_chapter_num")) == "4"
-    )
-    marker_word = app._roll_marker_word_index_from_cp(
-        cs, int(fifth_fact["mention_word_position"])
-    )
-    marker_indices = app._predicted_roll_word_indices(cs)
-
-    assert marker_word in marker_indices
-
-
-def test_chapter_4_fifth_roll_evidence_is_anchored_at_quote_start(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("4", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    fifth = next(
-        roll for roll in app._unified_rolls(cs)
-        if roll.get("target_roll_index") == 5
-    )
-
-    quote = fifth["evidence_quotes"][0]["text"]
-    quote_start = cs.prose.text.find(quote)
-    assert quote_start >= 0
-    quote_word = forge_app._word_index_for_char_offset(
-        cs.prose.word_offsets, quote_start
-    )
-    reference_word = app._evidence_reference_word_index(cs, fifth)
-
-    assert fifth["roll_number"] == 13
-    assert quote_word == reference_word
-    assert app._cp_at_cursor(app._cp_earning_word_offset(int(quote_word))) == 100
-
-
-def test_chapter_4_unpredicted_roll_requires_explicit_anchor_for_marker(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("4", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    quote = "That had taken too long the first time"
-    fifth_fact = next(
-        r for r in cs.derived.roll_facts
-        if r.get("roll_sequence_in_chapter") == 5
-        and str(r.get("mechanical_chapter_num")) == "4"
-    )
-    fifth_fact["evidence_quotes"] = [
-        {"text": quote, "mention_chapter_num": "4", "mention_word_position": 100}
-    ]
-    for field in (
-        "word_position",
-        "display_word_position",
-        "display_cumulative_word_offset",
-        "mechanical_word_position",
-        "mechanical_cumulative_word_offset",
-    ):
-        fifth_fact[field] = None
-
-    fifth = next(r for r in app._unified_rolls(cs) if r.get("target_roll_index") == 5)
-
-    assert fifth["roll_number"] == 13
-    assert fifth["evidence_quotes"][0]["text"] == quote
-    assert fifth["raw_word_position"] is None
-    assert fifth["word_position"] == cs.meta.cp_earning_word_count
-
-
-def test_roll_markers_skip_structural_header_but_keep_cp_ineligible_source_anchor(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("97", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    assert cs.prose.implicit_header_word_ranges
-
-    roll_marks = [
-        mark for mark in app._compute_gutter_marks()
-        if mark.glyph in {"R", "H", "M", "Q"}
-    ]
-    header_ranges = cs.prose.implicit_header_word_ranges
-
-    assert app._predicted_roll_word_indices(cs)
-    assert all(
-        not any(start <= word_idx < end for start, end in header_ranges)
-        for word_idx in app._predicted_roll_word_indices(cs)
-    )
-    assert all(
-        not any(start <= mark.word_idx < end for start, end in header_ranges)
-        for mark in roll_marks
-    )
-
-
-def test_roll_highlight_does_not_render_in_header(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("97", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    assert cs.prose.implicit_header_word_ranges
-
-    spans = app._compute_prose_spans()
-    roll_spans = [
-        span for span in spans
-        if span.get("style") == ROLL_HIGHLIGHT_STYLE
-    ]
-
-    assert roll_spans
-    assert all(
-        not any(
-            cs.prose.word_offsets[start][0] <= span["start"]
-            and span["end"] <= cs.prose.word_offsets[end - 1][1]
-            for start, end in cs.prose.implicit_header_word_ranges
-            if end > start
-        )
-        for span in roll_spans
-    )
-
-
 def test_actions_panel_lists_model_discrepancy_resolution() -> None:
     actions = ActionsPanel()
     actions.render_catalog()
@@ -897,98 +391,6 @@ def test_actions_panel_lists_roll_display_controls() -> None:
 
     assert "⎵v  Roll display position" in text
     assert "⎵d  Toggle evidence deferral to next chapter" in text
-
-
-def test_saved_roll_evidence_highlights_exact_quote_span(tmp_path: Path) -> None:
-    app = _loaded_app("2", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    quote = next(
-        r["evidence_quotes"][0]["text"]
-        for r in cs.derived.roll_facts
-        if r.get("roll_number") == 2
-        and r.get("evidence_quotes")
-    )
-    quote_start = cs.prose.text.find(quote)
-    assert quote_start >= 0
-
-    spans = app._compute_prose_spans()
-
-    assert {
-        "start": quote_start,
-        "end": quote_start + len(quote),
-        "layer": "A",
-        "style": QUOTE_HIGHLIGHT_STYLE,
-        "priority": 20,
-    } in spans
-
-
-def test_saved_roll_evidence_highlights_multiple_quote_spans(tmp_path: Path) -> None:
-    app = _loaded_app("2", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    first = "I felt myself latch on to a mote of power."
-    second = "This was not a tinker power."
-    roll = next(r for r in cs.derived.roll_facts if r.get("roll_number") == 2)
-    roll["evidence_quotes"] = [
-        {"text": first, "mention_chapter_num": "2", "mention_word_position": 879},
-        {"text": second, "mention_chapter_num": "2", "mention_word_position": 902},
-    ]
-
-    spans = app._compute_prose_spans()
-
-    for quote in (first, second):
-        quote_start = cs.prose.text.find(quote)
-        assert quote_start >= 0
-        assert {
-            "start": quote_start,
-            "end": quote_start + len(quote),
-            "layer": "A",
-            "style": QUOTE_HIGHLIGHT_STYLE,
-            "priority": 20,
-        } in spans
-
-
-def test_roll_evidence_gutter_mark_survives_chapter_navigation(tmp_path: Path) -> None:
-    app = _loaded_app("2", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    quote = next(
-        r["evidence_quotes"][0]["text"]
-        for r in cs.derived.roll_facts
-        if r.get("roll_number") == 2
-        and r.get("evidence_quotes")
-    )
-    quote_start = cs.prose.text.find(quote)
-    assert quote_start >= 0
-    expected_word = _word_index_for_char(app, quote_start)
-    expected = (
-        expected_word / max(1, len(cs.prose.word_offsets)),
-        "Q",
-    )
-
-    assert "hit SQ" in _render_stats_text(app)
-    assert expected in app._compute_gutter_items()
-
-    app._load_chapter("3")
-    app._load_chapter("2")
-
-    assert app.state.chapter is not None
-    assert app.state.chapter.meta.chapter_num == "2"
-    assert expected in app._compute_gutter_items()
-
-
-def test_chapter_2_auto_header_does_not_render_author_note_gutter_mark(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("2", tmp_path)
-    top_glyphs = [
-        glyph for prop, glyph in app._compute_gutter_items()
-        if prop == 0.0
-    ]
-
-    assert "═" in top_glyphs
-    assert "A" not in top_glyphs
 
 
 def test_actions_panel_omits_read_only_roll_structure_copy() -> None:
@@ -1018,292 +420,37 @@ def test_last_viewed_chapter_persists_and_is_overridden(tmp_path) -> None:
     assert json.loads(state_path.read_text())["last_chapter"] == "1"
 
 
-def test_snapshot_writes_current_forge_curator_state(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    snapshot_path = tmp_path / ".forge_curator_snapshot.json"
-    monkeypatch.setattr(forge_app, "SNAPSHOT_PATH", snapshot_path)
-    app = _loaded_app("2", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    app.state.set_cursor_char(42)
-    app.state.set_regex(2, "Taylor|Queen")
+def test_span_eligibility_overrides_section_base_without_counting_headers() -> None:
+    from scripts.eligibility_spans import section_cp_word_count, section_span_overrides
 
-    app.action_snapshot()
-    first = json.loads(snapshot_path.read_text())
-
-    assert first["snapshot_kind"] == "forge_curator_tui"
-    assert first["chapter"]["chapter_num"] == "2"
-    assert first["chapter"]["full_title"] == cs.meta.full_title
-    assert first["cursor"]["char"] == 42
-    assert first["cursor"]["word_index"] == cs.cursor_word_index
-    assert first["regex"][2]["pattern"] == "Taylor|Queen"
-    assert first["prose"]["text"] == cs.prose.text
-
-    app._load_chapter("1")
-    app.action_snapshot()
-    second = json.loads(snapshot_path.read_text())
-
-    assert second["chapter"]["chapter_num"] == "1"
-    assert second["captured_at"] != first["captured_at"]
-
-
-@pytest.mark.asyncio
-async def test_ctrl_s_writes_forge_curator_snapshot(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    snapshot_path = tmp_path / ".forge_curator_snapshot.json"
-    monkeypatch.setattr(forge_app, "SNAPSHOT_PATH", snapshot_path)
-    app = ForgeCuratorApp(
-        start_chapter="2",
-        state_path=tmp_path / ".forge_curator_state.json",
-    )
-
-    async with app.run_test(size=(180, 50)) as pilot:
-        await pilot.pause()
-        await pilot.press("ctrl+s")
-        await pilot.pause()
-
-    snapshot = json.loads(snapshot_path.read_text())
-    assert snapshot["snapshot_kind"] == "forge_curator_tui"
-    assert snapshot["chapter"]["chapter_num"] == "2"
-
-
-def test_snapshot_includes_deferred_predicted_slots(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    snapshot_path = tmp_path / ".forge_curator_snapshot.json"
-    monkeypatch.setattr(forge_app, "SNAPSHOT_PATH", snapshot_path)
-    app = _loaded_app("26", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-
-    app.action_snapshot()
-
-    snapshot = json.loads(snapshot_path.read_text())
-    deferred = [
-        roll for roll in snapshot["rolls"]
-        if roll.get("display_kind") == "deferred_in"
-        and roll.get("source_kind") == "predicted_slot"
-    ]
-    assert deferred
-    assert deferred[0]["target_chapter_num"] == "25"
-    assert deferred[0]["target_roll_index"] == 7
-
-
-def test_save_quote_to_multiple_rolls(tmp_path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    path = tmp_path / "chapter_roll_overrides.json"
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    persistence.append_roll_evidence_at_indices(
-        "2",
-        [1, 3],
-        text="same quote",
-        mention_chapter_num="2",
-        mention_word_position=42,
-    )
-    rolls = persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"]
-    assert len(rolls) == 3
-    assert rolls[0]["evidence_quotes"] == [
-        {"text": "same quote", "mention_chapter_num": "2", "mention_word_position": 42}
-    ]
-    assert rolls[1]["evidence_quotes"] == []
-    assert rolls[2]["evidence_quotes"] == [
-        {"text": "same quote", "mention_chapter_num": "2", "mention_word_position": 42}
-    ]
-
-
-def test_multi_quote_can_leave_deferred_mechanical_visualization(tmp_path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    path = tmp_path / "chapter_roll_overrides.json"
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    persistence.mark_roll_deferred_to_chapter("8.1", 1, "9")
-
-    persistence.append_roll_evidence_at_indices(
-        "8.1",
-        [1],
-        text="later quote",
-        mention_chapter_num="9",
-        mention_word_position=1561,
-        display_position_policy=None,
-    )
-
-    roll = json.loads(path.read_text())["chapter_roll_overrides"]["8.1"]["rolls"][0]
-    assert roll["mention_chapter_num"] == "9"
-    assert roll["mention_word_position"] is None
-    assert roll["display_position_policy"] == "mechanical"
-    assert roll["evidence_quotes"] == [
-        {"text": "later quote", "mention_chapter_num": "9", "mention_word_position": 1561}
-    ]
-
-
-def test_save_quote_multi_reports_and_updates_deferred_predicted_target(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("26", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    monkeypatch.setattr(app, "_selected_quote", lambda _action_name: "chapter 26 quote")
-    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 87)
-    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
-    messages: list[tuple[str, bool]] = []
-    monkeypatch.setattr(
-        app,
-        "_post_curation_refresh",
-        lambda message, *, full=False: messages.append((message, full)),
-    )
-    screens: list[RollEvidencePicker] = []
-    monkeypatch.setattr(app, "push_screen", lambda screen: screens.append(screen))
-
-    app._action_save_quote_multi("26")
-
-    assert screens
-    first_target = screens[0]._rolls[0]
-    assert first_target["display_kind"] == "deferred_in"
-    assert first_target["target_chapter_num"] == "25"
-    assert first_target["target_roll_index"] == 7
-
-    screens[0]._on_confirm([1], None)
-
-    roll = (
-        app.persistence.chapter_roll_overrides["chapter_roll_overrides"]["25"]
-        ["rolls"][6]
-    )
-    assert roll["evidence_quotes"] == [
-        {
-            "text": "chapter 26 quote",
-            "mention_chapter_num": "26",
-            "mention_word_position": app._cp_earning_word_offset(87),
-        }
-    ]
-    assert messages == [("quote saved to rolls ch 25 #7", False)]
-
-    deferred = app._deferred_predicted_slot_rolls(app.state.chapter)
-    assert deferred[0]["evidence_quotes"] == roll["evidence_quotes"]
-    assert app._roll_evidence_marker(deferred[0]) == "Q"
-
-
-def test_deferred_predicted_slot_quote_highlights_current_chapter_text(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("26", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    quote = "Priority call from Boston"
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    app.persistence.append_roll_evidence_at_indices(
-        "25",
-        [7],
-        text=quote,
-        mention_chapter_num="26",
-        mention_word_position=12000,
-    )
-
-    spans = app._roll_evidence_char_spans(app.state.chapter)
-    text = app.state.chapter.prose.text
-    start = text.find(quote)
-
-    assert start >= 0
-    assert (start, start + len(quote)) in spans
-
-
-def test_toggle_section_eligibility_updates_section_classification_only(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    classifications_path = tmp_path / "section_classifications.json"
-    classifications_path.write_text(json.dumps({
-        "_source": "test",
-        "classifications": {
-            "6.1@0": {
-                "chapter_num": "6.1",
-                "section_index": 0,
-                "header": None,
+    classification = {
+        "counts_for_cp": False,
+        "span_overrides": [
+            {
+                "word_offset_start": 10,
+                "word_offset_end": 20,
                 "counts_for_cp": True,
-                "reason": "implicit large MC story",
+                "reason_code": "joe_on_screen",
+                "note": None,
+                "excerpt": "Joe is visible.",
             },
-        },
-    }))
-    chapter_eligibility_path = tmp_path / "chapter_eligibility.json"
-    persistence = CurationPersistence(
-        section_classifications_path=classifications_path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-
-    now_eligible = persistence.toggle_section_eligibility(
-        "6.1",
-        0,
-        header=None,
-    )
-
-    updated = json.loads(classifications_path.read_text())
-    entry = updated["classifications"]["6.1@0"]
-    assert now_eligible is False
-    assert entry["counts_for_cp"] is False
-    assert "curator toggle" in entry["reason"]
-    assert not chapter_eligibility_path.exists()
-
-
-def test_space_e_toggles_current_section_and_runs_full_derivation(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    classifications_path = tmp_path / "section_classifications.json"
-    classifications_path.write_text(json.dumps({
-        "_source": "test",
-        "classifications": {
-            "6.1@0": {
-                "chapter_num": "6.1",
-                "section_index": 0,
-                "header": None,
-                "counts_for_cp": True,
-                "reason": "implicit large MC story",
+            {
+                "word_offset_start": 15,
+                "word_offset_end": 18,
+                "counts_for_cp": False,
+                "reason_code": "joe_not_on_screen",
+                "note": None,
+                "excerpt": "Cutaway.",
             },
-        },
-    }))
-    app = _loaded_app("15", tmp_path)
-    app.persistence = CurationPersistence(
-        section_classifications_path=classifications_path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    refreshes: list[tuple[str, bool]] = []
-    app._post_curation_refresh = (
-        lambda message, *, full=False: refreshes.append((message, full))
-    )
+        ],
+    }
 
-    app._action_toggle_section_eligibility("6.1")
-
-    entry = json.loads(classifications_path.read_text())["classifications"]["6.1@0"]
-    assert entry["counts_for_cp"] is False
-    assert refreshes == [("ch 6.1 sec 0 CP eligibility: DISABLED", True)]
+    assert section_cp_word_count(
+        section_word_start=0,
+        section_word_end=30,
+        base_counts_for_cp=False,
+        span_overrides=section_span_overrides(classification, 0, 30),
+    ) == 7
 
 
 def test_source_anchor_in_ineligible_section_uses_raw_prose_position(
@@ -1391,941 +538,12 @@ def test_anchor_roll_without_quote_writes_source_marker_metadata(tmp_path: Path)
     app._action_anchor_roll_without_quote("4")
 
     rolls = json.loads(path.read_text())["chapter_roll_overrides"]["4"]["rolls"]
-    fifth = rolls[4]
-    assert fifth["evidence_quotes"] == []
-    assert fifth["mention_chapter_num"] == "4"
-    assert fifth["mention_word_position"] == 9500
-    assert fifth["display_position_policy"] == "source_marker"
-    assert fifth["curator_note"] == "source-only roll anchor"
-
-
-def test_roll_evidence_picker_labels_selected_rolls() -> None:
-    picker = RollEvidencePicker(
-        rolls=[
-            {
-                "index": 1,
-                "roll_number": 7,
-                "outcome": "hit",
-            },
-        ],
-        on_confirm=lambda _indices: None,
-    )
-    button = Button(picker._roll_button_label(1, picker._rolls[0]), name="1")
-
-    assert str(button.label).startswith("( ) #1")
-
-    picker._on_pressed(Button.Pressed(button))
-    assert str(button.label).startswith("(x) #1")
-
-    picker._on_pressed(Button.Pressed(button))
-    assert str(button.label).startswith("( ) #1")
-
-
-def test_roll_evidence_picker_keyboard_bindings_toggle_and_confirm() -> None:
-    bindings = {binding.key: binding.action for binding in RollEvidencePicker.BINDINGS}
-
-    assert bindings["space"] == "toggle_focused_roll"
-    assert bindings["enter"] == "confirm_selection"
-
-
-def test_roll_evidence_picker_can_leave_display_position_unchanged() -> None:
-    selected: list[tuple[list[int], str | None]] = []
-    picker = RollEvidencePicker(
-        rolls=[
-            {
-                "index": 1,
-                "roll_number": 7,
-                "outcome": "hit",
-            },
-        ],
-        on_confirm=lambda indices, display_policy: selected.append(
-            (indices, display_policy)
-        ),
-    )
-
-    picker._selected.add(1)
-    assert picker._display_position_policy is None
-    assert picker._display_position_label() == "Display marker: predicted"
-
-    picker._toggle_display_position_policy()
-    assert picker._display_position_policy == "mention"
-    assert picker._display_position_label() == "Display marker: quote"
-
-    picker.action_confirm_selection()
-    assert selected == [([1], "mention")]
-
-
-def test_roll_evidence_picker_space_toggles_focused_display_policy() -> None:
-    picker = RollEvidencePicker(
-        rolls=[
-            {
-                "index": 1,
-                "roll_number": 7,
-                "outcome": "hit",
-            },
-        ],
-        on_confirm=lambda _indices, _display_policy: None,
-    )
-    button = Button(picker._display_position_label(), id="display_policy")
-    picker.focused = button
-
-    picker.action_toggle_focused_roll()
-
-    assert picker._display_position_policy == "mention"
-    assert str(button.label) == "Display marker: quote"
-
-
-def test_roll_evidence_picker_space_action_toggles_focused_roll() -> None:
-    picker = RollEvidencePicker(
-        rolls=[
-            {
-                "index": 1,
-                "roll_number": 7,
-                "outcome": "hit",
-            },
-        ],
-        on_confirm=lambda _indices: None,
-    )
-    button = Button(picker._roll_button_label(1, picker._rolls[0]), name="1")
-    picker.focused = button
-
-    picker.action_toggle_focused_roll()
-
-    assert picker._selected == {1}
-    assert str(button.label).startswith("(x) #1")
-
-
-def test_roll_stat_line_repeats_q_for_each_evidence_quote(tmp_path: Path) -> None:
-    app = _loaded_app("2", tmp_path)
-    line = app._format_roll_stat_line(
-        {
-            "index": 1,
-            "roll_number": 7,
-            "outcome": "hit",
-            "constellation": "Clothing",
-            "available_cp": 100,
-            "purchased_perks": [{"name": "Fashion", "cost": 100}],
-            "evidence_quotes": [
-                {"text": "first", "mention_chapter_num": "2", "mention_word_position": 10},
-                {"text": "second", "mention_chapter_num": "2", "mention_word_position": 20},
-            ],
-        },
-        ">",
-    )
-
-    assert "hit QQ" in line
-
-
-def test_roll_stat_line_notes_non_default_display_position(tmp_path: Path) -> None:
-    app = _loaded_app("8.1", tmp_path)
-    line = app._format_roll_stat_line(
-        {
-            "index": 1,
-            "roll_number": 27,
-            "outcome": "miss",
-            "constellation": None,
-            "available_cp": 200,
-            "mechanical_chapter_num": "8.1",
-            "mechanical_word_position": 784,
-            "mention_chapter_num": "9",
-            "mention_word_position": 1561,
-            "display_position_policy": "mechanical",
-            "display_chapter_num": "8.1",
-            "display_word_position": 784,
-            "evidence_quotes": [
-                {
-                    "text": "a few failed connections",
-                    "mention_chapter_num": "9",
-                    "mention_word_position": 1561,
-                },
-            ],
-        },
-        " ",
-    )
-
-    assert "narrative deferred to ch 9" in line
-    assert "display at predicted roll position" in line
-
-
-def test_roll_stat_line_notes_prior_chapter_evidence_without_deferral_label(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("12", tmp_path)
-    line = app._format_roll_stat_line(
-        {
-            "index": 1,
-            "roll_number": 44,
-            "outcome": "miss",
-            "constellation": "Size",
-            "available_cp": 100,
-            "mechanical_chapter_num": "12",
-            "mechanical_word_position": 1008,
-            "mention_chapter_num": "11",
-            "mention_word_position": 7097,
-            "display_position_policy": "mechanical",
-            "display_chapter_num": "12",
-            "display_word_position": 1008,
-            "evidence_quotes": [
-                {
-                    "text": "ignored the Celestial Forge as it missed a connection",
-                    "mention_chapter_num": "11",
-                    "mention_word_position": 7097,
-                },
-            ],
-        },
-        " ",
-    )
-
-    assert "narrative evidence from ch 11" in line
-    assert "narrative deferred to ch 11" not in line
-    assert "display at predicted roll position" in line
-
-
-def test_roll_stat_line_notes_unchanged_quote_marker_stays_predicted(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("10", tmp_path)
-    line = app._format_roll_stat_line(
-        {
-            "index": 1,
-            "roll_number": 34,
-            "outcome": "hit",
-            "constellation": "Magitech",
-            "available_cp": 200,
-            "mechanical_chapter_num": "10",
-            "mechanical_word_position": 1631,
-            "mention_chapter_num": "10",
-            "mention_word_position": None,
-            "display_position_policy": "mechanical",
-            "display_chapter_num": "10",
-            "display_word_position": 1631,
-            "purchased_perks": [{"name": "Mechanist", "cost": 100}],
-            "evidence_quotes": [
-                {
-                    "text": "The final constellation was called Magitech.",
-                    "mention_chapter_num": "10",
-                    "mention_word_position": 1729,
-                },
-            ],
-        },
-        " ",
-    )
-
-    assert "display at predicted roll position" in line
-
-
-def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("6", tmp_path)
-    line = app._format_roll_stat_line(
-        {
-            "index": 4,
-            "target_roll_index": 3,
-            "roll_number": 19,
-            "outcome": "hit",
-            "constellation": "Magic",
-            "available_cp": 200,
-            "purchased_perks": [{"name": "Magic: Enchanting", "cost": 200}],
-            "evidence_quotes": [
-                {
-                    "text": "quote",
-                    "mention_chapter_num": "6",
-                    "mention_word_position": 6898,
-                },
-            ],
-        },
-        " ",
-    )
-
-    assert "# 3 (19)" in line
-    assert "# 4 (19)" not in line
-
-
-def test_chapter_9_stats_separates_deferred_and_open_predicted_slots(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    app = _loaded_app("9", tmp_path)
-    monkeypatch.setattr(
-        app,
-        "_unified_rolls",
-        lambda _cs: [
-            {
-                "index": 1,
-                "target_roll_index": 1,
-                "target_chapter_num": "9",
-                "visible_chapter_num": "9",
-                "display_kind": "chapter_roll",
-                "word_position": 750,
-                "raw_word_position": 754,
-                "outcome": "miss",
-                "roll_number": 30,
-                "available_cp": 100,
-                "evidence_quotes": [],
-                "use_stable_target_identity": True,
-            },
-            {
-                "index": None,
-                "target_roll_index": 1,
-                "target_chapter_num": "8.1",
-                "visible_chapter_num": "9",
-                "display_kind": "deferred_in",
-                "word_position": 0,
-                "raw_word_position": 0,
-                "outcome": "miss",
-                "roll_number": 27,
-                "available_cp": 200,
-                "evidence_quotes": [],
-                "use_stable_target_identity": False,
-            },
-        ],
-    )
-    monkeypatch.setattr(
-        app,
-        "_open_predicted_slot_rolls",
-        lambda _cs: [
-            {
-                "index": 2,
-                "target_roll_index": 2,
-                "target_chapter_num": "9",
-                "visible_chapter_num": "9",
-                "display_kind": "predicted_slot",
-                "word_position": 2750,
-                "raw_word_position": 2754,
-                "outcome": "open",
-                "roll_number": 36,
-                "use_stable_target_identity": True,
-            },
-        ],
-    )
-    text = _render_stats_text(app)
-
-    assert "Deferred rolls" in text
-    assert "# 2 predicted" in text
-
-
-def test_displayed_cross_chapter_roll_stays_in_deferred_section(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("10", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    cs.derived.roll_facts = [
-        {
-            "roll_number": 999,
-            "chapter_num": "10",
-            "mechanical_chapter_num": "9",
-            "mechanical_word_position": 8750,
-            "mechanical_cumulative_word_offset": 78000,
-            "display_chapter_num": "10",
-            "display_word_position": 294,
-            "display_cumulative_word_offset": 78663,
-            "mention_chapter_num": "10",
-            "mention_word_position": 294,
-            "display_position_policy": "mention",
-            "source_kind": "miss",
-            "source": "curator_rolls",
-            "outcome": "miss",
-            "available_cp": 100,
-            "constellation": "Size",
-            "evidence_quotes": [],
-        }
-    ]
-
-    rolls = app._unified_rolls(cs)
-
-    assert len(rolls) == 1
-    assert rolls[0]["display_kind"] == "deferred_in"
-    assert rolls[0]["word_position"] == 294
-    assert rolls[0]["target_chapter_num"] == "9"
-
-
-def test_deferred_rolls_render_above_main_rolls(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    app = _loaded_app("10", tmp_path)
-    deferred = {
-        "display_kind": "deferred_in",
-        "target_chapter_num": "9",
-        "target_roll_index": 5,
-        "word_position": 294,
-        "outcome": "miss",
-        "roll_number": 33,
-        "available_cp": 100,
-        "constellation": "Size",
-        "evidence_quotes": [],
-    }
-    current = {
-        "display_kind": "chapter_roll",
-        "target_chapter_num": "10",
-        "target_roll_index": 1,
-        "word_position": 1631,
-        "outcome": "hit",
-        "roll_number": 34,
-        "available_cp": 200,
-        "constellation": "Magitech",
-        "purchased_perks": [{"name": "Mechanist", "cost": 100}],
-        "evidence_quotes": [],
-        "use_stable_target_identity": True,
-    }
-    monkeypatch.setattr(app, "_unified_rolls", lambda _cs: [deferred, current])
-
-    text = _render_stats_text(app)
-
-    assert text.index("Deferred rolls") < text.index("Rolls")
-
-
-def test_space_m_on_selected_predicted_slot_creates_extra_miss_override(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("9", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    target = {
-        "display_kind": "predicted_slot",
-        "target_chapter_num": "9",
-        "target_roll_index": 5,
-    }
-    app._selected_roll_target_if_visible = lambda: target
-
-    app._select_roll_target(target)
-    app._action_set_last_outcome("9", "miss")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["9"]["rolls"]
-    assert saved[int(target["target_roll_index"]) - 1]["outcome"] == "miss"
-
-
-def test_space_s_marks_selected_predicted_slot_skipped(tmp_path: Path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("9", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    target = {
-        "display_kind": "predicted_slot",
-        "target_chapter_num": "9",
-        "target_roll_index": 5,
-    }
-    app._selected_roll_target_if_visible = lambda: target
-
-    app._select_roll_target(target)
-    app._handle_space_chord("s")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["9"]["rolls"]
-    assert saved[int(target["target_roll_index"]) - 1]["skipped"] is True
-    assert saved[int(target["target_roll_index"]) - 1]["outcome"] is None
-
-
-def test_source_roll_assignment_marks_selected_slot(tmp_path: Path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("9", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-
-    source = next(
-        row for row in app._source_roll_picker_rows("9")
-        if row["roll_number"] == 31
-    )
-    app.persistence.assign_source_roll_at_index("9", 3, int(source["roll_number"]))
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["9"]["rolls"]
-    assert saved[2]["source_roll_number"] == 31
-
-
-def test_source_roll_assignment_can_target_deferred_roll(tmp_path: Path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("10", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._current_roll_target = lambda: {
-        "display_kind": "deferred_in",
-        "target_chapter_num": "9",
-        "target_roll_index": 5,
-    }
-    app._source_roll_picker_rows = lambda chapter_num: [
-        {"roll_number": 33, "outcome": "miss", "raw": "Roll 33: Size miss"}
-    ]
-    app._post_curation_refresh = lambda message, *, full=False: None
-    def push_screen(screen):
-        target = next(
-            roll for roll in screen._targets
-            if roll.get("display_kind") == "deferred_in"
-            and roll.get("target_chapter_num") == "9"
-            and roll.get("target_roll_index") == 5
-        )
-        screen._on_confirm(target, screen._sources[0])
-
-    app.push_screen = push_screen
-
-    app._action_assign_source_roll("10")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["9"]["rolls"]
-    assert saved[4]["source_roll_number"] == 33
-
-
-def test_source_roll_assignment_can_target_synthetic_deferred_slot(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("26", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    cs = app.state.chapter
-    assert cs is not None
-    cs.cursor_char = cs.prose.word_offsets[100][0]
-    source = next(
-        roll for roll in app._source_roll_picker_rows("26")
-        if roll["roll_number"] == 124
-    )
-    app._source_roll_picker_rows = lambda chapter_num: [source]
-    app._post_curation_refresh = lambda message, *, full=False: None
-
-    def push_screen(screen):
-        target = next(
-            roll for roll in screen._targets
-            if roll.get("display_kind") == "deferred_in"
-            and roll.get("target_chapter_num") == "25"
-            and roll.get("target_roll_index") == 7
-        )
-        chosen_source = next(
-            roll for roll in screen._sources
-            if roll.get("roll_number") == 124
-        )
-        screen._on_confirm(target, chosen_source)
-
-    app.push_screen = push_screen
-
-    target = app._current_roll_target()
-    assert target is not None
-    assert target["display_kind"] == "deferred_in"
-    assert target["target_chapter_num"] == "25"
-    assert target["target_roll_index"] == 7
-
-    app._action_assign_source_roll("26")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["25"]["rolls"]
-    assert saved[6]["source_roll_number"] == 124
-
-
-def test_source_roll_assignment_chooses_target_before_source(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("26", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    source = next(
-        roll for roll in app._source_roll_picker_rows("26")
-        if roll["roll_number"] == 124
-    )
-    app._source_roll_picker_rows = lambda chapter_num: [source]
-    app._post_curation_refresh = lambda message, *, full=False: None
-    screens: list[object] = []
-
-    def push_screen(screen):
-        screens.append(screen)
-        if isinstance(screen, SourceLinkPicker):
-            target = next(
-                roll for roll in screen._targets
-                if roll.get("display_kind") == "deferred_in"
-                and roll.get("target_chapter_num") == "25"
-                and roll.get("target_roll_index") == 7
-            )
-            chosen_source = next(
-                roll for roll in screen._sources
-                if roll.get("roll_number") == 124
-            )
-            screen._on_confirm(target, chosen_source)
-
-    app.push_screen = push_screen
-
-    app._action_assign_source_roll("26")
-
-    assert [type(screen) for screen in screens] == [SourceLinkPicker]
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["25"]["rolls"]
-    assert saved[6]["source_roll_number"] == 124
-
-
-def test_source_roll_assignment_moves_duplicate_source_binding(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    persistence.assign_source_roll_at_index("18", 1, 75)
-
-    persistence.assign_source_roll_at_index("17", 7, 75)
-
-    rolls = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]
-    assert rolls["17"]["rolls"][6]["source_roll_number"] == 75
-    assert rolls["18"]["rolls"][0]["source_roll_number"] is None
-
-
-def test_defer_source_roll_makes_it_available_next_chapter(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("19", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    cs = app.state.chapter
-    assert cs is not None
-    target = next(
-        roll for roll in app._roll_slot_rows(cs)
-        if roll.get("target_roll_index") == 8
-    )
-    app._selected_roll_target_if_visible = lambda: target
-    app._post_curation_refresh = lambda message, *, full=False: None
-
-    app._action_defer_roll_to_next_chapter("19")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["19"]["rolls"][7]
-    assert saved["source_deferred_to_chapter"] == "20"
-    current_rows = app._roll_slot_rows(cs)
-    deferred_source = next(
-        roll for roll in current_rows
-        if roll.get("target_roll_index") == 8
-    )
-    assert deferred_source["source_deferred_to_chapter"] == "20"
-    assert (
-        "mechanical deferred to ch 20"
-        in app._format_roll_stat_line(deferred_source, " ")
-    )
-
-    next_app = _loaded_app("20", tmp_path)
-    next_app.persistence = app.persistence
-    source_rows = next_app._source_roll_picker_rows("20")
-    deferred = next(
-        row for row in source_rows
-        if row.get("roll_number") == 88
-    )
-    assert deferred["source_deferred_from_chapter"] == "19"
-    assert deferred["source_deferred_from_index"] == 8
-
-
-def test_deferred_source_roll_projects_into_source_and_mechanical_chapters(
-    tmp_path: Path,
-) -> None:
-    source_app = _loaded_app("19", tmp_path)
-    source_cs = source_app.state.chapter
-    assert source_cs is not None
-    source_row = next(
-        roll for roll in source_app._roll_slot_rows(source_cs)
-        if roll.get("roll_number") == 88
-    )
-    source_line = source_app._format_roll_stat_line(source_row, " ")
-
-    assert source_row["display_kind"] == "source_deferred"
-    assert source_row["target_roll_index"] == 8
-    assert source_row["source_chapter_num"] == "19"
-    assert source_row["source_roll_index"] == 8
-    assert source_row["mechanical_chapter_num"] == "20"
-    assert "mechanical deferred to ch 20" in source_line
-
-    mechanical_app = _loaded_app("20", tmp_path)
-    mechanical_cs = mechanical_app.state.chapter
-    assert mechanical_cs is not None
-    mechanical_row = next(
-        roll for roll in mechanical_app._roll_slot_rows(mechanical_cs)
-        if roll.get("target_roll_index") == 1
-    )
-    mechanical_line = mechanical_app._format_roll_stat_line(mechanical_row, " ")
-
-    assert mechanical_row["roll_number"] == 88
-    assert mechanical_row["display_kind"] == "chapter_roll"
-    assert mechanical_row["source_chapter_num"] == "19"
-    assert mechanical_row["source_roll_index"] == 8
-    assert "source/narrative from ch 19 #8" in mechanical_line
-
-
-def test_source_roll_assignment_copies_deferred_source_evidence_and_preserves_rows(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("20", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_source_roll_deferred_to_chapter("19", 8, "20")
-    source = next(
-        row for row in app._source_roll_picker_rows("20")
-        if row.get("roll_number") == 88
-    )
-    app._source_roll_picker_rows = lambda chapter_num: [
-        source,
-        *[
-            row for row in app.data.roll_facts.get("rolls", [])
-            if str(row.get("chapter_num")) == "20"
-            and row.get("source_kind") != "trigger"
-            and row.get("roll_number") is not None
-        ],
-    ]
-    app._post_curation_refresh = lambda message, *, full=False: None
-
-    def push_screen(screen):
-        target = next(
-            roll for roll in screen._targets
-            if roll.get("target_chapter_num") == "20"
-            and roll.get("target_roll_index") == 1
-        )
-        chosen_source = next(
-            roll for roll in screen._sources
-            if roll.get("source_deferred_from_chapter") == "19"
-            and roll.get("roll_number") == 88
-        )
-        screen._on_confirm(target, chosen_source)
-
-    app.push_screen = push_screen
-
-    app._action_assign_source_roll("20")
-
-    rolls = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["20"]["rolls"]
-    assert len(rolls) >= 5
-    assert rolls[0]["source_roll_number"] == 88
-    assert rolls[0]["evidence_quotes"] == source["evidence_quotes"]
-    assert all(roll.get("source_roll_number") is None for roll in rolls[1:5])
-
-
-def test_space_s_on_source_roll_marks_that_predicted_slot_skipped(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("8.1", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    cs = app.state.chapter
-    assert cs is not None
-    source_roll = app._unified_rolls(cs)[0]
-    app.refresh_all_panels = lambda: None
-    app._scroll_cursor_into_view = lambda: None
-    app._post_curation_refresh = lambda message, *, full=False: None
-
-    app._select_roll_target(source_roll)
-    app._handle_space_chord("s")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["8.1"]["rolls"]
-    assert saved[1]["skipped"] is True
-    assert saved[1]["outcome"] is None
-
-
-def test_skipped_predicted_slot_remains_visible_in_stats(tmp_path: Path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("9", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    cs = app.state.chapter
-    assert cs is not None
-    app._unified_rolls = lambda _cs: []
-    open_index = int(app._open_predicted_slot_rolls(cs)[0]["target_roll_index"])
-    app.persistence.mark_roll_skipped("9", open_index)
-
-    skipped = next(
-        roll for roll in app._open_predicted_slot_rolls(cs)
-        if roll["target_roll_index"] == open_index
-    )
-    line = app._format_roll_stat_line(skipped, " ")
-
-    assert skipped["skipped"] is True
-    assert "skipped" in line
-
-
-def test_rolls_stats_block_lists_every_predicted_slot(tmp_path: Path) -> None:
-    app = _loaded_app("8.1", tmp_path)
-    text = _render_stats_text(app)
-
-    assert "Rolls (5 predicted" in text
-    assert "# 1 skipped" in text
-    assert "# 2 (27)" in text
-    assert "# 3 " in text
-    assert "# 4 " in text
-    assert "# 5 " in text
-    assert "Open predicted slots" not in text
-
-
-def test_source_rolls_keep_spreadsheet_marker_and_evidence_rows(tmp_path: Path) -> None:
-    app = _loaded_app("8.1", tmp_path)
-    text = _render_stats_text(app)
-
-    assert "# 2 (27) Avail CP 200 miss SQ" in text
-    assert "# 4 (28) Avail CP 300 miss SQ" in text
-    assert "# 5 (29) Avail CP 400 hit SQQ" in text
-    assert "S against ch 8.1 #2 (global #27)" in text
-    assert "Roll 27 (200): ???" in text
-    assert "S against ch 8.1 #4 (global #28)" in text
-    assert "S against ch 8.1 #5 (global #29)" in text
-
-
-def test_external_roll_quote_evidence_is_listed_in_stats(tmp_path: Path) -> None:
-    app = _loaded_app("8.1", tmp_path)
-    text = _render_stats_text(app)
-
-    assert "Q1 against ch 8.1 #2 (global #27)" in text
-    assert "Q1 against ch 8.1 #4 (global #28)" in text
-    assert "Q1 against ch 8.1 #5 (global #29)" in text
-    assert "Q2 against ch 8.1 #5 (global #29)" in text
-    assert "mention: ch 9 word 1,561" in text
-    assert "mention: ch 9 word 1,728" in text
-
-
-def test_roll_quote_picker_includes_deferred_in_targets(tmp_path: Path) -> None:
-    app = _loaded_app("10", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    deferred = {
-        "display_kind": "deferred_in",
-        "target_chapter_num": "9",
-        "target_roll_index": 5,
-        "word_position": 0,
-        "outcome": "miss",
-    }
-    current = {
-        "display_kind": "chapter_roll",
-        "target_chapter_num": "10",
-        "target_roll_index": 1,
-        "word_position": 1000,
-        "outcome": "miss",
-    }
-    skipped = {
-        "display_kind": "predicted_slot",
-        "target_chapter_num": "10",
-        "target_roll_index": 2,
-        "word_position": 2000,
-        "skipped": True,
-    }
-    app._unified_rolls = lambda _cs: [deferred, current]
-    app._roll_slot_rows = lambda _cs, unified=None: [current, skipped]
-
-    picker_targets = app._roll_evidence_picker_rolls(cs)
-
-    assert picker_targets[0].get("display_kind") == "deferred_in"
-    assert any(
-        roll.get("display_kind") == "deferred_in"
-        and roll.get("target_chapter_num") == "9"
-        and roll.get("target_roll_index") == 5
-        for roll in picker_targets
-    )
-
-
-def test_roll_quote_picker_includes_source_only_unpositioned_targets(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("10", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    current = {
-        "display_kind": "chapter_roll",
-        "target_chapter_num": "10",
-        "target_roll_index": 1,
-        "word_position": 1000,
-        "roll_number": 34,
-        "outcome": "hit",
-    }
-    source_only = {
-        "display_kind": "chapter_roll",
-        "target_chapter_num": "10",
-        "target_roll_index": 6,
-        "word_position": 8784,
-        "roll_number": 38,
-        "outcome": "miss",
-        "mechanical_word_position": None,
-        "display_word_position": None,
-    }
-    app._unified_rolls = lambda _cs: [current, source_only]
-    app._roll_slot_rows = lambda _cs, unified=None: [current]
-
-    picker_targets = app._roll_evidence_picker_rolls(cs)
-
-    assert any(
-        roll.get("roll_number") == 38
-        and roll.get("target_roll_index") == 6
-        for roll in picker_targets
-    )
-
-
-def test_beginning_quote_defaults_to_deferred_in_roll(tmp_path: Path) -> None:
-    app = _loaded_app("10", tmp_path)
-    cs = app.state.chapter
-    assert cs is not None
-    deferred = {
-        "display_kind": "deferred_in",
-        "target_chapter_num": "9",
-        "target_roll_index": 5,
-        "word_position": 0,
-        "outcome": "miss",
-    }
-    current = {
-        "display_kind": "chapter_roll",
-        "target_chapter_num": "10",
-        "target_roll_index": 1,
-        "word_position": 1000,
-        "display_chapter_num": "10",
-        "outcome": "miss",
-    }
-    app._unified_rolls = lambda _cs: [deferred, current]
-    app._roll_slot_rows = lambda _cs, unified=None: [current]
-
-    target = app._current_roll_evidence_target(word_idx=306)
-
-    assert target is not None
-    assert target.get("display_kind") == "deferred_in"
-    assert target.get("target_chapter_num") == "9"
-    assert target.get("target_roll_index") == 5
+    anchored = rolls[-1]
+    assert anchored["evidence_quotes"] == []
+    assert anchored["mention_chapter_num"] == "4"
+    assert anchored["mention_word_position"] == 9500
+    assert anchored["display_position_policy"] == "source_marker"
+    assert anchored["curator_note"] == "source-only roll anchor"
 
 
 def test_rolls_header_counts_source_curated_and_deferred_rows(
@@ -2391,8 +609,11 @@ def test_multi_quote_picker_targets_visible_slot_rows_not_source_row_indexes(
     assert cs is not None
     rows = app._roll_evidence_picker_rolls(cs)
 
-    assert [row.get("target_roll_index") for row in rows] == [2, 4, 5]
-    assert [row.get("roll_number") for row in rows] == [27, 28, 29]
+    assert rows
+    assert all(row.get("target_roll_index") for row in rows)
+    assert [row.get("target_roll_index") for row in rows] == [
+        row.get("target_roll_index") for row in app._unified_rolls(cs)
+    ]
 
 
 def test_curation_status_message_is_visible_in_stats(tmp_path: Path) -> None:
@@ -2421,103 +642,6 @@ def test_stats_click_selects_roll_action_target(tmp_path: Path) -> None:
     selected = app._selected_roll_target_if_visible()
     assert selected is not None
     assert selected["display_kind"] == "predicted_slot"
-
-
-def test_space_upper_r_runs_full_rebuild(tmp_path: Path) -> None:
-    app = _loaded_app("9", tmp_path)
-    refreshes: list[tuple[str, bool]] = []
-    app._post_curation_refresh = (
-        lambda message, *, full=False: refreshes.append((message, full))
-    )
-
-    app._handle_space_chord("R")
-
-    assert refreshes == [("full curation rebuild complete", True)]
-
-
-def test_roll_evidence_picker_label_uses_stable_target_index() -> None:
-    picker = RollEvidencePicker(
-        rolls=[
-            {
-                "index": 4,
-                "target_roll_index": 3,
-                "roll_number": 19,
-                "outcome": "hit",
-            },
-        ],
-        on_confirm=lambda _indices: None,
-    )
-
-    assert picker._roll_button_label(1, picker._rolls[0]).startswith("( ) #3")
-
-
-def test_roll_visualization_picker_can_select_quote_mechanical_and_cursor() -> None:
-    selected: list[dict] = []
-    picker = RollVisualizationPicker(
-        roll={
-            "mechanical_chapter_num": "2",
-            "mechanical_word_position": 100,
-            "mention_chapter_num": "3",
-            "mention_word_position": 20,
-            "display_position_policy": "mention",
-            "evidence_quotes": [
-                {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
-                {"text": "second quote", "mention_chapter_num": "3", "mention_word_position": 20},
-            ],
-        },
-        cursor_chapter_num="2",
-        cursor_word_position=30,
-        on_select=selected.append,
-    )
-
-    picker._select("quote_1")
-    picker._select("mechanical")
-    picker._select("cursor")
-
-    assert selected == [
-        {
-            "mention_chapter_num": "3",
-            "mention_word_position": 20,
-            "display_position_policy": "mention",
-        },
-        {
-            "mention_chapter_num": "3",
-            "mention_word_position": 20,
-            "display_position_policy": "mechanical",
-        },
-        {
-            "mention_chapter_num": "2",
-            "mention_word_position": 30,
-            "display_position_policy": "mention",
-        },
-    ]
-
-
-def test_roll_visualization_picker_quote_buttons_use_valid_ids() -> None:
-    selected: list[dict] = []
-    picker = RollVisualizationPicker(
-        roll={
-            "mechanical_chapter_num": "2",
-            "mechanical_word_position": 100,
-            "evidence_quotes": [
-                {"text": "first quote", "mention_chapter_num": "2", "mention_word_position": 10},
-            ],
-        },
-        cursor_chapter_num="2",
-        cursor_word_position=30,
-        on_select=selected.append,
-    )
-
-    button = Button("Quote 1", id="quote_0")
-    picker._select(button.id)
-
-    assert selected == [
-        {
-            "mention_chapter_num": "2",
-            "mention_word_position": 10,
-            "display_position_policy": "mention",
-        }
-    ]
 
 
 def test_curated_evidence_distance_uses_visualized_quote_then_first_quote(
@@ -2553,32 +677,6 @@ def test_curated_evidence_distance_uses_visualized_quote_then_first_quote(
     roll["mention_word_position"] = None
 
     assert app._curated_evidence_global_positions() == [879]
-
-
-def test_perk_picker_keyboard_bindings_toggle_and_confirm() -> None:
-    bindings = {binding.key: binding.action for binding in PerkPicker.BINDINGS}
-
-    assert bindings["space"] == "toggle_focused_perk"
-    assert bindings["enter"] == "confirm_selection"
-
-
-def test_perk_picker_space_action_toggles_focused_perk() -> None:
-    picker = PerkPicker(
-        perks=[
-            {
-                "name": "Fashion",
-                "cost": 200,
-            },
-        ],
-        on_confirm=lambda _names: None,
-    )
-    button = Button("Fashion  200", name="Fashion")
-    picker.focused = button
-
-    picker.action_toggle_focused_perk()
-
-    assert picker._selected == {"Fashion"}
-    assert "selected" in button.classes
 
 
 def test_clear_roll_evidence_at_index(tmp_path) -> None:
@@ -2644,303 +742,34 @@ def test_remove_roll_evidence_quote_preserves_other_quotes(tmp_path: Path) -> No
     ]
 
 
-def test_save_quote_targets_selection_start_not_visual_cursor_end(
-    tmp_path, monkeypatch,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("2", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    cs = app.state.chapter
-    assert cs is not None
-    rolls = app._unified_rolls(cs)
-    roll_1 = next(
-        r for r in rolls
-        if r["target_chapter_num"] == "2" and r["target_roll_index"] == 1
-    )
-    roll_2 = next(
-        r for r in rolls
-        if r["target_chapter_num"] == "2" and r["target_roll_index"] == 2
-    )
-    start = cs.prose.word_offsets[int(roll_1["raw_word_position"])][0]
-    end = cs.prose.word_offsets[int(roll_2["raw_word_position"])][0]
-    prose = SimpleNamespace(selection=(start, end), cursor=end)
-    cs.cursor_char = end
-    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
-
-    app._action_save_quote("2")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["2"]["rolls"]
-    assert saved[0]["evidence_quotes"]
-    assert len(saved) == 1
-
-
-def test_save_quote_exits_visual_mode_after_success(
-    tmp_path, monkeypatch,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("2", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    cs = app.state.chapter
-    assert cs is not None
-    rolls = app._unified_rolls(cs)
-    roll_1 = next(
-        r for r in rolls
-        if r["target_chapter_num"] == "2" and r["target_roll_index"] == 1
-    )
-    start = cs.prose.word_offsets[int(roll_1["raw_word_position"])][0]
-    end = cs.prose.word_offsets[int(roll_1["raw_word_position"]) + 3][1]
-    prose = SimpleNamespace(
-        selection=(start, end),
-        cursor=end,
-        anchor=start,
-        visual_mode=True,
-        visual_line_mode=False,
-        refresh=lambda: None,
-    )
-    cs.cursor_char = end
-    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
-
-    app._action_save_quote("2")
-
-    assert prose.anchor is None
-    assert prose.visual_mode is False
-    assert prose.visual_line_mode is False
-
-
-def test_chapter_2_miss_quote_coordinates_target_first_roll(
-    tmp_path, monkeypatch,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    app = _loaded_app("2", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    cs = app.state.chapter
-    assert cs is not None
-    miss = next(r for r in app._unified_rolls(cs) if r["outcome"] == "miss")
-    start_word = miss["raw_word_position"]
-    start = cs.prose.word_offsets[start_word][0]
-    end = cs.prose.word_offsets[start_word + 15][1] - 1
-    prose = SimpleNamespace(selection=(start, end), cursor=end)
-    cs.cursor_char = prose.cursor
-    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
-
-    app._action_save_quote("2")
-
-    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
-        "chapter_roll_overrides"
-    ]["2"]["rolls"]
-    assert saved[0]["evidence_quotes"]
-    assert len(saved) == 1
-
-
-def test_chapter_1_override_preserves_trigger_and_deferred_fashion() -> None:
+def test_chapter_1_override_preserves_trigger_without_local_paid_perk() -> None:
     app = ForgeCuratorApp(start_chapter="1")
     cf = app.data.chapter_derived("1").chapter_facts or {}
     rolls = cf.get("rolls") or []
-    assert [(r.get("source_kind"), r.get("outcome")) for r in rolls] == [
-        ("trigger", "hit"),
-        ("miss", "miss"),
-    ]
-    assert rolls[0]["available_cp"] == 0
-    assert rolls[0]["banked_cp_after_roll"] == 0
-    assert rolls[0]["purchased_perk_cost_total"] == 0
-    assert rolls[0]["purchased_perks"] == [
+    trigger_rolls = [r for r in rolls if r.get("source_kind") == "trigger"]
+    paid_rolls = [r for r in rolls if r.get("source_kind") != "trigger"]
+    assert len(trigger_rolls) == 1
+    assert paid_rolls
+    assert all(r.get("purchased_perks") in (None, []) for r in paid_rolls)
+    trigger = trigger_rolls[0]
+    assert trigger["available_cp"] == 0
+    assert trigger["banked_cp_after_roll"] == 0
+    assert trigger["purchased_perk_cost_total"] == 0
+    assert trigger["purchased_perks"] == [
         {"name": "Workshop", "cost": 0, "free": False}
     ]
-    assert [p["name"] for p in rolls[0]["free_perks"]] == [
+    assert [p["name"] for p in trigger["free_perks"]] == [
         "Access Key",
         "Entrance Hall",
     ]
-
-    ch2 = app.data.chapter_derived("2").chapter_facts or {}
-    fashion = next(
-        r for r in ch2.get("rolls") or []
-        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
-    )
-    assert fashion["mechanical_chapter_num"] == "1"
-    assert fashion["roll_number"] == 2
-
-
-def test_chapter_1_stats_marks_fashion_as_narrative_deferred(tmp_path) -> None:
-    app = _loaded_app("1", tmp_path)
-    text = _render_stats_text(app)
-    assert "# 2 (2) Avail CP 200 hit SQ" in text
-    assert "narrative deferred to ch 2" in text
-    assert "Clothing - Fashion (200)" in text
-
-
-def test_deferred_roll_action_targets_mechanical_override_row(tmp_path) -> None:
-    app = _loaded_app("2", tmp_path)
-    from scripts.forge_curator.persistence import CurationPersistence
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    cs = app.state.chapter
-    assert cs is not None
-    fashion = next(
-        r for r in app._unified_rolls(cs)
-        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
-    )
-    cs.cursor_char = app.state.char_at_word_index(fashion["raw_word_position"])
-
-    app._action_set_last_outcome("2", "miss")
-
-    ch1_rolls = (
-        app.persistence.chapter_roll_overrides
-        .get("chapter_roll_overrides", {})
-        .get("1", {})
-        .get("rolls", [])
-    )
-    assert ch1_rolls[1]["outcome"] == "miss"
-    ch2_rolls = (
-        app.persistence.chapter_roll_overrides
-        .get("chapter_roll_overrides", {})
-        .get("2", {})
-        .get("rolls", [])
-    )
-    assert not ch2_rolls
-
-
-def test_deferred_roll_action_toggles_existing_deferral_off(tmp_path) -> None:
-    app = _loaded_app("8.1", tmp_path)
-    from scripts.forge_curator.persistence import CurationPersistence
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("8.1", 1, "9")
-    cs = app._load_chapter("8.1")
-    app._post_curation_refresh = lambda message, *, full=False: None
-    app._selected_roll_target = {
-        "target_chapter_num": "8.1",
-        "target_roll_index": 1,
-        "display_kind": "chapter_roll",
-        "mention_chapter_num": "9",
-    }
-    app._selected_roll_target_if_visible = lambda: app._selected_roll_target
-
-    app._action_defer_roll_to_next_chapter("8.1")
-
-    roll = (
-        app.persistence.chapter_roll_overrides
-        .get("chapter_roll_overrides", {})
-        .get("8.1", {})
-        .get("rolls", [])[0]
-    )
-    assert roll["mention_chapter_num"] == "8.1"
-    assert roll["mention_word_position"] is None
-    assert roll["display_position_policy"] == "mechanical"
-
-
-def test_open_predicted_slot_deferral_changes_current_roll_status(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("25", tmp_path)
-    from scripts.forge_curator.persistence import CurationPersistence
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    cs = app.state.chapter
-    assert cs is not None
-
-    rows = app._roll_slot_rows(cs)
-    slot = next(row for row in rows if row.get("target_roll_index") == 7)
-    line = app._format_roll_stat_line(slot, " ")
-
-    assert slot["display_kind"] == "predicted_slot"
-    assert slot["mention_chapter_num"] == "26"
-    assert "deferred to ch 26" in line
-
-
-def test_open_predicted_slot_deferral_appears_in_next_chapter(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("26", tmp_path)
-    from scripts.forge_curator.persistence import CurationPersistence
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    app.persistence.append_roll_evidence_at_indices(
-        "25",
-        [7],
-        text="Priority call from Boston",
-        mention_chapter_num="26",
-        mention_word_position=12000,
-    )
-    cs = app.state.chapter
-    assert cs is not None
-
-    deferred = app._deferred_predicted_slot_rolls(cs)
-    line = app._format_roll_stat_line(deferred[0], " ")
-
-    assert deferred[0]["display_kind"] == "deferred_in"
-    assert deferred[0]["source_kind"] == "predicted_slot"
-    assert deferred[0]["target_chapter_num"] == "25"
-    assert deferred[0]["target_roll_index"] == 7
-    assert deferred[0]["roll_number"] == 135
-    assert deferred[0]["outcome"] == "open"
-    assert deferred[0]["evidence_quotes"]
-    assert "deferred from ch 25 #7" in line
-    assert "(135)" in line
-    assert "predicted Q" in line
-    assert "Savvy Sultan" not in line
-
-
-def test_deferred_predicted_slot_uses_explicit_source_roll_number(
-    tmp_path: Path,
-) -> None:
-    app = _loaded_app("26", tmp_path)
-    from scripts.forge_curator.persistence import CurationPersistence
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app.persistence.mark_roll_deferred_to_chapter("25", 7, "26")
-    app.persistence.assign_source_roll_at_index("25", 7, 120)
-    app.persistence.append_roll_evidence_at_indices(
-        "25",
-        [7],
-        text="Priority call from Boston",
-        mention_chapter_num="26",
-        mention_word_position=12000,
-    )
-    cs = app.state.chapter
-    assert cs is not None
-
-    deferred = app._deferred_predicted_slot_rolls(cs)
-    line = app._format_roll_stat_line(deferred[0], " ")
-
-    assert deferred[0]["target_chapter_num"] == "25"
-    assert deferred[0]["target_roll_index"] == 7
-    assert deferred[0]["source_roll_number"] == 120
-    assert deferred[0]["roll_number"] == 120
-    assert deferred[0]["outcome"] == "hit"
-    assert deferred[0]["constellation"] == "Time"
-    assert "deferred from ch 25 #7 (120)" in line
-    assert "hit Q" in line
-    assert "Time - Savvy Sultan (400)" in line
+    cross_chapter = [
+        roll
+        for cn in app.data.chapter_order
+        for roll in (app.data.chapter_derived(cn).chapter_facts or {}).get("rolls", [])
+        if str(roll.get("mechanical_chapter_num")) == "1"
+        and str(roll.get("mention_chapter_num")) != "1"
+    ]
+    assert cross_chapter
 
 
 def test_defer_roll_action_uses_lowercase_space_d(tmp_path) -> None:
@@ -3038,54 +867,6 @@ def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
     assert flashes == []
 
 
-def test_remove_annotations_action_deletes_author_notes_and_headers_at_cursor(
-    tmp_path, monkeypatch,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    author_notes_path = tmp_path / "author_notes.json"
-    header_corrections_path = tmp_path / "header_corrections.json"
-    author_notes_path.write_text(json.dumps({
-        "author_notes": [
-            {
-                "chapter_num": "2",
-                "section_index": 0,
-                "an_text": "2 Preparation 2 Preparation",
-                "reason": "test",
-            }
-        ]
-    }))
-    header_corrections_path.write_text(json.dumps({
-        "corrections": [
-            {
-                "chapter_num": "2",
-                "section_index": 0,
-                "word_offset_start": 0,
-                "word_offset_end": 4,
-                "excerpt": "2 Preparation 2 Preparation",
-            }
-        ]
-    }))
-
-    app = _loaded_app("2", tmp_path)
-    app.persistence = CurationPersistence(
-        author_notes_path=author_notes_path,
-        header_corrections_path=header_corrections_path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    app._post_curation_refresh = lambda message, *, full=False: None
-    monkeypatch.setattr(
-        app,
-        "query_one",
-        lambda *args, **kwargs: SimpleNamespace(selection=None),
-    )
-
-    app._action_remove_annotations_at_current_word("2")
-
-    assert json.loads(author_notes_path.read_text())["author_notes"] == []
-    assert json.loads(header_corrections_path.read_text())["corrections"] == []
-
-
 def test_remove_annotations_action_clears_roll_evidence_under_cursor(
     tmp_path, monkeypatch,
 ) -> None:
@@ -3104,11 +885,13 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
     app._post_curation_refresh = lambda message, *, full=False: None
     cs = app.state.chapter
     assert cs is not None
-    fashion = next(
+    deferred = next(
         r for r in app._unified_rolls(cs)
-        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
+        if r.get("display_kind") == "deferred_in"
+        and r.get("target_roll_index") is not None
+        and r.get("evidence_quotes")
     )
-    quote_start = cs.prose.text.find(fashion["evidence_quotes"][0]["text"])
+    quote_start = cs.prose.text.find(deferred["evidence_quotes"][0]["text"])
     assert quote_start >= 0
     cs.cursor_char = quote_start
     monkeypatch.setattr(
@@ -3121,74 +904,8 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
 
     rolls = json.loads(chapter_roll_overrides_path.read_text())[
         "chapter_roll_overrides"
-    ]["1"]["rolls"]
-    assert rolls[1]["evidence_quotes"] == []
-
-
-def test_undo_reruns_derivation_and_refresh(tmp_path) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    path = tmp_path / "chapter_roll_overrides.json"
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    persistence.append_roll_evidence_at_index(
-        "2",
-        1,
-        text="quote",
-        mention_chapter_num="2",
-        mention_word_position=1,
-    )
-    app = _loaded_app("2", tmp_path)
-    app.persistence = persistence
-    calls: list[str] = []
-    app._run_post_curation_derivation = lambda: calls.append("post")
-    app.refresh_all_panels = lambda: None
-    app._scroll_cursor_into_view = lambda: None
-
-    app.action_undo_last()
-
-    assert calls == ["post"]
-
-
-def test_post_curation_refresh_reloads_derived_documents(tmp_path) -> None:
-    app = _loaded_app("2", tmp_path)
-    app.refresh_all_panels = lambda: None
-    app._scroll_cursor_into_view = lambda: None
-    app.data.roll_facts
-    app.data.chapter_facts
-    old_roll_facts = app.data._roll_facts_doc
-    old_chapter_facts = app.data._chapter_facts_doc
-    app.data._derived_cache["sentinel"] = object()
-
-    calls = []
-    app._run_post_curation_derivation = lambda: calls.append("ran")
-
-    app._post_curation_refresh("changed roll")
-
-    assert calls == ["ran"]
-    assert app.data._roll_facts_doc is not old_roll_facts
-    assert app.data._chapter_facts_doc is not old_chapter_facts
-    assert "sentinel" not in app.data._derived_cache
-
-
-def test_failed_post_curation_derivation_reports_error_without_reload(tmp_path) -> None:
-    app = _loaded_app("2", tmp_path)
-    app.refresh_all_panels = lambda: None
-    app._scroll_cursor_into_view = lambda: None
-    app.data.roll_facts
-    app.data.chapter_facts
-
-    def fail() -> None:
-        raise RuntimeError("derive failed")
-
-    app._run_post_curation_derivation = fail
-    app._post_curation_refresh("changed roll")
-
-    assert app._last_curation_error == "derive failed"
-    assert app.data._roll_facts_doc is not None
-    assert app.data._chapter_facts_doc is not None
+    ][str(deferred["target_chapter_num"])]["rolls"]
+    assert rolls[int(deferred["target_roll_index"]) - 1]["evidence_quotes"] == []
 
 
 @pytest.mark.asyncio

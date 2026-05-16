@@ -1,9 +1,9 @@
 # Forge Curator TUI
 
 **Status:** implemented MVP with active model cleanup
-**Purpose:** an interactive terminal tool for walking the story chapter-by-chapter, reading prose with live derived-data stats, and committing curated facts (rolls, multi-grabs, regime transitions, eligibility transitions, AN markings) that override or extend the simulator's automatic derivations.
+**Purpose:** an interactive terminal tool for walking the story chapter-by-chapter, reading prose with live derived-data stats, and committing curated facts (rolls, multi-grabs, regime transitions, passage eligibility, narrative evidence) that override or extend the simulator's automatic derivations.
 **Audience:** the project owner, doing forensic data curation.
-**Out of scope:** NLP labeling (the existing `nlp/` TUI handles that), web visualization, automated detection of facts the user must verify by eye.
+**Out of scope:** web visualization, automated detection of facts the user must verify by eye.
 
 ## Why this exists
 
@@ -15,17 +15,16 @@ It also serves as a forward-looking tool: as the story continues to update, new 
 
 - **Q-A — Persistence: minimal number of files.** Manual curation is split by fact type:
   - `data/manual/chapter_roll_overrides.json` — single source for per-roll curated metadata keyed by mechanical chapter: roll structure, hit/miss, constellation, perks, mechanical/mention/display fields, and narrative evidence.
+  - `data/manual/section_classifications.json` — single source for section CP eligibility and passage-level eligibility spans, including author notes, section headers, and Joe-on-screen/Joe-not-on-screen spans.
   - `data/manual/regime_transitions.json` (existing) — regime change events. Pre-curated outside the TUI; no in-TUI editing action.
-  - `data/manual/author_notes.json` (existing) — AN spans.
-  - `data/manual/header_corrections.json` (new, only if needed for the header-correction action) — corrects markup/header word miscounts.
-  - **Dropped:** `word_eligibility.json` — mid-section eligibility transitions deferred until a real case requires them.
+  - **Dropped:** separate author-note/header/manual word-eligibility files. Passage eligibility belongs in `section_classifications.json`.
 - **Q-B — Save: auto-save after every action, with a session journal for rollback.**
   Each action writes the canonical override file *and* appends to a per-session journal at `data/manual/.session_journals/YYYY-MM-DDTHH-MM-SS.jsonl`. Each journal entry: timestamp, action type, target file path, before-state, after-state. A `:rollback N` command undoes the last N actions by replaying the journal in reverse. Journals are gitignored.
 - **Q-C — Re-derivation: per-chapter in-memory recompute on every action.**
   Linear walkthrough model: data through the *previous* chapter is treated as checkpointed and stable; the current chapter is the only thing recomputing. So per-action recompute is local to the current chapter only — it doesn't restart the whole pipeline, and downstream chapters are *not* refreshed on each action (they refresh when navigated to).
   Phase 0 prerequisite: factor `predict_rolls.py`, `derive_roll_outcomes.py`, `derive_roll_facts.py`, `roll_scheduler.py` to expose chapter-scoped functions.
-- **Q-D — Sibling tool, not an extension of the `nlp/` TUI.**
-  New module path: `scripts/forge_curator/` (decided). Shares prose rendering, vim motions, and panel layout with `nlp/` TUI by extracting common pieces into a new shared module.
+- **Q-D — Standalone Forge Curator tool.**
+  New module path: `scripts/forge_curator/` (decided). Prose rendering and vim motions live in Forge Curator.
 
 ## Layout
 
@@ -70,7 +69,7 @@ Three columns plus a status bar:
 
 - Renders the chapter's prose as one continuous flow with section breaks indicated as horizontal rules.
 - Cursor is a visible block (vim-style).
-- Vim motions: `h j k l w b e gg G 0 $ /` etc. Ported from existing labeling TUI.
+- Vim motions: `h j k l w b e gg G 0 $ /` etc.
 - Cursor word index increments on every word, but the *CP-earning* index only increments when the current word is eligible — so the stats panel can show both.
 - Visual mode (`v`) selects spans; used for span-mark-as-evidence action.
 
@@ -178,32 +177,13 @@ Multi-grab is a degenerate case: one roll entry with multiple perks. Single-perk
 
 Unchanged from current schema. TUI's `r` action writes here.
 
-### `data/manual/author_notes.json` (existing)
+### `data/manual/section_classifications.json`
 
-Unchanged. TUI's `n` / `N` actions write here.
+Stores whole-section CP eligibility and `span_overrides` for selected passages. Header and author-note exclusions use the same span mechanism as Joe-on-screen/Joe-not-on-screen eligibility.
 
-### `data/manual/header_corrections.json` (new, only if needed)
+### Dropped: separate passage-eligibility files
 
-When a markup or header is being miscounted as prose words, this file records the correction. Skeleton:
-
-```json
-{
-  "_purpose": "Per-chapter header span corrections. Words inside listed spans are excluded from CP-earning word counts.",
-  "corrections": [
-    {
-      "chapter_num": "97",
-      "section_index": 0,
-      "word_offset_start": 0,
-      "word_offset_end": 12,
-      "narrative_evidence": "..."
-    }
-  ]
-}
-```
-
-### Dropped: `word_eligibility.json`
-
-Mid-section eligibility transitions are deferred until a real case requires them.
+Separate author-note, header-correction, and word-eligibility files are not used. Passage-level CP eligibility belongs in `section_classifications.json`.
 
 ## Stats panel data sources
 
@@ -214,7 +194,7 @@ Mid-section eligibility transitions are deferred until a real case requires them
 - predicted rolls: `data/derived/predicted_rolls.json`
 - perks (chapter slice): `data/derived/obtained_perks.json` + `data/derived/perks_catalog.json` for cost lookup
 - validation status per chapter: `data/derived/roll_validation.json`
-- override entries for chapter: union of the four manual override files
+- override entries for chapter: relevant canonical manual files, primarily `chapter_roll_overrides.json` and `section_classifications.json`
 
 ## Re-derivation strategy
 
@@ -232,7 +212,7 @@ Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(ch
 ## Implementation phases
 
 **Phase 0 — Scaffolding & derive-script refactor.**
-- Extract shared TUI infrastructure (vim motions, panel layout, prose renderer) into `nlp/tui_common/` (or similar).
+- Build Forge Curator TUI infrastructure (vim motions, panel layout, prose renderer) under `scripts/forge_curator/`.
 - New entry point `scripts/forge_curator/` (or `tools/forge_curator/`).
 - Refactor `predict_rolls.py`, `derive_roll_outcomes.py`, `derive_roll_facts.py`, `roll_scheduler.py` to expose chapter-scoped functions.
 - Plumb prose source loading (parsed EPUB).
@@ -250,7 +230,7 @@ Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(ch
 - Action panel.
 - Auto-save after every action; session journal at `data/manual/.session_journals/`.
 - `:rollback N` command.
-- Routing each action to its persistence file (extend chapter_roll_overrides schema; add header_corrections.json only if header-correction action is exercised).
+- Routing each action to its source-of-truth file.
 - Span-mark-as-evidence action (visual mode `v` then `s`).
 
 **Phase 3 — Re-derivation integration.**
@@ -270,13 +250,12 @@ Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(ch
 - `scripts/forge_curator/state.py` (in-memory model)
 - `scripts/forge_curator/persistence.py` (route writes to override files)
 - `scripts/forge_curator/rederive.py` (per-chapter recompute)
-- `nlp/tui_common/` (shared panels, vim motions, prose renderer) — or a similar shared path
+- `scripts/forge_curator/passage_view.py` (vim motions and prose renderer)
 - `data/manual/word_eligibility.json` (stub)
 
 **Modify:**
 - `scripts/predict_rolls.py`, `scripts/derive_roll_outcomes.py`, `scripts/derive_roll_facts.py`, `scripts/roll_scheduler.py` — extract per-chapter functions
 - `data/manual/chapter_roll_overrides.json` schema parsing
-- `nlp/tui/` (existing labeling TUI) — extract reusable parts into `nlp/tui_common/`
 
 ## Verification
 
@@ -291,5 +270,3 @@ Phase 0 prerequisite: refactor each derive script to expose a `derive_chapter(ch
 - **Chapter roll override schema is current.** Entries use per-roll objects with `outcome`, `constellation`, `word_position`, `mention_chapter_num`, `mention_word_position`, `display_position_policy`, and `narrative_evidence`.
 
 ## Open questions
-
-- Are the existing `nlp/tui/` vim motions usable as-is, or do you want to revise the keybinds for the curator (different audience, different mental model)?

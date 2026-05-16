@@ -132,7 +132,7 @@ The cheapest items have the biggest perceived improvement — Phase A first prot
 - What's still missing for C3 is the **per-chapter** date table (every chapter → estimated in-world date, even chapters not directly attested). The infrastructure to feed this is in place; the work is twofold:
   - **Anchor entries**: add ~5–10 chapter-anchored events to `data/manual/timeline_manual.json` (the only place besides TUI spans where `chapter_num` may be set). Pick distinctive events ("Story Begins", "Bakuda bombing spree", "Endbringer fight", etc.).
   - **Interpolation pass**: a downstream consumer (could live in `build_chapter_facts.py` or a new `derive_chapter_dates.py`) reads the anchored entries and linearly interpolates by `epub_sequence` between adjacent anchors to fill every chapter.
-- LLM pass over chapter prose (originally envisioned here) is still useful for catching `DATE_REF` / `TIME_OF_DAY` cues; those become TUI-source entries via `derive_timeline.py`'s currently-empty TUI loader (`load_tui_entries`) once annotation work resumes.
+- Future manual passes over chapter prose can still add `DATE_REF` / `TIME_OF_DAY` cues; those become TUI-source entries via `derive_timeline.py`'s currently-empty TUI loader (`load_tui_entries`) once that workflow resumes.
 - Mostly orthogonal to C2 — can run in parallel.
 
 ### C4. Google Sheets URL pattern for perks

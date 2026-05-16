@@ -9,11 +9,8 @@ Override files (each is a single JSON document):
 
 - ``data/manual/chapter_roll_overrides.json`` — per-roll metadata
   (outcome, constellation, perks, evidence_quotes, word_position).
-- ``data/manual/author_notes.json`` — AN spans (per chapter + section).
 - ``data/manual/section_classifications.json`` — section-level
-  CP-eligibility truth used by derivation.
-- ``data/manual/header_corrections.json`` — markup spans excluded from
-  word counts.
+  CP-eligibility truth and passage-level span overrides used by derivation.
 
 Journal: ``data/manual/.session_journals/<ISO-timestamp>.jsonl`` — one
 JSON line per action, with timestamp, action_type, target_file,
@@ -30,9 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.forge_curator.data_loader import (
-    AUTHOR_NOTES,
     CHAPTER_ROLL_OVERRIDES,
-    HEADER_CORRECTIONS,
     MANUAL,
 )
 
@@ -59,17 +54,13 @@ class CurationPersistence:
         self,
         *,
         chapter_roll_overrides_path: Path | None = None,
-        author_notes_path: Path | None = None,
         section_classifications_path: Path | None = None,
-        header_corrections_path: Path | None = None,
         journal_dir_path: Path | None = None,
     ) -> None:
         self.chapter_roll_overrides_path = chapter_roll_overrides_path or CHAPTER_ROLL_OVERRIDES
-        self.author_notes_path = author_notes_path or AUTHOR_NOTES
         self.section_classifications_path = (
             section_classifications_path or SECTION_CLASSIFICATIONS
         )
-        self.header_corrections_path = header_corrections_path or HEADER_CORRECTIONS
         self.journal_dir_path = journal_dir_path or JOURNAL_DIR
         # Load existing override docs (or empty stubs).
         self.chapter_roll_overrides = self._load_or_default(
@@ -79,20 +70,12 @@ class CurationPersistence:
                 "chapter_roll_overrides": {},
             },
         )
-        self.author_notes = self._load_or_default(
-            self.author_notes_path,
-            {"author_notes": []},
-        )
         self.section_classifications = self._load_or_default(
             self.section_classifications_path,
             {
                 "_source": "Forge Curator section eligibility curation.",
                 "classifications": {},
             },
-        )
-        self.header_corrections = self._load_or_default(
-            self.header_corrections_path,
-            {"corrections": []},
         )
         # Initialise the session journal lazily on first action.
         self._journal_path: Path | None = None
@@ -140,6 +123,26 @@ class CurationPersistence:
             entry["target_file"] = str(target_file)
         with self._journal().open("a") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    def _write_chapter_roll_overrides(self, before: dict) -> None:
+        try:
+            _atomic_write_json(
+                self.chapter_roll_overrides_path,
+                self.chapter_roll_overrides,
+            )
+        except Exception:
+            self.chapter_roll_overrides = deepcopy(before)
+            raise
+
+    def _write_section_classifications(self, before: dict) -> None:
+        try:
+            _atomic_write_json(
+                self.section_classifications_path,
+                self.section_classifications,
+            )
+        except Exception:
+            self.section_classifications = deepcopy(before)
+            raise
 
     # ------------------------------------------------------------------
     # Helpers — locate / create per-chapter or per-roll structures.
@@ -285,7 +288,7 @@ class CurationPersistence:
                 roll["constellation"] = None
         if source_roll_number is not None:
             roll["source_roll_number"] = int(source_roll_number)
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "update_roll_at_index", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),
@@ -304,6 +307,7 @@ class CurationPersistence:
     def assign_source_roll_at_index(
         self, chapter_num: str, index: int, source_roll_number: int,
     ) -> dict:
+        before = deepcopy(self.chapter_roll_overrides)
         source_roll_number = int(source_roll_number)
         for other_chapter, entry in (
             self.chapter_roll_overrides.get("chapter_roll_overrides", {}).items()
@@ -318,14 +322,27 @@ class CurationPersistence:
                     continue
                 if roll.get("source_roll_number") == source_roll_number:
                     roll["source_roll_number"] = None
-        return self.update_roll_at_index(
-            chapter_num, index, source_roll_number=source_roll_number,
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["source_roll_number"] = source_roll_number
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "assign_source_roll_at_index",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "index": int(index),
+                "source_roll_number": source_roll_number,
+            },
         )
+        return roll
 
     def ensure_roll_count(self, chapter_num: str, count: int) -> None:
+        before = deepcopy(self.chapter_roll_overrides)
         for index in range(1, int(count) + 1):
             self.get_or_create_roll_at_index(chapter_num, index)
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
 
     def mark_source_roll_deferred_to_chapter(
         self,
@@ -336,7 +353,7 @@ class CurationPersistence:
         before = deepcopy(self.chapter_roll_overrides)
         roll = self.get_or_create_roll_at_index(chapter_num, index)
         roll["source_deferred_to_chapter"] = str(target_chapter_num)
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "mark_source_roll_deferred_to_chapter",
             self.chapter_roll_overrides_path,
@@ -354,7 +371,7 @@ class CurationPersistence:
         before = deepcopy(self.chapter_roll_overrides)
         roll = self.get_or_create_roll_at_index(chapter_num, index)
         roll["source_deferred_to_chapter"] = None
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "clear_source_roll_deferral",
             self.chapter_roll_overrides_path,
@@ -396,7 +413,7 @@ class CurationPersistence:
             if mention_word_position is not None:
                 roll["mention_word_position"] = int(mention_word_position)
             roll["display_position_policy"] = display_position_policy
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "append_roll_evidence_at_index",
             self.chapter_roll_overrides_path,
@@ -441,7 +458,7 @@ class CurationPersistence:
                     roll["mention_word_position"] = int(mention_word_position)
                 roll["display_position_policy"] = display_position_policy
             updated.append(roll)
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "append_roll_evidence_at_indices",
             self.chapter_roll_overrides_path,
@@ -481,7 +498,7 @@ class CurationPersistence:
             roll["mention_chapter_num"] = None
             roll["mention_word_position"] = None
             roll["display_position_policy"] = None
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "remove_roll_evidence_quote_at_index",
             self.chapter_roll_overrides_path,
@@ -507,7 +524,7 @@ class CurationPersistence:
             return False
         before = deepcopy(self.chapter_roll_overrides)
         roll["evidence_quotes"] = []
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "clear_roll_evidence_at_index",
             self.chapter_roll_overrides_path,
@@ -538,7 +555,7 @@ class CurationPersistence:
         roll["mention_chapter_num"] = str(mention_chapter_num)
         roll["mention_word_position"] = mention_word_position
         roll["display_position_policy"] = display_position_policy
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "mark_roll_deferred_to_chapter",
             self.chapter_roll_overrides_path,
@@ -561,7 +578,7 @@ class CurationPersistence:
         roll["mention_chapter_num"] = str(chapter_num)
         roll["mention_word_position"] = None
         roll["display_position_policy"] = "mechanical"
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "clear_roll_deferral",
             self.chapter_roll_overrides_path,
@@ -589,7 +606,7 @@ class CurationPersistence:
             if mention_word_position is not None else None
         )
         roll["display_position_policy"] = display_position_policy
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "set_roll_visualization_anchor",
             self.chapter_roll_overrides_path,
@@ -629,7 +646,7 @@ class CurationPersistence:
             "note": note,
         }
         entry["model_validation_resolution"] = resolution
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "resolve_model_validation_issue",
             self.chapter_roll_overrides_path,
@@ -671,9 +688,7 @@ class CurationPersistence:
             f"curator toggle: {'eligible' if now_eligible else 'ineligible'}"
             + (f" (was: {previous_reason})" if previous_reason else "")
         )
-        _atomic_write_json(
-            self.section_classifications_path, self.section_classifications
-        )
+        self._write_section_classifications(before)
         self._append_journal(
             "toggle_section_eligibility",
             self.section_classifications_path,
@@ -687,75 +702,71 @@ class CurationPersistence:
         )
         return now_eligible
 
-    def mark_header_span(
-        self, chapter_num: str, section_index: int,
-        word_offset_start: int, word_offset_end: int,
+    def mark_span_eligibility(
+        self,
+        chapter_num: str,
+        section_index: int,
+        word_offset_start: int,
+        word_offset_end: int,
+        *,
+        counts_for_cp: bool,
+        reason_code: str,
+        note: str | None = None,
         excerpt: str = "",
+        header: str | None = None,
+        current_counts_for_cp: bool | None = None,
     ) -> dict:
-        """Record a header span (excluded from CP-earning word counts).
+        """Record a selected passage as a CP-eligibility span override.
 
-        Replaces any prior entry for the same (chapter, section, range)
-        — idempotent within a single run.
+        Offsets are chapter-local word offsets. The entry lives under
+        the containing section's classification row so the derivation
+        pipeline can apply it on top of the section-level base state.
         """
-        cors = self.header_corrections.setdefault("corrections", [])
-        before = deepcopy(cors)
-        # Drop any exact duplicate.
-        cors = [
-            c for c in cors
+        if int(word_offset_end) <= int(word_offset_start):
+            raise ValueError("eligibility span must cover at least one word")
+        reason_code = str(reason_code).strip()
+        if not reason_code:
+            raise ValueError("eligibility span reason_code is required")
+        before = deepcopy(self.section_classifications)
+        entry = self._ensure_section_classification_entry(
+            str(chapter_num),
+            int(section_index),
+            header=header,
+            current_counts_for_cp=current_counts_for_cp,
+        )
+        spans = entry.setdefault("span_overrides", [])
+        spans = [
+            span for span in spans
             if not (
-                str(c.get("chapter_num")) == str(chapter_num)
-                and int(c.get("section_index", -1)) == int(section_index)
-                and int(c.get("word_offset_start", -1)) == int(word_offset_start)
-                and int(c.get("word_offset_end", -1)) == int(word_offset_end)
+                int(span.get("word_offset_start", -1)) == int(word_offset_start)
+                and int(span.get("word_offset_end", -1)) == int(word_offset_end)
             )
         ]
         new_entry = {
-            "chapter_num": str(chapter_num),
-            "section_index": int(section_index),
             "word_offset_start": int(word_offset_start),
             "word_offset_end": int(word_offset_end),
+            "counts_for_cp": bool(counts_for_cp),
+            "reason_code": reason_code,
+            "note": str(note).strip() if note and str(note).strip() else None,
             "excerpt": excerpt,
         }
-        cors.append(new_entry)
-        cors.sort(key=lambda c: (
-            str(c.get("chapter_num")),
-            int(c.get("section_index", 0)),
-            int(c.get("word_offset_start", 0)),
+        spans.append(new_entry)
+        spans.sort(key=lambda span: (
+            int(span.get("word_offset_start", 0)),
+            int(span.get("word_offset_end", 0)),
         ))
-        self.header_corrections["corrections"] = cors
-        _atomic_write_json(self.header_corrections_path, self.header_corrections)
+        entry["span_overrides"] = spans
+        self._write_section_classifications(before)
         self._append_journal(
-            "mark_header_span", self.header_corrections_path, str(chapter_num),
-            before, deepcopy(cors), extra={"new_entry": new_entry},
-        )
-        return new_entry
-
-    def mark_an_span(
-        self, chapter_num: str, section_index: int,
-        an_text: str, reason: str = "marked via curator TUI",
-    ) -> dict:
-        """Append (or replace) an author-note entry for ``chapter_num``+``section_index``."""
-        notes = self.author_notes.setdefault("author_notes", [])
-        before = deepcopy(notes)
-        # Replace any existing entry for the same (chapter_num, section_index).
-        notes = [
-            n for n in notes
-            if not (str(n.get("chapter_num")) == str(chapter_num)
-                    and int(n.get("section_index", -1)) == int(section_index))
-        ]
-        new_entry = {
-            "chapter_num": str(chapter_num),
-            "section_index": int(section_index),
-            "an_text": an_text,
-            "reason": reason,
-        }
-        notes.append(new_entry)
-        notes.sort(key=lambda n: (str(n.get("chapter_num")), int(n.get("section_index", 0))))
-        self.author_notes["author_notes"] = notes
-        _atomic_write_json(self.author_notes_path, self.author_notes)
-        self._append_journal(
-            "mark_an_span", self.author_notes_path, str(chapter_num),
-            before, deepcopy(notes), extra={"new_entry": new_entry},
+            "mark_span_eligibility",
+            self.section_classifications_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.section_classifications),
+            extra={
+                "section_index": int(section_index),
+                "new_entry": new_entry,
+            },
         )
         return new_entry
 
@@ -763,76 +774,56 @@ class CurationPersistence:
         self,
         chapter_num: str,
         word_index: int,
-        *,
-        author_note_keys: list[tuple[int, str]] | None = None,
     ) -> dict[str, int]:
-        """Remove manual AN/header annotations that cover ``word_index``.
-
-        ``author_note_keys`` contains ``(section_index, an_text)`` pairs
-        already resolved by the caller. Header corrections carry explicit
-        word offsets, so they can be removed directly here.
-        """
+        """Remove passage-level eligibility spans that cover ``word_index``."""
         cn = str(chapter_num)
         wi = int(word_index)
-        note_keys = {
-            (int(section_index), str(an_text))
-            for section_index, an_text in (author_note_keys or [])
-        }
 
         before = {
-            "author_notes": deepcopy(self.author_notes),
-            "header_corrections": deepcopy(self.header_corrections),
+            "section_classifications": deepcopy(self.section_classifications),
         }
 
-        notes = self.author_notes.setdefault("author_notes", [])
-        kept_notes = []
-        removed_notes = 0
-        for note in notes:
-            key = (int(note.get("section_index", -1)), str(note.get("an_text") or ""))
-            if str(note.get("chapter_num")) == cn and key in note_keys:
-                removed_notes += 1
+        classifications = self.section_classifications.setdefault(
+            "classifications", {}
+        )
+        removed_eligibility_spans = 0
+        for key, entry in classifications.items():
+            if str(entry.get("chapter_num")) != cn:
                 continue
-            kept_notes.append(note)
-        self.author_notes["author_notes"] = kept_notes
+            spans = entry.get("span_overrides") or []
+            kept_spans = []
+            for span in spans:
+                if (
+                    int(span.get("word_offset_start", -1)) <= wi
+                    and wi < int(span.get("word_offset_end", -1))
+                ):
+                    removed_eligibility_spans += 1
+                    continue
+                kept_spans.append(span)
+            if kept_spans:
+                entry["span_overrides"] = kept_spans
+            elif "span_overrides" in entry:
+                entry.pop("span_overrides", None)
 
-        corrections = self.header_corrections.setdefault("corrections", [])
-        kept_corrections = []
-        removed_headers = 0
-        for correction in corrections:
-            if (
-                str(correction.get("chapter_num")) == cn
-                and int(correction.get("word_offset_start", -1)) <= wi
-                and wi < int(correction.get("word_offset_end", -1))
-            ):
-                removed_headers += 1
-                continue
-            kept_corrections.append(correction)
-        self.header_corrections["corrections"] = kept_corrections
-
-        if removed_notes:
-            _atomic_write_json(self.author_notes_path, self.author_notes)
-        if removed_headers:
-            _atomic_write_json(self.header_corrections_path, self.header_corrections)
-        if removed_notes or removed_headers:
+        if removed_eligibility_spans:
+            self._write_section_classifications(before["section_classifications"])
+        if removed_eligibility_spans:
             self._append_journal(
                 "remove_annotations_at_word",
                 MANUAL,
                 cn,
                 before,
                 {
-                    "author_notes": deepcopy(self.author_notes),
-                    "header_corrections": deepcopy(self.header_corrections),
+                    "section_classifications": deepcopy(
+                        self.section_classifications
+                    ),
                 },
                 extra={
                     "word_index": wi,
-                    "removed_author_notes": removed_notes,
-                    "removed_header_corrections": removed_headers,
+                    "removed_eligibility_spans": removed_eligibility_spans,
                 },
             )
-        return {
-            "author_notes": removed_notes,
-            "header_corrections": removed_headers,
-        }
+        return {"eligibility_spans": removed_eligibility_spans}
 
     def set_last_roll_outcome(
         self, chapter_num: str, outcome: str
@@ -843,7 +834,7 @@ class CurationPersistence:
         if roll is None:
             return None
         roll["outcome"] = outcome
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "set_last_roll_outcome", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),
@@ -859,7 +850,7 @@ class CurationPersistence:
         if roll is None:
             return None
         roll["constellation"] = constellation
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "set_last_roll_constellation", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),
@@ -875,7 +866,7 @@ class CurationPersistence:
         if roll is None:
             return None
         roll["perks"] = list(perk_names)
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "set_last_roll_perks", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),
@@ -930,7 +921,7 @@ class CurationPersistence:
                 break
         if not inserted:
             rolls.append(new_roll)
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "insert_roll", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),
@@ -964,23 +955,6 @@ class CurationPersistence:
             idx -= 1
         if idx < 0:
             return None
-        if last.get("action_type") == "remove_annotations_at_word":
-            before_state = last["before"]
-            author_notes = before_state.get("author_notes")
-            header_corrections = before_state.get("header_corrections")
-            if author_notes is not None:
-                _atomic_write_json(self.author_notes_path, author_notes)
-                self.author_notes = author_notes
-            if header_corrections is not None:
-                _atomic_write_json(self.header_corrections_path, header_corrections)
-                self.header_corrections = header_corrections
-            self._append_journal(
-                "undo", MANUAL, last.get("chapter_num"),
-                before=last.get("after"),
-                after=before_state,
-                extra={"undid": last.get("action_type")},
-            )
-            return last.get("action_type", "?"), last.get("chapter_num")
         target_rel = last["target_file"]
         before_state = last["before"]
         target_abs = Path(target_rel)
@@ -990,12 +964,8 @@ class CurationPersistence:
         # Sync in-memory copies so live consumers see the rollback.
         if target_abs == self.chapter_roll_overrides_path or target_abs.name == "chapter_roll_overrides.json":
             self.chapter_roll_overrides = before_state
-        elif target_abs == self.author_notes_path or target_abs.name == "author_notes.json":
-            self.author_notes = before_state
         elif target_abs == self.section_classifications_path or target_abs.name == "section_classifications.json":
             self.section_classifications = before_state
-        elif target_abs == self.header_corrections_path or target_abs.name == "header_corrections.json":
-            self.header_corrections = before_state
         # Append an "undo" record so audit trail is preserved.
         self._append_journal(
             "undo", target_abs, last.get("chapter_num"),
@@ -1015,7 +985,7 @@ class CurationPersistence:
         if not rolls:
             return None
         removed = rolls.pop()
-        _atomic_write_json(self.chapter_roll_overrides_path, self.chapter_roll_overrides)
+        self._write_chapter_roll_overrides(before)
         self._append_journal(
             "delete_last_roll", self.chapter_roll_overrides_path, str(chapter_num),
             before, deepcopy(self.chapter_roll_overrides),

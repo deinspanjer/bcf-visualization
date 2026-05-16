@@ -4,8 +4,8 @@ Three-panel layout: stats (left), prose with cursor (centre, with a
 gutter column), actions catalog (right, disabled in Phase 1). A regex
 strip and status bar live at the bottom.
 
-Vim-style cursor motions are inherited from the shared
-``nlp.tui_common.PassageView`` widget.
+Vim-style cursor motions are inherited from the Forge Curator passage
+view widget.
 
 Run with::
 
@@ -33,16 +33,17 @@ from rich.text import Text
 from textual import events, on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, VerticalScroll
+from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, OptionList, Static
 from textual.widgets.option_list import Option
 
-from nlp.tui_common import PassageView as BasePassageView
 from scripts.forge_curator.data_loader import ForgeCuratorData
 from scripts.forge_curator.data_loader import MANUAL, ROOT
+from scripts.forge_curator.passage_view import PassageView as BasePassageView
 from scripts.forge_curator.persistence import CurationPersistence
 from scripts.forge_curator.state import ForgeCuratorState
+from scripts.eligibility_spans import section_cp_word_count, section_span_overrides
 
 STATE_FILE = MANUAL / ".forge_curator_state.json"
 # Fixed location for the TUI snapshot. Repeated use overwrites this file so
@@ -54,6 +55,11 @@ KNOWN_CONSTELLATIONS = [
     "Magic", "Magitech", "Personal Reality", "Quality",
     "Resources and Durability", "Size", "Time", "Toolkits", "Vehicles",
 ]
+CONSTELLATION_NAME_PATTERN = re.compile(
+    r"(?<![A-Za-z])(?:"
+    + "|".join(re.escape(name) for name in sorted(KNOWN_CONSTELLATIONS, key=len, reverse=True))
+    + r")(?![A-Za-z])"
+)
 
 try:
     # Imported lazily so the top-level module remains usable in tests
@@ -72,9 +78,9 @@ except Exception:  # pragma: no cover - defensive
 class PassageView(BasePassageView):
     """Forge Curator's prose widget.
 
-    Wraps the shared :class:`nlp.tui_common.PassageView` so the App can
+    Wraps the shared :class:`scripts.forge_curator.passage_view.PassageView` so the App can
     intercept the ``]`` / ``[`` chord prefixes (used by ``]r``, ``][``,
-    ``]2`` etc.) before the base widget's vim-style on_key handler eats
+    etc.) before the base widget's vim-style on_key handler eats
     them.
 
     The interception is purely cooperative: the widget exposes a
@@ -126,16 +132,7 @@ class PassageView(BasePassageView):
                 event.stop()
                 return
 
-        # 3) `z` / `x` / `c` select the active regex slot for n/N.
-        if ch in ("z", "x", "c"):
-            handler = getattr(app, "_handle_regex_slot_hotkey", None)
-            if handler is not None:
-                handler(ch)
-                event.prevent_default()
-                event.stop()
-                return
-
-        # 4) `*` — search for word under cursor as the dedicated star regex.
+        # 3) `*` — search for word under cursor as the dedicated star regex.
         if ch == "*":
             handler = getattr(app, "_handle_star_search", None)
             if handler is not None:
@@ -144,7 +141,44 @@ class PassageView(BasePassageView):
                 event.stop()
                 return
 
-        # 5) `n` / `N` — next / prev active regex match.
+        # 4) `z` / `Z` — next / prev match in the dedicated star regex.
+        if ch in ("z", "Z"):
+            handler = getattr(app, "_handle_star_regex_search", None)
+            if handler is not None:
+                handler(forward=(ch == "z"))
+                event.prevent_default()
+                event.stop()
+                return
+
+        # 5) `x` / `X` — next / prev quote-start article.
+        if ch in ("x", "X"):
+            handler = getattr(app, "_handle_article_motion", None)
+            if handler is not None:
+                handler(forward=(ch == "x"))
+                event.prevent_default()
+                event.stop()
+                return
+
+        # 6) `c` — jump to the end of the next exact constellation name.
+        if ch == "c":
+            handler = getattr(app, "_handle_constellation_name_motion", None)
+            if handler is not None:
+                handler()
+                event.prevent_default()
+                event.stop()
+                return
+
+        # 7) In visual mode, `n` extends to the end of the next
+        # connection/constellation word used as a quote boundary helper.
+        if ch == "n" and (self.visual_mode or self.visual_line_mode):
+            handler = getattr(app, "_handle_connection_word_motion", None)
+            if handler is not None:
+                handler()
+                event.prevent_default()
+                event.stop()
+                return
+
+        # 8) `n` / `N` — next / prev narrative evidence candidate.
         if ch in ("n", "N"):
             handler = getattr(app, "_handle_n_search", None)
             if handler is not None:
@@ -153,7 +187,7 @@ class PassageView(BasePassageView):
                 event.stop()
                 return
 
-        # 5.5) Visual selection toggles are handled here so Forge-specific
+        # 9) Visual selection toggles are handled here so Forge-specific
         # key interception does not depend on Textual's binding phase.
         if ch == "v":
             self.action_toggle_visual()
@@ -166,7 +200,7 @@ class PassageView(BasePassageView):
             event.stop()
             return
 
-        # 6) Space alone arms the action leader chord (overrides the base
+        # 10) Space alone arms the action leader chord (overrides the base
         #    PassageView's space=toggle_visual binding for forge_curator).
         if ch == " ":
             app._pending_space_chord = True
@@ -223,16 +257,11 @@ GLYPH_COLORS: dict[str, str] = {
     "M": "dark_orange",
     "A": "blue",
     "Q": "medium_purple1",
-    "1": "orange1",
-    "2": "cyan",
-    "3": "magenta",
+    "N": "yellow",
+    ".": "orange1",
     "*": "white",
 }
-GLYPH_CSS_COLORS: dict[str, str] = {
-    **GLYPH_COLORS,
-    # Textual CSS accepts "orange"; Rich's richer 256-color name is "orange1".
-    "1": "orange",
-}
+GLYPH_CSS_COLORS: dict[str, str] = {**GLYPH_COLORS}
 GLYPH_STYLES: dict[str, str] = {
     glyph: f"bold {color}" for glyph, color in GLYPH_COLORS.items()
 }
@@ -240,11 +269,11 @@ GLYPH_STYLES: dict[str, str] = {
 ROLL_HIGHLIGHT_STYLE = GLYPH_STYLES["R"]
 QUOTE_HIGHLIGHT_STYLE = GLYPH_STYLES["Q"]
 REGEX_HIGHLIGHT_STYLES = (
-    GLYPH_STYLES["1"],
-    GLYPH_STYLES["2"],
-    GLYPH_STYLES["3"],
     GLYPH_STYLES["*"],
 )
+FORGE_KEYWORD_HIGHLIGHT_STYLE = GLYPH_STYLES["."]
+FORGE_KEYWORD_PATTERN = re.compile(r"\b(?:Forge|[cC]onstellation|[mM]otes?)\b")
+CONSTELLATION_NAME_HIGHLIGHT_STYLE = "bold cyan"
 
 ROLL_EVIDENCE_GUTTER_GLYPH = "Q"
 
@@ -253,15 +282,14 @@ LEGEND = [
     ("R", "predicted roll", GLYPH_STYLES["R"]),
     ("H", "hit (curated/derived)", GLYPH_STYLES["H"]),
     ("M", "miss (curated/derived)", GLYPH_STYLES["M"]),
-    ("A", "author note span", GLYPH_STYLES["A"]),
+    ("A", "ineligible passage", GLYPH_STYLES["A"]),
     (
         ROLL_EVIDENCE_GUTTER_GLYPH,
         "saved roll evidence",
         GLYPH_STYLES[ROLL_EVIDENCE_GUTTER_GLYPH],
     ),
-    ("1", "regex 1 (z, n/N)", GLYPH_STYLES["1"]),
-    ("2", "regex 2", GLYPH_STYLES["2"]),
-    ("3", "regex 3", GLYPH_STYLES["3"]),
+    ("N", "narrative evidence candidate", GLYPH_STYLES["N"]),
+    (".", "Forge/constellation/mote keyword", GLYPH_STYLES["."]),
     ("*", "regex *", GLYPH_STYLES["*"]),
 ]
 
@@ -332,10 +360,9 @@ _GLYPH_PRIORITY = {
     "═": 4,
     "A": 5,
     ROLL_EVIDENCE_GUTTER_GLYPH: 6,
-    "*": 7,
-    "1": 8,
-    "2": 9,
-    "3": 10,
+    "N": 7,
+    "*": 8,
+    ".": 99,
 }
 
 
@@ -644,15 +671,6 @@ def _word_index_for_char_offset(
     return len(word_offsets) - 1 if word_offsets else None
 
 
-def _an_word_length(note: dict) -> int:
-    """Word count of an author-note entry (best effort).
-
-    The on-disk schema doesn't carry an explicit word count; use the raw
-    text length as a proxy.
-    """
-    text = note.get("an_text") or ""
-    return len(text.split())
-
 
 def _merge_ranges(
     ranges: list[tuple[int, int]],
@@ -681,10 +699,9 @@ def _range_prefix_len(ranges: list[tuple[int, int]], upper: int) -> int:
 # ``_raw_word_to_cp_word`` were removed in favour of canonical methods
 # ``ForgeCuratorApp._cp_earning_word_offset`` (raw→cp) and
 # ``ForgeCuratorApp._raw_word_for_cp_offset`` (cp→raw). The free
-# functions ignored AN / auto-header / manual-header exclusion ranges
-# and would land ``]r`` and similar jumps a few words off from the
-# actual threshold-crossing. The canonical methods both consult
-# ``_excluded_word_ranges`` so they always agree.
+# functions ignored passage-level eligibility spans and would land
+# ``]r`` and similar jumps a few words off from the actual
+# threshold-crossing.
 
 
 # ---------- actions panel ---------------------------------------------------
@@ -705,11 +722,10 @@ class ActionsPanel(Static):
         body = (
             "[bold]Actions[/bold] [dim](auto-save)[/dim]\n\n"
             "[bold]Chapter[/bold]\n"
-            "  ⎵e  Toggle section eligibility\n\n"
+            "  ⎵e  Toggle section eligibility\n"
+            "  ⎵E  Selected passage eligibility\n\n"
             "[bold]Selection-based[/bold]\n"
             "  v / V    select char / line\n"
-            "  ⎵a       AN = selection\n"
-            "  ⎵H       header = selection\n"
             "  ⎵q       quote = selection\n"
             "  ⎵Q       quote = selection, multiple rolls\n\n"
             "[bold]Roll metadata[/bold]\n"
@@ -731,11 +747,12 @@ class ActionsPanel(Static):
             "  ][ []  next/prev section\n"
             "  ]r [r  next/prev predicted roll\n"
             "  ]R [R  next/prev curated quote\n"
-            "  z/x/c  active regex 1/2/3\n"
-            "  n N    active regex next/prev\n"
+            "  n N    next/prev narrative evidence candidate\n"
+            "  z Z    next/prev regex * match\n"
+            "  x X    next/prev a/the\n"
+            "  c      next constellation name end\n"
             "  *      seed/select regex *\n"
-            "  ]2 [2  regex 2\n"
-            "  ]3 [3  regex 3\n\n"
+            "  /      focus regex *\n\n"
             "  u  undo last action\n"
             "  ?  help / legend\n"
             "  q  quit\n"
@@ -761,18 +778,6 @@ class RegexBar(Horizontal):
     RegexBar > Input.active {{
         text-style: bold underline;
     }}
-    RegexBar > Input.regex-slot-1 {{
-        color: {GLYPH_CSS_COLORS["1"]};
-        text-style: bold;
-    }}
-    RegexBar > Input.regex-slot-2 {{
-        color: {GLYPH_CSS_COLORS["2"]};
-        text-style: bold;
-    }}
-    RegexBar > Input.regex-slot-3 {{
-        color: {GLYPH_CSS_COLORS["3"]};
-        text-style: bold;
-    }}
     RegexBar > Input.regex-slot-4 {{
         color: {GLYPH_CSS_COLORS["*"]};
         text-style: bold;
@@ -785,18 +790,6 @@ class RegexBar(Horizontal):
     RegexBar Static.label.active {{
         text-style: bold underline;
     }}
-    RegexBar Static.label.regex-slot-1 {{
-        color: {GLYPH_CSS_COLORS["1"]};
-        text-style: bold;
-    }}
-    RegexBar Static.label.regex-slot-2 {{
-        color: {GLYPH_CSS_COLORS["2"]};
-        text-style: bold;
-    }}
-    RegexBar Static.label.regex-slot-3 {{
-        color: {GLYPH_CSS_COLORS["3"]};
-        text-style: bold;
-    }}
     RegexBar Static.label.regex-slot-4 {{
         color: {GLYPH_CSS_COLORS["*"]};
         text-style: bold;
@@ -804,18 +797,6 @@ class RegexBar(Horizontal):
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("regex 1:", id="regex_label_1", classes="label regex-slot-1")
-        yield Input(
-            id="regex_1", placeholder="(none)", compact=True, classes="regex-slot-1"
-        )
-        yield Static("regex 2:", id="regex_label_2", classes="label regex-slot-2")
-        yield Input(
-            id="regex_2", placeholder="(none)", compact=True, classes="regex-slot-2"
-        )
-        yield Static("regex 3:", id="regex_label_3", classes="label regex-slot-3")
-        yield Input(
-            id="regex_3", placeholder="(none)", compact=True, classes="regex-slot-3"
-        )
         yield Static("regex *:", id="regex_label_4", classes="label regex-slot-4")
         yield Input(
             id="regex_4", placeholder="(none)", compact=True, classes="regex-slot-4"
@@ -888,24 +869,23 @@ class HelpScreen(ModalScreen):
             "  ]r [r   next/prev curated hit/miss\n"
             "  ]R [R   next/prev predicted roll\n"
             "  ]q [q   next/prev curated narrator quote\n"
-            "  z/x/c   select regex 1/2/3 for n/N\n"
-            "  n / N   next/prev active regex match\n"
+            "  n / N   next/prev narrative evidence candidate\n"
+            "  z / Z   next/prev regex * match\n"
+            "  x / X   next/prev a/the\n"
+            "  c       next constellation name end\n"
             "  *       seed/select regex * with word under cursor\n"
-            "  ]2 [2   regex 2 matches\n"
-            "  ]3 [3   regex 3 matches\n"
             "  F12 / Ctrl-S  snapshot state to data/manual/.forge_curator_snapshot.json\n"
         )
         body.append("\nRegex bar\n", style="bold")
         body.append(
             "  /     focus regex *\n"
-            "  Tab   cycle regex 1 -> 2 -> 3 -> *\n"
+            "  Tab   focus regex *\n"
             "  Enter apply regex\n"
         )
         body.append("\nAction panel keybinds\n", style="bold")
         body.append(
             "  <space>e         toggle section eligibility\n"
-            "  <space>a         AN = current selection\n"
-            "  <space>H         header span = current selection\n"
+            "  <space>E         selected passage eligibility\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
             "  <space>v         roll display position\n"
@@ -937,6 +917,91 @@ class HelpScreen(ModalScreen):
 
 
 # ---------- pickers ---------------------------------------------------------
+
+
+class EligibilitySpanModal(ModalScreen):
+    """Collect CP-eligibility metadata for the current selection."""
+
+    DEFAULT_CSS = """
+    EligibilitySpanModal {
+        align: center middle;
+    }
+    EligibilitySpanModal > Container {
+        width: 76;
+        height: auto;
+        border: thick $accent;
+        background: $surface;
+        padding: 1 2;
+    }
+    EligibilitySpanModal Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    EligibilitySpanModal Input {
+        margin-bottom: 1;
+    }
+    EligibilitySpanModal Button {
+        width: 100%;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(self, on_confirm, selection_words: int, **kw):
+        super().__init__(**kw)
+        self._on_confirm = on_confirm
+        self._selection_words = int(selection_words)
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static(
+                f"Mark selected passage ({self._selection_words} words)",
+                classes="title",
+            )
+            yield Input(
+                placeholder=(
+                    "reason_code, e.g. joe_on_screen or joe_not_on_screen"
+                ),
+                id="eligibility_reason_code",
+            )
+            yield Input(
+                placeholder="optional note",
+                id="eligibility_note",
+            )
+            yield Button(
+                "CP eligible",
+                id="eligibility_true",
+                variant="success",
+            )
+            yield Button(
+                "CP ineligible",
+                id="eligibility_false",
+                variant="warning",
+            )
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id not in {"eligibility_true", "eligibility_false"}:
+            return
+        counts_for_cp = event.button.id == "eligibility_true"
+        try:
+            reason = self.query_one("#eligibility_reason_code", Input).value.strip()
+            note = self.query_one("#eligibility_note", Input).value.strip()
+        except Exception:
+            reason = ""
+            note = ""
+        if not reason:
+            reason = "joe_on_screen" if counts_for_cp else "joe_not_on_screen"
+        self.app.pop_screen()
+        self._on_confirm(counts_for_cp, reason, note or None)
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
 
 
 class ConstellationPicker(ModalScreen):
@@ -1456,7 +1521,7 @@ class SourceLinkPicker(ModalScreen):
                 classes="selection-summary",
             )
             with Horizontal():
-                with VerticalScroll(classes="column"):
+                with Vertical(classes="column"):
                     yield Static("Target slots", classes="column-title")
                     target_options = OptionList(
                         *[
@@ -1478,7 +1543,7 @@ class SourceLinkPicker(ModalScreen):
                         if self._target_index is not None else None
                     )
                     yield target_options
-                with VerticalScroll(classes="column"):
+                with Vertical(classes="column"):
                     yield Static("Source rolls", classes="column-title")
                     source_options = OptionList(
                         *[
@@ -1501,6 +1566,9 @@ class SourceLinkPicker(ModalScreen):
                     )
                     yield source_options
             yield Button("Confirm", id="confirm", variant="primary")
+
+    def on_mount(self) -> None:
+        self.query_one("#source_link_targets", OptionList).focus()
 
     @on(Button.Pressed)
     def _on_pressed(self, event: Button.Pressed) -> None:
@@ -1570,21 +1638,31 @@ class RollEvidencePicker(ModalScreen):
         align: center middle;
     }
     RollEvidencePicker > Container {
-        width: 76;
+        width: 96;
         height: auto;
         max-height: 80%;
         border: thick $accent;
         background: $surface;
-        padding: 1 2;
+        padding: 0 1;
     }
     RollEvidencePicker Static.title {
         height: 1;
         content-align: center middle;
         text-style: bold;
-        margin-bottom: 1;
+        margin-bottom: 0;
     }
     RollEvidencePicker Button {
         width: 100%;
+        margin: 0;
+    }
+    RollEvidencePicker .roll-columns {
+        width: 100%;
+        height: auto;
+    }
+    RollEvidencePicker .roll-column {
+        width: 1fr;
+        height: auto;
+        padding: 0;
     }
     RollEvidencePicker .selected {
         background: $accent 50%;
@@ -1621,12 +1699,22 @@ class RollEvidencePicker(ModalScreen):
     def compose(self) -> ComposeResult:
         with Container():
             yield Static("Save quote to rolls (click to toggle)", classes="title")
-            for idx, r in enumerate(self._rolls, start=1):
-                yield Button(
-                    self._roll_button_label(idx, r),
-                    id=f"roll_{idx}",
-                    name=str(idx),
-                )
+            split = (len(self._rolls) + 1) // 2
+            with Horizontal(classes="roll-columns"):
+                with Container(id="roll_column_left", classes="roll-column"):
+                    for idx, r in enumerate(self._rolls[:split], start=1):
+                        yield Button(
+                            self._roll_button_label(idx, r),
+                            id=f"roll_{idx}",
+                            name=str(idx),
+                        )
+                with Container(id="roll_column_right", classes="roll-column"):
+                    for idx, r in enumerate(self._rolls[split:], start=split + 1):
+                        yield Button(
+                            self._roll_button_label(idx, r),
+                            id=f"roll_{idx}",
+                            name=str(idx),
+                        )
             yield Button(self._display_position_label(), id="display_policy")
             yield Button("Confirm", id="confirm", variant="primary")
 
@@ -1837,7 +1925,7 @@ class ForgeCuratorApp(App):
         self._pending_chord: str | None = None
         # Tracker for <space>X leader chord state.
         self._pending_space_chord: bool = False
-        self.active_regex_slot: int = 0
+        self.active_regex_slot: int = 3
         self._last_curation_error: str | None = None
         self._last_curation_message: str | None = None
         self._selected_roll_target: dict | None = None
@@ -1930,17 +2018,16 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return
-        for idx, hits in enumerate(cs.regex_hits[:4], start=1):
-            try:
-                inp = self.query_one(f"#regex_{idx}", Input)
-                label = self.query_one(f"#regex_label_{idx}", Static)
-            except Exception:
-                continue
-            if not inp.has_focus:
-                inp.value = hits.pattern
-            active = idx - 1 == self.active_regex_slot
-            inp.set_class(active, "active")
-            label.set_class(active, "active")
+        self.active_regex_slot = 3
+        try:
+            inp = self.query_one("#regex_4", Input)
+            label = self.query_one("#regex_label_4", Static)
+        except Exception:
+            return
+        if not inp.has_focus:
+            inp.value = cs.regex_hits[3].pattern
+        inp.set_class(True, "active")
+        label.set_class(True, "active")
 
     def _compute_prose_spans(self) -> list[dict]:
         """Inline highlight spans for the prose view.
@@ -1974,8 +2061,22 @@ class ForgeCuratorApp(App):
                 "style": QUOTE_HIGHLIGHT_STYLE,
                 "priority": 20,
             })
-        for slot, hits in enumerate(cs.regex_hits[:4]):
-            style = REGEX_HIGHLIGHT_STYLES[slot]
+        for start, end in self._forge_keyword_char_spans(cs):
+            spans.append({
+                "start": start,
+                "end": end,
+                "style": FORGE_KEYWORD_HIGHLIGHT_STYLE,
+                "priority": 25,
+            })
+        for start, end in self._constellation_name_char_spans(cs):
+            spans.append({
+                "start": start,
+                "end": end,
+                "style": CONSTELLATION_NAME_HIGHLIGHT_STYLE,
+                "priority": 26,
+            })
+        for slot, hits in ((3, cs.regex_hits[3]),):
+            style = REGEX_HIGHLIGHT_STYLES[0]
             for start, end in hits.char_spans:
                 if 0 <= start < end <= len(cs.prose.text):
                     spans.append({
@@ -1985,6 +2086,30 @@ class ForgeCuratorApp(App):
                         "priority": 30 + slot,
                     })
         return spans
+
+    @staticmethod
+    def _forge_keyword_char_spans(cs) -> list[tuple[int, int]]:
+        return [
+            match.span()
+            for match in FORGE_KEYWORD_PATTERN.finditer(cs.prose.text)
+        ]
+
+    @staticmethod
+    def _constellation_name_char_spans(cs) -> list[tuple[int, int]]:
+        return [
+            match.span()
+            for match in CONSTELLATION_NAME_PATTERN.finditer(cs.prose.text)
+        ]
+
+    def _forge_keyword_word_indices(self, cs) -> list[int]:
+        indices: list[int] = []
+        seen: set[int] = set()
+        for start, _end in self._forge_keyword_char_spans(cs):
+            word_idx = _word_index_for_char_offset(cs.prose.word_offsets, start)
+            if word_idx is not None and word_idx not in seen:
+                seen.add(word_idx)
+                indices.append(word_idx)
+        return indices
 
     def _roll_evidence_char_spans(self, cs) -> list[tuple[int, int]]:
         """Return current-chapter prose spans backed by saved roll evidence.
@@ -2092,10 +2217,10 @@ class ForgeCuratorApp(App):
     def _is_structural_word_index(self, cs, word_idx: int) -> bool:
         if not (0 <= int(word_idx) < len(cs.prose.word_offsets)):
             return True
-        for ws, we in self._canonical_excluded_word_ranges(cs.meta.chapter_num, cs):
-            if int(ws) <= int(word_idx) < int(we):
-                return True
-        return False
+        sec_idx = cs.section_index_at(int(word_idx))
+        return not bool(
+            self._eligibility_at_cursor(cs, int(word_idx), sec_idx)["text_eligible"]
+        )
 
     def _evidence_fallback_word_index(self, cs, roll: dict) -> int | None:
         raw = self._curated_roll_word_index(cs, roll)
@@ -2161,16 +2286,16 @@ class ForgeCuratorApp(App):
         for ws, _we in (cs.prose.implicit_header_word_ranges or []):
             if 0 <= ws < total:
                 _add(ws, "═")
-        # Derived excluded ranges include ANs and auto/manual header
-        # exclusions. Auto headers already have a header glyph above, so
-        # don't render their duplicate exclusion range as an AN.
-        implicit_headers = set(cs.prose.implicit_header_word_ranges or [])
-        for ws, _we in (cs.meta.excluded_word_ranges or []):
-            span = (int(ws), int(_we))
-            if span in implicit_headers:
-                continue
-            if 0 <= int(ws) < total:
-                _add(int(ws), "A")
+        for section in cs.meta.sections or []:
+            for span in section.get("span_overrides") or []:
+                if bool(span.get("counts_for_cp")):
+                    continue
+                reason = str(span.get("reason_code") or "")
+                if reason in {"section_header", "chapter_title_header"}:
+                    continue
+                ws = int(span.get("word_offset_start") or 0)
+                if 0 <= ws < total:
+                    _add(ws, "A")
 
         # Predicted rolls — convert chapter-local CP-word to raw via
         # the canonical exclusion-aware inverse.
@@ -2196,55 +2321,41 @@ class ForgeCuratorApp(App):
             if 0 <= raw_idx < total:
                 _add(raw_idx, ROLL_EVIDENCE_GUTTER_GLYPH)
 
-        # Regex matches.
-        for slot, hits in enumerate(cs.regex_hits, start=1):
-            for wi in hits.word_indices:
-                if 0 <= wi < total:
-                    _add(int(wi), "*" if slot == 4 else str(slot))
+        # Narrative evidence candidates are paragraph-level scorer hits.
+        # They intentionally do not create prose highlights; the gutter N
+        # mark and n/N navigation are the low-noise review affordances.
+        for candidate in cs.evidence_candidates:
+            if 0 <= candidate.word_index < total:
+                _add(candidate.word_index, "N")
+
+        # User regex * matches.
+        for wi in cs.regex_hits[3].word_indices:
+            if 0 <= wi < total:
+                _add(int(wi), "*")
+
+        # Hard-coded Forge keywords are intentionally lowest priority.
+        for wi in self._forge_keyword_word_indices(cs):
+            if 0 <= wi < total:
+                _add(int(wi), ".")
 
         return items
 
     # ----- helpers ---------------------------------------------------------
 
-    def _chapter_author_notes(self, chapter_num: str) -> list[dict]:
-        """Manual AN docs are write inputs; display uses derived ranges."""
-        return []
-
-    def _an_word_span(self, note: dict, cs) -> tuple[int | None, int | None]:
-        """Compute the chapter-local raw word range covered by an AN entry.
-
-        The on-disk schema doesn't carry word offsets, so derive them
-        from the AN's section_index plus the actual ``an_text`` length.
-        We place the AN at the END of its section (matches the dominant
-        convention: ANs trail the section's prose).
-        """
-        section_index = note.get("section_index")
-        if section_index is None:
-            return None, None
-        sections = cs.meta.sections or []
-        if not (0 <= int(section_index) < len(sections)):
-            return None, None
-        # Cumulative raw word offset to start of section_index+1.
-        cum = 0
-        for i, sec in enumerate(sections):
-            wc = int(sec.get("word_count") or 0)
-            if i == int(section_index):
-                end = cum + wc
-                start = max(cum, end - _an_word_length(note))
-                return start, end
-            cum += wc
-        return None, None
-
-    def _excluded_word_ranges(self, cs) -> list[tuple[int, int]]:
-        """Word ranges in the current chapter excluded from CP earning.
-
-        Combines derived excluded ranges and auto-detected section
-        header ranges. Manual files are not read directly for display.
-        """
+    def _ineligible_span_ranges(self, cs) -> list[tuple[int, int]]:
+        """Passage-level ranges in the current chapter excluded from CP earning."""
         ranges: list[tuple[int, int]] = []
-        # Auto-detected section-header spans.
-        for ws, we in (cs.prose.implicit_header_word_ranges or []):
-            ranges.append((int(ws), int(we)))
+        for section in cs.meta.sections or []:
+            for span in section.get("span_overrides") or []:
+                if bool(span.get("counts_for_cp")):
+                    continue
+                try:
+                    ranges.append((
+                        int(span.get("word_offset_start")),
+                        int(span.get("word_offset_end")),
+                    ))
+                except (TypeError, ValueError):
+                    continue
         return _merge_ranges(sorted(ranges))
 
     def _chapter_ordinal(self, chapter_num: str) -> int:
@@ -2253,33 +2364,23 @@ class ForgeCuratorApp(App):
         except ValueError:
             return 0
 
-    def _canonical_excluded_word_ranges(
-        self, chapter_num: str, cs=None
-    ) -> list[tuple[int, int]]:
-        """Chapter-local content exclusions from derived data plus live edits."""
-        cn = str(chapter_num)
+    def _canonical_ineligible_span_ranges(self, cs=None) -> list[tuple[int, int]]:
+        """Chapter-local passage-level content exclusions."""
         ranges: list[tuple[int, int]] = []
-        try:
-            meta = self.data.chapter_meta(cn)
-            for r in meta.excluded_word_ranges or []:
-                if len(r) == 2 and int(r[1]) > int(r[0]):
-                    ranges.append((int(r[0]), int(r[1])))
-        except Exception:
-            pass
         if cs is not None:
-            ranges.extend(self._excluded_word_ranges(cs))
+            ranges.extend(self._ineligible_span_ranges(cs))
         return _merge_ranges(sorted(ranges))
 
     def _content_word_offset(self, cs, raw_word_idx: int) -> int:
         total = len(cs.prose.word_offsets)
         raw_word_idx = max(0, min(int(raw_word_idx), total))
-        excluded = self._canonical_excluded_word_ranges(cs.meta.chapter_num, cs)
+        excluded = self._canonical_ineligible_span_ranges(cs)
         return max(0, raw_word_idx - _range_prefix_len(excluded, raw_word_idx))
 
     def _chapter_content_total(self, chapter_num: str, cs=None) -> int:
         meta = self.data.chapter_meta(str(chapter_num))
         total = int(meta.total_word_count or 0)
-        excluded = self._canonical_excluded_word_ranges(str(chapter_num), cs)
+        excluded = self._canonical_ineligible_span_ranges(cs)
         return max(0, total - _range_overlap_len(excluded, 0, total))
 
     def _chapter_content_start(self, chapter_num: str) -> int:
@@ -2328,20 +2429,20 @@ class ForgeCuratorApp(App):
             section_counts = bool(sections[sec_idx].get("counts_for_cp", True))
         section_eligible = section_counts
 
-        for ws, we in (cs.prose.implicit_header_word_ranges or []):
-            if int(ws) <= word_idx < int(we):
-                return {
-                    "section_eligible": section_eligible,
-                    "text_eligible": False,
-                    "reason": "header",
-                }
-        for ws, we in (cs.meta.excluded_word_ranges or []):
-            if int(ws) <= word_idx < int(we):
-                return {
-                    "section_eligible": section_eligible,
-                    "text_eligible": False,
-                    "reason": "excluded",
-                }
+        if 0 <= sec_idx < len(sections):
+            for span in sections[sec_idx].get("span_overrides") or []:
+                try:
+                    start = int(span.get("word_offset_start"))
+                    end = int(span.get("word_offset_end"))
+                except (TypeError, ValueError):
+                    continue
+                if start <= int(word_idx) < end:
+                    span_eligible = bool(span.get("counts_for_cp"))
+                    return {
+                        "section_eligible": section_eligible,
+                        "text_eligible": span_eligible,
+                        "reason": str(span.get("reason_code") or "span override"),
+                    }
         if not section_eligible:
             return {
                 "section_eligible": False,
@@ -2573,33 +2674,31 @@ class ForgeCuratorApp(App):
     def _cp_earning_word_offset(self, raw_word_idx: int) -> int:
         """Map raw cursor word index to its CP-earning offset.
 
-        CP-eligible word = (section is CP-eligible) AND (word not within
-        any AN / header / auto-header span). Walks the chapter's
-        sections, intersecting CP-eligible section ranges with the
-        excluded-range list, so excluded words that already lie in an
-        ineligible section don't get double-subtracted. This is the
-        canonical raw→CP function for the TUI; ``_raw_word_for_cp_offset``
-        is its inverse.
+        CP-eligible word = section eligibility plus passage-level span
+        overrides. This is the canonical raw→CP function for the TUI;
+        ``_raw_word_for_cp_offset`` is its inverse.
         """
         cs = self.state.chapter
         if cs is None or raw_word_idx <= 0:
             return 0
-        excluded = self._canonical_excluded_word_ranges(cs.meta.chapter_num, cs)
         sections = cs.meta.sections or []
         cp = 0
         raw_running = 0
         for sec in sections:
             wc = int(sec.get("word_count") or 0)
             sec_end = raw_running + wc
-            if bool(sec.get("counts_for_cp", True)):
-                upper = min(sec_end, raw_word_idx)
-                if upper > raw_running:
-                    eligible_words = upper - raw_running
-                    excluded_words = sum(
-                        max(0, min(we, upper) - max(ws, raw_running))
-                        for ws, we in excluded
-                    )
-                    cp += max(0, eligible_words - excluded_words)
+            upper = min(sec_end, raw_word_idx)
+            if upper > raw_running:
+                cp += section_cp_word_count(
+                    section_word_start=raw_running,
+                    section_word_end=upper,
+                    base_counts_for_cp=bool(sec.get("counts_for_cp", True)),
+                    span_overrides=section_span_overrides(
+                        sec,
+                        raw_running,
+                        upper,
+                    ),
+                )
             if sec_end >= raw_word_idx:
                 break
             raw_running = sec_end
@@ -3047,6 +3146,7 @@ class ForgeCuratorApp(App):
                 local_cp is None
                 and str(row.get("source_chapter_num")) == cn
                 and str(row.get("mechanical_chapter_num") or row.get("chapter_num")) != cn
+                and not _is_deferred_in(row, local_cp)
             )
 
         def _sort_key(row: dict) -> tuple[int, int, int, int]:
@@ -3576,11 +3676,7 @@ class ForgeCuratorApp(App):
             self._flash("nothing to undo")
             return
         action, chapter = result
-        full = action in {
-            "mark_an_span",
-            "mark_header_span",
-            "remove_annotations_at_word",
-        }
+        full = action in {"mark_span_eligibility", "remove_annotations_at_word"}
         ch_part = f" (ch {chapter})" if chapter else ""
         self._post_curation_refresh(f"undid: {action}{ch_part}", full=full)
 
@@ -3631,7 +3727,6 @@ class ForgeCuratorApp(App):
                 "total_word_count": cs.meta.total_word_count,
                 "cp_earning_word_count": cs.meta.cp_earning_word_count,
                 "sections": cs.meta.sections,
-                "excluded_word_ranges": cs.meta.excluded_word_ranges,
             }
             snap["cursor"] = {
                 "char": cs.cursor_char,
@@ -3641,13 +3736,12 @@ class ForgeCuratorApp(App):
             }
             snap["regex"] = [
                 {
-                    "slot": idx + 1,
-                    "pattern": hits.pattern,
-                    "error": hits.error,
-                    "word_indices": list(hits.word_indices),
-                    "char_spans": list(hits.char_spans),
+                    "slot": "*",
+                    "pattern": cs.regex_hits[3].pattern,
+                    "error": cs.regex_hits[3].error,
+                    "word_indices": list(cs.regex_hits[3].word_indices),
+                    "char_spans": list(cs.regex_hits[3].char_spans),
                 }
-                for idx, hits in enumerate(cs.regex_hits[:4])
             ]
             unified = self._unified_rolls(cs)
             snap["rolls"] = [
@@ -3705,16 +3799,11 @@ class ForgeCuratorApp(App):
         return self._handle_chord(prefix, ch)
 
     def _set_active_regex_slot(self, slot: int) -> None:
-        if not (0 <= slot < 4):
-            return
-        self.active_regex_slot = slot
+        self.active_regex_slot = 3
         self._refresh_regex_bar()
 
     def _handle_regex_slot_hotkey(self, ch: str) -> None:
-        slots = {"z": 0, "x": 1, "c": 2}
-        slot = slots.get(ch)
-        if slot is not None:
-            self._set_active_regex_slot(slot)
+        return
 
     # ----- space-leader chord (Phase 2 actions) ---------------------------
 
@@ -3728,10 +3817,8 @@ class ForgeCuratorApp(App):
         cn = cs.meta.chapter_num
         if ch == "e":
             self._action_toggle_section_eligibility(cn)
-        elif ch == "a":
-            self._action_mark_an_from_selection(cn)
-        elif ch == "H":
-            self._action_mark_header_from_selection(cn)
+        elif ch == "E":
+            self._action_mark_span_eligibility(cn)
         elif ch == "h":
             self._action_set_last_outcome(cn, "hit")
         elif ch == "m":
@@ -3793,6 +3880,7 @@ class ForgeCuratorApp(App):
     def _run_full_curation_derivation(self) -> None:
         for script in (
             "scripts/extract_chapter_sections.py",
+            "scripts/build_section_classifications.py",
             "scripts/predict_rolls.py",
             "scripts/derive_roll_facts.py",
             "scripts/build_chapter_facts.py",
@@ -3854,39 +3942,6 @@ class ForgeCuratorApp(App):
             pass
         self._scroll_cursor_into_view()
 
-    def _refresh_live_manual_inputs(self) -> None:
-        """Deprecated compatibility path for non-roll actions."""
-        cs = self.state.chapter
-        if cs is not None:
-            cn = cs.meta.chapter_num
-            saved_cursor = cs.cursor_char
-            saved_anchor = None
-            saved_visual = False
-            saved_visual_line = False
-            try:
-                prose_view = self.query_one("#prose", PassageView)
-                saved_anchor = prose_view.anchor
-                saved_visual = prose_view.visual_mode
-                saved_visual_line = prose_view.visual_line_mode
-            except Exception:
-                pass
-            self.data._derived_cache.pop(cn, None)
-            new_cs = self._load_chapter(cn)
-            new_cs.cursor_char = saved_cursor
-            self.refresh_all_panels()
-            try:
-                prose_view = self.query_one("#prose", PassageView)
-                prose_view.cursor = saved_cursor
-                prose_view.anchor = saved_anchor
-                prose_view.visual_mode = saved_visual
-                prose_view.visual_line_mode = saved_visual_line
-                prose_view.refresh()
-            except Exception:
-                pass
-            self._scroll_cursor_into_view()
-        else:
-            self.refresh_all_panels()
-
     def _action_toggle_section_eligibility(self, chapter_num: str) -> None:
         cs = self.state.chapter
         if cs is None:
@@ -3909,163 +3964,123 @@ class ForgeCuratorApp(App):
             full=True,
         )
 
-    def _action_mark_an_from_selection(self, chapter_num: str) -> None:
-        """Save the current visual selection as an Author Note span.
-
-        Use ``v`` (char) or ``V`` (line) to select the AN text, then
-        ``<space>a``. Section index is taken from where the selection
-        starts.
-        """
+    def _selected_word_range_for_action(
+        self, action_name: str,
+    ) -> tuple[int, int, str] | None:
         cs = self.state.chapter
         if cs is None:
-            return
+            return None
         prose_view = self.query_one("#prose", PassageView)
         sel = prose_view.selection
         if sel is None:
-            self._flash("AN: no selection — press v or V to select first")
-            return
+            self._flash(f"{action_name}: no selection - press v or V to select first")
+            return None
         lo, hi = sel
-        an_text = cs.prose.text[lo:hi].strip()
-        if not an_text:
-            self._flash("AN: empty selection")
-            return
-        wo = cs.prose.word_offsets
-        word_at_lo = next((i for i, (s, e) in enumerate(wo) if e > lo), 0) if wo else 0
-        section_index = cs.section_index_at(word_at_lo)
-        self.persistence.mark_an_span(
-            chapter_num, int(section_index), an_text,
-            reason="marked via curator TUI",
-        )
-        prose_view.anchor = None
-        prose_view.visual_mode = False
-        prose_view.visual_line_mode = False
-        refresh = getattr(prose_view, "refresh", None)
-        if callable(refresh):
-            refresh()
-        self._post_curation_refresh(
-            f"AN saved ({len(an_text.split())} words, sec {section_index})",
-            full=True,
-        )
-
-    def _action_mark_header_from_selection(self, chapter_num: str) -> None:
-        """Save the current visual selection as a header-span correction.
-
-        Marked words are excluded from CP-earning word counts. Use ``V``
-        to grab the whole header line, then ``<space>H``.
-        """
-        cs = self.state.chapter
-        if cs is None:
-            return
-        prose_view = self.query_one("#prose", PassageView)
-        sel = prose_view.selection
-        if sel is None:
-            self._flash("header: no selection — press V to select the header line")
-            return
-        lo, hi = sel
+        lo, hi = min(lo, hi), max(lo, hi)
         wo = cs.prose.word_offsets
         if not wo:
-            self._flash("header: empty chapter")
-            return
-        word_start = next((i for i, (s, e) in enumerate(wo) if e > lo), len(wo))
-        word_end = next((i for i, (s, e) in enumerate(wo) if s >= hi), len(wo))
+            self._flash(f"{action_name}: empty chapter")
+            return None
+        word_start = next((i for i, (_s, e) in enumerate(wo) if e > lo), len(wo))
+        word_end = next((i for i, (s, _e) in enumerate(wo) if s >= hi), len(wo))
         if word_end <= word_start:
-            self._flash("header: selection covers no whole word")
+            self._flash(f"{action_name}: selection covers no whole word")
+            return None
+        return word_start, word_end, cs.prose.text[lo:hi].strip()
+
+    def _action_mark_span_eligibility(self, chapter_num: str) -> None:
+        selected = self._selected_word_range_for_action("eligibility")
+        if selected is None:
             return
-        excerpt = cs.prose.text[lo:hi].strip()
-        if len(excerpt) > 80:
-            excerpt = excerpt[:77] + "..."
-        section_index = cs.section_index_at(word_start)
-        self.persistence.mark_header_span(
-            chapter_num, int(section_index),
-            int(word_start), int(word_end),
-            excerpt=excerpt,
-        )
-        prose_view.anchor = None
-        prose_view.visual_mode = False
-        prose_view.visual_line_mode = False
-        refresh = getattr(prose_view, "refresh", None)
-        if callable(refresh):
-            refresh()
-        self._post_curation_refresh(
-            f"header marked ({word_end - word_start} words, sec {section_index})",
-            full=True,
+        word_start, word_end, excerpt = selected
+
+        def on_confirm(
+            counts_for_cp: bool,
+            reason_code: str,
+            note: str | None,
+        ) -> None:
+            self._save_span_eligibility(
+                chapter_num,
+                word_start,
+                word_end,
+                counts_for_cp=counts_for_cp,
+                reason_code=reason_code,
+                note=note,
+                excerpt=excerpt,
+            )
+
+        self.push_screen(
+            EligibilitySpanModal(
+                on_confirm,
+                selection_words=word_end - word_start,
+            )
         )
 
-    def _manual_author_note_keys_at_word(
-        self, chapter_num: str, word_idx: int,
-    ) -> list[tuple[int, str]]:
-        """Resolve manual author-note entries that cover ``word_idx``."""
+    def _save_span_eligibility(
+        self,
+        chapter_num: str,
+        word_start: int,
+        word_end: int,
+        *,
+        counts_for_cp: bool,
+        reason_code: str,
+        note: str | None = None,
+        excerpt: str = "",
+    ) -> None:
         cs = self.state.chapter
         if cs is None:
-            return []
-        notes = self.persistence.author_notes.get("author_notes") or []
-        word_offsets = cs.prose.word_offsets
-        if not word_offsets:
-            return []
-
-        section_starts: list[int] = []
+            return
+        sections = cs.meta.sections or []
+        if not sections:
+            self._flash("eligibility: no sections loaded")
+            return
+        display_excerpt = re.sub(r"\s+", " ", excerpt).strip()
+        if len(display_excerpt) > 120:
+            display_excerpt = display_excerpt[:117] + "..."
         running = 0
-        for section in cs.meta.sections or []:
-            section_starts.append(running)
-            running += int(section.get("word_count") or 0)
-
-        matches: list[tuple[int, str]] = []
-        for note in notes:
-            if str(note.get("chapter_num")) != str(chapter_num):
+        saved_count = 0
+        for section_index, section in enumerate(sections):
+            section_start = running
+            section_end = running + int(section.get("word_count") or 0)
+            running = section_end
+            start = max(int(word_start), section_start)
+            end = min(int(word_end), section_end)
+            if end <= start:
                 continue
-            try:
-                section_index = int(note.get("section_index"))
-            except Exception:
-                continue
-            an_text = str(note.get("an_text") or "")
-            if not an_text or not (0 <= section_index < len(section_starts)):
-                continue
-
-            section_start_word = section_starts[section_index]
-            section_end_word = (
-                section_starts[section_index + 1]
-                if section_index + 1 < len(section_starts)
-                else len(word_offsets)
+            self.persistence.mark_span_eligibility(
+                chapter_num,
+                int(section_index),
+                start,
+                end,
+                counts_for_cp=counts_for_cp,
+                reason_code=reason_code,
+                note=note,
+                excerpt=display_excerpt,
+                header=section.get("header"),
+                current_counts_for_cp=bool(section.get("counts_for_cp", True)),
             )
-            if section_start_word >= len(word_offsets):
-                continue
-            section_start_char = word_offsets[section_start_word][0]
-            section_end_char = (
-                word_offsets[min(section_end_word, len(word_offsets)) - 1][1]
-                if section_end_word > section_start_word
-                else section_start_char
-            )
-            section_text = cs.prose.text[section_start_char:section_end_char]
-            offset = section_text.find(an_text)
-            if offset < 0:
-                note_words = an_text.split()
-                section_words = [
-                    cs.prose.text[s:e]
-                    for s, e in word_offsets[section_start_word:section_end_word]
-                ]
-                for rel_start in range(0, len(section_words) - len(note_words) + 1):
-                    rel_end = rel_start + len(note_words)
-                    if section_words[rel_start:rel_end] == note_words:
-                        start_word = section_start_word + rel_start
-                        end_word = section_start_word + rel_end
-                        if start_word <= int(word_idx) < end_word:
-                            matches.append((section_index, an_text))
-                        break
-                continue
-
-            start_char = section_start_char + offset
-            end_char = start_char + len(an_text)
-            start_word = next(
-                (i for i, (_s, e) in enumerate(word_offsets) if e > start_char),
-                len(word_offsets),
-            )
-            end_word = next(
-                (i for i, (s, _e) in enumerate(word_offsets) if s >= end_char),
-                len(word_offsets),
-            )
-            if start_word <= int(word_idx) < end_word:
-                matches.append((section_index, an_text))
-        return matches
+            saved_count += 1
+        if not saved_count:
+            self._flash("eligibility: selection did not overlap a section")
+            return
+        try:
+            prose_view = self.query_one("#prose", PassageView)
+            prose_view.anchor = None
+            prose_view.visual_mode = False
+            prose_view.visual_line_mode = False
+            refresh = getattr(prose_view, "refresh", None)
+            if callable(refresh):
+                refresh()
+        except Exception:
+            pass
+        status = "eligible" if counts_for_cp else "ineligible"
+        self._post_curation_refresh(
+            (
+                f"CP {status} span saved "
+                f"({int(word_end) - int(word_start)} words, {reason_code})"
+            ),
+            full=True,
+        )
 
     def _action_remove_annotations_at_current_word(self, chapter_num: str) -> None:
         cs = self.state.chapter
@@ -4084,22 +4099,20 @@ class ForgeCuratorApp(App):
         result = self.persistence.remove_annotations_at_word(
             chapter_num,
             word_idx,
-            author_note_keys=self._manual_author_note_keys_at_word(chapter_num, word_idx),
         )
         total = (
-            result["author_notes"]
-            + result["header_corrections"]
-            + removed_roll_evidence
+            result["eligibility_spans"] + removed_roll_evidence
         )
         if not total:
             self._flash("annotation delete: none at current word")
             return
-        full = bool(result["author_notes"] or result["header_corrections"])
+        full = bool(
+            result["eligibility_spans"]
+        )
         self._post_curation_refresh(
             (
                 "annotation delete: "
-                f"{result['author_notes']} AN, "
-                f"{result['header_corrections']} header, "
+                f"{result['eligibility_spans']} eligibility, "
                 f"{removed_roll_evidence} roll evidence"
             ),
             full=full,
@@ -4752,11 +4765,36 @@ class ForgeCuratorApp(App):
         if target is None or target.get("target_roll_index") is None:
             self._flash("defer evidence: no predicted roll at/before cursor")
             return
-        if target.get("display_kind") == "deferred_in":
-            self._flash("defer evidence: roll is already deferred into this chapter")
-            return
         idx = int(target["target_roll_index"])
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
+        persisted_rolls = (
+            self.persistence.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(target_chapter, {})
+            .get("rolls", [])
+        )
+        persisted_roll = (
+            persisted_rolls[idx - 1]
+            if 0 <= idx - 1 < len(persisted_rolls)
+            and isinstance(persisted_rolls[idx - 1], dict)
+            else {}
+        )
+        persisted_source_deferred_to = persisted_roll.get("source_deferred_to_chapter")
+        persisted_mention_chapter = persisted_roll.get("mention_chapter_num")
+        if (
+            target.get("display_kind") == "deferred_in"
+            or (
+                persisted_mention_chapter is not None
+                and str(persisted_mention_chapter) != str(target_chapter)
+            )
+        ):
+            self.persistence.clear_roll_deferral(target_chapter, idx)
+            self._post_curation_refresh(f"roll #{idx} evidence deferral cleared")
+            return
+        if persisted_source_deferred_to is not None:
+            self.persistence.clear_source_roll_deferral(target_chapter, idx)
+            self._post_curation_refresh(f"roll #{idx} source deferral cleared")
+            return
         next_chapter = self._next_chapter_num(chapter_num)
         if next_chapter is None:
             self._flash("defer evidence: no next chapter")
@@ -4774,9 +4812,6 @@ class ForgeCuratorApp(App):
                 f"roll #{idx} source Roll {target.get('roll_number')} "
                 f"deferred to ch {next_chapter}"
             )
-        elif str(target.get("mention_chapter_num")) == str(next_chapter):
-            self.persistence.clear_roll_deferral(target_chapter, idx)
-            message = f"roll #{idx} evidence deferral cleared"
         else:
             self.persistence.mark_roll_deferred_to_chapter(
                 target_chapter,
@@ -4909,9 +4944,6 @@ class ForgeCuratorApp(App):
         if key == "q":
             self._jump_roll_quoted(forward=(prefix == "]"))
             return True
-        if key in ("2", "3"):
-            self._jump_regex(int(key) - 1, forward=(prefix == "]"))
-            return True
         return False
 
     def _handle_star_search(self) -> None:
@@ -4937,7 +4969,19 @@ class ForgeCuratorApp(App):
         self.refresh_all_panels()
 
     def _handle_n_search(self, *, forward: bool) -> None:
-        self._jump_regex(self.active_regex_slot, forward=forward)
+        self._jump_evidence_candidate(forward=forward)
+
+    def _handle_star_regex_search(self, *, forward: bool) -> None:
+        self._jump_regex(3, forward=forward)
+
+    def _handle_article_motion(self, *, forward: bool) -> None:
+        self._jump_article_word(forward=forward)
+
+    def _handle_constellation_name_motion(self) -> None:
+        self._jump_constellation_name_end()
+
+    def _handle_connection_word_motion(self) -> None:
+        self._jump_connection_word_end()
 
     # ----- jump navigation -----
 
@@ -4960,6 +5004,13 @@ class ForgeCuratorApp(App):
         if cs is None:
             return
         char = self.state.char_at_word_index(word_idx)
+        self._jump_to_char(char)
+
+    def _jump_to_char(self, char: int) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        char = max(0, min(int(char), len(cs.prose.text)))
         cs.cursor_char = char
         prose_view = self.query_one("#prose", PassageView)
         saved_anchor = prose_view.anchor
@@ -4976,6 +5027,62 @@ class ForgeCuratorApp(App):
             prose_view.visual_line_mode = saved_visual_line
             prose_view.refresh()
         self._scroll_cursor_into_view()
+
+    def _jump_article_word(self, *, forward: bool) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        cur = cs.cursor_word_index
+        article_words: list[int] = []
+        for idx, (start, end) in enumerate(cs.prose.word_offsets):
+            normalized = re.sub(r"^[^A-Za-z]+|[^A-Za-z]+$", "", cs.prose.text[start:end])
+            if normalized.lower() in {"a", "the"}:
+                article_words.append(idx)
+        if not article_words:
+            self._flash("no a/the words in this chapter")
+            return
+        candidates = [
+            idx for idx in article_words
+            if (idx > cur if forward else idx < cur)
+        ]
+        if not candidates:
+            candidates = article_words
+        target = min(candidates) if forward else max(candidates)
+        self._jump_to_word(target)
+
+    def _jump_constellation_name_end(self) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        cur_char = cs.cursor_char
+        matches = [
+            end - 1
+            for _start, end in self._constellation_name_char_spans(cs)
+            if end - 1 > cur_char
+        ]
+        if not matches:
+            self._flash("no next constellation name in this chapter")
+            return
+        self._jump_to_char(min(matches))
+
+    def _jump_connection_word_end(self) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        cur_char = cs.cursor_char
+        matches: list[int] = []
+        for start, _end in cs.prose.word_offsets:
+            token = cs.prose.text[start:_end]
+            for match in re.finditer(r"[A-Za-z]+", token):
+                if match.group(0).lower() in {"connection", "constellation"}:
+                    target = start + match.end() - 1
+                    if target > cur_char:
+                        matches.append(target)
+                    break
+        if not matches:
+            self._flash("no next connection/constellation in this chapter")
+            return
+        self._jump_to_char(min(matches))
 
     def _jump_section(self, *, forward: bool) -> None:
         cs = self.state.chapter
@@ -5040,6 +5147,25 @@ class ForgeCuratorApp(App):
         target = min(candidates) if forward else max(candidates)
         self._jump_to_word(target)
 
+    def _jump_evidence_candidate(self, *, forward: bool) -> None:
+        """Jump to next/prev paragraph selected by the narrative scorer."""
+        cs = self.state.chapter
+        if cs is None:
+            return
+        positions = sorted({c.word_index for c in cs.evidence_candidates})
+        if not positions:
+            self._flash("no narrative evidence candidates in this chapter")
+            return
+        cur_wi = cs.cursor_word_index
+        candidates = [
+            p for p in positions
+            if (p > cur_wi if forward else p < cur_wi)
+        ]
+        if not candidates:
+            candidates = positions
+        target = min(candidates) if forward else max(candidates)
+        self._jump_to_word(target)
+
     def _jump_regex(self, slot_idx: int, *, forward: bool) -> None:
         cs = self.state.chapter
         if cs is None:
@@ -5079,12 +5205,11 @@ class ForgeCuratorApp(App):
     @on(Input.Submitted)
     def _on_regex_submit(self, event: Input.Submitted) -> None:
         slot_id = event.input.id or ""
-        m = re.match(r"regex_([1234])", slot_id)
-        if not m:
+        if slot_id != "regex_4":
             return
-        slot = int(m.group(1)) - 1
-        self._set_active_regex_slot(slot)
-        self.state.set_regex(slot, event.input.value)
+        self._set_active_regex_slot(3)
+        self.state.set_regex(3, event.input.value)
+        self._jump_regex(3, forward=True)
         self.refresh_all_panels()
         prose = self.query_one("#prose", PassageView)
         prose.focus()

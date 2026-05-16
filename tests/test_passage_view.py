@@ -1,4 +1,4 @@
-"""Unit tests for nlp.tui.passage_view.PassageView.
+"""Unit tests for scripts.forge_curator.passage_view.PassageView.
 
 These tests exercise the widget's pure-Python state machine — cursor
 movement, selection extension, mouse-coordinate-to-offset mapping — without
@@ -12,7 +12,7 @@ import pytest
 from rich.style import Style
 from textual.app import App, ComposeResult
 
-from nlp.tui.passage_view import PassageView
+from scripts.forge_curator.passage_view import PassageView
 
 
 # ---------------------------------------------------------------------------
@@ -317,7 +317,10 @@ def test_selection_preserves_span_foreground_with_explicit_background() -> None:
 
     rendered = pv.render()
 
-    assert str(rendered.spans[1].style) == "bold color(214) on #303030"
+    selected_span = next(
+        span for span in rendered.spans if span.start == 1 and span.end == 3
+    )
+    assert str(selected_span.style) == "bold color(214) on #303030"
 
 
 def test_cursor_uses_explicit_contrast_pair_over_other_styles() -> None:

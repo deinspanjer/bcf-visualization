@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from scripts.forge_curator.evidence_scorer import EvidenceCandidate
+from scripts.forge_curator.evidence_scorer import evidence_candidates
 from scripts.forge_curator.data_loader import (
     ChapterDerived,
     ChapterMeta,
@@ -24,10 +26,7 @@ class RegexHits:
     """Character spans for the full regex matches."""
 
 
-DEFAULT_REGEX_PATTERNS = (
-    r"\b(mote|reach|constellation)\b",
-    r"\b(Celestial Forge|[tT]he Forge|[Mm]y powers?)\b",
-)
+DEFAULT_REGEX_PATTERNS: tuple[str, ...] = ()
 
 
 @dataclass
@@ -40,6 +39,7 @@ class ChapterState:
     regex_hits: list[RegexHits] = field(
         default_factory=lambda: [RegexHits(), RegexHits(), RegexHits(), RegexHits()]
     )
+    evidence_candidates: list[EvidenceCandidate] = field(default_factory=list)
 
     @property
     def cursor_word_index(self) -> int:
@@ -81,6 +81,15 @@ class ForgeCuratorState:
         derived = self.data.chapter_derived(cn)
         prose = self.data.chapter_prose(cn)
         cs = ChapterState(meta=meta, derived=derived, prose=prose)
+        header_ranges = tuple(prose.implicit_header_word_ranges or ())
+        cs.evidence_candidates = [
+            candidate
+            for candidate in evidence_candidates(prose.text, prose.word_offsets)
+            if not any(
+                start <= candidate.word_index < end
+                for start, end in header_ranges
+            )
+        ]
         self.chapter = cs
         for slot, pattern in enumerate(DEFAULT_REGEX_PATTERNS):
             self.set_regex(slot, pattern)

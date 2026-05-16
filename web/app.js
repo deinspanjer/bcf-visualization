@@ -1508,24 +1508,6 @@ function buildSkyModel(wireframes) {
   return { clusters, jumpByKey, perkIndex };
 }
 
-function buildRollResolutionMaps(resolutions) {
-  const byChapterRoll = new Map();
-  const byRoll = new Map();
-  for (const r of resolutions?.rolls || []) {
-    if (r.roll_number == null) continue;
-    byChapterRoll.set(`${r.chapter_num}::${r.roll_number}`, r);
-    if (!byRoll.has(String(r.roll_number))) byRoll.set(String(r.roll_number), r);
-  }
-  return { byChapterRoll, byRoll };
-}
-
-function lookupRollResolution(sky, chapter, roll) {
-  if (!sky || !roll || roll.roll_number == null) return null;
-  return sky.resolutions.byChapterRoll.get(`${chapter.chapter_num}::${roll.roll_number}`)
-    || sky.resolutions.byRoll.get(String(roll.roll_number))
-    || null;
-}
-
 function findPerkInSky(sky, perkName, constellation) {
   const entries = sky.model.perkIndex.get(skyNormName(perkName)) || [];
   if (constellation) {
@@ -1535,16 +1517,6 @@ function findPerkInSky(sky, perkName, constellation) {
   return entries[0] || null;
 }
 
-function cheapestMissCandidate(resolution, available) {
-  let best = null;
-  for (const candidate of resolution?.outstanding_perks_with_cost_gt_banked || []) {
-    const cost = Number(candidate.cost);
-    if (!Number.isFinite(cost) || cost <= available) continue;
-    if (!best || cost < Number(best.cost)) best = candidate;
-  }
-  return best;
-}
-
 function numericOrNull(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
@@ -1552,29 +1524,17 @@ function numericOrNull(value) {
 
 function skyRollInfo(state, chapter, roll, wordPos) {
   const sky = state.sky;
-  const resolution = lookupRollResolution(sky, chapter, roll);
   const rawAvailable = numericOrNull(roll.available_cp)
-    ?? numericOrNull(resolution?.banked_at_roll)
-    ?? numericOrNull(resolution?.curator_banked_before)
     ?? numericOrNull(roll.purchased_perk_cost)
-    ?? numericOrNull(resolution?.curator_cost)
+    ?? numericOrNull(roll.rolled_perk_cost)
     ?? 100;
-  const resolutionOutcome = resolution?.curator_outcome
-    ? resolution.curator_outcome.toLowerCase()
-    : null;
-  const baseOutcome = roll.outcome === "hit" ? "hit" : (resolutionOutcome || roll.outcome || "unknown");
-  const missCandidate = baseOutcome === "hit" ? null : cheapestMissCandidate(resolution, rawAvailable);
+  const baseOutcome = roll.outcome === "hit" ? "hit" : (roll.outcome || "unknown");
   let cost = numericOrNull(roll.rolled_perk_cost)
     ?? numericOrNull(roll.purchased_perk_cost)
-    ?? numericOrNull(resolution?.curator_cost)
-    ?? numericOrNull(missCandidate?.cost);
+    ?? numericOrNull(roll.miss_cost_estimate);
   let perkName = rollPrincipalName(roll)
-    || resolution?.curator_perk_name
-    || missCandidate?.name
     || (baseOutcome === "hit" ? "acquired mote" : "unresolved mote");
   let constellation = roll.constellation
-    || resolution?.curator_constellation
-    || missCandidate?.constellation
     || null;
   const indexed = findPerkInSky(sky, perkName, constellation);
   if (!constellation && indexed) constellation = indexed.jump.constellation;
@@ -1591,7 +1551,6 @@ function skyRollInfo(state, chapter, roll, wordPos) {
     chapter,
     roll,
     wordPos,
-    resolution,
     available,
     rawAvailable,
     cost,
@@ -1599,7 +1558,7 @@ function skyRollInfo(state, chapter, roll, wordPos) {
     perkName,
     constellation: constellation || "Toolkits",
     jump,
-    source: resolution?.banked_at_roll_source || "visual fallback",
+    source: "chapter_facts",
   };
 }
 
@@ -2190,7 +2149,7 @@ function updateSkyState(state) {
   updateSkyHud(state);
 }
 
-function initSkyView(state, wireframes, rollResolutions) {
+function initSkyView(state, wireframes) {
   const canvas = $("sky-canvas");
   if (!canvas || !wireframes) return;
   const sky = {
@@ -2199,7 +2158,6 @@ function initSkyView(state, wireframes, rollResolutions) {
     dpr: Math.min(2, window.devicePixelRatio || 1),
     prefs: readSkyPrefs(),
     model: buildSkyModel(wireframes),
-    resolutions: buildRollResolutionMaps(rollResolutions),
     dust: makeSkyDust(820),
     chapter: null,
     chapterIdx: -1,
@@ -2859,10 +2817,9 @@ function attachThemeToggle() {
     const packageIndex = await loadPackageIndex();
     const packageSelection = selectedPackageBase(packageIndex);
     const dataPackage = await loadDataPackage(packageSelection.base);
-    const [facts, wireframes, rollResolutions] = await Promise.all([
+    const [facts, wireframes] = await Promise.all([
       loadContractJSON(dataPackage, "chapter_facts"),
       skyEnabled ? loadContractJSON(dataPackage, "constellation_wireframes", { optional: true }) : Promise.resolve(null),
-      skyEnabled ? loadContractJSON(dataPackage, "roll_resolutions", { optional: true }) : Promise.resolve(null),
     ]);
     const model = buildCoordinateModel(facts);
     const cumIdx = buildCumulativeIndex(facts);
@@ -2885,7 +2842,7 @@ function attachThemeToggle() {
     if (skySection) skySection.hidden = !skyEnabled || !wireframes;
     renderTracks(model, facts);
     applyTimelineZoom(state, { center: true });
-    if (skyEnabled && wireframes) initSkyView(state, wireframes, rollResolutions);
+    if (skyEnabled && wireframes) initSkyView(state, wireframes);
     attachDataPackageSelector(
       packageIndex,
       packageSelection.packageId || dataPackage.manifest.package_id,
@@ -2901,7 +2858,8 @@ function attachThemeToggle() {
   } catch (err) {
     console.error(err);
     const errBox = el("div",
-      { style: { maxWidth: "600px", margin: "60px auto", padding: "24px",
+      { id: "load-error",
+        style: { maxWidth: "600px", margin: "60px auto", padding: "24px",
                  fontFamily: "sans-serif", color: "#b00" } },
       el("h1", null, "Failed to load data"),
       el("p", null, err.message),

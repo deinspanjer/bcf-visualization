@@ -36,9 +36,7 @@ ROLL_OUTCOMES = DERIVED / "roll_outcomes.json"
 OUTSTANDING_PERKS = DERIVED / "outstanding_perks_by_chapter.json"
 
 CHAPTER_ROLL_OVERRIDES = MANUAL / "chapter_roll_overrides.json"
-AUTHOR_NOTES = MANUAL / "author_notes.json"
 REGIME_TRANSITIONS = MANUAL / "regime_transitions.json"
-HEADER_CORRECTIONS = MANUAL / "header_corrections.json"
 
 
 # ---------- HTML stripping --------------------------------------------------
@@ -112,6 +110,18 @@ def _strip_html(raw: str) -> str:
     return s.text()
 
 
+def _compact_leading_header_whitespace(text: str) -> str:
+    """Remove display-only blank lines from the chapter header preamble.
+
+    The EPUB often starts with a title line, one or more empty block
+    elements, then the first rendered section/title line. Those empty
+    lines are not words, so compacting only this leading gap preserves
+    all word-index based curation/accounting coordinates while reducing
+    the dead space at the top of the TUI prose pane.
+    """
+    return re.sub(r"\A([^\n]+)\n(?:[ \t]*\n)+[ \t]*", r"\1\n", text, count=1)
+
+
 # ---------- on-disk JSON helpers --------------------------------------------
 
 
@@ -130,7 +140,6 @@ class ChapterMeta:
     total_word_count: int
     cp_earning_word_count: int
     sections: list[dict]
-    excluded_word_ranges: list[list[int]] = field(default_factory=list)
 
 
 @dataclass
@@ -160,9 +169,7 @@ class ChapterProse:
     section_break_word_indices: list[int]
     """Word indices at which section breaks (header rows) begin."""
     implicit_header_word_ranges: list[tuple[int, int]] = field(default_factory=list)
-    """Auto-detected header spans: each section's `header` field matched
-    against the first words of that section's prose. Excluded from CP
-    counts the same way as manual header_corrections entries."""
+    """Auto-detected header spans used for navigation markers only."""
 
 
 # ---------- loader ----------------------------------------------------------
@@ -187,9 +194,7 @@ class ForgeCuratorData:
         self._roll_outcomes_doc: dict | None = None
         self._outstanding_doc: dict | None = None
         self._chapter_roll_overrides_doc: dict | None = None
-        self._author_notes_doc: dict | None = None
         self._regime_transitions_doc: dict | None = None
-        self._header_corrections_doc: dict | None = None
         # Cached per-chapter derived slice and prose.
         self._derived_cache: dict[str, ChapterDerived] = {}
         self._prose_cache: dict[str, ChapterProse] = {}
@@ -208,9 +213,7 @@ class ForgeCuratorData:
         self._roll_outcomes_doc = None
         self._outstanding_doc = None
         self._chapter_roll_overrides_doc = None
-        self._author_notes_doc = None
         self._regime_transitions_doc = None
-        self._header_corrections_doc = None
         self._derived_cache = {}
         self._prose_cache = {}
         self._meta_by_chapter = None
@@ -282,15 +285,6 @@ class ForgeCuratorData:
         return self._chapter_roll_overrides_doc
 
     @property
-    def author_notes(self) -> dict:
-        if self._author_notes_doc is None:
-            if AUTHOR_NOTES.exists():
-                self._author_notes_doc = _read_json(AUTHOR_NOTES)
-            else:
-                self._author_notes_doc = {"notes": []}
-        return self._author_notes_doc
-
-    @property
     def regime_transitions(self) -> dict:
         if self._regime_transitions_doc is None:
             if REGIME_TRANSITIONS.exists():
@@ -299,24 +293,14 @@ class ForgeCuratorData:
                 self._regime_transitions_doc = {"transitions": []}
         return self._regime_transitions_doc
 
-    @property
-    def header_corrections(self) -> dict:
-        if self._header_corrections_doc is None:
-            if HEADER_CORRECTIONS.exists():
-                self._header_corrections_doc = _read_json(HEADER_CORRECTIONS)
-            else:
-                self._header_corrections_doc = {"corrections": []}
-        return self._header_corrections_doc
-
     # ----- chapter metadata -----
 
     def _build_meta(self) -> None:
         meta: dict[str, ChapterMeta] = {}
         order: list[str] = []
-        # chapter_sections.json carries the parser's structure but the
-        # CP-eligibility flag there is pre-classification. chapter_facts.json
-        # carries the post-classification flag. Merge: prefer
-        # chapter_facts's per-section ``counts_for_cp`` when available.
+        # chapter_sections.json carries parser structure only. chapter_facts.json
+        # carries final CP eligibility and CP word counts derived from
+        # data/manual/section_classifications.json.
         cf_by_chapter = {
             str(c.get("chapter_num")): c
             for c in self.chapter_facts.get("chapters", [])
@@ -326,27 +310,28 @@ class ForgeCuratorData:
             sections = list(c.get("sections") or [])
             cf_chapter = cf_by_chapter.get(cn) or {}
             cf_sections = cf_chapter.get("sections") or []
-            # Overlay counts_for_cp from chapter_facts onto each section.
+            if not cf_chapter:
+                raise ValueError(f"missing chapter_facts entry for chapter {cn}")
+            # Overlay final counts_for_cp from chapter_facts onto each section.
             merged_sections: list[dict] = []
             for i, sec in enumerate(sections):
                 merged = dict(sec)
-                if i < len(cf_sections):
-                    merged["counts_for_cp"] = bool(
-                        cf_sections[i].get("counts_for_cp", merged.get("counts_for_cp", True))
+                if i >= len(cf_sections):
+                    raise ValueError(
+                        f"chapter {cn} section {i} missing from chapter_facts"
                     )
+                merged["counts_for_cp"] = bool(cf_sections[i].get("counts_for_cp"))
+                merged["span_overrides"] = list(
+                    cf_sections[i].get("span_overrides") or []
+                )
                 merged_sections.append(merged)
             meta[cn] = ChapterMeta(
                 chapter_num=cn,
                 full_title=c.get("full_title", cn),
                 epub_href=c.get("epub_href"),
                 total_word_count=int(c.get("total_word_count") or 0),
-                cp_earning_word_count=int(
-                    cf_chapter.get("cp_earning_word_count")
-                    if cf_chapter.get("cp_earning_word_count") is not None
-                    else c.get("cp_earning_word_count") or 0
-                ),
+                cp_earning_word_count=int(cf_chapter.get("cp_earning_word_count") or 0),
                 sections=merged_sections,
-                excluded_word_ranges=list(c.get("excluded_word_ranges") or []),
             )
             order.append(cn)
         self._meta_by_chapter = meta
@@ -424,17 +409,9 @@ class ForgeCuratorData:
         overrides_present: dict[str, bool] = {}
         cro = self.chapter_roll_overrides.get("chapter_roll_overrides") or {}
         overrides_present["chapter_roll_overrides"] = cn in cro
-        an_doc = self.author_notes
-        an_list = an_doc.get("author_notes") or an_doc.get("notes") or []
-        an_entries = [n for n in an_list if str(n.get("chapter_num")) == cn]
-        overrides_present["author_notes"] = bool(an_entries)
         rt = self.regime_transitions.get("transitions") or []
         overrides_present["regime_transitions"] = any(
             str(t.get("chapter_num")) == cn for t in rt
-        )
-        hc = self.header_corrections.get("corrections") or []
-        overrides_present["header_corrections"] = any(
-            str(t.get("chapter_num")) == cn for t in hc
         )
 
         derived = ChapterDerived(
@@ -467,7 +444,9 @@ class ForgeCuratorData:
         if meta.epub_href and EPUB_PATH.exists():
             raw_html = _read_chapter_html(EPUB_PATH, meta.epub_href)
             if raw_html is not None:
-                stripped = _strip_html(raw_html)
+                stripped = _compact_leading_header_whitespace(
+                    _strip_html(raw_html)
+                )
                 # Split at section breaks: each section in chapter_sections
                 # corresponds to one header within the file. Without
                 # per-section text on disk we treat the whole chapter as
