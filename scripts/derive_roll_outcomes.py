@@ -32,7 +32,7 @@ Edge cases
   * K == N           -> all rolls are hits.
   * K > N            -> we synthesize (K - N) additional roll slots at
                         evenly-spaced word positions using the chapter's
-                        `words_approx`. Total slots become K, all hits.
+                        `words`. Total slots become K, all hits.
                         Synthesized slots are tagged `source: "synthetic"`.
   * N == 0, K > 0    -> all K slots are synthesized (no predicted slots
                         existed for this chapter).
@@ -148,7 +148,7 @@ def _build_chapter_slots(
     chapter_num: str,
     predicted: list[dict],
     acquisition_units: list[dict],
-    words_approx: int,
+    words: int,
     chapter_word_start: int = 0,
     cp_words: int | None = None,
     banked_cp_in: int = 0,
@@ -177,7 +177,7 @@ def _build_chapter_slots(
     # If we need more slots than predictions, synthesize the difference.
     extra = max(0, k - n)
     synth_positions = _synthetic_positions(
-        words_approx or 1000, extra, real_positions
+        words or 1000, extra, real_positions
     )
 
     slots: list[dict] = []
@@ -234,7 +234,7 @@ def _build_chapter_slots(
     # CP perks. Word positions in the predicted-rolls input are STORY-GLOBAL
     # cumulative offsets; subtract chapter_word_start to get chapter-local.
     state = (shadow_state or ShadowState()).copy()
-    total_words = cp_words if cp_words is not None else words_approx
+    total_words = cp_words if cp_words is not None else words
     banked_x100 = banked_cp_in * 100
     last_word_local = 0
     from regime_simulator import _accumulate_x100, shadow_words
@@ -388,7 +388,7 @@ def main(argv: list[str] | None = None) -> None:
     chapter_order: list[str] = [c["chapter_num"] for c in chapters]
     chapter_pos = {c: i for i, c in enumerate(chapter_order)}
     words_by_chapter: dict[str, int] = {
-        c["chapter_num"]: int(c.get("words_approx") or 0) for c in chapters
+        c["chapter_num"]: int(c.get("total_word_count") or 0) for c in chapters
     }
 
     # Group inputs by chapter.
@@ -499,7 +499,7 @@ def main(argv: list[str] | None = None) -> None:
             "max(N,K) roll slots using floor((i+0.5)*M/K) for hit-slot index i. "
             "Free perks attach to their paid hit and do not consume roll slots. "
             "Where K > N, additional slots are synthesized at evenly-spaced "
-            "word positions using chapters.json words_approx."
+            "word positions using chapters.json words."
         ),
         "_caveat": (
             "Fallback for chapters without manual Forge Curator coverage. "

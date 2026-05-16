@@ -52,7 +52,7 @@ from pathlib import Path
 
 from _common import write_validated_json
 from find_roll_locations import (
-    _split_sections, _strip_to_spaces, _build_chapter_index, _to_plain,
+    _split_sections, _strip_to_spaces, _to_plain,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -230,14 +230,11 @@ def main() -> None:
     chapter_word_index: dict[str, list[int]] = {}
     chapter_html_cache: dict[str, str] = {}
     with zipfile.ZipFile(EPUB) as zf:
-        title_to_href = _build_chapter_index(zf)
         for c in chapters:
             ch = c["chapter_num"]
             if ch not in predicted_chapters:
                 continue
-            href = title_to_href.get(c["full_title"])
-            if not href:
-                continue
+            href = c["epub_href"]
             html = zf.read(f"EPUB/{href}").decode("utf-8")
             chapter_html_cache[ch] = html
             chapter_word_index[ch] = _chapter_word_index(html, classifications, ch)

@@ -484,17 +484,6 @@ def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
     return out
 
 
-def _build_chapter_index(zf: zipfile.ZipFile) -> dict[str, str]:
-    """Map chapter full_title -> EPUB href."""
-    nav = zf.read("EPUB/nav.xhtml").decode("utf-8")
-    out: dict[str, str] = {}
-    for href, title in re.findall(
-        r'<a[^>]*?href="([^"]+)"[^>]*>([^<]+)</a>', nav, re.DOTALL
-    ):
-        out[title.strip()] = href
-    return out
-
-
 def main() -> None:
     if not EPUB.exists():
         raise SystemExit(
@@ -509,11 +498,8 @@ def main() -> None:
     low_confidence_count = 0
     flagged: list[tuple[str, str, str]] = []
     with zipfile.ZipFile(EPUB) as zf:
-        title_to_href = _build_chapter_index(zf)
         for c in chapters:
-            href = title_to_href.get(c["full_title"])
-            if not href:
-                continue
+            href = c["epub_href"]
             html = zf.read(f"EPUB/{href}").decode("utf-8")
             sections_html = _split_sections(html)
 

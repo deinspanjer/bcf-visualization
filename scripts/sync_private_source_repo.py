@@ -108,19 +108,20 @@ def derived_chapter_summary() -> dict:
     pub_doc = load_json(ROOT / "data" / "manual" / "chapter_publication_dates.json") or {}
     chapters = list(chapters_doc.get("chapters") or [])
     chapters.sort(key=lambda c: tuple(c.get("sort_key") or (0, 0)))
-    edits = [
-        row.get("last_edited_at")
-        for row in pub_doc.get("chapters") or []
-        if row.get("last_edited_at")
-    ]
+    pub_rows = list(pub_doc.get("chapters") or [])
+    pub_by_num = {row["chapter_num"]: row for row in pub_rows}
+    edits = [row.get("last_edited_at") for row in pub_rows if row.get("last_edited_at")]
     if not chapters:
         return {
             "last_chapter_publish_timestamp": None,
             "max_last_modification_timestamp": max(edits) if edits else None,
         }
     last = chapters[-1]
+    last_pub_row = pub_by_num.get(last.get("chapter_num"))
     return {
-        "last_chapter_publish_timestamp": last.get("publish_iso"),
+        "last_chapter_publish_timestamp": (
+            last_pub_row.get("published_at") if last_pub_row else None
+        ),
         "max_last_modification_timestamp": max(edits) if edits else None,
     }
 

@@ -408,37 +408,6 @@ def test_web_app_roll_tooltip_shows_fixture_roll_details_on_hover(tmp_path):
             browser.close()
 
 
-def test_web_app_roll_dot_click_opens_source_chapter_url(tmp_path):
-    playwright_api = pytest.importorskip("playwright.sync_api")
-
-    with staged_web_runtime_site(tmp_path) as site:
-        with playwright_api.sync_playwright() as p:
-            browser = _chromium_browser_or_skip(p, playwright_api)
-            page = browser.new_page(viewport={"width": 1280, "height": 900})
-            page.add_init_script(
-                """
-                window.__openedUrls = [];
-                window.open = (url, target, features) => {
-                  window.__openedUrls.push({ url, target, features });
-                  return null;
-                };
-                """
-            )
-            page.goto(site.url_for("/web/?dataPackage=tiny-default"), wait_until="networkidle")
-
-            page.locator("#track-rolls .roll-dot").first.click()
-
-            assert page.evaluate("window.__openedUrls") == [
-                {
-                    "url": "https://example.test/chapters/2",
-                    "target": "_blank",
-                    "features": "noopener",
-                }
-            ]
-
-            browser.close()
-
-
 def test_web_app_roll_tooltip_touch_pin_and_outside_click_hide(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 

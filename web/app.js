@@ -1223,9 +1223,6 @@ function renderState(state) {
   $("readout-words").textContent = inPreroll
     ? `−${fmt(Math.round(Math.abs(currentWord)))} words (pre-roll)`
     : `${fmt(Math.round(currentWord))} / ${fmt(model.totalWords)} words`;
-  const sv = $("readout-sv-link");
-  if (ch && ch.post_url) { sv.href = ch.post_url; sv.hidden = false; }
-  else { sv.hidden = true; }
 
   const cum = (!inPreroll && ch)
     ? cumIdx.cumByCh.get(ch.chapter_num)
@@ -1295,7 +1292,7 @@ function renderThisChapter(ch, inPreroll) {
     : "";
   meta.appendChild(el("span",
     { style: { color: "var(--gray-3)" } },
-    `published ${ch.published_at.slice(0, 10)}${editStr} · ${ch.likes} likes`));
+    `published ${ch.published_at.slice(0, 10)}${editStr}`));
 
   if (ch.rolls.length === 0) {
     list.appendChild(el("li", { class: "empty" },
@@ -2258,11 +2255,6 @@ function attachRollTooltip() {
       }
       tip.appendChild(block);
     }
-    if (c.post_url) {
-      tip.appendChild(el("div", { class: "tip-link" },
-        c.post_url.split("#")[1] || "view on SV"));
-    }
-
     tip.hidden = false;
     placeTooltip(e);
   }
@@ -2286,10 +2278,6 @@ function attachRollTooltip() {
   }
   function hideHover() {
     if (!currentPinnedDot()) tip.hidden = true;
-  }
-  function openDot(dot) {
-    const url = dot._chapter.post_url;
-    if (url) window.open(url, "_blank", "noopener");
   }
   function isTouchLikePointer(e) {
     return e && (e.pointerType === "touch" || e.pointerType === "pen");
@@ -2385,7 +2373,7 @@ function attachRollTooltip() {
     const gesture = pendingDotGesture;
     pendingDotGesture = null;
     if (gesture.moved) return;
-    if (gesture.openTarget) openDot(gesture.openTarget);
+    if (gesture.openTarget) hide();
     else pinDot(gesture.dot, e);
     markHandledDotGesture(gesture.dot);
     e.preventDefault();
@@ -2408,13 +2396,13 @@ function attachRollTooltip() {
     if (shouldPinDot(e, dot)) {
       e.preventDefault();
       if (pinnedTarget) {
-        openDot(pinnedTarget);
+        hide();
         return;
       }
       pinDot(dot, e);
       return;
     }
-    openDot(dot);
+    pinDot(dot, e);
   });
   document.addEventListener("click", e => {
     if (!pinnedDot) return;

@@ -1428,8 +1428,6 @@ body.sky-focus-mode #zoom-controls {
 #readout-chapter { font-weight: 600; color: var(--ink); }
 #scrubber-readout .dot { color: var(--gray-3); margin: 0 6px; }
 #readout-words { font-variant-numeric: tabular-nums; }
-#readout-sv-link { color: var(--accent); }
-#readout-sv-link[hidden] { display: none; }
 
 /* Playback controls */
 #playback-controls {

@@ -151,8 +151,6 @@ def _chapter(
         "published_source": "ao3",
         "last_edited_at": "2024-01-02",
         "last_edited_source": "epub",
-        "post_url": f"https://example.test/chapters/{chapter_num}",
-        "likes": 10,
         "total_word_count": word_count,
         "cumulative_words_through_chapter": start_words + word_count,
         "cp_earning_word_count": word_count,

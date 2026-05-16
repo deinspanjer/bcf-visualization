@@ -10,7 +10,7 @@ on:
       - 'data/raw/Brocktons_Celestial_Forge_Reference.xlsx'
       - 'data/raw/Brocktons_Celestial_Forge_Rolls_List.xlsx'
       - 'data/raw/info_posts/**'
-      - 'data/raw/threadmark_index/**'
+      - 'data/raw/ao3_index/**'
       - 'data/raw/tvtropes_wog.mht'
       - 'data/raw/wiki/**'
       - 'scripts/parse_*.py'

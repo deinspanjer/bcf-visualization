@@ -47,7 +47,7 @@ from eligibility_spans import (
     section_cp_word_count,
     section_span_overrides,
 )
-from find_roll_locations import _build_chapter_index, _split_sections
+from find_roll_locations import _split_sections
 
 EPUB = RAW / "Brocktons_Celestial_Forge.epub"
 CHAPTERS = DERIVED / "chapters.json"
@@ -393,12 +393,8 @@ def main() -> None:
     # Open EPUB once; for each chapter compute section char-offsets.
     chapter_section_offsets: dict[str, list[tuple[int, int]]] = {}
     with zipfile.ZipFile(EPUB) as zf:
-        title_to_href = _build_chapter_index(zf)
         for c in chapters:
-            href = title_to_href.get(c["full_title"])
-            if not href:
-                chapter_section_offsets[c["chapter_num"]] = []
-                continue
+            href = c["epub_href"]
             html = zf.read(f"EPUB/{href}").decode("utf-8")
             offsets = [(s, e) for _h, s, e in _split_sections(html)]
             chapter_section_offsets[c["chapter_num"]] = offsets
@@ -715,15 +711,13 @@ def main() -> None:
             "full_title": c["full_title"],
             "sort_key": c["sort_key"],
             "point_calculation_regime": regime_for_chapter(cn),
-            "epub_href": title_to_href.get(c["full_title"], ""),
+            "epub_href": c["epub_href"],
 
             "published_at": published_at,
             "published_source": pub["published_source"],
             "last_edited_at": last_edited_at,
             "last_edited_source": pub["last_edited_source"],
             "edited_lag_days": edited_lag_days,
-            "post_url": c.get("post_url", ""),
-            "likes": c.get("likes", 0),
 
             "in_world": {
                 "start_date": None,

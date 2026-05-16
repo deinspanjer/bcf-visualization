@@ -40,6 +40,33 @@ def _load(name: str) -> dict:
     return json.loads((DERIVED / f"{name}.json").read_text())
 
 
+def _load_chapters_with_dates() -> list[dict]:
+    """Return chapters.json's chapters annotated with `publish_ts`
+    (Unix seconds at midnight UTC) joined from
+    data/manual/chapter_publication_dates.json.
+
+    chapters.json carries no dates of its own; manual publication dates
+    are the single source of truth.
+    """
+    chapters = _load("chapters")["chapters"]
+    pub_doc = json.loads(
+        (ROOT / "data" / "manual" / "chapter_publication_dates.json").read_text()
+    )
+    pub_by_num = {r["chapter_num"]: r["published_at"] for r in pub_doc["chapters"]}
+    out: list[dict] = []
+    for c in chapters:
+        published_at = pub_by_num.get(c["chapter_num"])
+        if not published_at:
+            raise SystemExit(
+                f"chapter {c['chapter_num']} missing from chapter_publication_dates.json"
+            )
+        ts = int(dt.datetime.strptime(published_at, "%Y-%m-%d").replace(
+            tzinfo=dt.UTC
+        ).timestamp())
+        out.append({**c, "publish_ts": ts, "published_at": published_at})
+    return out
+
+
 def _chapter_sort_key(num: str) -> tuple[int, int]:
     parts = num.split(".", 1)
     return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
@@ -83,14 +110,14 @@ def chart_publish_pace() -> None:
     year-end totals labelled directly on the line. No legend, no fill,
     no decorative box.
     """
-    chapters = _load("chapters")["chapters"]
+    chapters = _load_chapters_with_dates()
     chapters.sort(key=lambda c: c["publish_ts"])
 
     dates = [dt.datetime.fromtimestamp(c["publish_ts"]) for c in chapters]
     cumulative: list[int] = []
     running = 0
     for c in chapters:
-        running += c["words_approx"]
+        running += c["total_word_count"]
         cumulative.append(running)
 
     fig, ax = plt.subplots(figsize=(12, 5.5))
@@ -121,7 +148,7 @@ def chart_publish_pace() -> None:
             continue
         d = dt.datetime.fromtimestamp(match["publish_ts"])
         running_at = sum(
-            c["words_approx"] for c in chapters
+            c["total_word_count"] for c in chapters
             if c["publish_ts"] <= match["publish_ts"]
         )
         ax.plot([d, d], [running_at, y_top], color="0.4", linewidth=0.6, zorder=1)
@@ -370,13 +397,13 @@ def chart_throughput_by_year() -> None:
     Same axes (Jan 1 → Dec 31, 0 → max) across all panels so slopes are
     directly comparable. Steeper slope = faster pace that year.
     """
-    chapters = _load("chapters")["chapters"]
+    chapters = _load_chapters_with_dates()
     chapters.sort(key=lambda c: c["publish_ts"])
 
     by_year: dict[str, list[tuple[dt.date, int]]] = defaultdict(list)
     for c in chapters:
         d = dt.datetime.fromtimestamp(c["publish_ts"]).date()
-        by_year[d.strftime("%Y")].append((d, c["words_approx"]))
+        by_year[d.strftime("%Y")].append((d, c["total_word_count"]))
 
     years = sorted(by_year)
     n = len(years)
@@ -465,7 +492,7 @@ def chart_throughput_by_regime() -> None:
     rule changes affected each pace measure. Words/acquisition is the
     headline: rules tripled the words spent per perk in regime 3.
     """
-    chapters = _load("chapters")["chapters"]
+    chapters = _load_chapters_with_dates()
     obtained = _load("obtained_perks")["perks"]
 
     by_regime: dict[int, dict[str, float]] = {}
@@ -473,13 +500,13 @@ def chart_throughput_by_regime() -> None:
         chs = [c for c in chapters if _regime(c["chapter_num"]) == r_id]
         if not chs:
             continue
-        words = sum(c["words_approx"] for c in chs)
+        words = sum(c["total_word_count"] for c in chs)
         n_chap = len(chs)
         first_d = min(dt.datetime.fromtimestamp(c["publish_ts"]) for c in chs)
         last_d = max(dt.datetime.fromtimestamp(c["publish_ts"]) for c in chs)
         span_days = (last_d - first_d).days + 1
         n_acq = sum(1 for p in obtained if _regime(p["chapter_num"]) == r_id)
-        wpc = [c["words_approx"] for c in chs]
+        wpc = [c["total_word_count"] for c in chs]
         by_regime[r_id] = {
             "chapters": n_chap,
             "words": words,
@@ -575,7 +602,7 @@ def chart_words_per_perk() -> None:
     (noisy by nature); a rolling median over a 21-acquisition window
     shows the trend. Regime change markers anchor the regime shifts.
     """
-    chapters = _load("chapters")["chapters"]
+    chapters = _load_chapters_with_dates()
     obtained = _load("obtained_perks")["perks"]
     chap_ordered = sorted(chapters, key=lambda c: c["publish_ts"])
     chap_pub = {c["chapter_num"]: dt.datetime.fromtimestamp(c["publish_ts"])
@@ -586,9 +613,9 @@ def chart_words_per_perk() -> None:
     running = 0
     for c in chap_ordered:
         chapter_word_start[c["chapter_num"]] = running
-        running += c["words_approx"]
+        running += c["total_word_count"]
 
-    chap_words = {c["chapter_num"]: c["words_approx"] for c in chapters}
+    chap_words = {c["chapter_num"]: c["total_word_count"] for c in chapters}
 
     # Group paid acquisitions by chapter, preserving order
     acqs_by_chap: dict[str, list[dict]] = defaultdict(list)
@@ -694,7 +721,7 @@ def chart_monthly_throughput() -> None:
     Bars at monthly resolution, regime change markers as thin vertical
     lines on each panel. Bar color shifts by regime.
     """
-    chapters = _load("chapters")["chapters"]
+    chapters = _load_chapters_with_dates()
     chap_ordered = sorted(chapters, key=lambda c: c["publish_ts"])
 
     by_month: dict[str, list[dict]] = defaultdict(list)
@@ -707,8 +734,8 @@ def chart_monthly_throughput() -> None:
     month_dates = [dt.date(int(m.split("-")[0]), int(m.split("-")[1]), 15) for m in months]
 
     chap_counts = [len(by_month[m]) for m in months]
-    word_sums = [sum(c["words_approx"] for c in by_month[m]) for m in months]
-    median_lengths = [statistics.median(c["words_approx"] for c in by_month[m]) for m in months]
+    word_sums = [sum(c["total_word_count"] for c in by_month[m]) for m in months]
+    median_lengths = [statistics.median(c["total_word_count"] for c in by_month[m]) for m in months]
 
     # Color each bar by regime (use first chapter in the month to pick)
     regime_colors_bg = ["#3b6ea5", "#a3733b", "#a33b6e"]
@@ -813,7 +840,7 @@ def chart_time_dilation() -> None:
     side - that's the time-dilation message: in-world barely moves
     while the x-axes span huge distances.
     """
-    chapters = _load("chapters")["chapters"]
+    chapters = _load_chapters_with_dates()
     chapters.sort(key=_chapter_sort_key_chapter)
 
     # Cumulative word count and elapsed real-world days per chapter
@@ -822,7 +849,7 @@ def chart_time_dilation() -> None:
     rw_days: dict[str, int] = {}
     running = 0
     for c in chapters:
-        running += c["words_approx"]
+        running += c["total_word_count"]
         cumulative_words_by_chapter[c["chapter_num"]] = running
         d = dt.datetime.fromtimestamp(c["publish_ts"])
         rw_days[c["chapter_num"]] = (d - pub_dt0).days

@@ -39,10 +39,11 @@ pipeline.
 Typical full regeneration order:
 
 ```sh
-.venv/bin/python scripts/parse_threadmarks.py
+.venv/bin/python scripts/parse_chapters.py
 .venv/bin/python scripts/parse_rolls.py
 .venv/bin/python scripts/parse_reference.py
 .venv/bin/python scripts/extract_chapter_sections.py
+.venv/bin/python scripts/seed_chapter_publication_dates.py
 .venv/bin/python scripts/build_section_classifications.py
 .venv/bin/python scripts/build_perk_directory.py
 .venv/bin/python scripts/predict_rolls.py
@@ -55,6 +56,11 @@ Typical full regeneration order:
 .venv/bin/python scripts/spot_check.py
 .venv/bin/python scripts/make_charts.py
 ```
+
+`parse_chapters.py` parses the EPUB navigation document for the chapter
+list (number, ordinal, title, href, exact word count). `data/raw/`
+holds the EPUB plus the AO3 navigate page; the SV threadmark scrape is
+no longer part of the pipeline.
 
 Each derived JSON file should validate against its schema before being
 written. Structural drift should fail loudly.

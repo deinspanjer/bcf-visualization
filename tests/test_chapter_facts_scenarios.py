@@ -115,10 +115,9 @@ def _fixture_chapter(
         "chapter_num": chapter_num,
         "full_title": title,
         "sort_key": sort_key,
-        "publish_iso": f"2024-01-{sort_key[0]:02d}T00:00:00+00:00",
-        "post_url": f"https://example.test/{chapter_num}",
-        "likes": sort_key[0],
-        "words_approx": word_count,
+        "ordinal": sort_key[0],
+        "epub_href": f"chap_{sort_key[0]}.xhtml",
+        "total_word_count": word_count,
     }
 
 
@@ -275,17 +274,17 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
             "chapter_num": "1",
             "full_title": "1 Fixture",
             "sort_key": [1, 0],
-            "publish_iso": "2024-01-01T00:00:00+00:00",
-            "post_url": "https://example.test/1",
-            "likes": 1,
+            "ordinal": 1,
+            "epub_href": "chap_1.xhtml",
+            "total_word_count": 1000,
         },
         {
             "chapter_num": "2",
             "full_title": "2 Fixture",
             "sort_key": [2, 0],
-            "publish_iso": "2024-01-02T00:00:00+00:00",
-            "post_url": "https://example.test/2",
-            "likes": 2,
+            "ordinal": 2,
+            "epub_href": "chap_2.xhtml",
+            "total_word_count": 1000,
         },
     ]
     _write_json(derived / "chapters.json", {"chapters": chapters})
@@ -530,12 +529,12 @@ def test_chapter_facts_emits_edited_lag_days_from_publication_dates(
     assert row["edited_lag_days"] == 223  # 2020-12-10 minus 2020-05-01
 
 
-def test_chapter_facts_falls_through_sv_provenance_for_chapter_without_ao3(
+def test_chapter_facts_passes_through_manual_provenance(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    """If the manual file records published_source='sv', that provenance
-    flows through unchanged."""
+    """If the manual file records a non-ao3 published_source (e.g. a row
+    a maintainer hand-edited), that provenance flows through unchanged."""
     from scripts import build_chapter_facts
 
     project = tmp_path / "project"
@@ -576,7 +575,7 @@ def test_chapter_facts_falls_through_sv_provenance_for_chapter_without_ao3(
         "chapters": [{
             "chapter_num": "1",
             "published_at": "2020-07-19",
-            "published_source": "sv",
+            "published_source": "manual",
             "last_edited_at": None,
             "last_edited_source": None,
         }],
@@ -587,7 +586,7 @@ def test_chapter_facts_falls_through_sv_provenance_for_chapter_without_ao3(
 
     row = json.loads((derived / "chapter_facts.json").read_text())["chapters"][0]
     assert row["published_at"] == "2020-07-19"
-    assert row["published_source"] == "sv"
+    assert row["published_source"] == "manual"
     assert row["last_edited_at"] is None
     assert row["last_edited_source"] is None
     assert row["edited_lag_days"] is None

@@ -60,7 +60,7 @@ def test_roll_outcomes_spread_hits_across_predicted_slots() -> None:
             _unit(_perk("First Hit", seq=1)),
             _unit(_perk("Second Hit", seq=2)),
         ],
-        words_approx=1000,
+        words=1000,
         transitions=[],
     )
 
@@ -83,7 +83,7 @@ def test_roll_outcomes_make_all_predicted_slots_misses_when_no_hits() -> None:
         "1",
         _predicted(100, 200, 300),
         [],
-        words_approx=1000,
+        words=1000,
         transitions=[],
     )
 
@@ -101,7 +101,7 @@ def test_roll_outcomes_synthesize_extra_slots_when_hits_exceed_predictions() -> 
             _unit(_perk("Second", seq=2)),
             _unit(_perk("Third", seq=3)),
         ],
-        words_approx=900,
+        words=900,
         transitions=[],
     )
 
@@ -123,7 +123,7 @@ def test_roll_outcomes_attach_multi_grab_and_free_perks_to_one_hit_slot() -> Non
                 free_perks=[_perk("Free Rider", cost=0, free=True, seq=3)],
             )
         ],
-        words_approx=1000,
+        words=1000,
         transitions=[],
     )
 
@@ -139,7 +139,7 @@ def test_roll_outcomes_misses_do_not_debit_banked_cp() -> None:
         "1",
         _predicted(2000),
         [],
-        words_approx=4000,
+        words=4000,
         transitions=[],
     )
 
@@ -153,7 +153,7 @@ def test_roll_outcomes_hits_debit_paid_cost_and_continue_banking() -> None:
         "1",
         _predicted(2000),
         [_unit(_perk("Paid Hit", cost=100))],
-        words_approx=4000,
+        words=4000,
         transitions=[],
     )
 
@@ -167,7 +167,7 @@ def test_roll_outcomes_apply_mid_chapter_regime_transition() -> None:
         "97",
         _predicted(1000, 3000, chapter_num="97", cp_rule_regime=None),
         [_unit(_perk("Nano-Forge", cost=100), chapter_num="97")],
-        words_approx=4000,
+        words=4000,
         transitions=[
             {
                 "chapter_num": "97",
@@ -191,7 +191,7 @@ def test_roll_outcomes_carry_regime_three_shadow_after_large_hit() -> None:
         "98",
         _predicted(3000, chapter_num="98", cp_rule_regime=None),
         [_unit(_perk("Large Hit", cost=600), chapter_num="98")],
-        words_approx=6000,
+        words=6000,
         transitions=[],
     )
 

@@ -45,14 +45,6 @@ is convenient but not the preferred source-of-truth flow.
 - `data/raw/info_posts/sv_page_0403.mht`
 - `data/raw/info_posts/sv_page_0649.mht`
 - `data/raw/info_posts/sv_page_0847.mht`
-- `data/raw/threadmark_index/threadmarks_p1.mht`
-- `data/raw/threadmark_index/threadmarks_p2.mht`
-- `data/raw/threadmark_index/threadmarks_p3.mht`
-- `data/raw/threadmark_index/threadmarks_p4.mht`
-- `data/raw/threadmark_index/threadmarks_p5.mht`
-- `data/raw/threadmark_index/threadmarks_p6.mht`
-- `data/raw/threadmark_index/threadmarks_p7.mht`
-- `data/raw/threadmark_index/threadmarks_p8.mht`
 - `data/raw/tvtropes_wog.mht`
 - `data/raw/wiki/bcf_wiki_timeline.html`
 
