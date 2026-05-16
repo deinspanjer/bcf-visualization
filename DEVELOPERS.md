@@ -50,7 +50,6 @@ Typical full regeneration order:
 .venv/bin/python scripts/find_roll_locations.py
 .venv/bin/python scripts/find_text_backed_rolls.py
 .venv/bin/python scripts/validate_roll_locations.py
-.venv/bin/python scripts/derive_roll_resolutions.py
 .venv/bin/python scripts/derive_roll_outcomes.py
 .venv/bin/python scripts/derive_roll_facts.py
 .venv/bin/python scripts/build_chapter_facts.py
@@ -197,37 +196,75 @@ Serve locally with:
 
 Then open <http://127.0.0.1:8001/web/>.
 
-## Test design notes
+## Testing Design Pattern
 
-Forge Curator and release tests should protect domain contracts rather
-than freeze incidental presentation. Prefer assertions against helper
-methods and derived JSON semantics: predicted roll distances, curated
-roll distances, curated evidence distances, raw versus effective model
-discrepancy flags, resolved issue metadata, and package fields derived
-from the current `chapter_facts.json`.
+The project test surface should be organized by feature and layer. Tests
+should protect observable behavior, data contracts, and model invariants
+rather than freezing the current curated story data shape or the exact
+implementation structure used to produce it.
+
+Aim for complete feature-level coverage across the data pipeline, Forge
+Curator TUI, web UI, package/release checks, and shared domain helpers.
+Source and line coverage targets should be evaluated separately after the
+feature inventory is clear; high source coverage is useful only when the
+tests still describe meaningful behavior.
+
+Use these layers:
+
+- Unit tests cover pure functions, small domain helpers, web formatters,
+  reducers, render-model builders, and other isolated logic. Fixtures
+  should be minimal, explicit, and local to the behavior under test.
+- Data pipeline scenario tests create a small prerequisite fixture,
+  mutate manual curation data or source data, run the relevant derivation
+  stage, and assert that the derived output satisfies the required
+  contract. They should not depend on live chapter counts, live curated
+  roll order, or incidental current-story details.
+- Forge Curator TUI tests cover how `ForgeCuratorApp` reads its inputs,
+  presents state to actions, writes manual curation data, invokes the
+  appropriate derivation or reload path, and handles errors. They should
+  use stable fixtures and should not re-test the data pipeline behavior
+  already covered by pipeline scenario tests.
+- Web UI unit tests cover web-specific logic with stable fixtures:
+  filtering, state transitions, formatters, derived view models, and
+  interaction helpers.
+- Web UI integration tests load the app against purpose-built runtime
+  fixture data and verify user-visible feature behavior. They must not
+  rely on the current curated data shape, latest chapter count, exact
+  story roll sequence, or other time-coupled generated literals.
+- Coherence, smoke, and package tests may read the current generated data,
+  but only to verify schema validity, manifest consistency, path safety,
+  package completeness, and other global contracts. They should derive
+  expectations from the generated JSON instead of pinning exact current
+  chapter rows, release dates, tags, or latest chapter numbers.
+
+Every scenario-style test should make its prerequisite state, mutation,
+and expected output requirement obvious. Prefer fixture builders when the
+same domain setup is needed by multiple tests, but keep each test's
+behavioral premise visible at the call site.
 
 Review new tests as production code. A good test should make clear what
-regression it would catch and why that regression is meaningful. Avoid
+real regression it would catch and why that regression matters. Avoid
 assertions that simply mirror the implementation just written; constants,
 string literals, formatting, and layout details should only be pinned when
 they are part of an explicit compatibility or product contract.
 
-Prefer tests that remain valid across reasonable refactors. Before handoff,
-summarize the intent of new tests in terms of the protected behavior, data
-contract, or model invariant rather than the edited function or constant.
+UI tests should separate product behavior from rendering details. Prefer
+asserting shared state, action effects, accessibility-relevant behavior,
+token flow, or documented interaction semantics before exact rendered
+text or styling. If exact UI copy or layout must be tested, keep that
+assertion narrow and pair it with a semantic assertion that explains the
+behavior it protects.
 
-Avoid tests that only pin formatted stats text, comma grouping, line
-breaks, or exact UI copy unless that formatting is itself the product
-behavior. If a UI text test is necessary, keep it narrow and pair it
-with a semantic assertion that explains what behavior the text is
-protecting.
+Before handoff for any change that adds or materially changes tests,
+summarize the protected behavior, data contract, or invariant. Do not
+describe the tests merely as coverage for the edited function or constant.
 
-Smoke and package tests should model real contract failures. Derive
-current-story expectations from generated data where possible instead
-of pinning package dates, release tags, latest chapter numbers, or
-other time-coupled literals. Require successful package smoke status
-for deployable bundles, and reject path escapes or missing runtime
-entrypoints explicitly.
+The active cleanup roadmap lives in
+[docs/test_surface_cleanup_plan.md](docs/test_surface_cleanup_plan.md).
+The feature-to-test checklist lives in
+[docs/test_feature_inventory.md](docs/test_feature_inventory.md). Use
+those documents to track feature-level coverage gaps and to break large
+test refactors into layer-specific slices.
 
 ## Documentation placement rules
 
@@ -260,30 +297,7 @@ Change-driven update matrix:
 - When adding user-facing track encodings, update both the legend and
   `USERS.md`.
 
-## Roadmap: local NLP extraction
-
-A model-based extraction layer is being planned to replace the
-regex-heavy parts of the current pipeline (event detection in
-`find_text_backed_rolls.py`, POV classification in
-`build_section_classifications.py`) and to add new derivations
-(in-world dates, Joe-on-screen flags, time-mode classification).
-
-Architecture: a llama.cpp labeling-assistant lane plus two fine-tuned
-encoder models (span extractor + section classifier) served from a
-FastAPI process on a local GPU box, with iMac-side scripts calling the
-endpoints over LAN. The existing deterministic parsers stay in place
-as fallbacks; the new layer is additive.
-
-**Phase 0 status: scaffolded.** The `nlp/` package, FastAPI server,
-client wrapper, smoke test, and Windows setup scripts are in place.
-`/health` and `/version` work on a fresh checkout; `/extract` and
-`/classify_section` return 503 with the documented
-`*_model_not_loaded` body until trained checkpoints exist. NLP tests are
-kept out of the default curation/data-flow gate and run separately:
-
-```sh
-.venv/bin/python scripts/verify_nlp.py
-```
+## Verification
 
 Before reporting a curation, data-flow, or static visualization change
 as complete, run the default repo verification gate:
@@ -291,17 +305,3 @@ as complete, run the default repo verification gate:
 ```sh
 .venv/bin/python scripts/verify.py
 ```
-For the operator workflow (Windows install, smoke test, what to do
-when a check fails), see the runbook below.
-
-Reference docs:
-
-- Operator runbook (Phase 0): [docs/local_nlp_runbook.md](docs/local_nlp_runbook.md)
-- Feasibility study: [docs/local_nlp_research.md](docs/local_nlp_research.md)
-- Master plan: [docs/local_nlp_plan.md](docs/local_nlp_plan.md)
-- Companion docs: [label schema](docs/local_nlp_label_schema.md),
-  [setup](docs/local_nlp_setup.md),
-  [annotation playbook](docs/local_nlp_annotation_playbook.md),
-  [training](docs/local_nlp_training.md),
-  [serving](docs/local_nlp_serving.md)
-- Phased build tasks tracked in [TODO.md](TODO.md).

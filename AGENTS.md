@@ -9,7 +9,13 @@
 - Derived JSON is the single source of truth for `forge_curator`.
 - TUI code must not reconcile, reinterpret, clamp, or synthesize roll, word, or accounting facts except for direct display formatting.
 - If derived facts disagree, fix the derivation pipeline and schema, then regenerate data.
+- When refactoring a data model or source-of-truth path, remove obsolete fields, files, actions, tests, and compatibility shims in the same change unless a real external contract requires a transition. Do not preserve dead code or empty generated fields just to avoid touching call sites.
 - Tests must assert semantic invariants of the model, not UI symptoms.
+- Before adding or materially changing tests, read the project-specific
+  testing pattern in `DEVELOPERS.md` under `Testing Design Pattern`.
+  This section is the canonical progressive-disclosure guidance for test
+  layer boundaries, stable fixtures, web UI tests, and feature-level
+  coverage expectations.
 - Before reporting a change as complete, self-review any tests you added or
   materially changed. Each such test should protect a meaningful behavior,
   data contract, or model invariant, not merely pin the implementation shape

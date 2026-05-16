@@ -32,6 +32,11 @@
 
 ## Documentation and maintenance
 
+- Execute the test-surface cleanup roadmap in
+  [docs/test_surface_cleanup_plan.md](docs/test_surface_cleanup_plan.md):
+  replace current-story-shape assertions with stable fixtures, add
+  fixture-backed web UI integration tests, split large TUI tests by
+  capability, and map every major feature to an owning test layer.
 - Top-level `data/derived/*.json` is ignored and release-backed Pages
   deploy plus local maintainer bootstrap were validated with
   `bcf-visualization-data-v20260509.3-ch194-120.1`; keep monitoring the
@@ -54,29 +59,3 @@
 - Move committed schema contracts out of `data/derived/_schemas/` into
   a non-derived schema/contract path, preserving compatibility for the
   validators during the transition.
-
-## Research
-
-- [x] Evaluate whether a local NLP model trained or tuned on the
-  primary EPUB could reliably extract power-acquisition facts from prose
-  without using a subscription LLM (see
-  `docs/local_nlp_research.md`).
-- [x] Build the implementation plan and supporting docs for local NLP
-  extraction (see `docs/local_nlp_plan.md` and the companion docs:
-  `local_nlp_label_schema.md`, `local_nlp_setup.md`,
-  `local_nlp_annotation_playbook.md`, `local_nlp_training.md`,
-  `local_nlp_serving.md`).
-
-## Local NLP build (per `docs/local_nlp_plan.md`)
-
-- Phase 0: stand up `nlp/` package, `pyproject.toml`, FastAPI scaffold,
-  smoke tests on Windows + iMac.
-- Phase 1: implement labeling assistant + Textual TUI; build the
-  ~250-passage pilot set; freeze the label schema.
-- Phase 2: expand to ~1500 passages; train v1 span model and v1 section
-  classifier; wire `extract_chapter_events.py` into the pipeline.
-- Phase 3: active-learning expansion; add `extract_chapter_dates.py`;
-  promote ML lane to default in `build_chapter_facts.py`.
-- Resolves: in-world date track for the scrubber; tighter section
-  classification on the 70 medium/low-confidence sections; the "Joe
-  on screen by name/cape" refinement.
