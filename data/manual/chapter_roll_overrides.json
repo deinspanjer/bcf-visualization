@@ -1012,19 +1012,6 @@
         },
         {
           "perks": [],
-          "outcome": null,
-          "constellation": null,
-          "word_position": null,
-          "mention_chapter_num": null,
-          "mention_word_position": null,
-          "display_position_policy": "mechanical",
-          "skipped": true,
-          "source_roll_number": null,
-          "evidence_quotes": [],
-          "curator_note": "left open/skipped rather than inserting an unlogged second miss for \"a couple\""
-        },
-        {
-          "perks": [],
           "outcome": "miss",
           "constellation": null,
           "word_position": null,
@@ -1040,7 +1027,7 @@
               "mention_word_position": 294
             }
           ],
-          "curator_note": null
+          "curator_note": "uses the final ch9 predicted slot rather than inserting an unlogged second miss for \"a couple\""
         }
       ]
     },
