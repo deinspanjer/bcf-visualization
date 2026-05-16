@@ -20,7 +20,7 @@ High-level map of the derived data used by the visualization and analytics.
 | `data/derived/roll_outcomes.json` | Interpolated fallback roll sequence for chapters not covered by the curator log. Input to `roll_facts.json`, not consumed directly by the app. |
 | `data/derived/roll_facts.json` | **Canonical** roll-attempt stream joined into `chapter_facts.json`. Curator rows from `rolls.json` win where present; `roll_outcomes.json` rows are provenance-marked fallback. Free perks attach to paid hits. Rows separate owner/listing chapter (`chapter_num`), mechanical predicted-slot chapter (`mechanical_chapter_num`), and visualization coordinate (`display_*`) so deferred roll mentions can be modeled without UI reconciliation. |
 | `data/derived/roll_locations_validation.json` | Validation + discrepancy summary |
-| `data/derived/chapter_last_edited.json` | Threadmark last-edited metadata |
+| `data/manual/chapter_publication_dates.json` | Single source of truth for per-chapter first-publication and last-edit dates. Each date carries its own provenance (`manual`/`ao3`/`sv`/`epub`). Bootstrapped from AO3 + EPUB by `scripts/seed_chapter_publication_dates.py`; hand-owned thereafter. |
 | `data/derived/extracted_perks.json` | Perk footer extraction from chapter exports |
 | `data/derived/perk_directory.json` | Joined directory view for lookup/enrichment |
 | `data/derived/chapter_facts.json` | Visualization backbone consumed by web app. Embeds the canonical `in_world_timeline` so the front-end loads a single file. |

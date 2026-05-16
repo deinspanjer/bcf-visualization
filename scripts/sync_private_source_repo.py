@@ -105,12 +105,12 @@ def load_json(path: Path) -> dict | None:
 
 def derived_chapter_summary() -> dict:
     chapters_doc = load_json(ROOT / "data" / "derived" / "chapters.json") or {}
-    edits_doc = load_json(ROOT / "data" / "derived" / "chapter_last_edited.json") or {}
+    pub_doc = load_json(ROOT / "data" / "manual" / "chapter_publication_dates.json") or {}
     chapters = list(chapters_doc.get("chapters") or [])
     chapters.sort(key=lambda c: tuple(c.get("sort_key") or (0, 0)))
     edits = [
         row.get("last_edited_at")
-        for row in edits_doc.get("chapters") or []
+        for row in pub_doc.get("chapters") or []
         if row.get("last_edited_at")
     ]
     if not chapters:

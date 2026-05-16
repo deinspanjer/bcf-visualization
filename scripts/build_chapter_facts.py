@@ -15,7 +15,7 @@ Joins:
   - obtained_perks.json ....... acquisitions used by fallback derivation
   - perk_directory.json ....... canonical perk IDs and constellations
   - outstanding_perks_by_chapter.json  miss-size estimates
-  - chapter_last_edited.json .. SV edit timestamps
+  - chapter_publication_dates.json  publish + last-edit dates (manual)
 
 In-world dates are stubbed out (every field null, confidence="stub").
 A future derivation pass will populate them.
@@ -33,6 +33,7 @@ Roll attribution:
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import zipfile
@@ -58,7 +59,7 @@ PREDICTED_ROLLS = DERIVED / "predicted_rolls.json"
 CHAPTER_ROLL_OVERRIDES = MANUAL / "chapter_roll_overrides.json"
 OBTAINED_PERKS = DERIVED / "obtained_perks.json"
 PERK_DIRECTORY = DERIVED / "perk_directory.json"
-LAST_EDITED = DERIVED / "chapter_last_edited.json"
+PUBLICATION_DATES = MANUAL / "chapter_publication_dates.json"
 TIMELINE = DERIVED / "timeline.json"
 OUT = DERIVED / "chapter_facts.json"
 
@@ -360,8 +361,8 @@ def main() -> None:
         str(row["chapter_num"]): row
         for row in roll_validation_doc.get("chapter_checks", [])
     }
-    last_edited = json.loads(LAST_EDITED.read_text())["chapters"]
-    last_edited_by_chap = {r["chapter_num"]: r for r in last_edited}
+    pub_rows = json.loads(PUBLICATION_DATES.read_text())["chapters"]
+    pub_by_chap = {r["chapter_num"]: r for r in pub_rows}
 
     # Canonical in-world timeline: built upstream by scripts/derive_timeline.py
     # by merging xlsx + wiki + TUI annotations + manual entries. We embed it
@@ -677,7 +678,13 @@ def main() -> None:
         })
 
         # ---------- chapter row ----------
-        last_ed = last_edited_by_chap.get(cn, {})
+        pub = pub_by_chap[cn]
+        published_at = pub["published_at"]
+        last_edited_at = pub["last_edited_at"]
+        edited_lag_days = (
+            (dt.date.fromisoformat(last_edited_at) - dt.date.fromisoformat(published_at)).days
+            if last_edited_at else None
+        )
         cumulative_story_words += chapter_story_words
         cumulative_cp_words += chapter_cp_words
         cumulative_perks += paid_count_in_chap + free_count_in_chap
@@ -710,10 +717,11 @@ def main() -> None:
             "point_calculation_regime": regime_for_chapter(cn),
             "epub_href": title_to_href.get(c["full_title"], ""),
 
-            "published_at": c["publish_iso"],
-            "last_edited_at": last_ed.get("last_edited_at"),
-            "last_edited_known": last_ed.get("last_edited_known", False),
-            "edited_lag_days": last_ed.get("edited_lag_days"),
+            "published_at": published_at,
+            "published_source": pub["published_source"],
+            "last_edited_at": last_edited_at,
+            "last_edited_source": pub["last_edited_source"],
+            "edited_lag_days": edited_lag_days,
             "post_url": c.get("post_url", ""),
             "likes": c.get("likes", 0),
 
@@ -830,7 +838,7 @@ def main() -> None:
         "_method": (
             "Cross-join of chapters.json + chapter_sections.json + "
             "section_classifications.json + roll_facts.json + "
-            "chapter_last_edited.json. Roll facts are pre-reconciled "
+            "chapter_publication_dates.json. Roll facts are pre-reconciled "
             "upstream: curator roll rows win where present, and "
             "interpolated rows are provenance-marked fallback. Free perks "
             "attach to their paid hit. In-world dates are stubbed (every "

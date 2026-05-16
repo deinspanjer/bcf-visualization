@@ -236,7 +236,7 @@ def _patch_pipeline_paths(monkeypatch, project: Path, epub: Path) -> None:
     monkeypatch.setattr(build_chapter_facts, "CHAPTER_ROLL_OVERRIDES", manual / "chapter_roll_overrides.json")
     monkeypatch.setattr(build_chapter_facts, "OBTAINED_PERKS", derived / "obtained_perks.json")
     monkeypatch.setattr(build_chapter_facts, "PERK_DIRECTORY", derived / "perk_directory.json")
-    monkeypatch.setattr(build_chapter_facts, "LAST_EDITED", derived / "chapter_last_edited.json")
+    monkeypatch.setattr(build_chapter_facts, "PUBLICATION_DATES", manual / "chapter_publication_dates.json")
     monkeypatch.setattr(build_chapter_facts, "TIMELINE", derived / "timeline.json")
     monkeypatch.setattr(build_chapter_facts, "OUT", derived / "chapter_facts.json")
     monkeypatch.setattr(
@@ -378,22 +378,26 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
     _write_json(derived / "obtained_perks.json", {"perks": []})
     _write_json(derived / "perk_directory.json", {"perks": []})
     _write_json(
-        derived / "chapter_last_edited.json",
+        manual / "chapter_publication_dates.json",
         {
+            "_source": "test fixture",
+            "_count": 2,
             "chapters": [
                 {
                     "chapter_num": "1",
+                    "published_at": "2024-01-01",
+                    "published_source": "ao3",
                     "last_edited_at": None,
-                    "last_edited_known": False,
-                    "edited_lag_days": None,
+                    "last_edited_source": None,
                 },
                 {
                     "chapter_num": "2",
+                    "published_at": "2024-01-02",
+                    "published_source": "ao3",
                     "last_edited_at": None,
-                    "last_edited_known": False,
-                    "edited_lag_days": None,
+                    "last_edited_source": None,
                 },
-            ]
+            ],
         },
     )
     _write_json(
@@ -418,7 +422,7 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
     monkeypatch.setattr(build_chapter_facts, "CHAPTER_ROLL_OVERRIDES", manual / "chapter_roll_overrides.json")
     monkeypatch.setattr(build_chapter_facts, "OBTAINED_PERKS", derived / "obtained_perks.json")
     monkeypatch.setattr(build_chapter_facts, "PERK_DIRECTORY", derived / "perk_directory.json")
-    monkeypatch.setattr(build_chapter_facts, "LAST_EDITED", derived / "chapter_last_edited.json")
+    monkeypatch.setattr(build_chapter_facts, "PUBLICATION_DATES", manual / "chapter_publication_dates.json")
     monkeypatch.setattr(build_chapter_facts, "TIMELINE", derived / "timeline.json")
     monkeypatch.setattr(build_chapter_facts, "OUT", derived / "chapter_facts.json")
     monkeypatch.setattr(
@@ -449,6 +453,144 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
     assert by_chapter["1"]["model_validation"]["current_discrepancy"] is True
     assert by_chapter["2"]["model_validation"]["prior_discrepancy"] is True
     assert by_chapter["2"]["model_validation"]["first_discrepancy_chapter_num"] == "1"
+
+    # Date fields pass through verbatim from chapter_publication_dates.json,
+    # and edited_lag_days is computed as last_edited_at - published_at.
+    assert by_chapter["1"]["published_at"] == "2024-01-01"
+    assert by_chapter["1"]["published_source"] == "ao3"
+    assert by_chapter["1"]["last_edited_at"] is None
+    assert by_chapter["1"]["last_edited_source"] is None
+    assert by_chapter["1"]["edited_lag_days"] is None
+
+
+def test_chapter_facts_emits_edited_lag_days_from_publication_dates(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """When chapter_publication_dates.json carries a last_edited_at,
+    build_chapter_facts derives edited_lag_days inline rather than
+    pulling it from a separate file."""
+    from scripts import build_chapter_facts
+
+    project = tmp_path / "project"
+    raw = project / "data" / "raw"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = raw / "fixture.epub"
+    raw.mkdir(parents=True)
+    with zipfile.ZipFile(epub, "w") as zf:
+        zf.writestr(
+            "EPUB/nav.xhtml",
+            '<nav><a href="chap_1.xhtml">1 Fixture</a></nav>',
+        )
+        zf.writestr("EPUB/chap_1.xhtml", "<p>body</p>")
+
+    _write_json(derived / "chapters.json", {"chapters": [
+        _fixture_chapter("1", "1 Fixture", sort_key=[1, 0]),
+    ]})
+    _write_json(derived / "chapter_sections.json", {"chapters": [
+        _fixture_section("1", "1 Fixture"),
+    ]})
+    _write_json(manual / "section_classifications.json",
+                {"classifications": {"1@0": {"counts_for_cp": True}}})
+    _write_json(derived / "predicted_rolls.json", {"predicted": []})
+    _write_json(derived / "roll_facts.json",
+                {"_method": "test", "rolls": []})
+    _write_json(derived / "roll_validation.json", {"chapter_checks": []})
+    _write_json(derived / "obtained_perks.json", {"perks": []})
+    _write_json(derived / "perk_directory.json", {"perks": []})
+    _write_json(manual / "chapter_roll_overrides.json",
+                {"chapter_roll_overrides": {}})
+    _write_json(derived / "timeline.json", {
+        "_sources_used": [], "_count": 0,
+        "_first_in_world_date": None, "_last_in_world_date": None,
+        "entries": [],
+    })
+    _write_json(manual / "chapter_publication_dates.json", {
+        "_source": "test fixture",
+        "_count": 1,
+        "chapters": [{
+            "chapter_num": "1",
+            "published_at": "2020-05-01",
+            "published_source": "ao3",
+            "last_edited_at": "2020-12-10",
+            "last_edited_source": "epub",
+        }],
+    })
+
+    _patch_pipeline_paths(monkeypatch, project, epub)
+    build_chapter_facts.main()
+
+    out = json.loads((derived / "chapter_facts.json").read_text())
+    row = out["chapters"][0]
+    assert row["published_at"] == "2020-05-01"
+    assert row["published_source"] == "ao3"
+    assert row["last_edited_at"] == "2020-12-10"
+    assert row["last_edited_source"] == "epub"
+    assert row["edited_lag_days"] == 223  # 2020-12-10 minus 2020-05-01
+
+
+def test_chapter_facts_falls_through_sv_provenance_for_chapter_without_ao3(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """If the manual file records published_source='sv', that provenance
+    flows through unchanged."""
+    from scripts import build_chapter_facts
+
+    project = tmp_path / "project"
+    raw = project / "data" / "raw"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = raw / "fixture.epub"
+    raw.mkdir(parents=True)
+    with zipfile.ZipFile(epub, "w") as zf:
+        zf.writestr("EPUB/nav.xhtml",
+                    '<nav><a href="chap_1.xhtml">1 Fixture</a></nav>')
+        zf.writestr("EPUB/chap_1.xhtml", "<p>body</p>")
+
+    _write_json(derived / "chapters.json", {"chapters": [
+        _fixture_chapter("1", "1 Fixture", sort_key=[1, 0]),
+    ]})
+    _write_json(derived / "chapter_sections.json", {"chapters": [
+        _fixture_section("1", "1 Fixture"),
+    ]})
+    _write_json(manual / "section_classifications.json",
+                {"classifications": {"1@0": {"counts_for_cp": True}}})
+    _write_json(derived / "predicted_rolls.json", {"predicted": []})
+    _write_json(derived / "roll_facts.json",
+                {"_method": "test", "rolls": []})
+    _write_json(derived / "roll_validation.json", {"chapter_checks": []})
+    _write_json(derived / "obtained_perks.json", {"perks": []})
+    _write_json(derived / "perk_directory.json", {"perks": []})
+    _write_json(manual / "chapter_roll_overrides.json",
+                {"chapter_roll_overrides": {}})
+    _write_json(derived / "timeline.json", {
+        "_sources_used": [], "_count": 0,
+        "_first_in_world_date": None, "_last_in_world_date": None,
+        "entries": [],
+    })
+    _write_json(manual / "chapter_publication_dates.json", {
+        "_source": "test fixture",
+        "_count": 1,
+        "chapters": [{
+            "chapter_num": "1",
+            "published_at": "2020-07-19",
+            "published_source": "sv",
+            "last_edited_at": None,
+            "last_edited_source": None,
+        }],
+    })
+
+    _patch_pipeline_paths(monkeypatch, project, epub)
+    build_chapter_facts.main()
+
+    row = json.loads((derived / "chapter_facts.json").read_text())["chapters"][0]
+    assert row["published_at"] == "2020-07-19"
+    assert row["published_source"] == "sv"
+    assert row["last_edited_at"] is None
+    assert row["last_edited_source"] is None
+    assert row["edited_lag_days"] is None
 
 
 def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
@@ -714,7 +856,23 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
             }
         },
     )
-    _write_json(derived / "chapter_last_edited.json", {"chapters": []})
+    _write_json(
+        manual / "chapter_publication_dates.json",
+        {
+            "_source": "test fixture",
+            "_count": 3,
+            "chapters": [
+                {
+                    "chapter_num": str(i),
+                    "published_at": f"2024-01-{i:02d}",
+                    "published_source": "ao3",
+                    "last_edited_at": None,
+                    "last_edited_source": None,
+                }
+                for i in (1, 2, 3)
+            ],
+        },
+    )
     _write_json(
         derived / "timeline.json",
         {

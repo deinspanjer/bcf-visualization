@@ -147,9 +147,10 @@ def _chapter(
     return {
         "chapter_num": chapter_num,
         "full_title": title,
-        "published_at": "2024-01-01T00:00:00+00:00",
-        "last_edited_at": "2024-01-02T00:00:00+00:00",
-        "last_edited_known": True,
+        "published_at": "2024-01-01",
+        "published_source": "ao3",
+        "last_edited_at": "2024-01-02",
+        "last_edited_source": "epub",
         "post_url": f"https://example.test/chapters/{chapter_num}",
         "likes": 10,
         "total_word_count": word_count,

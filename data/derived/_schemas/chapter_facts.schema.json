@@ -383,7 +383,8 @@
       "required": [
         "chapter_num", "full_title", "sort_key", "point_calculation_regime",
         "epub_href",
-        "published_at", "last_edited_at", "last_edited_known",
+        "published_at", "published_source",
+        "last_edited_at", "last_edited_source",
         "edited_lag_days", "post_url", "likes",
         "in_world",
         "total_word_count", "cp_earning_word_count",
@@ -403,10 +404,11 @@
         "point_calculation_regime": { "type": "integer", "enum": [1, 2, 3] },
         "epub_href":       { "type": "string" },
 
-        "published_at":    { "type": "string", "minLength": 1 },
-        "last_edited_at":  { "anyOf": [{ "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, { "type": "null" }] },
-        "last_edited_known": { "type": "boolean" },
-        "edited_lag_days": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
+        "published_at":      { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "published_source":  { "type": "string", "enum": ["manual", "ao3", "sv", "epub"] },
+        "last_edited_at":    { "anyOf": [{ "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, { "type": "null" }] },
+        "last_edited_source":{ "anyOf": [{ "type": "string", "enum": ["manual", "ao3", "sv", "epub"] }, { "type": "null" }] },
+        "edited_lag_days":   { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
         "post_url":        { "type": "string" },
         "likes":           { "type": "integer", "minimum": 0 },
 

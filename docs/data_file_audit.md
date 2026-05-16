@@ -93,7 +93,7 @@ not release inputs.
 ### Committed Schemas
 
 - `data/derived/_schemas/chapter_facts.schema.json`
-- `data/derived/_schemas/chapter_last_edited.schema.json`
+- `data/derived/_schemas/chapter_publication_dates.schema.json`
 - `data/derived/_schemas/chapter_sections.schema.json`
 - `data/derived/_schemas/chapters.schema.json`
 - `data/derived/_schemas/constellation_wireframes.schema.json`
@@ -115,7 +115,6 @@ These are not data payloads. They define contracts and should stay committed.
 
 ### Ignored Derived Intermediate Payloads
 
-- `data/derived/chapter_last_edited.json`
 - `data/derived/chapter_sections.json`
 - `data/derived/chapters.json`
 - `data/derived/constellation_knowledge_by_chapter.json`

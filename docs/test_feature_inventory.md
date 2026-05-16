@@ -28,6 +28,7 @@ Status labels:
 | Model validation status | unit/coherence | `tests/test_model_validation_scenarios.py`, `tests/test_model_validation.py` | covered | Fixture tests cover raw/effective discrepancy logic; generated-data tests remain as coherence checks. |
 | Data package build/release contracts | package/scenario | `tests/test_data_package_contract.py`, `tests/test_pages_smoke.py`, `tests/test_codex_environment_data.py` | covered | Exact identity checks use tiny package fixtures; release download/cleanup tests use synthetic tag strings as API examples. |
 | Local generated-data coherence | coherence | `tests/test_model_validation.py`, `tests/test_roll_position_invariants.py`, `tests/test_predicted_roll_field_names.py`, `tests/test_data_package_contract.py` | covered | Current generated data is used only for schema/global invariants, simulator agreement, manifest consistency, and package completeness. |
+| Chapter publication-date manual file + bootstrap | scenario | `tests/test_chapter_publication_dates_seed.py`, `tests/test_chapter_facts_scenarios.py` | covered | Seed scenarios cover AO3-source publish + EPUB-source last-edit, missing-from-AO3 fallback to SV provenance, and schema validation. Chapter-facts scenarios assert per-date provenance passes through verbatim and that `edited_lag_days` is computed from the two dates inline. |
 
 ## Forge Curator TUI
 

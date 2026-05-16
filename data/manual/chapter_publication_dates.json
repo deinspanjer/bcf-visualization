@@ -1,0 +1,1364 @@
+{
+  "_source": "Bootstrapped from AO3 navigate page + EPUB 'Last edited:' footers. Hand-editable thereafter; re-running this script overwrites. published_source/last_edited_source record where each date came from.",
+  "_count": 194,
+  "chapters": [
+    {
+      "chapter_num": "1",
+      "published_at": "2020-05-01",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "2",
+      "published_at": "2020-05-02",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "3",
+      "published_at": "2020-05-04",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "3.1",
+      "published_at": "2020-05-05",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "4",
+      "published_at": "2020-05-06",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "5",
+      "published_at": "2020-05-07",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "6",
+      "published_at": "2020-05-08",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "6.1",
+      "published_at": "2020-05-10",
+      "published_source": "ao3",
+      "last_edited_at": "2020-09-26",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "7",
+      "published_at": "2020-05-10",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "8",
+      "published_at": "2020-05-11",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "8.1",
+      "published_at": "2020-05-12",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "9",
+      "published_at": "2020-05-13",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "10",
+      "published_at": "2020-05-15",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "11",
+      "published_at": "2020-05-20",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "12",
+      "published_at": "2020-05-25",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "12.1",
+      "published_at": "2020-05-31",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "13",
+      "published_at": "2020-06-05",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "14",
+      "published_at": "2020-06-10",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "15",
+      "published_at": "2020-06-17",
+      "published_source": "ao3",
+      "last_edited_at": "2020-07-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "16",
+      "published_at": "2020-06-25",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "16.1",
+      "published_at": "2020-06-25",
+      "published_source": "ao3",
+      "last_edited_at": "2020-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "17",
+      "published_at": "2020-07-02",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "18",
+      "published_at": "2020-07-09",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "19",
+      "published_at": "2020-07-15",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "20",
+      "published_at": "2020-07-23",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "21",
+      "published_at": "2020-07-30",
+      "published_source": "ao3",
+      "last_edited_at": "2020-08-01",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "21.1",
+      "published_at": "2020-08-06",
+      "published_source": "ao3",
+      "last_edited_at": "2020-09-19",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "22",
+      "published_at": "2020-08-13",
+      "published_source": "ao3",
+      "last_edited_at": "2020-08-14",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "23",
+      "published_at": "2020-08-20",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "24",
+      "published_at": "2020-08-27",
+      "published_source": "ao3",
+      "last_edited_at": "2020-08-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "25",
+      "published_at": "2020-09-03",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "26",
+      "published_at": "2020-09-10",
+      "published_source": "ao3",
+      "last_edited_at": "2020-09-11",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "27",
+      "published_at": "2020-09-17",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "28",
+      "published_at": "2020-09-24",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "29",
+      "published_at": "2020-10-01",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "30",
+      "published_at": "2020-10-14",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "31",
+      "published_at": "2020-10-22",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "32",
+      "published_at": "2020-10-29",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "33",
+      "published_at": "2020-11-12",
+      "published_source": "ao3",
+      "last_edited_at": "2020-11-17",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "34",
+      "published_at": "2020-11-19",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-03",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "35",
+      "published_at": "2020-11-26",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "35.1",
+      "published_at": "2020-12-03",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "36",
+      "published_at": "2020-12-10",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-17",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "37",
+      "published_at": "2020-12-17",
+      "published_source": "ao3",
+      "last_edited_at": "2020-12-19",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "38",
+      "published_at": "2020-12-31",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "39",
+      "published_at": "2021-01-07",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "40",
+      "published_at": "2021-01-14",
+      "published_source": "ao3",
+      "last_edited_at": "2021-01-18",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "41",
+      "published_at": "2021-01-28",
+      "published_source": "ao3",
+      "last_edited_at": "2021-04-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "41.1",
+      "published_at": "2021-02-11",
+      "published_source": "ao3",
+      "last_edited_at": "2021-02-11",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "41.2",
+      "published_at": "2021-02-18",
+      "published_source": "ao3",
+      "last_edited_at": "2021-02-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "41.3",
+      "published_at": "2021-03-04",
+      "published_source": "ao3",
+      "last_edited_at": "2021-03-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "42",
+      "published_at": "2021-04-01",
+      "published_source": "ao3",
+      "last_edited_at": "2021-04-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "42.1",
+      "published_at": "2021-04-15",
+      "published_source": "ao3",
+      "last_edited_at": "2021-04-15",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "43",
+      "published_at": "2021-04-29",
+      "published_source": "ao3",
+      "last_edited_at": "2021-05-04",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "43.1",
+      "published_at": "2021-05-06",
+      "published_source": "ao3",
+      "last_edited_at": "2021-05-06",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "44",
+      "published_at": "2021-05-13",
+      "published_source": "ao3",
+      "last_edited_at": "2021-05-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "45",
+      "published_at": "2021-05-27",
+      "published_source": "ao3",
+      "last_edited_at": "2021-05-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "45.1",
+      "published_at": "2021-06-03",
+      "published_source": "ao3",
+      "last_edited_at": "2021-06-03",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "46",
+      "published_at": "2021-06-17",
+      "published_source": "ao3",
+      "last_edited_at": "2021-06-21",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "46.1",
+      "published_at": "2021-06-24",
+      "published_source": "ao3",
+      "last_edited_at": "2021-06-26",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "46.2",
+      "published_at": "2021-07-08",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-08",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "47",
+      "published_at": "2021-07-22",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "48",
+      "published_at": "2021-07-29",
+      "published_source": "ao3",
+      "last_edited_at": "2021-07-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "49",
+      "published_at": "2021-08-05",
+      "published_source": "ao3",
+      "last_edited_at": "2021-08-15",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "50",
+      "published_at": "2021-08-12",
+      "published_source": "ao3",
+      "last_edited_at": "2021-08-17",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "51",
+      "published_at": "2021-08-19",
+      "published_source": "ao3",
+      "last_edited_at": "2021-10-15",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "52",
+      "published_at": "2021-08-26",
+      "published_source": "ao3",
+      "last_edited_at": "2021-08-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "53",
+      "published_at": "2021-09-02",
+      "published_source": "ao3",
+      "last_edited_at": "2021-09-02",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "54",
+      "published_at": "2021-09-09",
+      "published_source": "ao3",
+      "last_edited_at": "2021-09-09",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "55",
+      "published_at": "2021-09-23",
+      "published_source": "ao3",
+      "last_edited_at": "2021-09-28",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "55.1",
+      "published_at": "2021-10-07",
+      "published_source": "ao3",
+      "last_edited_at": "2021-11-02",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "56",
+      "published_at": "2021-10-14",
+      "published_source": "ao3",
+      "last_edited_at": "2021-10-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "57",
+      "published_at": "2021-10-28",
+      "published_source": "ao3",
+      "last_edited_at": "2021-11-02",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "57.1",
+      "published_at": "2021-11-04",
+      "published_source": "ao3",
+      "last_edited_at": "2021-11-04",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "58",
+      "published_at": "2021-11-18",
+      "published_source": "ao3",
+      "last_edited_at": "2021-11-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "58.1",
+      "published_at": "2021-11-25",
+      "published_source": "ao3",
+      "last_edited_at": "2021-11-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "58.2",
+      "published_at": "2021-12-02",
+      "published_source": "ao3",
+      "last_edited_at": "2021-12-21",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "59",
+      "published_at": "2021-12-09",
+      "published_source": "ao3",
+      "last_edited_at": "2021-12-20",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "60",
+      "published_at": "2021-12-23",
+      "published_source": "ao3",
+      "last_edited_at": "2021-12-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "61",
+      "published_at": "2022-01-06",
+      "published_source": "ao3",
+      "last_edited_at": "2022-01-06",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "62",
+      "published_at": "2022-01-13",
+      "published_source": "ao3",
+      "last_edited_at": "2022-01-14",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "63",
+      "published_at": "2022-01-20",
+      "published_source": "ao3",
+      "last_edited_at": "2022-01-31",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "63.1",
+      "published_at": "2022-01-27",
+      "published_source": "ao3",
+      "last_edited_at": "2022-01-28",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "64",
+      "published_at": "2022-02-03",
+      "published_source": "ao3",
+      "last_edited_at": "2022-02-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "65",
+      "published_at": "2022-02-10",
+      "published_source": "ao3",
+      "last_edited_at": "2022-02-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "65.1",
+      "published_at": "2022-02-16",
+      "published_source": "ao3",
+      "last_edited_at": "2022-02-17",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "65.2",
+      "published_at": "2022-02-23",
+      "published_source": "ao3",
+      "last_edited_at": "2022-02-24",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "65.3",
+      "published_at": "2022-03-03",
+      "published_source": "ao3",
+      "last_edited_at": "2022-03-07",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "65.4",
+      "published_at": "2022-03-10",
+      "published_source": "ao3",
+      "last_edited_at": "2022-03-14",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "66",
+      "published_at": "2022-03-17",
+      "published_source": "ao3",
+      "last_edited_at": "2022-03-17",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "67",
+      "published_at": "2022-03-24",
+      "published_source": "ao3",
+      "last_edited_at": "2022-03-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "68",
+      "published_at": "2022-03-31",
+      "published_source": "ao3",
+      "last_edited_at": "2022-04-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "68.1",
+      "published_at": "2022-04-07",
+      "published_source": "ao3",
+      "last_edited_at": "2022-04-07",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "68.2",
+      "published_at": "2022-04-14",
+      "published_source": "ao3",
+      "last_edited_at": "2022-04-14",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "68.3",
+      "published_at": "2022-04-21",
+      "published_source": "ao3",
+      "last_edited_at": "2022-04-26",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "69",
+      "published_at": "2022-04-28",
+      "published_source": "ao3",
+      "last_edited_at": "2022-05-06",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "70",
+      "published_at": "2022-05-05",
+      "published_source": "ao3",
+      "last_edited_at": "2022-05-06",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "71",
+      "published_at": "2022-05-12",
+      "published_source": "ao3",
+      "last_edited_at": "2022-05-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "72",
+      "published_at": "2022-05-19",
+      "published_source": "ao3",
+      "last_edited_at": "2022-05-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "73",
+      "published_at": "2022-05-26",
+      "published_source": "ao3",
+      "last_edited_at": "2022-05-26",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "74",
+      "published_at": "2022-06-02",
+      "published_source": "ao3",
+      "last_edited_at": "2022-06-06",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "74.1",
+      "published_at": "2022-06-16",
+      "published_source": "ao3",
+      "last_edited_at": "2022-06-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "74.2",
+      "published_at": "2022-06-23",
+      "published_source": "ao3",
+      "last_edited_at": "2022-07-01",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "75",
+      "published_at": "2022-07-07",
+      "published_source": "ao3",
+      "last_edited_at": "2022-07-09",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "76",
+      "published_at": "2022-07-14",
+      "published_source": "ao3",
+      "last_edited_at": "2022-07-18",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "76.1",
+      "published_at": "2022-07-21",
+      "published_source": "ao3",
+      "last_edited_at": "2022-07-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "76.2",
+      "published_at": "2022-07-28",
+      "published_source": "ao3",
+      "last_edited_at": "2022-08-01",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "77",
+      "published_at": "2022-08-04",
+      "published_source": "ao3",
+      "last_edited_at": "2022-08-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "78",
+      "published_at": "2022-08-11",
+      "published_source": "ao3",
+      "last_edited_at": "2022-08-11",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "79",
+      "published_at": "2022-08-18",
+      "published_source": "ao3",
+      "last_edited_at": "2022-08-24",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "80",
+      "published_at": "2022-08-25",
+      "published_source": "ao3",
+      "last_edited_at": "2022-08-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "81",
+      "published_at": "2022-09-01",
+      "published_source": "ao3",
+      "last_edited_at": "2022-09-09",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "82",
+      "published_at": "2022-09-15",
+      "published_source": "ao3",
+      "last_edited_at": "2022-09-15",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "82.1",
+      "published_at": "2022-09-22",
+      "published_source": "ao3",
+      "last_edited_at": "2022-09-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "83",
+      "published_at": "2022-09-29",
+      "published_source": "ao3",
+      "last_edited_at": "2022-09-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "83.1",
+      "published_at": "2022-10-06",
+      "published_source": "ao3",
+      "last_edited_at": "2022-10-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "84",
+      "published_at": "2022-10-20",
+      "published_source": "ao3",
+      "last_edited_at": "2022-10-20",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "85",
+      "published_at": "2022-11-03",
+      "published_source": "ao3",
+      "last_edited_at": "2022-11-04",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "85.1",
+      "published_at": "2022-11-17",
+      "published_source": "ao3",
+      "last_edited_at": "2022-11-19",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "86",
+      "published_at": "2022-11-24",
+      "published_source": "ao3",
+      "last_edited_at": "2022-11-24",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "87",
+      "published_at": "2022-12-01",
+      "published_source": "ao3",
+      "last_edited_at": "2022-12-01",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "87.1",
+      "published_at": "2022-12-08",
+      "published_source": "ao3",
+      "last_edited_at": "2022-12-08",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "88",
+      "published_at": "2022-12-22",
+      "published_source": "ao3",
+      "last_edited_at": "2023-01-04",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "88.1",
+      "published_at": "2023-01-05",
+      "published_source": "ao3",
+      "last_edited_at": "2023-01-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "89",
+      "published_at": "2023-01-12",
+      "published_source": "ao3",
+      "last_edited_at": "2023-01-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "89.1",
+      "published_at": "2023-01-19",
+      "published_source": "ao3",
+      "last_edited_at": "2023-01-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "90",
+      "published_at": "2023-02-02",
+      "published_source": "ao3",
+      "last_edited_at": "2023-02-07",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "91",
+      "published_at": "2023-02-09",
+      "published_source": "ao3",
+      "last_edited_at": "2023-02-18",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "92",
+      "published_at": "2023-02-23",
+      "published_source": "ao3",
+      "last_edited_at": "2023-02-28",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "93",
+      "published_at": "2023-03-02",
+      "published_source": "ao3",
+      "last_edited_at": "2023-03-02",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "94",
+      "published_at": "2023-03-16",
+      "published_source": "ao3",
+      "last_edited_at": "2023-03-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "94.1",
+      "published_at": "2023-03-30",
+      "published_source": "ao3",
+      "last_edited_at": "2023-04-04",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95",
+      "published_at": "2023-04-06",
+      "published_source": "ao3",
+      "last_edited_at": "2023-04-09",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95.1",
+      "published_at": "2023-04-20",
+      "published_source": "ao3",
+      "last_edited_at": "2023-04-20",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95.2",
+      "published_at": "2023-04-27",
+      "published_source": "ao3",
+      "last_edited_at": "2023-04-28",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95.3",
+      "published_at": "2023-05-11",
+      "published_source": "ao3",
+      "last_edited_at": "2023-06-15",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95.4",
+      "published_at": "2023-05-25",
+      "published_source": "ao3",
+      "last_edited_at": "2023-06-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95.5",
+      "published_at": "2023-06-08",
+      "published_source": "ao3",
+      "last_edited_at": "2023-06-15",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "95.6",
+      "published_at": "2023-06-22",
+      "published_source": "ao3",
+      "last_edited_at": "2023-07-01",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "96",
+      "published_at": "2023-07-06",
+      "published_source": "ao3",
+      "last_edited_at": "2023-07-09",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "96.1",
+      "published_at": "2023-07-20",
+      "published_source": "ao3",
+      "last_edited_at": "2023-07-20",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "97",
+      "published_at": "2023-08-04",
+      "published_source": "ao3",
+      "last_edited_at": "2023-08-14",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "98",
+      "published_at": "2023-08-17",
+      "published_source": "ao3",
+      "last_edited_at": "2023-08-17",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "98.1",
+      "published_at": "2023-09-01",
+      "published_source": "ao3",
+      "last_edited_at": "2023-09-01",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "99",
+      "published_at": "2023-09-15",
+      "published_source": "ao3",
+      "last_edited_at": "2023-09-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "99.1",
+      "published_at": "2023-09-28",
+      "published_source": "ao3",
+      "last_edited_at": "2023-09-28",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "99.2",
+      "published_at": "2023-10-13",
+      "published_source": "ao3",
+      "last_edited_at": "2023-10-24",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "99.3",
+      "published_at": "2023-11-02",
+      "published_source": "ao3",
+      "last_edited_at": "2023-11-02",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "100",
+      "published_at": "2023-11-17",
+      "published_source": "ao3",
+      "last_edited_at": "2024-01-02",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "100.1",
+      "published_at": "2024-01-04",
+      "published_source": "ao3",
+      "last_edited_at": "2024-01-04",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "101",
+      "published_at": "2024-01-19",
+      "published_source": "ao3",
+      "last_edited_at": "2024-02-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "102",
+      "published_at": "2024-02-08",
+      "published_source": "ao3",
+      "last_edited_at": "2024-02-13",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "103",
+      "published_at": "2024-02-23",
+      "published_source": "ao3",
+      "last_edited_at": "2024-02-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "104",
+      "published_at": "2024-03-08",
+      "published_source": "ao3",
+      "last_edited_at": "2024-03-08",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "104.1",
+      "published_at": "2024-03-28",
+      "published_source": "ao3",
+      "last_edited_at": "2024-07-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "104.2",
+      "published_at": "2024-04-12",
+      "published_source": "ao3",
+      "last_edited_at": "2024-04-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "105",
+      "published_at": "2024-04-25",
+      "published_source": "ao3",
+      "last_edited_at": "2024-04-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "106",
+      "published_at": "2024-05-09",
+      "published_source": "ao3",
+      "last_edited_at": "2024-05-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "107",
+      "published_at": "2024-05-30",
+      "published_source": "ao3",
+      "last_edited_at": "2024-05-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "108",
+      "published_at": "2024-06-14",
+      "published_source": "ao3",
+      "last_edited_at": "2024-06-14",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "108.1",
+      "published_at": "2024-07-05",
+      "published_source": "ao3",
+      "last_edited_at": "2024-07-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "108.2",
+      "published_at": "2024-07-25",
+      "published_source": "ao3",
+      "last_edited_at": "2024-07-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "108.3",
+      "published_at": "2024-08-16",
+      "published_source": "ao3",
+      "last_edited_at": "2024-08-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "109",
+      "published_at": "2024-08-29",
+      "published_source": "ao3",
+      "last_edited_at": "2024-08-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "109.1",
+      "published_at": "2024-09-13",
+      "published_source": "ao3",
+      "last_edited_at": "2024-09-24",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "110",
+      "published_at": "2024-09-27",
+      "published_source": "ao3",
+      "last_edited_at": "2024-10-03",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "110.1",
+      "published_at": "2024-10-10",
+      "published_source": "ao3",
+      "last_edited_at": "2024-10-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "110.2",
+      "published_at": "2024-10-24",
+      "published_source": "ao3",
+      "last_edited_at": "2024-10-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "110.3",
+      "published_at": "2024-11-08",
+      "published_source": "ao3",
+      "last_edited_at": "2024-11-08",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "111",
+      "published_at": "2024-11-29",
+      "published_source": "ao3",
+      "last_edited_at": "2024-11-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "111.1",
+      "published_at": "2024-12-20",
+      "published_source": "ao3",
+      "last_edited_at": "2024-12-20",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "111.2",
+      "published_at": "2025-01-10",
+      "published_source": "ao3",
+      "last_edited_at": "2025-01-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "111.3",
+      "published_at": "2025-01-30",
+      "published_source": "ao3",
+      "last_edited_at": "2025-01-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "112",
+      "published_at": "2025-02-20",
+      "published_source": "ao3",
+      "last_edited_at": "2025-02-20",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "113",
+      "published_at": "2025-03-14",
+      "published_source": "ao3",
+      "last_edited_at": "2025-03-21",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "113.1",
+      "published_at": "2025-03-27",
+      "published_source": "ao3",
+      "last_edited_at": "2025-03-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "113.2",
+      "published_at": "2025-04-18",
+      "published_source": "ao3",
+      "last_edited_at": "2025-04-18",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "113.3",
+      "published_at": "2025-05-09",
+      "published_source": "ao3",
+      "last_edited_at": "2025-05-09",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "114",
+      "published_at": "2025-05-30",
+      "published_source": "ao3",
+      "last_edited_at": "2025-05-30",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "115",
+      "published_at": "2025-06-20",
+      "published_source": "ao3",
+      "last_edited_at": "2025-06-29",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "116",
+      "published_at": "2025-07-10",
+      "published_source": "ao3",
+      "last_edited_at": "2025-07-10",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "116.1",
+      "published_at": "2025-08-01",
+      "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "116.2",
+      "published_at": "2025-08-29",
+      "published_source": "ao3",
+      "last_edited_at": "2025-09-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "116.3",
+      "published_at": "2025-09-25",
+      "published_source": "ao3",
+      "last_edited_at": "2025-09-25",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "117",
+      "published_at": "2025-10-23",
+      "published_source": "ao3",
+      "last_edited_at": "2025-10-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "118",
+      "published_at": "2025-11-21",
+      "published_source": "ao3",
+      "last_edited_at": "2025-11-22",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "119",
+      "published_at": "2025-12-05",
+      "published_source": "ao3",
+      "last_edited_at": "2025-12-12",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "119.1",
+      "published_at": "2025-12-19",
+      "published_source": "ao3",
+      "last_edited_at": "2025-12-19",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "119.2",
+      "published_at": "2026-01-16",
+      "published_source": "ao3",
+      "last_edited_at": "2026-01-16",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "119.3",
+      "published_at": "2026-01-30",
+      "published_source": "ao3",
+      "last_edited_at": "2026-02-05",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "119.4",
+      "published_at": "2026-02-19",
+      "published_source": "ao3",
+      "last_edited_at": "2026-02-23",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "119.5",
+      "published_at": "2026-03-06",
+      "published_source": "ao3",
+      "last_edited_at": "2026-03-13",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "120",
+      "published_at": "2026-03-27",
+      "published_source": "ao3",
+      "last_edited_at": "2026-03-27",
+      "last_edited_source": "epub"
+    },
+    {
+      "chapter_num": "120.1",
+      "published_at": "2026-04-16",
+      "published_source": "ao3",
+      "last_edited_at": "2026-04-17",
+      "last_edited_source": "epub"
+    }
+  ]
+}

@@ -46,7 +46,6 @@ Typical full regeneration order:
 .venv/bin/python scripts/build_section_classifications.py
 .venv/bin/python scripts/build_perk_directory.py
 .venv/bin/python scripts/predict_rolls.py
-.venv/bin/python scripts/extract_last_edited.py
 .venv/bin/python scripts/find_roll_locations.py
 .venv/bin/python scripts/find_text_backed_rolls.py
 .venv/bin/python scripts/validate_roll_locations.py

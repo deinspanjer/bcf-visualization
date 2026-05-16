@@ -50,7 +50,7 @@ The sidecar is `Brocktons_Celestial_Forge.metadata.json`. It records:
 - chapter count
 - last chapter friendly number/title/href
 - last chapter publish timestamp from `data/derived/chapters.json`
-- max last-modification timestamp from `data/derived/chapter_last_edited.json`
+- max last-modification timestamp from `data/manual/chapter_publication_dates.json`
 
 SHA-256 is included alongside MD5 because MD5 is useful for legacy comparison
 but should not be the only integrity check.

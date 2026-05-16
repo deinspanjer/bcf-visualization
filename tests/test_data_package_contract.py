@@ -29,9 +29,6 @@ def _write_tiny_package_source(path: Path) -> Path:
             ],
         }) + "\n"
     )
-    (path / "chapter_last_edited.json").write_text(
-        json.dumps({"chapters": []}) + "\n"
-    )
     return path
 
 
@@ -118,7 +115,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     with tarfile.open(outputs.dev_tar, "r:gz") as tf:
         dev_names = set(tf.getnames())
     assert "data_package.json" in dev_names
-    assert "chapter_last_edited.json" in dev_names
+    assert "chapter_facts.json" in dev_names
     assert "_schemas/chapter_facts.schema.json" not in dev_names
 
     extracted_dev = tmp_path / "extracted-dev"
@@ -127,7 +124,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         extracted_dev,
         expected_bundle_class="dev-derived",
     )
-    assert dev_manifest["files"]["chapter_last_edited"]["schema_version"] is None
+    assert dev_manifest["files"]["chapter_facts"]["schema_version"] == 1
 
 
 def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path: Path) -> None:

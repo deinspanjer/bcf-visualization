@@ -1290,7 +1290,7 @@ function renderThisChapter(ch, inPreroll) {
     ` · ${ch.paid_perks_gained} paid + ${ch.free_perks_gained} free` +
     ` · ${ch.hits_count} hits / ${ch.misses_count + ch.unknowns_count} others`));
   meta.appendChild(el("br"));
-  const editStr = ch.last_edited_known
+  const editStr = ch.last_edited_at
     ? ` · last edited ${ch.last_edited_at}`
     : "";
   meta.appendChild(el("span",

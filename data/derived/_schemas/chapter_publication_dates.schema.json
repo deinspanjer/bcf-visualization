@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/chapter_publication_dates.schema.json",
+  "title": "ChapterPublicationDates",
+  "description": "Single source of truth for per-chapter first-publication and last-edit dates. Lives in data/manual/ and is hand-owned; the seed script bootstraps it once from AO3 + EPUB. Each date carries its own provenance because the two dates have genuinely independent sources (publish from AO3, last-edit from EPUB-extracted SV footer).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "chapters"],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "chapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chapter" }
+    }
+  },
+  "$defs": {
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_num", "published_at", "published_source",
+        "last_edited_at", "last_edited_source"
+      ],
+      "properties": {
+        "chapter_num":       { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "published_at":      { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "published_source":  { "type": "string", "enum": ["manual", "ao3", "sv", "epub"] },
+        "last_edited_at":    { "anyOf": [{ "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }, { "type": "null" }] },
+        "last_edited_source":{ "anyOf": [{ "type": "string", "enum": ["manual", "ao3", "sv", "epub"] }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "last_edited_at": { "type": "null" } } },
+          "then": { "properties": { "last_edited_source": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "last_edited_at": { "type": "string" } } },
+          "then": { "properties": { "last_edited_source": { "type": "string" } } }
+        }
+      ]
+    }
+  }
+}
