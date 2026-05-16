@@ -62,10 +62,8 @@ introduced.
 
 ### Committed Curated Inputs
 
-- `data/manual/author_notes.json`
 - `data/manual/author_roll_table_2026-05-09.json`
 - `data/manual/chapter_roll_overrides.json`
-- `data/manual/header_corrections.json`
 - `data/manual/perk_constellation_overrides.json`
 - `data/manual/regex_hit_review.json`
 - `data/manual/regime_transitions.json`
@@ -107,7 +105,6 @@ not release inputs.
 - `data/derived/_schemas/roll_facts.schema.json`
 - `data/derived/_schemas/roll_locations_regex.schema.json`
 - `data/derived/_schemas/roll_locations_validation.schema.json`
-- `data/derived/_schemas/roll_resolutions.schema.json`
 - `data/derived/_schemas/roll_text_evidence.schema.json`
 - `data/derived/_schemas/rolls.schema.json`
 - `data/derived/_schemas/timeline.schema.json`
@@ -133,7 +130,6 @@ These are not data payloads. They define contracts and should stay committed.
 - `data/derived/roll_locations_regex.json`
 - `data/derived/roll_locations_validation.json`
 - `data/derived/roll_outcomes.json`
-- `data/derived/roll_resolutions.json`
 - `data/derived/roll_text_evidence.json`
 - `data/derived/roll_validation.json`
 - `data/derived/rolls.json`
