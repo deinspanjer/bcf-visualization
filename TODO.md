@@ -5,6 +5,10 @@
 - Keep the data-release workflow's private source repo path as the
   preferred EPUB input and treat FicHub download as an explicit fallback,
   not the normal release path.
+- Enhance the private-source scripts with clear bidirectional commands:
+  one to publish/copy a local EPUB into the private source repo, and one
+  to hydrate `data/raw/Brocktons_Celestial_Forge.epub` from the latest
+  private source ref or an explicitly selected source tag.
 - Locate and document any later author clarification about which
   non-Joe-POV sections count for CP earning.
 - Reclassify sections under the suspected "Joe on screen" rule while
