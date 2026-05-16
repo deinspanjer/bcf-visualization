@@ -56,7 +56,7 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
         "package_id": "pkg-a",
         "files": {
             "chapter_facts": {"path": "chapter_facts.json"},
-            "roll_resolutions": {"path": "nested/roll_resolutions.json"},
+            "constellation_wireframes": {"path": "nested/constellation_wireframes.json"},
         },
     }
     payloads = {
@@ -65,7 +65,7 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
         "https://example.test/bcf/data/packages/pkg-a/chapter_facts.json": {
             "schema_version": 1,
         },
-        "https://example.test/bcf/data/packages/pkg-a/nested/roll_resolutions.json": {
+        "https://example.test/bcf/data/packages/pkg-a/nested/constellation_wireframes.json": {
             "schema_version": 1,
         },
     }
@@ -101,6 +101,6 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
     assert result == manifest
     assert json.loads((output / "data_package.json").read_text()) == manifest
     assert json.loads((output / "chapter_facts.json").read_text()) == {"schema_version": 1}
-    assert json.loads((output / "nested" / "roll_resolutions.json").read_text()) == {
+    assert json.loads((output / "nested" / "constellation_wireframes.json").read_text()) == {
         "schema_version": 1,
     }

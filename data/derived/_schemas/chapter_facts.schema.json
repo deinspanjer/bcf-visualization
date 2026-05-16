@@ -137,6 +137,10 @@
         "word_count":                 { "type": "integer", "minimum": 0 },
         "cp_earning_word_count":      { "type": "integer", "minimum": 0 },
         "counts_for_cp":              { "type": "boolean" },
+        "span_overrides": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/eligibility_span_override" }
+        },
         "classification":             { "type": ["string", "null"] },
         "classification_confidence":  { "type": ["string", "null"] },
         "structural_markers":         { "type": "array", "items": { "type": "string" } },
@@ -144,6 +148,22 @@
         "char_offset_end_in_chapter":   { "type": "integer", "minimum": 0 },
         "in_world_start_time_of_day": { "type": ["string", "null"], "enum": [null, "morning", "afternoon", "evening", "night"] },
         "in_world_end_time_of_day":   { "type": ["string", "null"], "enum": [null, "morning", "afternoon", "evening", "night"] }
+      }
+    },
+    "eligibility_span_override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "word_offset_start", "word_offset_end", "counts_for_cp",
+        "reason_code", "note", "excerpt"
+      ],
+      "properties": {
+        "word_offset_start": { "type": "integer", "minimum": 0 },
+        "word_offset_end":   { "type": "integer", "minimum": 0 },
+        "counts_for_cp":     { "type": "boolean" },
+        "reason_code":       { "type": "string", "minLength": 1 },
+        "note":              { "type": ["string", "null"] },
+        "excerpt":           { "type": "string" }
       }
     },
     "roll": {

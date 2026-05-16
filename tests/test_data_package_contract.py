@@ -18,6 +18,23 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def _write_tiny_package_source(path: Path) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "chapter_facts.json").write_text(
+        json.dumps({
+            "schema_version": 1,
+            "chapters": [
+                {"chapter_num": "1", "full_title": "1 Fixture Start"},
+                {"chapter_num": "2.5", "full_title": "2.5 Fixture Finale"},
+            ],
+        }) + "\n"
+    )
+    (path / "chapter_last_edited.json").write_text(
+        json.dumps({"chapters": []}) + "\n"
+    )
+    return path
+
+
 def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     manifest = _load_json(DERIVED / "data_package.json")
     chapter_facts = _load_json(DERIVED / "chapter_facts.json")
@@ -55,7 +72,6 @@ def test_web_consumed_schemas_pin_contract_versions() -> None:
         "chapter_facts",
         "perk_directory",
         "constellation_wireframes",
-        "roll_resolutions",
     ):
         schema = _load_json(DERIVED / "_schemas" / f"{schema_name}.schema.json")
         assert "schema_version" in schema["required"]
@@ -64,9 +80,10 @@ def test_web_consumed_schemas_pin_contract_versions() -> None:
 
 def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path,
         package_date="20260509",
         build_number=7,
@@ -74,12 +91,12 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         generated_at="2026-05-09T12:00:00Z",
     )
 
-    assert outputs.release_tag == "bcf-visualization-data-v20260509.7-ch194-120.1"
+    assert outputs.release_tag == "bcf-visualization-data-v20260509.7-ch2-2.5"
     assert outputs.runtime_tar.name == (
-        "bcf-visualization-runtime-v20260509.7-ch194-120.1.tar.gz"
+        "bcf-visualization-runtime-v20260509.7-ch2-2.5.tar.gz"
     )
     assert outputs.dev_tar.name == (
-        "bcf-visualization-data-v20260509.7-ch194-120.1.tar.gz"
+        "bcf-visualization-data-v20260509.7-ch2-2.5.tar.gz"
     )
     assert outputs.checksums_path.name == "SHA256SUMS"
 
@@ -92,16 +109,16 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
 
     with tarfile.open(outputs.runtime_tar, "r:gz") as tf:
         manifest = json.loads(tf.extractfile("data_package.json").read())
-    assert manifest["package_id"] == "bcf-visualization-runtime-v20260509.7-ch194-120.1"
+    assert manifest["package_id"] == "bcf-visualization-runtime-v20260509.7-ch2-2.5"
     assert manifest["release_tag"] == outputs.release_tag
-    assert manifest["story_chapter_ordinal"] == 194
-    assert manifest["story_chapter_num"] == "120.1"
-    assert manifest["version_label"] == "BCF data 20260509.7, story ch 194 / 120.1"
+    assert manifest["story_chapter_ordinal"] == 2
+    assert manifest["story_chapter_num"] == "2.5"
+    assert manifest["version_label"] == "BCF data 20260509.7, story ch 2 / 2.5"
 
     with tarfile.open(outputs.dev_tar, "r:gz") as tf:
         dev_names = set(tf.getnames())
     assert "data_package.json" in dev_names
-    assert "roll_text_evidence.json" in dev_names
+    assert "chapter_last_edited.json" in dev_names
     assert "_schemas/chapter_facts.schema.json" not in dev_names
 
     extracted_dev = tmp_path / "extracted-dev"
@@ -253,7 +270,6 @@ def test_local_derived_coherence_flags_stale_predicted_rolls(
                 "chapter_num": "91.9",
                 "full_title": "91.9 Test",
                 "sections": [{"word_count": 2000, "counts_for_cp": True}],
-                "excluded_word_ranges": [],
             }],
         }) + "\n"
     )
@@ -335,9 +351,10 @@ def test_download_dev_latest_fails_when_no_data_release_exists(
 
 def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist",
         package_date="20260509",
         build_number=10,
@@ -353,23 +370,24 @@ def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) ->
     index = _load_json(index_path)
     package = index["packages"][0]
     assert index["default_package_id"] == (
-        "bcf-visualization-runtime-v20260509.10-ch194-120.1"
+        "bcf-visualization-runtime-v20260509.10-ch2-2.5"
     )
     assert package["package_prefix"] == "bcf-visualization"
     assert package["package_kind"] == "runtime"
     assert package["release_tag"] == (
-        "bcf-visualization-data-v20260509.10-ch194-120.1"
+        "bcf-visualization-data-v20260509.10-ch2-2.5"
     )
-    assert package["story_chapter_ordinal"] == 194
-    assert package["story_chapter_num"] == "120.1"
-    assert package["version_label"] == "BCF data 20260509.10, story ch 194 / 120.1"
+    assert package["story_chapter_ordinal"] == 2
+    assert package["story_chapter_num"] == "2.5"
+    assert package["version_label"] == "BCF data 20260509.10, story ch 2 / 2.5"
 
 
 def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs_a = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist-a",
         package_date="20260509",
         build_number=10,
@@ -377,7 +395,7 @@ def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> Non
         generated_at="2026-05-09T12:00:00Z",
     )
     outputs_b = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist-b",
         package_date="20260509",
         build_number=11,
@@ -388,16 +406,16 @@ def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> Non
     index_path = data_release.prepare_pages(
         runtime_tars=[outputs_a.runtime_tar, outputs_b.runtime_tar],
         site_dir=tmp_path / "site",
-        default_package_id="bcf-visualization-runtime-v20260509.11-ch194-120.1",
+        default_package_id="bcf-visualization-runtime-v20260509.11-ch2-2.5",
     )
 
     index = _load_json(index_path)
     assert index["default_package_id"] == (
-        "bcf-visualization-runtime-v20260509.11-ch194-120.1"
+        "bcf-visualization-runtime-v20260509.11-ch2-2.5"
     )
     assert [pkg["package_id"] for pkg in index["packages"]] == [
-        "bcf-visualization-runtime-v20260509.10-ch194-120.1",
-        "bcf-visualization-runtime-v20260509.11-ch194-120.1",
+        "bcf-visualization-runtime-v20260509.10-ch2-2.5",
+        "bcf-visualization-runtime-v20260509.11-ch2-2.5",
     ]
     assert (tmp_path / "site" / "data" / "default" / "data_package.json").is_file()
     assert (
@@ -405,16 +423,17 @@ def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> Non
         / "site"
         / "data"
         / "packages"
-        / "bcf-visualization-runtime-v20260509.10-ch194-120.1"
+        / "bcf-visualization-runtime-v20260509.10-ch2-2.5"
         / "data_package.json"
     ).is_file()
 
 
 def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs_a = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist-a",
         package_date="20260509",
         build_number=10,
@@ -422,7 +441,7 @@ def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> 
         generated_at="2026-05-09T12:00:00Z",
     )
     outputs_b = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist-b",
         package_date="20260509",
         build_number=11,
@@ -433,10 +452,10 @@ def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> 
     index_path = data_release.prepare_pages(
         runtime_tars=[outputs_a.runtime_tar, outputs_b.runtime_tar],
         site_dir=tmp_path / "site",
-        default_package_id="bcf-visualization-runtime-v20260509.10-ch194-120.1",
+        default_package_id="bcf-visualization-runtime-v20260509.10-ch2-2.5",
         smoke_status_by_package_id={
-            "bcf-visualization-runtime-v20260509.10-ch194-120.1": "passed",
-            "bcf-visualization-runtime-v20260509.11-ch194-120.1": "failed",
+            "bcf-visualization-runtime-v20260509.10-ch2-2.5": "passed",
+            "bcf-visualization-runtime-v20260509.11-ch2-2.5": "failed",
         },
         smoke_run_url="https://github.com/deinspanjer/bcf-visualization/actions/runs/1",
     )
@@ -447,12 +466,12 @@ def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> 
         for pkg in index["packages"]
     ] == [
         (
-            "bcf-visualization-runtime-v20260509.10-ch194-120.1",
+            "bcf-visualization-runtime-v20260509.10-ch2-2.5",
             "passed",
             "https://github.com/deinspanjer/bcf-visualization/actions/runs/1",
         ),
         (
-            "bcf-visualization-runtime-v20260509.11-ch194-120.1",
+            "bcf-visualization-runtime-v20260509.11-ch2-2.5",
             "failed",
             "https://github.com/deinspanjer/bcf-visualization/actions/runs/1",
         ),
@@ -461,9 +480,10 @@ def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> 
 
 def test_prepare_pages_rejects_invalid_smoke_status(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist",
         package_date="20260509",
         build_number=10,
@@ -476,16 +496,17 @@ def test_prepare_pages_rejects_invalid_smoke_status(tmp_path: Path) -> None:
             runtime_tars=[outputs.runtime_tar],
             site_dir=tmp_path / "site",
             smoke_status_by_package_id={
-                "bcf-visualization-runtime-v20260509.10-ch194-120.1": "burning",
+                "bcf-visualization-runtime-v20260509.10-ch2-2.5": "burning",
             },
         )
 
 
 def test_prepare_pages_preserves_existing_package_smoke_metadata(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist",
         package_date="20260509",
         build_number=10,
@@ -497,7 +518,7 @@ def test_prepare_pages_preserves_existing_package_smoke_metadata(tmp_path: Path)
         runtime_tars=[outputs.runtime_tar],
         site_dir=tmp_path / "site",
         package_metadata_by_package_id={
-            "bcf-visualization-runtime-v20260509.10-ch194-120.1": {
+            "bcf-visualization-runtime-v20260509.10-ch2-2.5": {
                 "smoke_status": "failed",
                 "smoke_run_url": "https://example.test/old-smoke",
             }
@@ -716,9 +737,10 @@ def test_safe_extract_rejects_symlink_members(tmp_path: Path) -> None:
 
 def test_prepare_pages_rejects_tampered_runtime_bundle(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist",
         package_date="20260509",
         build_number=8,
@@ -745,9 +767,10 @@ def test_prepare_pages_rejects_tampered_runtime_bundle(tmp_path: Path) -> None:
 
 def test_prepare_pages_rejects_unsupported_contract_version(tmp_path: Path) -> None:
     from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
 
     outputs = data_release.build_packages(
-        source_dir=DERIVED,
+        source_dir=source,
         output_dir=tmp_path / "dist",
         package_date="20260509",
         build_number=9,

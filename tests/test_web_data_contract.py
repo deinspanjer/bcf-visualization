@@ -74,7 +74,7 @@ def test_web_contract_helpers_allow_bad_optional_document_to_disable_feature() -
     source = """
       import { validateDataDocument } from './web/data-contract.js';
       const result = validateDataDocument(
-        'roll_resolutions',
+        'constellation_wireframes',
         { schema_version: 2 },
         { schema_version: 1 },
         { optional: true },
@@ -83,7 +83,7 @@ def test_web_contract_helpers_allow_bad_optional_document_to_disable_feature() -
     """
     assert json.loads(_node_eval(source)) == {
         "ok": False,
-        "reason": "Unsupported roll_resolutions schema_version: expected 1, found 2",
+        "reason": "Unsupported constellation_wireframes schema_version: expected 1, found 2",
     }
 
 

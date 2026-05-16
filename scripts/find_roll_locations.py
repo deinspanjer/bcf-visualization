@@ -267,21 +267,39 @@ _KIND_RANK = {
 
 # ---------- section splitter (matches extract_chapter_sections.py) ---------
 
+_PLAIN_PAI_MARKER_RE = (
+    r"(?:Preamble|Addendum|Interlude)[:\s]+[A-Z][A-Za-z0-9 .'\-]{0,60}"
+)
+_PLAIN_TITLE_PAI_MARKER_RE = (
+    r"(?:\d+(?:\.\d+)?\s+)?" + _PLAIN_PAI_MARKER_RE
+)
 _PLAIN_SECTION_MARKER_RE = (
-    r"(?:Jumpchain abilities this chapter:?|New abilities for [^:<]+:?)"
+    r"(?:Jumpchain abilities this chapter:?|New abilities for [^:<]+:?|"
+    + _PLAIN_TITLE_PAI_MARKER_RE
+    + r")"
 )
 
 _MARKER_RE = re.compile(
+    r"(?:"
     r"<p[^>]*>\s*(?:"
     r"<strong[^>]*>(?P<strong>[^<]+)</strong>"
     r"|(?P<plain>" + _PLAIN_SECTION_MARKER_RE + r")"
-    r")\s*</p>",
+    r")\s*</p>"
+    r"|<strong[^>]*>(?P<strong_inline>" + _PLAIN_SECTION_MARKER_RE + r")</strong>"
+    r"|(?<=>)\s*(?P<plain_inline>" + _PLAIN_TITLE_PAI_MARKER_RE + r")\s*(?=<p\b)"
+    r")",
     re.IGNORECASE,
 )
 
 
 def _marker_header(match: re.Match[str]) -> str:
-    return (match.group("strong") or match.group("plain") or "").strip()
+    return (
+        match.group("strong")
+        or match.group("plain")
+        or match.group("strong_inline")
+        or match.group("plain_inline")
+        or ""
+    ).strip()
 
 
 def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
@@ -295,7 +313,7 @@ def _split_sections(html: str) -> list[tuple[str | None, int, int]]:
     if markers[0].start() > 0:
         out.append((None, 0, markers[0].start()))
     for i, m in enumerate(markers):
-        start = m.end()
+        start = m.start()
         end = markers[i + 1].start() if i + 1 < len(markers) else len(html)
         out.append((_marker_header(m), start, end))
     return out
@@ -586,10 +604,9 @@ def main() -> None:
             "Each entry tags an in-prose phrasing that LOOKS like the "
             "protagonist narrating a roll attempt, miss, acquisition, "
             "or constellation reveal. This pass is intentionally liberal "
-            "and over-collects; expect false positives. A separate "
-            "Stage-2 LLM filter will discard candidates that, in "
-            "context, don't actually describe a roll event. Use these "
-            "candidates to validate predicted_rolls.json by checking "
+            "and over-collects; expect false positives. Use these "
+            "candidates as curator navigation hints and to validate "
+            "predicted_rolls.json by checking "
             "that each predicted roll has at least one nearby narrative "
             "anchor; conversely, candidates with no nearby predicted "
             "roll may indicate the regime simulator is off. "

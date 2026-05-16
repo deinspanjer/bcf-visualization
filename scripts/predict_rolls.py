@@ -3,7 +3,7 @@
 Reads:
   - data/derived/chapters.json
   - data/derived/obtained_perks.json
-  - data/derived/chapter_sections.json   (per-section CP-earning word counts)
+  - data/derived/chapter_sections.json   (per-section structure and word counts)
 
 Writes:
   - data/derived/predicted_rolls.json
@@ -22,10 +22,10 @@ in cumulative-word order. Between events, it accumulates CP at the
 regime rate, subtracting any active shadow. When banked CP crosses
 the roll threshold, a roll is predicted at that exact word offset.
 
-CP-earning word counts come from chapter_sections.json, which classifies
-each section of each chapter (Preamble/Addendum/Interlude/perks/news/
-PHO posts) and records only the MC-POV word count per chapter. Run
-`scripts/extract_chapter_sections.py` first to populate that file.
+CP-earning word counts come from chapter_sections.json section structure
+plus the curated eligibility truth in data/manual/section_classifications.json.
+Run `scripts/extract_chapter_sections.py` and
+`scripts/build_section_classifications.py` before predicting rolls.
 
 The prediction is then cross-validated against rolls.json for
 chapters 1-75 (where actual rolls are logged), and used to project
@@ -45,6 +45,7 @@ from multi_grab import (
     unit_principal_cost,
     unit_total_cost,
 )
+from eligibility_spans import section_cp_word_count, section_span_overrides
 from regime_simulator import (
     REGIMES,
     SHADOW_CP_RATIO,
@@ -69,73 +70,11 @@ OUT = DERIVED / "predicted_rolls.json"
 # ---------- per-chapter CP-earning word counts ------------------------------
 
 
-_HEADER_CORRECTIONS_JSON = MANUAL / "header_corrections.json"
-
-
-def _load_header_correction_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:
-    """Per-chapter list of (word_start, word_end) header-correction
-    ranges, in chapter-local word coords.
-
-    Read from ``data/manual/header_corrections.json``; the TUI writes
-    chapter-local word offsets there.
-    """
-    if not _HEADER_CORRECTIONS_JSON.exists():
-        return {}
-    doc = json.loads(_HEADER_CORRECTIONS_JSON.read_text())
-    out: dict[str, list[tuple[int, int]]] = {}
-    for c in (doc.get("corrections") or []):
-        cn = str(c.get("chapter_num"))
-        ws = c.get("word_offset_start")
-        we = c.get("word_offset_end")
-        if ws is None or we is None or int(we) <= int(ws):
-            continue
-        out.setdefault(cn, []).append((int(ws), int(we)))
-    return out
-
-
-def _merge_word_ranges(
-    ranges: list[tuple[int, int]],
-) -> list[tuple[int, int]]:
-    """Sort + merge overlapping/adjacent ranges. Mirrors
-    ``extract_chapter_sections._merge_word_ranges``; kept here too so
-    the consumer doesn't have to import from another script."""
-    out: list[list[int]] = []
-    for s, e in sorted(ranges):
-        if e <= s:
-            continue
-        if out and s <= out[-1][1]:
-            out[-1][1] = max(out[-1][1], e)
-        else:
-            out.append([s, e])
-    return [(s, e) for s, e in out]
-
-
-def _intersect_section_with_excluded(
-    section_word_start: int,
-    section_word_end: int,
-    excluded: list[tuple[int, int]],
-) -> int:
-    """Total words in ``[section_word_start, section_word_end)`` that
-    are also in any of the merged ``excluded`` ranges.
-    """
-    total = 0
-    for ws, we in excluded:
-        lo = max(ws, section_word_start)
-        hi = min(we, section_word_end)
-        if hi > lo:
-            total += hi - lo
-    return total
-
-
 def _load_cp_words_per_chapter() -> dict[str, int]:
     """Canonical CP-eligible word count per chapter, keyed by full_title.
 
-    Walks each chapter's CP-eligible sections (``counts_for_cp=True``
-    AND ``cls_data`` doesn't override to False) and subtracts the union
-    of CP-exclusion word ranges (AN + auto-header from
-    ``chapter_sections.json:excluded_word_ranges`` + manual
-    header_corrections from ``data/manual/header_corrections.json``).
-    Range-merging guarantees overlapping exclusions are counted once.
+    Walks each chapter's manually curated CP-eligible sections and applies
+    passage-level span overrides from ``section_classifications.json``.
     """
     if not SECTIONS_JSON.exists():
         raise SystemExit(
@@ -149,16 +88,9 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
         )
     sections_data = json.loads(SECTIONS_JSON.read_text())
     cls_data = json.loads(CLASSIFICATIONS_JSON.read_text())["classifications"]
-    manual_header_by_chapter = _load_header_correction_ranges_by_chapter()
-
     out: dict[str, int] = {}
     for c in sections_data["chapters"]:
         cn = str(c["chapter_num"])
-        # Build per-chapter union of excluded word ranges (chapter-local).
-        chapter_excl = list(c.get("excluded_word_ranges") or [])
-        chapter_excl_tuples = [(int(s), int(e)) for s, e in chapter_excl]
-        chapter_excl_tuples.extend(manual_header_by_chapter.get(cn, []))
-        merged = _merge_word_ranges(chapter_excl_tuples)
         # Walk sections in order, accumulating eligible words.
         total = 0
         word_cursor = 0
@@ -167,15 +99,22 @@ def _load_cp_words_per_chapter() -> dict[str, int]:
             sec_start = word_cursor
             sec_end = word_cursor + wc
             key = f"{cn}@{i}"
-            section_eligible = (
-                bool(s.get("counts_for_cp", True))
-                and cls_data.get(key, {}).get("counts_for_cp", True)
-            )
-            if section_eligible:
-                excluded_in_section = _intersect_section_with_excluded(
-                    sec_start, sec_end, merged,
+            if key not in cls_data:
+                raise SystemExit(
+                    f"missing section classification for {key}; run "
+                    "scripts/build_section_classifications.py before predicting rolls"
                 )
-                total += max(0, wc - excluded_in_section)
+            section_eligible = bool(cls_data[key].get("counts_for_cp"))
+            total += section_cp_word_count(
+                section_word_start=sec_start,
+                section_word_end=sec_end,
+                base_counts_for_cp=section_eligible,
+                span_overrides=section_span_overrides(
+                    cls_data[key],
+                    sec_start,
+                    sec_end,
+                ),
+            )
             word_cursor = sec_end
         out[c["full_title"]] = max(0, total)
     return out

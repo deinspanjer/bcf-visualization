@@ -205,13 +205,76 @@ def mechanics_override_section_index(sections: list[dict]) -> int | None:
     return max(pool, key=lambda item: item[1].get("word_count", 0))[0]
 
 
+def header_span_override(
+    section: dict,
+    section_word_start: int,
+) -> dict | None:
+    """Return the generated ineligible span for a section header."""
+    word_count = int(section.get("auto_header_word_count") or 0)
+    if word_count <= 0:
+        return None
+    reason_code = (
+        "chapter_title_header"
+        if section.get("header") is None else "section_header"
+    )
+    return {
+        "word_offset_start": section_word_start,
+        "word_offset_end": section_word_start + word_count,
+        "counts_for_cp": False,
+        "reason_code": reason_code,
+        "note": "generated from chapter section header",
+        "excerpt": section.get("header") or "",
+    }
+
+
+def merge_span_overrides(
+    generated: list[dict],
+    existing: list[dict],
+) -> list[dict]:
+    """Merge generated structural spans with curated manual spans."""
+    out: list[dict] = []
+    generated_keys = {
+        (
+            int(span.get("word_offset_start", -1)),
+            int(span.get("word_offset_end", -1)),
+            str(span.get("reason_code") or ""),
+        )
+        for span in generated
+    }
+    for span in generated:
+        out.append(span)
+    for span in existing:
+        key = (
+            int(span.get("word_offset_start", -1)),
+            int(span.get("word_offset_end", -1)),
+            str(span.get("reason_code") or ""),
+        )
+        if key not in generated_keys:
+            out.append(span)
+    out.sort(key=lambda span: (
+        int(span.get("word_offset_start", 0)),
+        int(span.get("word_offset_end", 0)),
+        str(span.get("reason_code") or ""),
+    ))
+    return out
+
+
 def main() -> None:
     sections_data = json.loads(SECTIONS_JSON.read_text())
     mechanics_chapters = mechanics_evidence_chapters()
+    existing_classifications = {}
+    if OUT.exists():
+        try:
+            existing_classifications = (
+                json.loads(OUT.read_text()).get("classifications") or {}
+            )
+        except Exception:
+            existing_classifications = {}
 
     classifications = {}
     review_count = 0
     for c in sections_data["chapters"]:
+        section_word_start = 0
         for i, section in enumerate(c["sections"]):
             override = MANUAL_OVERRIDES.get((c["chapter_num"], i))
             if override is not None:
@@ -226,6 +289,18 @@ def main() -> None:
                 "counts_for_cp": counts,
                 "reason": reason,
             }
+            existing = existing_classifications.get(key) or {}
+            generated_spans = [
+                span for span in [header_span_override(section, section_word_start)]
+                if span is not None
+            ]
+            span_overrides = merge_span_overrides(
+                generated_spans,
+                existing.get("span_overrides") or [],
+            )
+            if span_overrides:
+                classifications[key]["span_overrides"] = span_overrides
+            section_word_start += int(section.get("word_count") or 0)
 
         chapter_keys = [
             f"{c['chapter_num']}@{i}"
@@ -261,7 +336,8 @@ def main() -> None:
         "_note": (
             "Per-section MC POV classifications, used by predict_rolls.py "
             "to compute CP-earning word counts. Overrides for ambiguous "
-            "headers are listed in the script."
+            "headers are listed in the script. Curated span_overrides "
+            "from existing entries are preserved across regeneration."
         ),
         "classifications": classifications,
     }, indent=2, ensure_ascii=False) + "\n")

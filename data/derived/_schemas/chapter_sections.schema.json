@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bcf-visualization/derived/chapter_sections.schema.json",
   "title": "Chapter Sections",
-  "description": "Per-section POV classification and CP-earning word counts derived by walking each EPUB chapter's HTML and scanning each section's first ~3000 chars for first/third-person pronouns, structural markers (PHO/news/meeting), and header pattern.",
+  "description": "Per-section structure and diagnostic POV classification derived by walking each EPUB chapter's HTML and scanning each section's first ~3000 chars for first/third-person pronouns, structural markers (PHO/news/meeting), and header pattern. Final CP eligibility is curated in data/manual/section_classifications.json and materialized in chapter_facts.json.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "_source", "_count", "_total_sections",
     "_classification_distribution", "_confidence_distribution",
-    "_total_words", "_cp_earning_words", "_note", "chapters"
+    "_total_words", "_note", "chapters"
   ],
   "properties": {
     "_source": { "type": "string" },
@@ -23,7 +23,6 @@
       "additionalProperties": { "type": "integer", "minimum": 0 }
     },
     "_total_words":      { "type": "integer", "minimum": 0 },
-    "_cp_earning_words": { "type": "integer", "minimum": 0 },
     "_note":             { "type": "string" },
     "chapters": {
       "type": "array",
@@ -36,27 +35,16 @@
       "additionalProperties": false,
       "required": [
         "chapter_num", "full_title", "epub_href",
-        "total_word_count", "cp_earning_word_count", "sections"
+        "total_word_count", "sections"
       ],
       "properties": {
         "chapter_num":           { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
         "full_title":            { "type": "string", "minLength": 1 },
         "epub_href":             { "type": "string", "minLength": 1 },
         "total_word_count":      { "type": "integer", "minimum": 0 },
-        "cp_earning_word_count": { "type": "integer", "minimum": 0 },
         "sections": {
           "type": "array",
           "items": { "$ref": "#/$defs/section" }
-        },
-        "excluded_word_ranges": {
-          "type": "array",
-          "description": "Union of CP-exclusion word ranges (chapter-local), built from per-section AN + auto-header ranges and merged for de-duplication. Manual header_corrections from data/manual/header_corrections.json are merged in at consumption time.",
-          "items": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
-            "items": { "type": "integer", "minimum": 0 }
-          }
         }
       }
     },
@@ -64,15 +52,14 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "header", "word_count", "counts_for_cp",
+        "header", "word_count",
         "classification", "confidence", "classification_reason",
         "fp_count", "tp_count", "structural_markers", "sample",
-        "author_note_ranges", "author_note_word_count"
+        "auto_header_word_count"
       ],
       "properties": {
         "header":                { "type": ["string", "null"] },
         "word_count":            { "type": "integer", "minimum": 0 },
-        "counts_for_cp":         { "type": "boolean" },
         "classification":        { "enum": ["mc", "non_mc_perks", "non_mc_other_pov", "non_mc_meta"] },
         "confidence":            { "enum": ["high", "medium", "low"] },
         "classification_reason": { "type": "string" },
@@ -80,16 +67,6 @@
         "tp_count":              { "type": "integer", "minimum": 0 },
         "structural_markers":    { "type": "array", "items": { "type": "string" } },
         "sample":                { "type": "string" },
-        "author_note_ranges": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
-            "items": { "type": "integer", "minimum": 0 }
-          }
-        },
-        "author_note_word_count": { "type": "integer", "minimum": 0 },
         "auto_header_word_count": { "type": "integer", "minimum": 0 }
       }
     }

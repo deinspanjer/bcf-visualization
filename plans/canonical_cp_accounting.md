@@ -5,7 +5,7 @@
 
 ## Goals
 
-1. **One canonical CP-eligible word count per (chapter, section)**, computed by the pipeline. Subtracts: ineligible sections, author notes, manual header corrections, auto-detected section headers.
+1. **One canonical CP-eligible word count per (chapter, section)**, computed by the pipeline from `section_classifications.json`. Whole-section eligibility and passage-level `span_overrides` cover ineligible sections, author notes, section headers, and Joe-on-screen/Joe-not-on-screen spans.
 2. **One canonical banked-CP function** keyed on `(chapter_num, raw_word_offset)` — the simulator computes a per-chapter banked-CP table during `simulate_story` and exposes it. No re-derivation in the TUI.
 3. **One canonical `predicted_rolls.json`** with roll positions at exact threshold-crossings, not at event boundaries.
 4. **Curated overrides take priority** over auto-detection when both are present.
@@ -16,13 +16,14 @@
 
 - `extract_chapter_sections.py` runs the same regex-based "first N words of each section match the section's `header` field" detection that `data_loader._detect_section_headers` does today.
 - Per-section field added: `auto_header_word_count`.
-- Output: `chapter_sections.json` carries `word_count`, `author_note_word_count`, `auto_header_word_count`.
+- Output: `chapter_sections.json` carries structural section fields including `word_count` and `auto_header_word_count`. CP/text eligibility is not stored here.
 
-### 2. Pipeline consumes manual header_corrections
+### 2. Pipeline consumes section classification spans
 
-- `_load_cp_words_per_chapter` reads `data/manual/header_corrections.json`.
-- Subtracts manual header-span word ranges from the per-chapter total, after AN and auto-header.
-- Manual entries override auto-detected ones at the same span (de-dup by overlap).
+- `_load_cp_words_per_chapter` reads `data/manual/section_classifications.json`.
+- Section-level `counts_for_cp` is the base state.
+- Passage-level `span_overrides` add or remove CP-eligible words inside a section.
+- Generated header spans and curated author-note spans use the same model as other passage eligibility.
 
 ### 3. Simulator fires rolls at threshold-crossings
 
@@ -40,7 +41,7 @@
 ### 5. TUI consumes canonical outputs
 
 - Delete `data_loader._detect_section_headers`. Read `auto_header_word_count` from the loaded chapter_sections data.
-- Delete `app._cp_at_cursor`, `app._excluded_word_ranges`, `app._cp_earning_word_offset`. TUI calls `cp_at_chapter_word` and a sibling `cp_earning_word_offset(chapter_num, raw_word_offset)`.
+- Delete duplicate CP accounting helpers. TUI calls canonical helpers for banked CP and CP-earning offsets.
 - Stats panel pulls from canonical functions; gutter computes word indices the same way.
 
 ### 6. Tests

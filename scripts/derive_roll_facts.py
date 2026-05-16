@@ -611,6 +611,28 @@ def _apply_issue_resolutions(
     return resolved_issues, resolved_codes
 
 
+BLOCKING_VALIDATION_CODES = {
+    "paid_rolls_exceed_predicted_slots",
+    "known_attempts_exceed_predicted_slots",
+    "cost_schedule_infeasible",
+}
+
+
+def _validation_status(issues: list[dict]) -> tuple[str, bool, bool]:
+    raw_has_discrepancy = any(
+        issue["code"] in BLOCKING_VALIDATION_CODES for issue in issues
+    )
+    has_discrepancy = any(
+        issue["code"] in BLOCKING_VALIDATION_CODES and not issue.get("resolved")
+        for issue in issues
+    )
+    return (
+        "discrepancy" if has_discrepancy else "ok",
+        has_discrepancy,
+        raw_has_discrepancy,
+    )
+
+
 def _explicit_extra_slot_position(
     entry: dict | None, chapter_words: int
 ) -> int | None:
@@ -2310,18 +2332,7 @@ def main() -> None:
         issues, resolved_issue_codes = _apply_issue_resolutions(
             issues, multi_overrides.get(cn)
         )
-        blocking_codes = {
-            "paid_rolls_exceed_predicted_slots",
-            "known_attempts_exceed_predicted_slots",
-            "cost_schedule_infeasible",
-        }
-        raw_has_discrepancy = any(
-            issue["code"] in blocking_codes for issue in issues
-        )
-        has_discrepancy = any(
-            issue["code"] in blocking_codes and not issue.get("resolved")
-            for issue in issues
-        )
+        status, has_discrepancy, raw_has_discrepancy = _validation_status(issues)
         if cn in multi_overrides and _has_structural_roll_override(multi_overrides[cn]):
             source_priority = "vetted_curated"
         elif cn in curator_by_chapter:
@@ -2333,7 +2344,7 @@ def main() -> None:
 
         chapter_checks.append({
             "chapter_num": cn,
-            "status": "discrepancy" if has_discrepancy else "ok",
+            "status": status,
             "has_discrepancy": has_discrepancy,
             "raw_has_discrepancy": raw_has_discrepancy,
             "resolved_issue_codes": resolved_issue_codes,

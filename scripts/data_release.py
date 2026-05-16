@@ -38,7 +38,7 @@ PACKAGE_PREFIX = "bcf-visualization"
 SMOKE_STATUSES = {"passed", "failed", "unknown"}
 
 RUNTIME_REQUIRED = ["chapter_facts"]
-RUNTIME_OPTIONAL = ["constellation_wireframes", "roll_resolutions"]
+RUNTIME_OPTIONAL = ["constellation_wireframes"]
 DEV_BUNDLE_MANIFEST_NAME = "_dev_data_package.json"
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(
@@ -477,19 +477,13 @@ def _check_predicted_rolls_fresh(source_dir: Path) -> list[str]:
                 "cost": unit_total_cost(unit),
                 "principal_cost": unit_principal_cost(unit),
             })
-        if source_dir.resolve() == DERIVED.resolve():
-            cp_words_by_chapter = predict_rolls._load_cp_words_per_chapter()
-        else:
-            cp_words_by_chapter = {
-                str(chapter.get("full_title") or chapter.get("chapter_num")): sum(
-                    int(section.get("word_count") or 0)
-                    for section in (chapter.get("sections") or [])
-                    if section.get("counts_for_cp", True)
-                )
-                for chapter in _read_json(source_dir / "chapter_sections.json").get(
-                    "chapters", []
-                )
-            }
+        if source_dir.resolve() != DERIVED.resolve():
+            raise SystemExit(
+                "predicted roll validation requires data/manual/"
+                "section_classifications.json; non-default source_dir is not "
+                "supported for this check"
+            )
+        cp_words_by_chapter = predict_rolls._load_cp_words_per_chapter()
         expected, _starts, _ends, total_words = predict_rolls._simulate(
             chapters,
             paid_by_chapter,

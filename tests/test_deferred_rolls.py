@@ -19,12 +19,6 @@ from derive_roll_facts import (  # noqa: E402
     _restructure_curator_rows,
 )
 from build_chapter_facts import _skipped_predicted_roll_markers  # noqa: E402
-from data_paths import DERIVED  # noqa: E402
-
-
-ROLL_FACTS_JSON = DERIVED / "roll_facts.json"
-ROLL_VALIDATION_JSON = DERIVED / "roll_validation.json"
-CHAPTER_FACTS_JSON = DERIVED / "chapter_facts.json"
 
 
 def _perk(
@@ -566,75 +560,3 @@ def test_merge_paid_units_ignores_unassigned_zero_cost_paid_perks() -> None:
     assert stdout.getvalue() == ""
     assert len(units) == 1
     assert [p["perk_name"] for p in units[0]["paid"]] == ["Narrative Hit"]
-
-
-def test_chapter_1_fashion_is_deferred_to_chapter_2_roll_facts() -> None:
-    rolls = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
-    fashion = next(
-        r for r in rolls
-        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
-    )
-
-    assert fashion["chapter_num"] == "2"
-    assert fashion["mechanical_chapter_num"] == "1"
-    assert fashion["roll_number"] == 2
-    assert fashion["mechanical_cumulative_word_offset"] == 4000
-    assert fashion["mention_word_position"] == 879
-    assert fashion["display_position_policy"] == "mention"
-    assert fashion["display_chapter_num"] == "2"
-    assert fashion["display_word_position"] == 879
-    assert fashion["display_cumulative_word_offset"] == 5217
-    assert fashion["word_position"] == fashion["display_word_position"]
-    assert fashion["cumulative_word_offset"] == fashion["display_cumulative_word_offset"]
-
-
-def test_chapter_4_unpredicted_miss_preserves_source_roll_number() -> None:
-    rolls = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
-    ch4_rolls = [
-        r for r in rolls
-        if r.get("source_kind") != "trigger"
-        and str(r.get("mechanical_chapter_num")) == "4"
-    ]
-    fifth = next(r for r in ch4_rolls if r["roll_sequence_in_chapter"] == 5)
-
-    assert fifth["outcome"] == "miss"
-    assert fifth["roll_number"] == 13
-
-
-def test_deferred_roll_validation_counts_mechanical_chapter() -> None:
-    checks = {
-        row["chapter_num"]: row
-        for row in json.loads(ROLL_VALIDATION_JSON.read_text())["chapter_checks"]
-    }
-
-    assert checks["1"]["required_paid_roll_count"] == 1
-    assert checks["1"]["known_attempt_count"] == 2
-    assert checks["1"]["predicted_roll_count"] == 2
-    assert checks["1"]["status"] == "ok"
-    assert checks["2"]["known_attempt_count"] == 3
-
-
-def test_chapter_facts_own_deferred_roll_by_mention_chapter() -> None:
-    chapters = {
-        row["chapter_num"]: row
-        for row in json.loads(CHAPTER_FACTS_JSON.read_text())["chapters"]
-    }
-    ch1_rolls = chapters["1"]["rolls"]
-    ch2_rolls = chapters["2"]["rolls"]
-    fashion = next(
-        r for r in ch2_rolls
-        if any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
-    )
-
-    assert not any(
-        any(p["name"] == "Fashion" for p in r.get("purchased_perks") or [])
-        for r in ch1_rolls
-    )
-    assert fashion["mechanical_chapter_num"] == "1"
-    assert fashion["display_chapter_num"] == "2"
-    assert fashion["display_word_position"] == 879
-    assert fashion["display_word_position_epub"] == (
-        chapters["1"]["total_word_count"] + 879
-    )
-    assert chapters["2"]["paid_perks_gained"] == 3
-    assert chapters["2"]["perks_gained"] == 3

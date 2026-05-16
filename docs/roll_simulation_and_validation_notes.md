@@ -16,7 +16,7 @@ Deferred rolls are modeled as one mechanical predicted slot plus one narrated/li
 3. `scripts/derive_roll_facts.py` merges curator rows, manual chapter-roll overrides, fallback rows, predicted slots, and scheduler accounting into `roll_facts.json` plus `roll_validation.json`.
 4. `scripts/build_chapter_facts.py` groups canonical roll facts by narration/listing chapter and embeds them into `chapter_facts.json`.
 
-`scripts/find_roll_locations.py`, `scripts/find_text_backed_rolls.py`, and `scripts/derive_roll_resolutions.py` support evidence discovery and NLP candidate generation. They are not the canonical source for roll ownership or accounting.
+`scripts/find_roll_locations.py` and `scripts/find_text_backed_rolls.py` support evidence discovery. They are not the canonical source for roll ownership or accounting.
 
 ## Validation Rules
 

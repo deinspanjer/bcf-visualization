@@ -41,13 +41,17 @@ from collections import Counter
 from _common import write_validated_json
 from data_paths import DERIVED, MANUAL, RAW, ROOT
 from data_release import refresh_current_runtime_manifest
+from eligibility_spans import (
+    merge_word_ranges,
+    section_cp_word_count,
+    section_span_overrides,
+)
 from find_roll_locations import _build_chapter_index, _split_sections
 
 EPUB = RAW / "Brocktons_Celestial_Forge.epub"
 CHAPTERS = DERIVED / "chapters.json"
 SECTIONS = DERIVED / "chapter_sections.json"
 CLASSIFICATIONS = MANUAL / "section_classifications.json"
-HEADER_CORRECTIONS = MANUAL / "header_corrections.json"
 ROLL_FACTS = DERIVED / "roll_facts.json"
 ROLL_VALIDATION = DERIVED / "roll_validation.json"
 PREDICTED_ROLLS = DERIVED / "predicted_rolls.json"
@@ -183,19 +187,24 @@ def _story_section_word_count(
     section_end: int,
     marker_kind: str,
     classification: str | None,
-    excluded_ranges: list[tuple[int, int]],
+    span_overrides: list[dict],
 ) -> int:
     """Words that belong on the visualization's story-word axis.
 
     ``chapter_sections.json`` preserves raw EPUB section counts for curator
     navigation. ``chapter_facts.json`` is the web runtime contract, so its
-    word axis excludes title/header words, author notes, and the abilities
-    footer/perk recap sections.
+    word axis excludes meta sections and passage-level ineligible spans
+    such as section headers and author notes.
     """
     if marker_kind in {"abilities", "author_note"}:
         return 0
     if classification == "non_mc_meta":
         return 0
+    excluded_ranges = merge_word_ranges([
+        (int(span["word_offset_start"]), int(span["word_offset_end"]))
+        for span in span_overrides
+        if not bool(span.get("counts_for_cp"))
+    ])
     excluded_in_section = _range_overlap_len(
         excluded_ranges,
         section_start,
@@ -209,50 +218,29 @@ def _chapter_story_word_count(
     chapter_num: str,
     full_title: str,
     sec_meta: dict,
-    manual_header_ranges: dict[str, list[tuple[int, int]]],
+    classifications: dict[str, dict],
 ) -> int:
-    excluded_ranges = [
-        (int(r[0]), int(r[1]))
-        for r in sec_meta.get("excluded_word_ranges", [])
-        if len(r) == 2 and int(r[1]) > int(r[0])
-    ]
-    excluded_ranges.extend(manual_header_ranges.get(chapter_num, []))
     total = 0
     sec_word_start = 0
     for i, s in enumerate(sec_meta["sections"]):
         word_count = int(s["word_count"])
         sec_word_end = sec_word_start + word_count
         marker_kind = parse_marker_kind(s.get("header"), full_title)
+        cls = classifications.get(f"{chapter_num}@{i}", {})
         total += _story_section_word_count(
             word_count=word_count,
             section_start=sec_word_start,
             section_end=sec_word_end,
             marker_kind=marker_kind,
             classification=s.get("classification"),
-            excluded_ranges=excluded_ranges,
+            span_overrides=section_span_overrides(
+                cls,
+                sec_word_start,
+                sec_word_end,
+            ),
         )
         sec_word_start = sec_word_end
     return total
-
-
-def _manual_header_ranges_by_chapter() -> dict[str, list[tuple[int, int]]]:
-    """Load manual header corrections as chapter-local word ranges.
-
-    Existing entries are already stored in chapter-local word offsets by
-    the TUI. They are kept separate from extractor-generated exclusions
-    so the derived builder can consume both consistently.
-    """
-    if not HEADER_CORRECTIONS.exists():
-        return {}
-    data = json.loads(HEADER_CORRECTIONS.read_text())
-    out: dict[str, list[tuple[int, int]]] = {}
-    for c in data.get("corrections", []):
-        ws = c.get("word_offset_start")
-        we = c.get("word_offset_end")
-        if ws is None or we is None or int(we) <= int(ws):
-            continue
-        out.setdefault(str(c.get("chapter_num")), []).append((int(ws), int(we)))
-    return out
 
 
 def _load_chapter_roll_overrides() -> dict[str, dict]:
@@ -324,13 +312,12 @@ def main() -> None:
     sections_data = json.loads(SECTIONS.read_text())
     sections_by_chap = {c["chapter_num"]: c for c in sections_data["chapters"]}
     classifications = json.loads(CLASSIFICATIONS.read_text())["classifications"]
-    manual_header_ranges = _manual_header_ranges_by_chapter()
     chapter_story_words_by_num = {
         c["chapter_num"]: _chapter_story_word_count(
             chapter_num=c["chapter_num"],
             full_title=c["full_title"],
             sec_meta=sections_by_chap[c["chapter_num"]],
-            manual_header_ranges=manual_header_ranges,
+            classifications=classifications,
         )
         for c in chapters
     }
@@ -435,28 +422,30 @@ def main() -> None:
         pov_set: set[str] = set()
         marker_kinds_seen: list[str] = []
         struct_markers_aggregate: set[str] = set()
-        excluded_ranges = [
-            (int(r[0]), int(r[1]))
-            for r in sec_meta.get("excluded_word_ranges", [])
-            if len(r) == 2 and int(r[1]) > int(r[0])
-        ]
-        excluded_ranges.extend(manual_header_ranges.get(cn, []))
         sec_word_start = 0
         story_word_cursor = 0
         cp_word_cursor = 0
         for i, s in enumerate(sec_meta["sections"]):
-            cls = classifications.get(f"{cn}@{i}", {})
-            counts_for_cp = bool(cls.get("counts_for_cp", False))
+            cls_key = f"{cn}@{i}"
+            if cls_key not in classifications:
+                raise SystemExit(
+                    f"missing section classification for {cls_key}; run "
+                    "scripts/build_section_classifications.py before building chapter facts"
+                )
+            cls = classifications[cls_key]
+            counts_for_cp = bool(cls.get("counts_for_cp"))
             word_count = int(s["word_count"])
             sec_word_end = sec_word_start + word_count
-            excluded_in_section = _range_overlap_len(
-                excluded_ranges,
+            span_overrides = section_span_overrides(
+                cls,
                 sec_word_start,
                 sec_word_end,
             )
-            cp_word_count = (
-                max(0, word_count - excluded_in_section)
-                if counts_for_cp else 0
+            cp_word_count = section_cp_word_count(
+                section_word_start=sec_word_start,
+                section_word_end=sec_word_end,
+                base_counts_for_cp=counts_for_cp,
+                span_overrides=span_overrides,
             )
             mk = parse_marker_kind(s.get("header"), c["full_title"])
             story_word_count = _story_section_word_count(
@@ -465,7 +454,7 @@ def main() -> None:
                 section_end=sec_word_end,
                 marker_kind=mk,
                 classification=s.get("classification"),
-                excluded_ranges=excluded_ranges,
+                span_overrides=span_overrides,
             )
             pov = parse_pov_character(s.get("header"), c["full_title"])
             if pov:
@@ -483,6 +472,7 @@ def main() -> None:
                 "word_count": story_word_count,
                 "cp_earning_word_count": cp_word_count,
                 "counts_for_cp": counts_for_cp,
+                "span_overrides": span_overrides,
                 "classification": s.get("classification"),
                 "classification_confidence": s.get("confidence"),
                 "structural_markers": s.get("structural_markers") or [],

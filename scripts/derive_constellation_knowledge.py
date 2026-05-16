@@ -11,8 +11,8 @@ Reads:
 Writes:
   - data/derived/constellation_knowledge_by_chapter.json
 
-The output is intended to feed LLM annotation prompts:
-  "as of this roll, Joe currently knows these constellation names: [...]"
+The output supports roll/context displays that need to know which
+constellation names Joe knows at a given chapter boundary.
 """
 
 from __future__ import annotations

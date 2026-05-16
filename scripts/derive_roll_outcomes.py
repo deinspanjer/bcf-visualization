@@ -1,7 +1,7 @@
 """Derive interpolated per-roll hit/miss outcomes.
 
-Placeholder pipeline used until NLP-extracted ground-truth roll outcomes
-(from `roll_text_evidence.json` and friends) are available at scale.
+Fallback pipeline used when manual Forge Curator roll facts are not
+available for a chapter.
 
 Approach
 --------
@@ -502,10 +502,10 @@ def main(argv: list[str] | None = None) -> None:
             "word positions using chapters.json words_approx."
         ),
         "_caveat": (
-            "PLACEHOLDER until NLP-extracted ground-truth roll outcomes are "
-            "available. Per-chapter HIT COUNT is canonical; within-chapter "
-            "hit/miss timing is the predicted-rolls model's guess interpolated "
-            "by even spacing."
+            "Fallback for chapters without manual Forge Curator coverage. "
+            "Per-chapter HIT COUNT is canonical; within-chapter hit/miss "
+            "timing is the predicted-rolls model's guess interpolated by "
+            "even spacing."
         ),
         "_counts": {
             "rolls_emitted": len(all_rolls),

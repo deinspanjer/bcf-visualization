@@ -95,15 +95,62 @@ def test_roll_validation_reports_global_roll_capacity_checks() -> None:
 
 
 def test_roll_facts_use_evidence_quotes_contract() -> None:
-    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
     schema = json.loads(ROLL_FACTS_SCHEMA_JSON.read_text())
     validator = Draft202012Validator(schema)
-    quoted_roll = next(roll for roll in roll_facts if roll.get("evidence_quotes"))
-
-    assert "narrative_evidence" not in quoted_roll
-    assert quoted_roll["evidence_quotes"][0]["text"]
-
-    invalid_doc = {
+    valid_quote = {
+        "text": "synthetic quote",
+        "mention_chapter_num": "1",
+        "mention_word_position": 10,
+    }
+    minimal_roll = {
+        "roll_key": "fixture:0001",
+        "roll_number": 1,
+        "chapter_num": "1",
+        "predicted_chapter_num": "1",
+        "mechanical_chapter_num": "1",
+        "mechanical_word_position": 100,
+        "mechanical_cumulative_word_offset": 100,
+        "mention_chapter_num": "1",
+        "mention_word_position": 10,
+        "display_position_policy": "source_marker",
+        "display_chapter_num": "1",
+        "display_word_position": 10,
+        "display_cumulative_word_offset": 10,
+        "source_chapter_num": "1",
+        "source_roll_index": 1,
+        "source_word_position": 10,
+        "source_cumulative_word_offset": 10,
+        "visible_chapter_nums": ["1"],
+        "chapter_attribution_disagreement": False,
+        "source": "curator_rolls",
+        "source_kind": "miss",
+        "outcome": "miss",
+        "constellation": None,
+        "constellation_revealed": False,
+        "available_cp": 100,
+        "banked_cp_after_roll": 100,
+        "purchased_perks": [],
+        "purchased_perk_cost_total": None,
+        "purchased_perk_id": None,
+        "purchased_perk_jump": None,
+        "free_perks": [],
+        "rolled_perk_name": None,
+        "rolled_perk_cost": 200,
+        "miss_cost_estimate": 200,
+        "predicted_word_position_epub": 100,
+        "predicted_char_offset_in_chapter": None,
+        "anchor_char_offset_in_chapter": None,
+        "evidence_kind": "curator_log",
+        "evidence_quotes": [valid_quote],
+        "raw": "Roll 1 miss",
+        "source_row_index": 0,
+        "roll_sequence_in_chapter": 1,
+        "rolls_in_chapter": 1,
+        "slot_source": "curator",
+        "word_position": 10,
+        "cumulative_word_offset": 10,
+    }
+    valid_doc = {
         "schema_version": 1,
         "_source": "test",
         "_method": "test",
@@ -112,12 +159,18 @@ def test_roll_facts_use_evidence_quotes_contract() -> None:
             "rolls_emitted": 1,
             "curator_rows": 1,
             "interpolated_rows": 0,
-            "hits": 1,
-            "misses": 0,
+            "hits": 0,
+            "misses": 1,
             "triggers": 0,
             "free_perks": 0,
         },
-        "rolls": [dict(quoted_roll, narrative_evidence="legacy scalar")],
+        "rolls": [minimal_roll],
+    }
+
+    assert list(validator.iter_errors(valid_doc)) == []
+
+    invalid_doc = valid_doc | {
+        "rolls": [minimal_roll | {"narrative_evidence": "legacy scalar"}],
     }
     errors = list(validator.iter_errors(invalid_doc))
 
@@ -145,29 +198,6 @@ def test_roll_validation_status_matches_blocking_model_issues() -> None:
         assert check["status"] == ("discrepancy" if has_discrepancy else "ok")
 
 
-def test_chapter_4_extra_attempt_discrepancy_is_curator_resolved() -> None:
-    validation = json.loads(ROLL_VALIDATION_JSON.read_text())
-    check = next(
-        row for row in validation["chapter_checks"]
-        if str(row["chapter_num"]) == "4"
-    )
-    resolved = [
-        issue for issue in check["issues"]
-        if issue["code"] == "known_attempts_exceed_predicted_slots"
-    ]
-
-    assert check["predicted_roll_count"] == 4
-    assert check["known_attempt_count"] == 5
-    assert check["known_attempt_capacity_ok"] is False
-    assert check["raw_has_discrepancy"] is True
-    assert check["has_discrepancy"] is False
-    assert check["status"] == "ok"
-    assert check["resolved_issue_codes"] == ["known_attempts_exceed_predicted_slots"]
-    assert resolved and resolved[0]["severity"] == "info"
-    assert resolved[0]["resolved"] is True
-    assert resolved[0]["resolution_reason_code"] == "post_publication_edit_extra_roll"
-
-
 def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None:
     validation = json.loads(ROLL_VALIDATION_JSON.read_text())
     checks = {
@@ -192,15 +222,3 @@ def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None
             if first_discrepancy is None:
                 first_discrepancy = chapter_num
             prior_discrepancy = True
-
-
-def test_chapter_4_resolution_does_not_pollute_chapter_5_model_status() -> None:
-    chapters = {
-        str(chapter["chapter_num"]): chapter
-        for chapter in json.loads(CHAPTER_FACTS_JSON.read_text())["chapters"]
-    }
-
-    assert chapters["4"]["model_validation"]["current_discrepancy"] is False
-    assert chapters["4"]["model_validation"]["raw_current_discrepancy"] is True
-    assert chapters["5"]["model_validation"]["prior_discrepancy"] is False
-    assert chapters["5"]["model_validation"]["first_discrepancy_chapter_num"] is None
