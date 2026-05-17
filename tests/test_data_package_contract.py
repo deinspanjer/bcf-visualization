@@ -20,13 +20,45 @@ def _load_json(path: Path) -> dict:
 
 def _write_tiny_package_source(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
+    chapters = [
+        {"chapter_num": "1", "full_title": "1 Fixture Start"},
+        {"chapter_num": "2.5", "full_title": "2.5 Fixture Finale"},
+    ]
     (path / "chapter_facts.json").write_text(
+        json.dumps({"schema_version": 1, "chapters": chapters}) + "\n"
+    )
+    (path / "visualization_facts.json").write_text(
         json.dumps({
             "schema_version": 1,
-            "chapters": [
-                {"chapter_num": "1", "full_title": "1 Fixture Start"},
-                {"chapter_num": "2.5", "full_title": "2.5 Fixture Finale"},
-            ],
+            "_source": "fixture",
+            "_method": "fixture",
+            "version": {
+                "package_id": "fixture",
+                "version_label": "fixture",
+                "package_date": "20260101",
+                "build_number": 1,
+                "source_commit": "fixture",
+                "story_chapter_ordinal": len(chapters),
+                "story_chapter_num": chapters[-1]["chapter_num"],
+                "story_chapter_title": chapters[-1]["full_title"],
+            },
+            "shadow_periods": [],
+            "in_world_timeline": {
+                "_sources_used": [], "_count": 0,
+                "_first_in_world_date": None, "_last_in_world_date": None,
+                "entries": [],
+            },
+            "chapters": chapters,
+            "constellation_wireframes": {
+                "cluster_constellations": [],
+                "jump_constellations": [],
+            },
+            "predicted_rolls": [],
+            "predicted_rolls_meta": {
+                "_count": 0,
+                "_total_words_epub_exact": 0,
+                "_regime_summary": {"1": "", "2": "", "3": ""},
+            },
         }) + "\n"
     )
     return path
@@ -52,7 +84,8 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     assert manifest["contract"] == "bcf-visualization-data"
     assert manifest["contract_version"] == 1
     assert manifest["bundle_class"] == "pages-runtime"
-    assert manifest["entrypoints"]["web"]["required"] == ["chapter_facts"]
+    assert manifest["entrypoints"]["web"]["required"] == ["visualization_facts"]
+    assert manifest["entrypoints"]["web"].get("optional", []) == []
 
     for name, meta in manifest["files"].items():
         path = DERIVED / meta["path"]
@@ -100,7 +133,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     with tarfile.open(outputs.runtime_tar, "r:gz") as tf:
         runtime_names = set(tf.getnames())
     assert "data_package.json" in runtime_names
-    assert "chapter_facts.json" in runtime_names
+    assert "visualization_facts.json" in runtime_names
     assert "perk_directory.json" not in runtime_names
     assert "roll_text_evidence.json" not in runtime_names
 
@@ -116,6 +149,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         dev_names = set(tf.getnames())
     assert "data_package.json" in dev_names
     assert "chapter_facts.json" in dev_names
+    assert "visualization_facts.json" in dev_names
     assert "_schemas/chapter_facts.schema.json" not in dev_names
 
     extracted_dev = tmp_path / "extracted-dev"
@@ -125,6 +159,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         expected_bundle_class="dev-derived",
     )
     assert dev_manifest["files"]["chapter_facts"]["schema_version"] == 1
+    assert dev_manifest["files"]["visualization_facts"]["schema_version"] == 1
 
 
 def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path: Path) -> None:
@@ -132,13 +167,42 @@ def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path:
 
     derived = tmp_path / "derived"
     derived.mkdir()
-    chapter_facts = {
-        "schema_version": 1,
-        "chapters": [
-            {"chapter_num": "1", "full_title": "1 Opening"},
-        ],
-    }
+    chapters = [{"chapter_num": "1", "full_title": "1 Opening"}]
+    chapter_facts = {"schema_version": 1, "chapters": chapters}
     (derived / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
+    viz_facts = {
+        "schema_version": 1,
+        "_source": "fixture",
+        "_method": "fixture",
+        "version": {
+            "package_id": "fixture",
+            "version_label": "fixture",
+            "package_date": "20260101",
+            "build_number": 1,
+            "source_commit": "fixture",
+            "story_chapter_ordinal": len(chapters),
+            "story_chapter_num": chapters[-1]["chapter_num"],
+            "story_chapter_title": chapters[-1]["full_title"],
+        },
+        "shadow_periods": [],
+        "in_world_timeline": {
+            "_sources_used": [], "_count": 0,
+            "_first_in_world_date": None, "_last_in_world_date": None,
+            "entries": [],
+        },
+        "chapters": chapters,
+        "constellation_wireframes": {
+            "cluster_constellations": [],
+            "jump_constellations": [],
+        },
+        "predicted_rolls": [],
+        "predicted_rolls_meta": {
+            "_count": 0,
+            "_total_words_epub_exact": 0,
+            "_regime_summary": {"1": "", "2": "", "3": ""},
+        },
+    }
+    (derived / "visualization_facts.json").write_text(json.dumps(viz_facts) + "\n")
     data_release.write_current_runtime_manifest(
         source_dir=derived,
         package_date="20260509",
@@ -148,8 +212,8 @@ def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path:
     )
     stale_manifest = _load_json(derived / "data_package.json")
 
-    chapter_facts["chapters"][0]["full_title"] = "1 Updated"
-    (derived / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
+    viz_facts["_method"] = "fixture updated"
+    (derived / "visualization_facts.json").write_text(json.dumps(viz_facts) + "\n")
 
     data_release.refresh_current_runtime_manifest(source_dir=derived)
 
@@ -157,11 +221,11 @@ def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path:
     assert manifest["package_date"] == "20260509"
     assert manifest["build_number"] == 7
     assert manifest["source_commit"] == "test-commit"
-    assert manifest["files"]["chapter_facts"]["sha256"] != (
-        stale_manifest["files"]["chapter_facts"]["sha256"]
+    assert manifest["files"]["visualization_facts"]["sha256"] != (
+        stale_manifest["files"]["visualization_facts"]["sha256"]
     )
-    assert manifest["files"]["chapter_facts"]["sha256"] == hashlib.sha256(
-        (derived / "chapter_facts.json").read_bytes()
+    assert manifest["files"]["visualization_facts"]["sha256"] == hashlib.sha256(
+        (derived / "visualization_facts.json").read_bytes()
     ).hexdigest()
 
 
@@ -174,13 +238,43 @@ def test_download_dev_keeps_dev_manifest_separate_and_writes_runtime_manifest(
     dist = tmp_path / "dist"
     output = tmp_path / "derived"
     source.mkdir()
-    chapter_facts = {
-        "schema_version": 1,
-        "chapters": [
-            {"chapter_num": "1", "full_title": "1 Opening"},
-        ],
-    }
+    chapters = [{"chapter_num": "1", "full_title": "1 Opening"}]
+    chapter_facts = {"schema_version": 1, "chapters": chapters}
     (source / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
+    (source / "visualization_facts.json").write_text(
+        json.dumps({
+            "schema_version": 1,
+            "_source": "fixture",
+            "_method": "fixture",
+            "version": {
+                "package_id": "fixture",
+                "version_label": "fixture",
+                "package_date": "20260101",
+                "build_number": 1,
+                "source_commit": "fixture",
+                "story_chapter_ordinal": len(chapters),
+                "story_chapter_num": chapters[-1]["chapter_num"],
+                "story_chapter_title": chapters[-1]["full_title"],
+            },
+            "shadow_periods": [],
+            "in_world_timeline": {
+                "_sources_used": [], "_count": 0,
+                "_first_in_world_date": None, "_last_in_world_date": None,
+                "entries": [],
+            },
+            "chapters": chapters,
+            "constellation_wireframes": {
+                "cluster_constellations": [],
+                "jump_constellations": [],
+            },
+            "predicted_rolls": [],
+            "predicted_rolls_meta": {
+                "_count": 0,
+                "_total_words_epub_exact": 0,
+                "_regime_summary": {"1": "", "2": "", "3": ""},
+            },
+        }) + "\n"
+    )
     outputs = data_release.build_packages(
         source_dir=source,
         output_dir=dist,
@@ -746,12 +840,12 @@ def test_prepare_pages_rejects_tampered_runtime_bundle(tmp_path: Path) -> None:
     )
     extracted = tmp_path / "extracted"
     data_release._safe_extract(outputs.runtime_tar, extracted)
-    chapter_facts = extracted / "chapter_facts.json"
-    text = chapter_facts.read_text()
+    viz_facts = extracted / "visualization_facts.json"
+    text = viz_facts.read_text()
     replacement = "schema_versioN"
     assert "schema_version" in text
     assert len(replacement) == len("schema_version")
-    chapter_facts.write_text(text.replace("schema_version", replacement, 1))
+    viz_facts.write_text(text.replace("schema_version", replacement, 1))
     tampered = tmp_path / "tampered.tar.gz"
     with tarfile.open(tampered, "w:gz") as tf:
         for path in sorted(extracted.rglob("*")):
@@ -788,3 +882,45 @@ def test_prepare_pages_rejects_unsupported_contract_version(tmp_path: Path) -> N
 
     with pytest.raises(ValueError, match="unsupported data package contract_version"):
         data_release.prepare_pages(runtime_tars=[tampered], site_dir=tmp_path / "site")
+
+
+def test_build_manifest_bootstrap_mode_allows_missing_runtime_required(tmp_path: Path) -> None:
+    """Pass 1 of the two-pass build must succeed before visualization_facts.json exists."""
+    from scripts import data_release
+
+    # Source dir has chapter_facts (needed for _story_freshness) but NO visualization_facts.
+    chapters = [{"chapter_num": "1", "full_title": "1 Fixture"}]
+    (tmp_path / "chapter_facts.json").write_text(
+        json.dumps({"schema_version": 1, "chapters": chapters}) + "\n"
+    )
+
+    manifest_path = data_release.write_current_runtime_manifest(
+        source_dir=tmp_path,
+        package_date="20260101",
+        build_number=1,
+        source_commit="bootstrap-test",
+        allow_missing_required=True,
+    )
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["entrypoints"]["web"]["required"] == ["visualization_facts"]
+    assert "visualization_facts" not in manifest["files"], (
+        "bootstrap pass must omit missing required files from the files dict, not stub them"
+    )
+
+
+def test_build_manifest_without_bootstrap_still_fails_on_missing_required(tmp_path: Path) -> None:
+    """Pass 2 must hard-fail if the bundle is still missing (caught misconfiguration)."""
+    from scripts import data_release
+
+    chapters = [{"chapter_num": "1", "full_title": "1 Fixture"}]
+    (tmp_path / "chapter_facts.json").write_text(
+        json.dumps({"schema_version": 1, "chapters": chapters}) + "\n"
+    )
+
+    with pytest.raises(FileNotFoundError, match="visualization_facts"):
+        data_release.write_current_runtime_manifest(
+            source_dir=tmp_path,
+            package_date="20260101",
+            build_number=1,
+            source_commit="strict-test",
+        )

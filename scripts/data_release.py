@@ -37,8 +37,8 @@ MANIFEST_SCHEMA_VERSION = 1
 PACKAGE_PREFIX = "bcf-visualization"
 SMOKE_STATUSES = {"passed", "failed", "unknown"}
 
-RUNTIME_REQUIRED = ["chapter_facts"]
-RUNTIME_OPTIONAL = ["constellation_wireframes"]
+RUNTIME_REQUIRED = ["visualization_facts"]
+RUNTIME_OPTIONAL = []
 DEV_BUNDLE_MANIFEST_NAME = "_dev_data_package.json"
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(
@@ -265,6 +265,7 @@ def build_manifest(
     story: StoryFreshness,
     source_commit: str | None = None,
     generated_at: str | None = None,
+    allow_missing_required: bool = False,  # NEW
 ) -> dict:
     if bundle_class not in {"pages-runtime", "dev-derived"}:
         raise ValueError(f"unsupported bundle class: {bundle_class}")
@@ -283,6 +284,12 @@ def build_manifest(
     else:
         file_names = [path.name for path in _top_level_json_files(source_dir)]
 
+    if allow_missing_required:  # NEW
+        # Bootstrap pass: filter out required files that don't exist yet so _file_meta
+        # doesn't fail on the dict comprehension below. The missing-required check after
+        # the dict build will also be skipped (see further down).
+        file_names = [name for name in file_names if (source_dir / name).exists()]
+
     files = {
         Path(name).stem: _file_meta(source_dir, source_dir / name)
         for name in file_names
@@ -291,7 +298,7 @@ def build_manifest(
         name for name in RUNTIME_REQUIRED
         if name not in files and bundle_class == "pages-runtime"
     ]
-    if missing_required:
+    if missing_required and not allow_missing_required:  # MODIFIED
         raise FileNotFoundError(f"missing runtime data files: {', '.join(missing_required)}")
 
     return {
@@ -335,6 +342,7 @@ def write_current_runtime_manifest(
     build_number: int = 1,
     source_commit: str | None = None,
     generated_at: str | None = None,
+    allow_missing_required: bool = False,  # NEW
 ) -> Path:
     package_date = package_date or _today()
     story = _story_freshness(source_dir)
@@ -360,29 +368,42 @@ def write_current_runtime_manifest(
         story=story,
         source_commit=source_commit or "phase1-committed-derived-data",
         generated_at=generated_at,
+        allow_missing_required=allow_missing_required,  # NEW
     )
     out = source_dir / "data_package.json"
     _write_json(out, manifest)
     return out
 
 
-def refresh_current_runtime_manifest(*, source_dir: Path = DERIVED) -> Path:
+def refresh_current_runtime_manifest(
+    *,
+    source_dir: Path = DERIVED,
+    package_date: str | None = None,
+    build_number: int | None = None,
+    source_commit: str | None = None,
+    generated_at: str | None = None,
+    allow_missing_required: bool = False,
+) -> Path:
     existing_path = source_dir / "data_package.json"
     existing = _read_json(existing_path) if existing_path.exists() else {}
-    build_number = existing.get("build_number", 1)
-    if not isinstance(build_number, int):
-        build_number = int(build_number)
-    package_date = existing.get("package_date")
-    if not isinstance(package_date, str) or not package_date:
-        package_date = _today()
-    source_commit = existing.get("source_commit")
-    if not isinstance(source_commit, str) or not source_commit:
-        source_commit = None
+
+    if build_number is None:
+        existing_build = existing.get("build_number", 1)
+        build_number = int(existing_build) if not isinstance(existing_build, int) else existing_build
+    if package_date is None:
+        existing_date = existing.get("package_date")
+        package_date = existing_date if isinstance(existing_date, str) and existing_date else _today()
+    if source_commit is None:
+        existing_commit = existing.get("source_commit")
+        source_commit = existing_commit if isinstance(existing_commit, str) and existing_commit else None
+
     return write_current_runtime_manifest(
         source_dir=source_dir,
         package_date=package_date,
         build_number=build_number,
         source_commit=source_commit,
+        generated_at=generated_at,
+        allow_missing_required=allow_missing_required,
     )
 
 
@@ -1031,9 +1052,13 @@ def main() -> None:
 
     p_manifest = sub.add_parser("manifest", help="write data/derived/data_package.json")
     p_manifest.add_argument("--source-dir", type=_path, default=DERIVED)
-    p_manifest.add_argument("--date", default=_today())
-    p_manifest.add_argument("--build-number", type=int, default=1)
-    p_manifest.add_argument("--source-commit")
+    p_manifest.add_argument("--date", default=None,
+        help="Override package_date (YYYYMMDD). Default: read from existing manifest, else today.")
+    p_manifest.add_argument("--build-number", type=int, default=None,
+        help="Override build_number. Default: read from existing manifest, else 1.")
+    p_manifest.add_argument("--source-commit", default=None)
+    p_manifest.add_argument("--bootstrap", action="store_true",
+        help="Pass 1 of the two-pass build: allow runtime-required files to be missing. Use before running build_visualization_facts.py on a clean tree.")
 
     p_package = sub.add_parser("package", help="build runtime and dev tar.gz bundles")
     p_package.add_argument("--source-dir", type=_path, default=DERIVED)
@@ -1124,11 +1149,12 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.cmd == "manifest":
-        out = write_current_runtime_manifest(
+        out = refresh_current_runtime_manifest(
             source_dir=args.source_dir,
             package_date=args.date,
             build_number=args.build_number,
             source_commit=args.source_commit,
+            allow_missing_required=args.bootstrap,
         )
         print(out.relative_to(ROOT))
     elif args.cmd == "package":

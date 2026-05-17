@@ -241,7 +241,7 @@ def _patch_pipeline_paths(monkeypatch, project: Path, epub: Path) -> None:
     monkeypatch.setattr(
         build_chapter_facts,
         "refresh_current_runtime_manifest",
-        lambda *, source_dir: None,
+        lambda *, source_dir, **_: None,
     )
 
 
@@ -427,7 +427,7 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
     monkeypatch.setattr(
         build_chapter_facts,
         "refresh_current_runtime_manifest",
-        lambda *, source_dir: None,
+        lambda *, source_dir, **_: None,
     )
 
     build_chapter_facts.main()

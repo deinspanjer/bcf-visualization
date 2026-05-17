@@ -851,7 +851,7 @@ def main() -> None:
     }
 
     write_validated_json(OUT, payload, "chapter_facts")
-    refresh_current_runtime_manifest(source_dir=DERIVED)
+    refresh_current_runtime_manifest(source_dir=DERIVED, allow_missing_required=True)
 
     # Console summary
     print(f"wrote {OUT.relative_to(ROOT)}: {len(out_chapters)} chapters")
