@@ -26,13 +26,13 @@ def test_web_contract_helpers_accept_supported_manifest() -> None:
         schema_version: 1,
         contract: 'bcf-visualization-data',
         contract_version: 1,
-        files: { chapter_facts: { path: 'chapter_facts.json', schema_version: 1 } },
-        entrypoints: { web: { required: ['chapter_facts'], optional: [] } },
+        files: { visualization_facts: { path: 'visualization_facts.json', schema_version: 1 } },
+        entrypoints: { web: { required: ['visualization_facts'], optional: [] } },
       };
       const result = validateDataPackageManifest(manifest);
       console.log(JSON.stringify(result.required));
     """
-    assert json.loads(_node_eval(source)) == ["chapter_facts"]
+    assert json.loads(_node_eval(source)) == ["visualization_facts"]
 
 
 def test_web_contract_helpers_reject_unsupported_manifest() -> None:
@@ -58,7 +58,7 @@ def test_web_contract_helpers_reject_bad_required_document_version() -> None:
       import { validateDataDocument } from './web/data-contract.js';
       try {
         validateDataDocument(
-          'chapter_facts',
+          'visualization_facts',
           { schema_version: 2 },
           { schema_version: 1 },
           { optional: false },
@@ -67,14 +67,14 @@ def test_web_contract_helpers_reject_bad_required_document_version() -> None:
         console.log(err.message);
       }
     """
-    assert "Unsupported chapter_facts schema_version" in _node_eval(source)
+    assert "Unsupported visualization_facts schema_version" in _node_eval(source)
 
 
 def test_web_contract_helpers_allow_bad_optional_document_to_disable_feature() -> None:
     source = """
       import { validateDataDocument } from './web/data-contract.js';
       const result = validateDataDocument(
-        'constellation_wireframes',
+        'demo_optional',
         { schema_version: 2 },
         { schema_version: 1 },
         { optional: true },
@@ -83,7 +83,7 @@ def test_web_contract_helpers_allow_bad_optional_document_to_disable_feature() -
     """
     assert json.loads(_node_eval(source)) == {
         "ok": False,
-        "reason": "Unsupported constellation_wireframes schema_version: expected 1, found 2",
+        "reason": "Unsupported demo_optional schema_version: expected 1, found 2",
     }
 
 
