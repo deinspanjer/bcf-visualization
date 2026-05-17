@@ -217,7 +217,10 @@
           "type": "array",
           "items": { "$ref": "#/$defs/skipped_predicted_roll" }
         },
-        "rolls":    { "type": "array", "items": { "$ref": "#/$defs/roll" } }
+        "rolls":    { "type": "array", "items": { "$ref": "#/$defs/roll" } },
+
+        "post_url": { "type": ["string", "null"] },
+        "likes":    { "type": ["integer", "null"] }
       }
     },
     "section": {
