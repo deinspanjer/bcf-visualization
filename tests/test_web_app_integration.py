@@ -45,7 +45,7 @@ def _page_with_console_capture(
 def test_web_app_loads_preview_playthrough_without_obsolete_sky_dom(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
+    with staged_web_runtime_site(tmp_path) as site:
         with playwright_api.sync_playwright() as p:
             browser = _chromium_browser_or_skip(p, playwright_api)
             page, console_messages = _page_with_console_capture(browser, site)
@@ -76,7 +76,7 @@ def test_web_app_loads_preview_playthrough_without_obsolete_sky_dom(tmp_path):
 def test_web_app_mode_switch_toggles_detail_and_persists(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
+    with staged_web_runtime_site(tmp_path) as site:
         with playwright_api.sync_playwright() as p:
             browser = _chromium_browser_or_skip(p, playwright_api)
             page, console_messages = _page_with_console_capture(browser, site)
@@ -99,7 +99,7 @@ def test_web_app_mode_switch_toggles_detail_and_persists(tmp_path):
 def test_web_app_package_selector_switches_and_default_removes_query(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
+    with staged_web_runtime_site(tmp_path) as site:
         with playwright_api.sync_playwright() as p:
             browser = _chromium_browser_or_skip(p, playwright_api)
             page, console_messages = _page_with_console_capture(browser, site, "/web/")
@@ -125,8 +125,8 @@ def test_web_app_required_document_error_uses_load_error_panel(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
     with staged_web_runtime_site(tmp_path) as site:
-        broken_chapter_facts = site.root / "data/packages/tiny-default/chapter_facts.json"
-        broken_chapter_facts.write_text('{"schema_version": 999, "chapters": []}\n')
+        broken_bundle = site.root / "data/packages/tiny-default/visualization_facts.json"
+        broken_bundle.write_text('{"schema_version": 999, "chapters": []}\n')
         with playwright_api.sync_playwright() as p:
             browser = _chromium_browser_or_skip(p, playwright_api)
             page = browser.new_page(viewport={"width": 1280, "height": 900})
@@ -136,7 +136,7 @@ def test_web_app_required_document_error_uses_load_error_panel(tmp_path):
             error = page.locator("#load-error")
             expect(error).to_be_visible()
             expect(error).to_contain_text("Failed to load data")
-            expect(error).to_contain_text("Unsupported chapter_facts schema_version")
+            expect(error).to_contain_text("Unsupported visualization_facts schema_version")
 
             browser.close()
 
@@ -144,8 +144,8 @@ def test_web_app_required_document_error_uses_load_error_panel(tmp_path):
 def test_web_app_field_log_uses_quotes_and_no_log_placeholder_without_synthetic_prose(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
-        facts_path = site.root / "data/packages/tiny-default/chapter_facts.json"
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
         facts = json.loads(facts_path.read_text())
         facts["chapters"][1]["rolls"][0]["evidence_quotes"] = [{"text": "The fixture quote line."}]
         facts_path.write_text(json.dumps(facts, indent=2, sort_keys=True) + "\n")
@@ -187,8 +187,8 @@ def test_web_app_field_log_uses_quotes_and_no_log_placeholder_without_synthetic_
 def test_web_app_detail_roll_log_filters_sorts_and_click_moves_playhead(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
-        facts_path = site.root / "data/packages/tiny-default/chapter_facts.json"
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
         facts = json.loads(facts_path.read_text())
         facts["chapters"][2]["rolls"].append(
             {
@@ -232,8 +232,8 @@ def test_web_app_detail_roll_log_filters_sorts_and_click_moves_playhead(tmp_path
 def test_web_app_maps_predicted_cp_roll_positions_to_raw_word_positions(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
-        facts_path = site.root / "data/packages/tiny-default/chapter_facts.json"
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
         facts = json.loads(facts_path.read_text())
         facts["chapters"][0]["cp_earning_word_count"] = 1000
         facts["chapters"][0]["cumulative_cp_earning_words"] = 1000
@@ -282,7 +282,7 @@ def test_web_app_maps_predicted_cp_roll_positions_to_raw_word_positions(tmp_path
 def test_web_app_pause_on_roll_can_resume_without_manual_scrubbing(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
+    with staged_web_runtime_site(tmp_path) as site:
         with playwright_api.sync_playwright() as p:
             browser = _chromium_browser_or_skip(p, playwright_api)
             page, console_messages = _page_with_console_capture(
@@ -311,7 +311,7 @@ def test_web_app_pause_on_roll_can_resume_without_manual_scrubbing(tmp_path):
 def test_web_app_keyboard_controls_move_clamp_and_ignore_text_input_focus(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
+    with staged_web_runtime_site(tmp_path) as site:
         with playwright_api.sync_playwright() as p:
             browser = _chromium_browser_or_skip(p, playwright_api)
             page, console_messages = _page_with_console_capture(
@@ -346,33 +346,3 @@ def test_web_app_keyboard_controls_move_clamp_and_ignore_text_input_focus(tmp_pa
             browser.close()
 
 
-def test_web_app_optional_wireframes_missing_or_malformed_degrades_cleanly(tmp_path):
-    playwright_api = pytest.importorskip("playwright.sync_api")
-
-    with staged_web_runtime_site(tmp_path, include_wireframes=False) as site:
-        with playwright_api.sync_playwright() as p:
-            browser = _chromium_browser_or_skip(p, playwright_api)
-            page, console_messages = _page_with_console_capture(browser, site)
-
-            expect = playwright_api.expect
-            expect(page.locator(".playthrough-unavailable")).to_be_visible()
-            page.locator("#mode-detail").click()
-            expect(page.locator(".detail")).to_be_visible()
-            assert console_messages == []
-
-            browser.close()
-
-    with staged_web_runtime_site(tmp_path, include_wireframes=True) as site:
-        broken = site.root / "data/packages/tiny-default/constellation_wireframes.json"
-        broken.write_text('{"schema_version": 999}\n')
-        with playwright_api.sync_playwright() as p:
-            browser = _chromium_browser_or_skip(p, playwright_api)
-            page, console_messages = _page_with_console_capture(browser, site)
-
-            expect = playwright_api.expect
-            expect(page.locator(".playthrough-unavailable")).to_be_visible()
-            page.locator("#mode-detail").click()
-            expect(page.locator("#detail-roll-log-panel")).to_be_visible()
-            assert console_messages == []
-
-            browser.close()
