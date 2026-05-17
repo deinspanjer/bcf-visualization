@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "pytest"]
+dev = ["ruff", "pytest", "playwright"]
 
 [build-system]
 requires = ["hatchling"]
