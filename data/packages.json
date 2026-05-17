@@ -1,0 +1,15 @@
+{
+  "default_package_id": "bcf-visualization-runtime-v20260516.20-ch194-120.1",
+  "packages": [
+    {
+      "package_date": "20260516",
+      "package_id": "bcf-visualization-runtime-v20260516.20-ch194-120.1",
+      "path": "data/derived",
+      "smoke_status": "passed",
+      "story_chapter_num": "120.1",
+      "story_chapter_ordinal": 194,
+      "version_label": "BCF data 20260516.20, story ch 194 / 120.1"
+    }
+  ],
+  "schema_version": 1
+}

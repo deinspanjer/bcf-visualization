@@ -1,6 +1,15 @@
 {
   "_purpose": "Hand-curated overrides applied after solver, before validation. See plans/roll_sequence_validation.md.",
   "roll_overrides": {
+    "curator:0000": {
+      "evidence_quotes": [
+        {
+          "text": "I knew the name of the power I had, Metalwork Workshop which was from the Toolkits constellation of powers.",
+          "mention_chapter_num": "1",
+          "mention_word_position": 2510
+        }
+      ]
+    },
     "interpolated:0638": {
       "available_cp": 700,
       "banked_cp_after_roll": 100,
