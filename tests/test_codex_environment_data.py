@@ -55,17 +55,13 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
     manifest = {
         "package_id": "pkg-a",
         "files": {
-            "chapter_facts": {"path": "chapter_facts.json"},
-            "constellation_wireframes": {"path": "nested/constellation_wireframes.json"},
+            "visualization_facts": {"path": "visualization_facts.json"},
         },
     }
     payloads = {
         "https://example.test/bcf/data/packages.json": packages,
         "https://example.test/bcf/data/packages/pkg-a/data_package.json": manifest,
-        "https://example.test/bcf/data/packages/pkg-a/chapter_facts.json": {
-            "schema_version": 1,
-        },
-        "https://example.test/bcf/data/packages/pkg-a/nested/constellation_wireframes.json": {
+        "https://example.test/bcf/data/packages/pkg-a/visualization_facts.json": {
             "schema_version": 1,
         },
     }
@@ -100,7 +96,4 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
 
     assert result == manifest
     assert json.loads((output / "data_package.json").read_text()) == manifest
-    assert json.loads((output / "chapter_facts.json").read_text()) == {"schema_version": 1}
-    assert json.loads((output / "nested" / "constellation_wireframes.json").read_text()) == {
-        "schema_version": 1,
-    }
+    assert json.loads((output / "visualization_facts.json").read_text()) == {"schema_version": 1}

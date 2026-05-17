@@ -23,7 +23,8 @@ High-level map of the derived data used by the visualization and analytics.
 | `data/manual/chapter_publication_dates.json` | Single source of truth for per-chapter first-publication and last-edit dates. Each date carries its own provenance (`manual`/`ao3`/`sv`/`epub`). Bootstrapped from AO3 + EPUB by `scripts/seed_chapter_publication_dates.py`; hand-owned thereafter. |
 | `data/derived/extracted_perks.json` | Perk footer extraction from chapter exports |
 | `data/derived/perk_directory.json` | Joined directory view for lookup/enrichment |
-| `data/derived/chapter_facts.json` | Visualization backbone consumed by web app. Embeds the canonical `in_world_timeline` so the front-end loads a single file. |
+| `data/derived/chapter_facts.json` | Pipeline intermediate. Embeds the canonical `in_world_timeline` and roll facts. Consumed by `build_visualization_facts.py` and `data_release.py`; not fetched by the web layer. |
+| `data/derived/visualization_facts.json` | **Bundled web payload.** Produced by `scripts/build_visualization_facts.py`; bundles `chapter_facts.json`, `constellation_wireframes.json`, and `predicted_rolls.json` into a single file. This is the sole required runtime file the web app fetches (alongside `data_package.json` for the package picker). |
 
 ## Build order
 
@@ -39,7 +40,12 @@ find_text_backed_rolls.py  -> roll_text_evidence.json (evidence windows)
 derive_roll_outcomes.py    -> roll_outcomes.json (fallback interpolation)
 derive_roll_facts.py       -> roll_facts.json (canonical, schema-validated)
             ↓
-build_chapter_facts.py     -> chapter_facts.json (embeds in_world_timeline + roll_facts)
+build_chapter_facts.py         -> chapter_facts.json (embeds in_world_timeline + roll_facts)
+build_constellation_wireframes.py -> constellation_wireframes.json
+predict_rolls.py               -> predicted_rolls.json
+data_release.py manifest --bootstrap -> data_package.json (pass 1, version metadata only)
+build_visualization_facts.py   -> visualization_facts.json (bundled web payload)
+data_release.py manifest       -> data_package.json (pass 2, adds visualization_facts hash/size)
 ```
 
 The canonical timeline merger never invents data: `xlsx` and `wiki` entries always carry `chapter_num=null`; only `manual` and (future) `tui` entries may attest a chapter. Multiple entries on the same in-world date from different sources are kept separate — no automated dedup.

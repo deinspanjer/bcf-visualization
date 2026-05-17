@@ -41,14 +41,14 @@ def _write_minimal_site(
             "package_id": package_id,
             "contract": "bcf-visualization-data",
             "contract_version": 1,
-            "files": {"chapter_facts": {"path": "chapter_facts.json", "schema_version": 1}},
-            "entrypoints": {"web": {"required": ["chapter_facts"], "optional": []}},
+            "files": {"visualization_facts": {"path": "visualization_facts.json", "schema_version": 1}},
+            "entrypoints": {"web": {"required": ["visualization_facts"], "optional": []}},
         },
     )
     if broken:
         return
     _write_json(
-        site / "data" / "packages" / package_id / "chapter_facts.json",
+        site / "data" / "packages" / package_id / "visualization_facts.json",
         {
             "schema_version": 1,
             "chapters": [
