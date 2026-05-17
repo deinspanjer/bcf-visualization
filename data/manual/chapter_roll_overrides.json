@@ -1230,7 +1230,11 @@
             }
           ],
           "curator_note": null
-        },
+        }
+      ]
+    },
+    "12": {
+      "rolls": [
         {
           "perks": [],
           "outcome": null,
@@ -1249,11 +1253,7 @@
             }
           ],
           "curator_note": null
-        }
-      ]
-    },
-    "12": {
-      "rolls": [
+        },
         {
           "perks": [],
           "outcome": null,
