@@ -255,49 +255,36 @@ async function loadRuntime() {
 
   const manifest = await fetchJSON(`${selected.base}/data_package.json?v=${DATA_VERSION}`);
   const manifestInfo = validateDataPackageManifest(manifest);
-  const docs = {};
-  for (const name of manifestInfo.required) {
-    const meta = manifestInfo.files[name];
-    const doc = await fetchJSON(`${selected.base}/${meta.path}?v=${DATA_VERSION}`);
-    validateDataDocument(name, doc, meta);
-    docs[name] = doc;
+  const factsMeta = manifestInfo.files.visualization_facts;
+  if (!factsMeta || !factsMeta.path) {
+    throw new Error("Data package manifest does not declare visualization_facts.");
   }
+  const bundle = await fetchJSON(`${selected.base}/${factsMeta.path}?v=${DATA_VERSION}`);
+  validateDataDocument("visualization_facts", bundle, factsMeta);
 
-  let wireframes = null;
-  let wireframeUnavailableReason = "Constellation wireframes are not included in this data package.";
-  const wireframeMeta = manifestInfo.files.constellation_wireframes;
-  if (wireframeMeta) {
-    try {
-      const doc = await fetchJSON(`${selected.base}/${wireframeMeta.path}?v=${DATA_VERSION}`);
-      const result = validateDataDocument("constellation_wireframes", doc, wireframeMeta, { optional: true });
-      if (result.ok) {
-        wireframes = doc;
-        wireframeUnavailableReason = null;
-      } else {
-        wireframeUnavailableReason = result.reason;
-      }
-    } catch (error) {
-      wireframeUnavailableReason = error.message || "Constellation wireframes could not be loaded.";
-    }
-  }
-
-  const story = buildStory(docs.chapter_facts);
-  const constellations = wireframes ? buildConstellations(wireframes) : [];
+  const story = buildStory(bundle);
+  const constellations = buildConstellations(bundle.constellation_wireframes);
   const conByName = Object.fromEntries(constellations.map(c => [c.name, c]));
   const jumpWireframeByKey = new Map();
-  for (const jump of wireframes?.jump_constellations || []) {
+  for (const jump of bundle.constellation_wireframes.jump_constellations || []) {
     jumpWireframeByKey.set(`${jump.constellation}::${jump.jump}`, jump);
   }
 
+  const curated = bundle.predicted_rolls;
+  const lastCuratedWord = curated.length ? curated[curated.length - 1].word_position : 0;
+  const synthetic = buildSyntheticCpTicks(story).filter(t => t.word_position > lastCuratedWord);
+  const predictedRolls = [...curated, ...synthetic];
+
   app.data = {
     pkg: manifest,
+    bundleVersion: bundle.version,
     story,
-    wireframes,
-    wireframeUnavailableReason,
+    wireframes: bundle.constellation_wireframes,
     constellations,
     conByName,
     jumpWireframeByKey,
-    predictedRolls: buildSyntheticCpTicks(story),
+    predictedRolls,
+    predictedRollsMeta: bundle.predicted_rolls_meta,
   };
   app.wordPos = clamp(app.wordPos, 0, story.total_words);
 }
@@ -779,7 +766,7 @@ function renderHeader() {
 function renderPackageSelector() {
   const packages = Array.isArray(app.packageIndex?.packages) ? app.packageIndex.packages : [];
   if (!packages.length) {
-    return el("span", { class: "data-version", text: app.data.pkg.version_label || "BCF data" });
+    return el("span", { class: "data-version", text: app.data.bundleVersion.version_label || "BCF data" });
   }
   const defaultId = app.packageIndex.default_package_id || packages[0].package_id;
   const select = el("select", {
@@ -818,7 +805,7 @@ function renderInfoPopover() {
     el("div", { class: "meta-row" },
       el("span", { text: "Visualization by deinspanjer" }),
       el("a", { class: "gh-link", href: PROJECT_REPO, target: "_blank", rel: "noopener noreferrer", text: "github.com/deinspanjer/bcf-visualization" }),
-      el("span", { text: app.data.pkg.version_label || app.data.pkg.package_id || "BCF data" }),
+      el("span", { text: app.data.bundleVersion.version_label || app.data.bundleVersion.package_id || "BCF data" }),
       renderPackageSelector(),
     ),
   );
@@ -1115,7 +1102,6 @@ function renderStatStrip() {
 }
 
 function renderPlaythrough() {
-  const wireframesReady = !!app.data.wireframes;
   const chapter = chapterAtWord(app.wordPos);
   const lastRoll = lastRollAtWord(app.wordPos);
   const firing = lastRoll && Math.abs(app.wordPos - lastRoll.word_position) <= 1500;
@@ -1130,9 +1116,9 @@ function renderPlaythrough() {
         hudToken(firing ? "forge active" : "drifting", firing && lastRoll ? formatRollLabel(lastRoll) : "", `hud-state ${firing ? "active" : "drift"}`),
         hudToken("chapter", `${chapter.chapter_num} / ${app.data.story.chapters.length}`, ""),
       ),
-      wireframesReady ? renderCarousel() : renderPlaythroughUnavailable(),
+      renderCarousel(),
       renderViewportFrame(),
-      wireframesReady && firing && lastRoll ? renderJumpFocus(lastRoll) : null,
+      firing && lastRoll ? renderJumpFocus(lastRoll) : null,
     ),
     !app.fieldLogHidden ? renderNarrativeReadout(firing ? lastRoll : null, chapter) : null,
   );
@@ -1145,13 +1131,6 @@ function hudToken(key, value, extraClass) {
   );
 }
 
-function renderPlaythroughUnavailable() {
-  return el("div", { class: "playthrough-unavailable", role: "status" },
-    el("strong", { text: "Constellation wireframes unavailable." }),
-    el("span", { text: "Playthrough sky content needs optional constellation_wireframes.json; scrubber and Detail mode remain usable." }),
-    el("span", { class: "unavailable-reason", text: app.data.wireframeUnavailableReason || "" }),
-  );
-}
 
 function renderViewportFrame() {
   return el("div", { class: "viewport-frame" },

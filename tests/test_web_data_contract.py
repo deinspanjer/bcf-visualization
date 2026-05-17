@@ -135,3 +135,35 @@ def test_web_contract_helper_marks_default_after_smoke_status() -> None:
     assert _node_eval(source) == (
         "BCF data 20260509.7, story ch 194 / 120.1 (smoke passed, default)"
     )
+
+
+def test_visualization_facts_bundle_has_keys_loader_reads() -> None:
+    """The real bundle at data/derived/visualization_facts.json must carry every
+    top-level key the web loader reads. If a future bundler change drops a key,
+    this test fails before we ship a broken visualization."""
+    bundle_path = ROOT / "data" / "derived" / "visualization_facts.json"
+    assert bundle_path.exists(), (
+        "Run scripts/build_visualization_facts.py first (Task 2 Step 5)."
+    )
+    bundle = json.loads(bundle_path.read_text())
+    required_keys = {
+        "schema_version", "version",
+        "shadow_periods", "in_world_timeline", "chapters",
+        "constellation_wireframes", "predicted_rolls", "predicted_rolls_meta",
+    }
+    missing = required_keys - set(bundle.keys())
+    assert not missing, f"bundle missing keys the loader reads: {sorted(missing)}"
+
+
+def test_visualization_facts_predicted_rolls_use_renamed_regime_field() -> None:
+    """The bundler renames cp_rule_regime → regime so render code at web/app.js
+    consumes a single canonical field name. If a row carries cp_rule_regime instead
+    of regime, the scrubber axis hairlines will silently render as regime-1."""
+    bundle_path = ROOT / "data" / "derived" / "visualization_facts.json"
+    assert bundle_path.exists()
+    bundle = json.loads(bundle_path.read_text())
+    rolls = bundle.get("predicted_rolls") or []
+    assert rolls, "expected at least one predicted roll in the real bundle"
+    for row in rolls[:5]:
+        assert "regime" in row, f"row missing renamed field: {row}"
+        assert "cp_rule_regime" not in row, f"row still carries upstream field: {row}"
