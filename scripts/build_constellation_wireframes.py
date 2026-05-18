@@ -74,9 +74,9 @@ def norm_jump(s: str | None) -> str | None:
 # debug overlay.
 
 CLUSTER_SHAPES: dict[str, dict] = {
-    # Toolkits → adjustable wrench, head on the left, handle to the right.
+    # Toolkits → toolbox with tools protruding.
     "Toolkits": {
-        "shape_concept": "open-end wrench / spanner: jaws on the left, long handle trailing right",
+        "shape_concept": "toolbox: open box with a hammer and screwdriver sticking out",
         "vertices": [
             (-0.95,  0.45),  # upper jaw tip
             (-0.95, -0.45),  # lower jaw tip
@@ -282,9 +282,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Magitech → angular circuit with a jagged bolt.
+    # Magitech → diode circuit symbol feeding a lightning bolt.
     "Magitech": {
-        "shape_concept": "angular magitech circuit: rectangular left frame feeding a central junction and jagged right-side bolt",
+        "shape_concept": "diode circuit symbol leading into a lightning bolt",
         "vertices": [
             # gear teeth around a unit-ish circle
             ( 1.00 * math.cos(a), 1.00 * math.sin(a))
