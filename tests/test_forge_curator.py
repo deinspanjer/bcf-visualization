@@ -458,7 +458,7 @@ def test_source_anchor_in_ineligible_section_uses_raw_prose_position(
 ) -> None:
     from scripts.forge_curator.persistence import CurationPersistence
 
-    app = _loaded_app("15", tmp_path)
+    app = _loaded_app("4", tmp_path)
     app.persistence = CurationPersistence(
         chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
         journal_dir_path=tmp_path / ".journals",
@@ -470,11 +470,11 @@ def test_source_anchor_in_ineligible_section_uses_raw_prose_position(
     cursor_word = footer_start + 10
     cs.cursor_char = cs.prose.word_offsets[cursor_word][0]
 
-    app._action_anchor_roll_without_quote("15")
+    app._action_anchor_roll_without_quote("4")
 
     saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())[
         "chapter_roll_overrides"
-    ]["15"]["rolls"][5]
+    ]["4"]["rolls"][-1]
     assert app._cp_earning_word_offset(cursor_word) == cs.meta.cp_earning_word_count
     assert saved["mention_word_position"] == cursor_word
     assert saved["display_position_policy"] == "source_marker"

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Vehicles · Cluster Wireframe</title>
+<style>
+  :root {
+    --void:       #03080d;
+    --void-soft:  #07121a;
+    --ink:        #e8fdff;
+    --muted:      #9ad7df;
+    --dim:        #5f9ba4;
+    --cyan:       #5cf4ff;
+    --rose:       #ff8aa8;
+    --edge-soft:  rgba(92, 244, 255, 0.22);
+    --warn-bg:    rgba(255, 138, 168, 0.10);
+    --warn-edge:  rgba(255, 138, 168, 0.55);
+    --serif:      Georgia, "Times New Roman", serif;
+    --sans:       "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono:       ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--void); color: var(--ink);
+                font-family: var(--sans); }
+  body { padding: 28px 36px 48px; min-height: 100vh; }
+  h1 { font-family: var(--serif); font-size: 28px; color: var(--cyan);
+        margin: 0 0 6px 0; letter-spacing: 0.03em; }
+  .back-link { display: inline-block; margin: 0 0 18px 0; font-family: var(--mono);
+                font-size: 12px; color: var(--dim); }
+  h2 { font-family: var(--serif); font-size: 22px; color: var(--cyan);
+        margin: 32px 0 12px 0; }
+  h3 { font-family: var(--serif); font-size: 18px; color: var(--ink);
+        margin: 26px 0 6px 0; }
+  dl.meta { margin: 0 0 22px 0; font-family: var(--mono); font-size: 12px;
+             display: grid; grid-template-columns: 78px 1fr; row-gap: 4px;
+             column-gap: 14px; max-width: 760px; }
+  dl.meta dt { color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  dl.meta dd { margin: 0; color: var(--ink); }
+  p.shape-concept { font-family: var(--serif); font-style: italic; color: var(--muted);
+                     font-size: 15px; max-width: 60ch; margin: 0 0 24px 0; line-height: 1.4; }
+  p.shape-concept .label { display: block; font-family: var(--mono); font-style: normal;
+                            color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em;
+                            font-size: 11px; margin-bottom: 4px; }
+  .image-comparison { display: grid; grid-template-columns: repeat(2, minmax(260px, 360px));
+                       gap: 18px; align-items: start; margin: 0 0 30px 0; }
+  .image-panel { margin: 0; padding: 0; }
+  .preview-label { color: var(--dim); font-family: var(--mono); font-size: 11px;
+                    letter-spacing: 0.08em; margin: 0 0 7px 0; text-transform: uppercase; }
+  .image-panel svg, .image-panel img, .empty-reference {
+    width: 100%; aspect-ratio: 1 / 1; display: block;
+    border: 1px solid var(--edge-soft); border-radius: 4px;
+    background: var(--void-soft);
+  }
+  .image-panel svg { height: auto; }
+  .image-panel img { object-fit: contain; padding: 18px; box-sizing: border-box; }
+  .image-panel img.reference-image { background: #e8fdff; }
+  .empty-reference { box-sizing: border-box; color: var(--dim); display: grid; place-items: center;
+                      font-family: var(--mono); font-size: 12px; padding: 18px; text-align: center; }
+  @media (max-width: 760px) {
+    .image-comparison { grid-template-columns: minmax(260px, 360px); }
+  }
+  table { border-collapse: collapse; width: min(100%, 980px); margin: 0 0 18px 0;
+           font-size: 13px; }
+  th, td { border: 1px solid var(--edge-soft); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: 600;
+        text-align: left; text-transform: uppercase; letter-spacing: 0.08em;
+        background: rgba(92, 244, 255, 0.06); }
+  td { color: var(--ink); line-height: 1.35; }
+  td:nth-child(2) { width: 120px; font-family: var(--mono); color: var(--muted); }
+  .jump-summary td:nth-child(2) { width: 120px; text-align: right; }
+  .note-field { min-width: 220px; }
+  .jump-meta { margin: 0 0 8px 0; color: var(--dim); font-family: var(--mono); font-size: 12px; }
+  a { color: var(--cyan); text-decoration-color: var(--edge-soft); }
+</style>
+</head>
+<body>
+<h1>Vehicles</h1>
+<a class="back-link" href="../index.html">Back to constellation index</a>
+<dl class="meta">
+  <dt>Jumps</dt><dd>13</dd>
+  <dt>Hue</dt><dd>30° · oklch(0.82 0.14 30)</dd>
+  <dt>Perks</dt><dd>4 x star-100 · 2 x star-200 · 1 x star-300 · 1 x star-400 · 5 x star-600</dd>
+  <dt>Free</dt><dd>no free perks</dd>
+</dl>
+<p class="shape-concept"><span class="label">Intended image</span>car side profile: hood line, roofline, trunk, and two wheels</p>
+<section class="image-comparison">
+  <figure class="image-panel">
+    <div class="preview-label">Current</div>
+    <!-- EDITABLE: cluster silhouette - markers expand the silhouette template to jump_count -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320"
+       color="oklch(0.82 0.14 30)"
+       style="background: radial-gradient(circle at 50% 60%, #07121a 0%, #03080d 75%)">
+    <title>Vehicles</title>
+    <desc>Vehicles as a constellation of its 13 jumps. One marker per jump.</desc>
+    <defs>
+      <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="transparent"/>
+        <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
+        <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
+        <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
+        <stop offset="1"    stop-color="transparent"/>
+      </linearGradient>
+      <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
+        <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
+          <g opacity="0.68" style="mix-blend-mode:screen">
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
+          </g>
+          <g opacity="0.32" style="mix-blend-mode:screen">
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
+          </g>
+          <circle r="2.2" fill="currentColor" opacity="0.16"/>
+          <circle r="1.4" fill="#fff"/>
+        </g>
+      </symbol>
+    </defs>
+
+    <!-- Background starfield (deterministic seed-3 LCG, 60 dots). -->
+    <g class="starfield">
+      <circle cx="76.1" cy="174.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="193.3" cy="200.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="4.2" cy="268.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="75.0" cy="318.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="267.7" cy="152.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="48.2" cy="203.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="167.4" cy="237.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="20.5" cy="242.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="96.4" cy="9.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="151.3" cy="230.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="228.5" cy="294.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="256.3" cy="142.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="281.2" cy="31.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="69.4" cy="309.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="200.5" cy="96.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="123.5" cy="112.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="187.0" cy="289.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="297.3" cy="274.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="214.8" cy="52.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="308.7" cy="289.5" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="228.4" cy="67.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="183.5" cy="91.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="273.3" cy="316.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="256.2" cy="131.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="94.0" cy="246.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="14.1" cy="196.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="229.9" cy="105.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="313.8" cy="161.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="99.1" cy="24.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="10.0" cy="63.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="195.3" cy="50.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="277.7" cy="100.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="286.9" cy="120.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="166.4" cy="206.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="179.0" cy="198.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="162.2" cy="138.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="76.0" cy="96.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="166.8" cy="175.5" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="132.9" cy="185.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="197.1" cy="202.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="200.7" cy="149.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="112.8" cy="226.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="7.1" cy="19.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="308.3" cy="80.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="189.7" cy="102.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="100.1" cy="118.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="96.1" cy="120.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="8.6" cy="182.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="99.2" cy="71.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="76.4" cy="60.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="223.4" cy="32.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="106.8" cy="266.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="273.8" cy="54.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="208.1" cy="283.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="72.0" cy="38.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="61.1" cy="258.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="58.7" cy="89.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="205.4" cy="258.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="41.5" cy="93.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="86.8" cy="110.8" r="0.5" fill="#fff" opacity="0.3"/>
+    </g>
+
+    <polyline class="cluster-outline" points="30.0,194.2 30.0,160.0 64.2,139.5 118.9,125.8 146.3,77.9 201.1,77.9 235.3,125.8 276.3,139.5 290.0,160.0 290.0,194.2 84.7,242.1 235.3,242.1 118.9,180.5 30.0,194.2"
+              fill="none" stroke="currentColor" stroke-opacity="0.32"
+              stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- One diffraction-spike marker per jump. -->
+    <g class="jump-markers">
+      <use href="#star-mark" x="15.0" y="179.2" width="30" height="30"/>
+      <use href="#star-mark" x="15.0" y="145.0" width="30" height="30"/>
+      <use href="#star-mark" x="49.2" y="124.5" width="30" height="30"/>
+      <use href="#star-mark" x="103.9" y="110.8" width="30" height="30"/>
+      <use href="#star-mark" x="131.3" y="62.9" width="30" height="30"/>
+      <use href="#star-mark" x="186.1" y="62.9" width="30" height="30"/>
+      <use href="#star-mark" x="220.3" y="110.8" width="30" height="30"/>
+      <use href="#star-mark" x="261.3" y="124.5" width="30" height="30"/>
+      <use href="#star-mark" x="275.0" y="145.0" width="30" height="30"/>
+      <use href="#star-mark" x="275.0" y="179.2" width="30" height="30"/>
+      <use href="#star-mark" x="69.7" y="227.1" width="30" height="30"/>
+      <use href="#star-mark" x="220.3" y="227.1" width="30" height="30"/>
+      <use href="#star-mark" x="103.9" y="165.5" width="30" height="30"/>
+    </g>
+  </svg>
+  <!-- /EDITABLE -->
+  </figure>
+  <figure class="image-panel">
+    <div class="preview-label">Reference</div>
+    <div class="empty-reference">No reference.svg saved yet.</div>
+  </figure>
+</section>
+
+<section class="jump-summary">
+  <h2>Jump Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Jump name</th><th>Total perks in jump</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+    <tr><td><a href="#ace-combat">Ace Combat</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#big-o">Big O</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#captain-harlock">Captain Harlock</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#fast-and-furious">Fast and Furious</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#g-i-joe">G.I. Joe</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#gundam-uc">Gundam UC</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#gurren-lagann">Gurren Lagann</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#kerbal-space-program">Kerbal Space Program</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#macross">Macross</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#mad-max">Mad Max</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#metal-gear-solid">Metal Gear Solid</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#star-wars-the-clone-wars">Star Wars: The Clone Wars</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#titanfall">Titanfall</a></td><td>1</td><td class="note-field"></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="jump-details">
+  <h2>Perk Details</h2>
+  <section class="jump-detail" id="ace-combat">
+    <h3>Ace Combat</h3>
+    <p class="jump-meta">1 x 400 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Technical Certainties</td><td>400 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="big-o">
+    <h3>Big O</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Valuable Memories</td><td>300 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="captain-harlock">
+    <h3>Captain Harlock</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>The Good Doctor</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="fast-and-furious">
+    <h3>Fast and Furious</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Mechanic</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="g-i-joe">
+    <h3>G.I. Joe</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Superweapons</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="gundam-uc">
+    <h3>Gundam UC</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Anaheim Degree</td><td>200 CP</td><td>Mass Production Mobile Suit: Gun-EZ, Hangar</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="gurren-lagann">
+    <h3>Gurren Lagann</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Always a Bigger Robot</td><td>600 CP</td><td>Spiral Energy</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="kerbal-space-program">
+    <h3>Kerbal Space Program</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Aerospace Engineering Makes Things Go Fast</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="macross">
+    <h3>Macross</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Fingers of Silver</td><td>200 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="mad-max">
+    <h3>Mad Max</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Black Thumb</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="metal-gear-solid">
+    <h3>Metal Gear Solid</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>A New Age of Warfare</td><td>600 CP</td><td>Global Operations, Signature Weapon</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="star-wars-the-clone-wars">
+    <h3>Star Wars: The Clone Wars</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Mechanical Genius</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="titanfall">
+    <h3>Titanfall</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Titan Engineering</td><td>100 CP</td><td>Titan Chassis - Medium, Titan Hangar</td></tr>
+      </tbody>
+    </table>
+  </section>
+</section>
+</body>
+</html>

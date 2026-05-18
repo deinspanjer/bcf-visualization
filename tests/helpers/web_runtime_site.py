@@ -65,28 +65,22 @@ def _copy_web_files(repo_root: Path, site_root: Path) -> None:
         shutil.copy2(repo_root / "web" / filename, web_dir / filename)
 
 
-def _manifest(package_id: str, *, include_wireframes: bool = False) -> dict:
-    files = {
-        "chapter_facts": {
-            "path": "chapter_facts.json",
-            "schema_version": 1,
-        },
-    }
-    if include_wireframes:
-        files["constellation_wireframes"] = {
-            "path": "constellation_wireframes.json",
-            "schema_version": 1,
-        }
+def _manifest(package_id: str) -> dict:
     return {
         "package_id": package_id,
         "contract": "bcf-visualization-data",
         "contract_version": 1,
         "version_label": f"Synthetic {package_id}",
-        "files": files,
+        "files": {
+            "visualization_facts": {
+                "path": "visualization_facts.json",
+                "schema_version": 1,
+            },
+        },
         "entrypoints": {
             "web": {
-                "required": ["chapter_facts"],
-                "optional": ["constellation_wireframes"],
+                "required": ["visualization_facts"],
+                "optional": [],
             },
         },
     }
@@ -281,21 +275,56 @@ def _wireframes() -> dict:
     }
 
 
+def _visualization_facts(package_id: str) -> dict:
+    chapter_facts = _chapter_facts()
+    wireframes = _wireframes()
+    return {
+        "schema_version": 1,
+        "_source": "tests/helpers/web_runtime_site.py",
+        "_method": "synthetic test fixture",
+        "version": {
+            "package_id": package_id,
+            "version_label": f"Synthetic {package_id}",
+            "package_date": "20260101",
+            "build_number": 1,
+            "source_commit": "synthetic",
+            "story_chapter_ordinal": len(chapter_facts.get("chapters", [])),
+            "story_chapter_num": chapter_facts["chapters"][-1]["chapter_num"] if chapter_facts.get("chapters") else "1",
+            "story_chapter_title": chapter_facts["chapters"][-1].get("full_title", "Synthetic") if chapter_facts.get("chapters") else "Synthetic",
+        },
+        "shadow_periods": chapter_facts.get("shadow_periods", []),
+        "in_world_timeline": chapter_facts.get("in_world_timeline", {
+            "_sources_used": [], "_count": 0,
+            "_first_in_world_date": None, "_last_in_world_date": None,
+            "entries": [],
+        }),
+        "chapters": chapter_facts.get("chapters", []),
+        "constellation_wireframes": {
+            "cluster_constellations": wireframes.get("cluster_constellations", []),
+            "jump_constellations": wireframes.get("jump_constellations", []),
+        },
+        "predicted_rolls": [
+            # Use renamed field `regime`, not the upstream `cp_rule_regime`.
+            {"roll_number": 1, "word_position": 2000, "chapter_num": "1",
+             "regime": 1, "roll_trigger_cp_threshold": 100},
+        ],
+        "predicted_rolls_meta": {
+            "_count": 1,
+            "_total_words_epub_exact": 2000,
+            "_regime_summary": {"1": "synthetic", "2": "synthetic", "3": "synthetic"},
+        },
+    }
+
+
 def _stage_package(
     site_root: Path,
     package_id: str,
     *,
     derived: bool = False,
-    include_wireframes: bool = False,
 ) -> None:
     package_dir = site_root / ("data/derived" if derived else f"data/packages/{package_id}")
-    _write_json(
-        package_dir / "data_package.json",
-        _manifest(package_id, include_wireframes=include_wireframes),
-    )
-    _write_json(package_dir / "chapter_facts.json", _chapter_facts())
-    if include_wireframes:
-        _write_json(package_dir / "constellation_wireframes.json", _wireframes())
+    _write_json(package_dir / "data_package.json", _manifest(package_id))
+    _write_json(package_dir / "visualization_facts.json", _visualization_facts(package_id))
 
 
 @contextlib.contextmanager
@@ -318,8 +347,6 @@ def _serve(site_root: Path) -> Iterator[str]:
 @contextlib.contextmanager
 def staged_web_runtime_site(
     tmp_path: Path,
-    *,
-    include_wireframes: bool = False,
 ) -> Iterator[StagedWebRuntimeSite]:
     repo_root = Path(__file__).resolve().parents[2]
     site_root = tmp_path / "runtime-site"
@@ -345,14 +372,9 @@ def staged_web_runtime_site(
             ],
         },
     )
-    _stage_package(site_root, "tiny-default", include_wireframes=include_wireframes)
-    _stage_package(site_root, "tiny-alt", include_wireframes=include_wireframes)
-    _stage_package(
-        site_root,
-        "synthetic-derived",
-        derived=True,
-        include_wireframes=include_wireframes,
-    )
+    _stage_package(site_root, "tiny-default")
+    _stage_package(site_root, "tiny-alt")
+    _stage_package(site_root, "synthetic-derived", derived=True)
 
     with _serve(site_root) as base_url:
         yield StagedWebRuntimeSite(root=site_root, base_url=base_url)

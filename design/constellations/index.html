@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Constellation Design Index</title>
+<style>
+  :root {
+    --void:       #03080d;
+    --ink:        #e8fdff;
+    --muted:      #9ad7df;
+    --dim:        #5f9ba4;
+    --cyan:       #5cf4ff;
+    --edge-soft:  rgba(92, 244, 255, 0.22);
+    --serif:      Georgia, "Times New Roman", serif;
+    --sans:       "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono:       ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--void); color: var(--ink);
+                font-family: var(--sans); }
+  body { padding: 28px 36px 48px; min-height: 100vh; }
+  h1 { font-family: var(--serif); font-size: 28px; color: var(--cyan);
+        margin: 0 0 14px 0; letter-spacing: 0.03em; }
+  p { color: var(--muted); margin: 0 0 22px 0; max-width: 68ch; line-height: 1.45; }
+  table { border-collapse: collapse; width: min(100%, 1180px); font-size: 13px; }
+  th, td { border: 1px solid var(--edge-soft); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: 600;
+        text-align: left; text-transform: uppercase; letter-spacing: 0.08em;
+        background: rgba(92, 244, 255, 0.06); }
+  td.num { color: var(--dim); font-family: var(--mono); text-align: right; width: 72px; }
+  td:nth-child(2) { min-width: 220px; }
+  .thumb-cell { width: 96px; text-align: center; }
+  .thumb { width: 72px; height: 72px; object-fit: contain; display: inline-block;
+            border: 1px solid var(--edge-soft); border-radius: 4px;
+            background: #07121a; padding: 6px; box-sizing: border-box; }
+  .reference-thumb { background: #e8fdff; }
+  .empty-thumb { color: var(--dim); display: inline-grid; place-items: center;
+                  width: 72px; height: 72px; font-family: var(--mono); font-size: 11px; }
+  a { color: var(--cyan); text-decoration-color: var(--edge-soft); }
+</style>
+</head>
+<body>
+<h1>Constellation Design Index</h1>
+<p>Cluster constellation pages in discovery order.</p>
+<table>
+  <thead>
+    <tr><th>Order</th><th>Constellation</th><th>Current</th><th>Reference</th><th>Jumps</th><th>Perks</th><th>Intended image</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">01</td><td><a href="01-toolkits/index.html">Toolkits</a></td><td class="thumb-cell"><img class="thumb" src="01-toolkits/current.svg" alt="Toolkits current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">24</td><td class="num">27</td><td>open-end wrench / spanner: jaws on the left, long handle trailing right</td></tr>
+    <tr><td class="num">02</td><td><a href="02-knowledge/index.html">Knowledge</a></td><td class="thumb-cell"><img class="thumb" src="02-knowledge/current.svg" alt="Knowledge current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">32</td><td class="num">47</td><td>open book: four visible pages with a central spine and inner page lines</td></tr>
+    <tr><td class="num">03</td><td><a href="03-vehicles/index.html">Vehicles</a></td><td class="thumb-cell"><img class="thumb" src="03-vehicles/current.svg" alt="Vehicles current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">13</td><td class="num">13</td><td>car side profile: hood line, roofline, trunk, and two wheels</td></tr>
+    <tr><td class="num">04</td><td><a href="04-time/index.html">Time</a></td><td class="thumb-cell"><img class="thumb" src="04-time/current.svg" alt="Time current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">11</td><td class="num">12</td><td>hourglass: two stacked triangles pinching at the waist with falling-sand grains</td></tr>
+    <tr><td class="num">05</td><td><a href="05-crafting/index.html">Crafting</a></td><td class="thumb-cell"><img class="thumb" src="05-crafting/current.svg" alt="Crafting current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">16</td><td class="num">19</td><td>claw hammer: split claw head, neck, long handle ending in a grip</td></tr>
+    <tr><td class="num">06</td><td><a href="06-clothing/index.html">Clothing</a></td><td class="thumb-cell"><img class="thumb" src="06-clothing/current.svg" alt="Clothing current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">12</td><td class="num">13</td><td>shirt / dress-form silhouette: collar, shoulders, sleeves, hem</td></tr>
+    <tr><td class="num">07</td><td><a href="07-magic/index.html">Magic</a></td><td class="thumb-cell"><img class="thumb" src="07-magic/current.svg" alt="Magic current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">14</td><td class="num">17</td><td>pointed wizard hat: wide brim, rising cone, star at the tip</td></tr>
+    <tr><td class="num">08</td><td><a href="08-quality/index.html">Quality</a></td><td class="thumb-cell"><img class="thumb" src="08-quality/current.svg" alt="Quality current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">20</td><td class="num">29</td><td>brilliant-cut diamond: table on top, crown facets, pavilion narrowing to a culet</td></tr>
+    <tr><td class="num">09</td><td><a href="09-size/index.html">Size</a></td><td class="thumb-cell"><img class="thumb" src="09-size/current.svg" alt="Size current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">8</td><td class="num">17</td><td>faceted growth spire: pointed top, central spine, sloped side facets, and split lower fins</td></tr>
+    <tr><td class="num">10</td><td><a href="10-resources-and-durability/index.html">Resources and Durability</a></td><td class="thumb-cell"><img class="thumb" src="10-resources-and-durability/current.svg" alt="Resources and Durability current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">23</td><td class="num">25</td><td>anvil: long horn, flat top, waist, and broad base</td></tr>
+    <tr><td class="num">11</td><td><a href="11-magitech/index.html">Magitech</a></td><td class="thumb-cell"><img class="thumb" src="11-magitech/current.svg" alt="Magitech current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">10</td><td class="num">12</td><td>angular magitech circuit: rectangular left frame feeding a central junction and jagged right-side bolt</td></tr>
+    <tr><td class="num">12</td><td><a href="12-alchemy/index.html">Alchemy</a></td><td class="thumb-cell"><img class="thumb" src="12-alchemy/current.svg" alt="Alchemy current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">11</td><td class="num">17</td><td>Erlenmeyer flask: narrow neck, sloped shoulders, and broad flat base</td></tr>
+    <tr><td class="num">13</td><td><a href="13-capstone/index.html">Capstone</a></td><td class="thumb-cell"><img class="thumb" src="13-capstone/current.svg" alt="Capstone current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">19</td><td class="num">29</td><td>brick wall with a central capstone bearing a five-pointed star</td></tr>
+    <tr><td class="num">14</td><td><a href="14-personal-reality/index.html">Personal Reality</a></td><td class="thumb-cell"><img class="thumb" src="14-personal-reality/current.svg" alt="Personal Reality current image"/></td><td class="thumb-cell"><span class="empty-thumb">none</span></td><td class="num">1</td><td class="num">124</td><td>planet in a nested hypercube: central world enclosed by perspective cubes and dimensional connector lines</td></tr>
+  </tbody>
+</table>
+</body>
+</html>

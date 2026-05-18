@@ -96,9 +96,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Knowledge → open book viewed from above, two pages with a spine.
+    # Knowledge → open book viewed from above, four visible pages with a spine.
     "Knowledge": {
-        "shape_concept": "open book: two facing pages with a central spine and corner ticks",
+        "shape_concept": "open book: four visible pages with a central spine and inner page lines",
         "vertices": [
             ( 0.00,  0.85),  # top of spine
             ( 0.00,  0.00),  # spine middle
@@ -122,7 +122,7 @@ CLUSTER_SHAPES: dict[str, dict] = {
 
     # Vehicles → side profile of a car: hood, roof, trunk, wheels.
     "Vehicles": {
-        "shape_concept": "car side profile: hood line, roofline, two wheels, headlights",
+        "shape_concept": "car side profile: hood line, roofline, trunk, and two wheels",
         "vertices": [
             (-0.95, -0.20),  # front bumper bottom
             (-0.95,  0.05),  # front bumper top
@@ -242,9 +242,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Size → upward growth chevron / scaling triangle stack.
+    # Size → faceted growth spire.
     "Size": {
-        "shape_concept": "upward growth chevron stack: small triangle at base growing to a wide one above",
+        "shape_concept": "faceted growth spire: pointed top, central spine, sloped side facets, and split lower fins",
         "vertices": [
             ( 0.00,  0.95),  # apex
             (-0.30,  0.55),
@@ -261,9 +261,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Resources and Durability → kite shield outline with center boss.
+    # Resources and Durability → anvil silhouette.
     "Resources and Durability": {
-        "shape_concept": "kite shield: rounded shoulders narrowing to a point, center boss, trim",
+        "shape_concept": "anvil: long horn, flat top, waist, and broad base",
         "vertices": [
             ( 0.00,  0.95),  # top center
             (-0.55,  0.85),  # top-left shoulder
@@ -282,9 +282,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Magitech → cog with a lightning bolt streaking through.
+    # Magitech → angular circuit with a jagged bolt.
     "Magitech": {
-        "shape_concept": "gear ringed with teeth, lightning bolt zig-zagging across the face",
+        "shape_concept": "angular magitech circuit: rectangular left frame feeding a central junction and jagged right-side bolt",
         "vertices": [
             # gear teeth around a unit-ish circle
             ( 1.00 * math.cos(a), 1.00 * math.sin(a))
@@ -303,9 +303,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Alchemy → round-bottom flask / Erlenmeyer with bubbles.
+    # Alchemy → Erlenmeyer flask.
     "Alchemy": {
-        "shape_concept": "round-bottom flask: narrow neck, bulbous body, bubbles rising from the brew",
+        "shape_concept": "Erlenmeyer flask: narrow neck, sloped shoulders, and broad flat base",
         "vertices": [
             (-0.15,  0.95),  # neck rim left
             ( 0.15,  0.95),  # neck rim right
@@ -326,9 +326,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Capstone → mountain peak with a smaller foothill.
+    # Capstone → brick wall with highlighted capstone.
     "Capstone": {
-        "shape_concept": "mountain peak: tall central summit flanked by two foothills",
+        "shape_concept": "brick wall with a central capstone bearing a five-pointed star",
         "vertices": [
             ( 0.00,  0.95),  # main peak
             (-0.25,  0.50),  # main slope upper-left
@@ -346,9 +346,9 @@ CLUSTER_SHAPES: dict[str, dict] = {
         ],
     },
 
-    # Personal Reality → house with door + chimney = the workshop.
+    # Personal Reality → planet nested inside a higher-dimensional frame.
     "Personal Reality": {
-        "shape_concept": "house / workshop silhouette: pitched roof with chimney, door, two windows",
+        "shape_concept": "planet in a nested hypercube: central world enclosed by perspective cubes and dimensional connector lines",
         "vertices": [
             ( 0.00,  0.95),  # roof peak
             (-0.85,  0.20),  # roof eave left

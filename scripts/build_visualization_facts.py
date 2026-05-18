@@ -1,0 +1,87 @@
+"""Bundle chapter_facts, constellation_wireframes, predicted_rolls, and version metadata into the single visualization_facts.json file consumed by the web visualization."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+try:
+    from _common import write_validated_json
+    from data_paths import DERIVED
+except ModuleNotFoundError:
+    from scripts._common import write_validated_json
+    from scripts.data_paths import DERIVED
+
+
+SOURCE = "scripts/build_visualization_facts.py"
+METHOD = ("Bundles chapter_facts + constellation_wireframes + "
+          "predicted_rolls into the single web-facing visualization data file.")
+
+VERSION_FIELDS = (
+    "package_id", "version_label", "package_date", "build_number",
+    "source_commit", "story_chapter_ordinal", "story_chapter_num",
+    "story_chapter_title",
+)
+
+CHAPTER_FACTS_PAYLOAD_KEYS = ("shadow_periods", "in_world_timeline", "chapters")
+WIREFRAME_PAYLOAD_KEYS = ("cluster_constellations", "jump_constellations")
+PREDICTED_META_KEYS = ("_count", "_total_words_epub_exact", "_regime_summary")
+
+
+def _read_json(path: Path) -> dict:
+    return json.loads(path.read_text())
+
+
+def build(input_dir: Path) -> dict:
+    chapter_facts = _read_json(input_dir / "chapter_facts.json")
+    wireframes = _read_json(input_dir / "constellation_wireframes.json")
+    predicted = _read_json(input_dir / "predicted_rolls.json")
+    manifest = _read_json(input_dir / "data_package.json")
+
+    version = {key: manifest[key] for key in VERSION_FIELDS}
+
+    # Rename cp_rule_regime → regime on the way through. Keeps a single canonical name
+    # at the render-side consumer (`web/app.js:1021` reads `tick.regime`); the pipeline
+    # file's `cp_rule_regime` stays unchanged for internal use.
+    predicted_rolls = [
+        {**{k: v for k, v in row.items() if k != "cp_rule_regime"},
+         "regime": row["cp_rule_regime"]}
+        for row in predicted["predicted"]
+    ]
+
+    bundle = {
+        "schema_version": 1,
+        "_source": SOURCE,
+        "_method": METHOD,
+        "version": version,
+        **{key: chapter_facts[key] for key in CHAPTER_FACTS_PAYLOAD_KEYS},
+        "constellation_wireframes": {
+            key: wireframes[key] for key in WIREFRAME_PAYLOAD_KEYS
+        },
+        "predicted_rolls": predicted_rolls,
+        "predicted_rolls_meta": {
+            key: predicted[key] for key in PREDICTED_META_KEYS
+        },
+    }
+    return bundle
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--input-dir", type=Path, default=DERIVED,
+        help="Directory containing chapter_facts.json, constellation_wireframes.json, predicted_rolls.json, data_package.json. Defaults to data/derived/.",
+    )
+    parser.add_argument(
+        "--output", type=Path, default=DERIVED / "visualization_facts.json",
+        help="Output path. Defaults to data/derived/visualization_facts.json.",
+    )
+    args = parser.parse_args()
+
+    bundle = build(args.input_dir)
+    write_validated_json(args.output, bundle, schema_name="visualization_facts")
+
+
+if __name__ == "__main__":
+    main()

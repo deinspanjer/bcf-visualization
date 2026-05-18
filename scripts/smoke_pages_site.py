@@ -72,22 +72,22 @@ def validate_site(*, site_dir: Path) -> SmokeResult:
     files = manifest.get("files")
     if not isinstance(required, list) or not isinstance(files, dict):
         raise RuntimeError("default package manifest has no web runtime contract")
-    if "chapter_facts" not in required:
-        raise RuntimeError("chapter_facts is not a required web entrypoint")
+    if "visualization_facts" not in required:
+        raise RuntimeError("visualization_facts is not a required web entrypoint")
 
-    chapter_meta = files.get("chapter_facts")
-    if not isinstance(chapter_meta, dict) or not isinstance(chapter_meta.get("path"), str):
-        raise RuntimeError("chapter_facts file metadata is missing")
-    chapter_path = package_dir / chapter_meta["path"]
-    if not chapter_path.is_file():
-        raise RuntimeError(f"required runtime file is missing: {chapter_path}")
+    viz_meta = files.get("visualization_facts")
+    if not isinstance(viz_meta, dict) or not isinstance(viz_meta.get("path"), str):
+        raise RuntimeError("visualization_facts file metadata is missing")
+    viz_path = package_dir / viz_meta["path"]
+    if not viz_path.is_file():
+        raise RuntimeError(f"required runtime file is missing: {viz_path}")
 
-    facts = _read_json(chapter_path)
-    if facts.get("schema_version") != chapter_meta.get("schema_version"):
-        raise RuntimeError("chapter_facts schema_version does not match manifest")
+    facts = _read_json(viz_path)
+    if facts.get("schema_version") != viz_meta.get("schema_version"):
+        raise RuntimeError("visualization_facts schema_version does not match manifest")
     chapters = facts.get("chapters")
     if not isinstance(chapters, list) or not chapters:
-        raise RuntimeError("chapter_facts has no chapters")
+        raise RuntimeError("visualization_facts has no chapters")
     roll_count = 0
     for chapter in chapters:
         if isinstance(chapter, dict):
@@ -95,7 +95,7 @@ def validate_site(*, site_dir: Path) -> SmokeResult:
             if isinstance(rolls, list):
                 roll_count += len(rolls)
     if roll_count == 0:
-        raise RuntimeError("chapter_facts has no rolls to render")
+        raise RuntimeError("visualization_facts has no rolls to render")
 
     return SmokeResult(
         package_id=package_id,

@@ -42,7 +42,7 @@ def package_base_url(packages_url: str, package_index: dict) -> str:
 
 
 def download_package(*, packages_url: str, output_dir: Path, force: bool = False) -> dict:
-    if (output_dir / "chapter_facts.json").exists() and not force:
+    if (output_dir / "visualization_facts.json").exists() and not force:
         print(f"{output_dir} already hydrated; skipping download")
         return {}
 
@@ -50,7 +50,7 @@ def download_package(*, packages_url: str, output_dir: Path, force: bool = False
     base_url = package_base_url(packages_url, index)
     manifest = load_json_url(urllib.parse.urljoin(base_url, "data_package.json"))
     files = manifest.get("files")
-    if not isinstance(files, dict) or "chapter_facts" not in files:
+    if not isinstance(files, dict) or "visualization_facts" not in files:
         raise RuntimeError("deployed package manifest does not contain runtime files")
 
     output_dir.mkdir(parents=True, exist_ok=True)
