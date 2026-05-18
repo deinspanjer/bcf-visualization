@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Size · Cluster Wireframe</title>
+<style>
+  :root {
+    --void:       #03080d;
+    --void-soft:  #07121a;
+    --ink:        #e8fdff;
+    --muted:      #9ad7df;
+    --dim:        #5f9ba4;
+    --cyan:       #5cf4ff;
+    --rose:       #ff8aa8;
+    --edge-soft:  rgba(92, 244, 255, 0.22);
+    --warn-bg:    rgba(255, 138, 168, 0.10);
+    --warn-edge:  rgba(255, 138, 168, 0.55);
+    --serif:      Georgia, "Times New Roman", serif;
+    --sans:       "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono:       ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--void); color: var(--ink);
+                font-family: var(--sans); }
+  body { padding: 28px 36px 48px; min-height: 100vh; }
+  h1 { font-family: var(--serif); font-size: 28px; color: var(--cyan);
+        margin: 0 0 6px 0; letter-spacing: 0.03em; }
+  .back-link { display: inline-block; margin: 0 0 18px 0; font-family: var(--mono);
+                font-size: 12px; color: var(--dim); }
+  h2 { font-family: var(--serif); font-size: 22px; color: var(--cyan);
+        margin: 32px 0 12px 0; }
+  h3 { font-family: var(--serif); font-size: 18px; color: var(--ink);
+        margin: 26px 0 6px 0; }
+  dl.meta { margin: 0 0 22px 0; font-family: var(--mono); font-size: 12px;
+             display: grid; grid-template-columns: 78px 1fr; row-gap: 4px;
+             column-gap: 14px; max-width: 760px; }
+  dl.meta dt { color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  dl.meta dd { margin: 0; color: var(--ink); }
+  p.shape-concept { font-family: var(--serif); font-style: italic; color: var(--muted);
+                     font-size: 15px; max-width: 60ch; margin: 0 0 24px 0; line-height: 1.4; }
+  p.shape-concept .label { display: block; font-family: var(--mono); font-style: normal;
+                            color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em;
+                            font-size: 11px; margin-bottom: 4px; }
+  .image-comparison { display: grid; grid-template-columns: repeat(2, minmax(260px, 360px));
+                       gap: 18px; align-items: start; margin: 0 0 30px 0; }
+  .image-panel { margin: 0; padding: 0; }
+  .preview-label { color: var(--dim); font-family: var(--mono); font-size: 11px;
+                    letter-spacing: 0.08em; margin: 0 0 7px 0; text-transform: uppercase; }
+  .image-panel svg, .image-panel img, .empty-reference {
+    width: 100%; aspect-ratio: 1 / 1; display: block;
+    border: 1px solid var(--edge-soft); border-radius: 4px;
+    background: var(--void-soft);
+  }
+  .image-panel svg { height: auto; }
+  .image-panel img { object-fit: contain; padding: 18px; box-sizing: border-box; }
+  .image-panel img.reference-image { background: #e8fdff; }
+  .empty-reference { box-sizing: border-box; color: var(--dim); display: grid; place-items: center;
+                      font-family: var(--mono); font-size: 12px; padding: 18px; text-align: center; }
+  @media (max-width: 760px) {
+    .image-comparison { grid-template-columns: minmax(260px, 360px); }
+  }
+  table { border-collapse: collapse; width: min(100%, 980px); margin: 0 0 18px 0;
+           font-size: 13px; }
+  th, td { border: 1px solid var(--edge-soft); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: 600;
+        text-align: left; text-transform: uppercase; letter-spacing: 0.08em;
+        background: rgba(92, 244, 255, 0.06); }
+  td { color: var(--ink); line-height: 1.35; }
+  td:nth-child(2) { width: 120px; font-family: var(--mono); color: var(--muted); }
+  .jump-summary td:nth-child(2) { width: 120px; text-align: right; }
+  .note-field { min-width: 220px; }
+  .jump-meta { margin: 0 0 8px 0; color: var(--dim); font-family: var(--mono); font-size: 12px; }
+  a { color: var(--cyan); text-decoration-color: var(--edge-soft); }
+</style>
+</head>
+<body>
+<h1>Size</h1>
+<a class="back-link" href="../index.html">Back to constellation index</a>
+<dl class="meta">
+  <dt>Jumps</dt><dd>8</dd>
+  <dt>Hue</dt><dd>100° · oklch(0.82 0.14 100)</dd>
+  <dt>Perks</dt><dd>6 x star-100 · 1 x star-200 · 2 x star-300 · 5 x star-400 · 3 x star-600</dd>
+  <dt>Free</dt><dd>no free perks</dd>
+</dl>
+<p class="shape-concept"><span class="label">Intended image</span>faceted growth spire: pointed top, central spine, sloped side facets, and split lower fins</p>
+<section class="image-comparison">
+  <figure class="image-panel">
+    <div class="preview-label">Current</div>
+    <!-- EDITABLE: cluster silhouette - markers expand the silhouette template to jump_count -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320"
+       color="oklch(0.82 0.14 100)"
+       style="background: radial-gradient(circle at 50% 60%, #07121a 0%, #03080d 75%)">
+    <title>Size</title>
+    <desc>Size as a constellation of its 8 jumps. One marker per jump.</desc>
+    <defs>
+      <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="transparent"/>
+        <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
+        <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
+        <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
+        <stop offset="1"    stop-color="transparent"/>
+      </linearGradient>
+      <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
+        <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
+          <g opacity="0.68" style="mix-blend-mode:screen">
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
+          </g>
+          <g opacity="0.32" style="mix-blend-mode:screen">
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
+          </g>
+          <circle r="2.2" fill="currentColor" opacity="0.16"/>
+          <circle r="1.4" fill="#fff"/>
+        </g>
+      </symbol>
+    </defs>
+
+    <!-- Background starfield (deterministic seed-9 LCG, 60 dots). -->
+    <g class="starfield">
+      <circle cx="148.2" cy="119.5" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="277.3" cy="2.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="287.5" cy="25.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="197.3" cy="13.1" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="225.1" cy="144.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="50.3" cy="76.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="162.0" cy="295.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="247.7" cy="122.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="32.5" cy="93.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="232.2" cy="135.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="85.4" cy="67.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="259.0" cy="63.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="281.4" cy="17.5" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="157.3" cy="7.5" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="290.1" cy="35.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="38.8" cy="185.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="65.0" cy="2.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="172.7" cy="5.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="159.0" cy="294.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="127.4" cy="204.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="185.5" cy="55.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="306.7" cy="17.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="194.0" cy="47.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="318.4" cy="319.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="225.7" cy="304.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="195.6" cy="13.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="215.7" cy="188.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="27.8" cy="111.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="186.9" cy="144.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="315.5" cy="183.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="255.8" cy="105.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="68.3" cy="142.1" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="28.4" cy="201.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="250.9" cy="8.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="258.4" cy="159.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="79.4" cy="236.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="73.9" cy="308.5" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="119.4" cy="275.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="213.6" cy="54.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="82.9" cy="16.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="55.3" cy="302.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="194.1" cy="3.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="66.8" cy="124.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="309.3" cy="113.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="179.8" cy="43.9" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="177.9" cy="222.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="144.4" cy="225.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="122.6" cy="283.9" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="228.9" cy="246.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="158.2" cy="31.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="169.2" cy="55.5" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="27.0" cy="249.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="4.2" cy="56.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="179.0" cy="124.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="154.3" cy="302.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="301.2" cy="9.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="284.5" cy="174.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="171.9" cy="291.1" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="205.7" cy="173.5" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="232.0" cy="230.6" r="0.5" fill="#fff" opacity="0.3"/>
+    </g>
+
+    <polyline class="cluster-outline" points="160.0,38.1 111.2,103.1 208.8,103.1 70.6,160.0 249.4,160.0 30.0,225.0 290.0,225.0 70.6,281.9 160.0,38.1"
+              fill="none" stroke="currentColor" stroke-opacity="0.32"
+              stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- One diffraction-spike marker per jump. -->
+    <g class="jump-markers">
+      <use href="#star-mark" x="145.0" y="23.1" width="30" height="30"/>
+      <use href="#star-mark" x="96.2" y="88.1" width="30" height="30"/>
+      <use href="#star-mark" x="193.8" y="88.1" width="30" height="30"/>
+      <use href="#star-mark" x="55.6" y="145.0" width="30" height="30"/>
+      <use href="#star-mark" x="234.4" y="145.0" width="30" height="30"/>
+      <use href="#star-mark" x="15.0" y="210.0" width="30" height="30"/>
+      <use href="#star-mark" x="275.0" y="210.0" width="30" height="30"/>
+      <use href="#star-mark" x="55.6" y="266.9" width="30" height="30"/>
+    </g>
+  </svg>
+  <!-- /EDITABLE -->
+  </figure>
+  <figure class="image-panel">
+    <div class="preview-label">Reference</div>
+    <div class="empty-reference">No reference.svg saved yet.</div>
+  </figure>
+</section>
+
+<section class="jump-summary">
+  <h2>Jump Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Jump name</th><th>Total perks in jump</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+    <tr><td><a href="#transformers">Transformers</a></td><td>4</td><td class="note-field"></td></tr>
+    <tr><td><a href="#zoids-legacy">Zoids: Legacy</a></td><td>4</td><td class="note-field"></td></tr>
+    <tr><td><a href="#generator-rex">Generator Rex</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#kerbal-space-program">Kerbal Space Program</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#red-faction">Red Faction</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#james-bond-007">James Bond: 007</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#rwby">RWBY</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#worm">Worm</a></td><td>1</td><td class="note-field"></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="jump-details">
+  <h2>Perk Details</h2>
+  <section class="jump-detail" id="transformers">
+    <h3>Transformers</h3>
+    <p class="jump-meta">1 x 600 CP · 1 x 400 CP · 2 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Cybertronian Forge</td><td>600 CP</td><td>Altmode, Decepticon Terrorize!, Energon, Energon Battle Pistol, Energon Melee Weapon, ROBOTS IN DISGUISE! - Medium Chassis</td></tr>
+      <tr><td>Master Builder</td><td>400 CP</td><td></td></tr>
+      <tr><td>Science! Engineering</td><td>100 CP</td><td></td></tr>
+      <tr><td>Science! Mechanics</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="zoids-legacy">
+    <h3>Zoids: Legacy</h3>
+    <p class="jump-meta">1 x 400 CP · 1 x 5 CP · 1 x 3 CP · 1 x 2 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Hybridization Theory</td><td>400 CP</td><td></td></tr>
+      <tr><td>Doppler Field Generator</td><td>5 CP</td><td></td></tr>
+      <tr><td>Accelerator Equipment</td><td>3 CP</td><td></td></tr>
+      <tr><td>Electron Shield Generators</td><td>2 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="generator-rex">
+    <h3>Generator Rex</h3>
+    <p class="jump-meta">1 x 400 CP · 1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Nanite Removal and Control</td><td>400 CP</td><td></td></tr>
+      <tr><td>Nanite Sciences</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="kerbal-space-program">
+    <h3>Kerbal Space Program</h3>
+    <p class="jump-meta">1 x 400 CP · 1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>This Is How I Want It</td><td>400 CP</td><td>Emblems, Espirit de Kerbal, Some Old Friends, Speak English, Dammit!, This Is, Actually, Rocket Science</td></tr>
+      <tr><td>They&#x27;re Like Legoes, Right?</td><td>200 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="red-faction">
+    <h3>Red Faction</h3>
+    <p class="jump-meta">2 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Nano-forge</td><td>600 CP</td><td></td></tr>
+      <tr><td>Nano-technician</td><td>600 CP</td><td>Recycler, Sledgehammer</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="james-bond-007">
+    <h3>James Bond: 007</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Gadget Master</td><td>300 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="rwby">
+    <h3>RWBY</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Tinkerer</td><td>300 CP</td><td>Aura, Dust, Variable Weapon, Scroll</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="worm">
+    <h3>Worm</h3>
+    <p class="jump-meta">1 x 400 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Miniaturization and Efficiency</td><td>400 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+</section>
+</body>
+</html>

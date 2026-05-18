@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Knowledge · Cluster Wireframe</title>
+<style>
+  :root {
+    --void:       #03080d;
+    --void-soft:  #07121a;
+    --ink:        #e8fdff;
+    --muted:      #9ad7df;
+    --dim:        #5f9ba4;
+    --cyan:       #5cf4ff;
+    --rose:       #ff8aa8;
+    --edge-soft:  rgba(92, 244, 255, 0.22);
+    --warn-bg:    rgba(255, 138, 168, 0.10);
+    --warn-edge:  rgba(255, 138, 168, 0.55);
+    --serif:      Georgia, "Times New Roman", serif;
+    --sans:       "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono:       ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--void); color: var(--ink);
+                font-family: var(--sans); }
+  body { padding: 28px 36px 48px; min-height: 100vh; }
+  h1 { font-family: var(--serif); font-size: 28px; color: var(--cyan);
+        margin: 0 0 6px 0; letter-spacing: 0.03em; }
+  .back-link { display: inline-block; margin: 0 0 18px 0; font-family: var(--mono);
+                font-size: 12px; color: var(--dim); }
+  h2 { font-family: var(--serif); font-size: 22px; color: var(--cyan);
+        margin: 32px 0 12px 0; }
+  h3 { font-family: var(--serif); font-size: 18px; color: var(--ink);
+        margin: 26px 0 6px 0; }
+  dl.meta { margin: 0 0 22px 0; font-family: var(--mono); font-size: 12px;
+             display: grid; grid-template-columns: 78px 1fr; row-gap: 4px;
+             column-gap: 14px; max-width: 760px; }
+  dl.meta dt { color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  dl.meta dd { margin: 0; color: var(--ink); }
+  p.shape-concept { font-family: var(--serif); font-style: italic; color: var(--muted);
+                     font-size: 15px; max-width: 60ch; margin: 0 0 24px 0; line-height: 1.4; }
+  p.shape-concept .label { display: block; font-family: var(--mono); font-style: normal;
+                            color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em;
+                            font-size: 11px; margin-bottom: 4px; }
+  .image-comparison { display: grid; grid-template-columns: repeat(2, minmax(260px, 360px));
+                       gap: 18px; align-items: start; margin: 0 0 30px 0; }
+  .image-panel { margin: 0; padding: 0; }
+  .preview-label { color: var(--dim); font-family: var(--mono); font-size: 11px;
+                    letter-spacing: 0.08em; margin: 0 0 7px 0; text-transform: uppercase; }
+  .image-panel svg, .image-panel img, .empty-reference {
+    width: 100%; aspect-ratio: 1 / 1; display: block;
+    border: 1px solid var(--edge-soft); border-radius: 4px;
+    background: var(--void-soft);
+  }
+  .image-panel svg { height: auto; }
+  .image-panel img { object-fit: contain; padding: 18px; box-sizing: border-box; }
+  .image-panel img.reference-image { background: #e8fdff; }
+  .empty-reference { box-sizing: border-box; color: var(--dim); display: grid; place-items: center;
+                      font-family: var(--mono); font-size: 12px; padding: 18px; text-align: center; }
+  @media (max-width: 760px) {
+    .image-comparison { grid-template-columns: minmax(260px, 360px); }
+  }
+  table { border-collapse: collapse; width: min(100%, 980px); margin: 0 0 18px 0;
+           font-size: 13px; }
+  th, td { border: 1px solid var(--edge-soft); padding: 8px 10px; vertical-align: top; }
+  th { color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: 600;
+        text-align: left; text-transform: uppercase; letter-spacing: 0.08em;
+        background: rgba(92, 244, 255, 0.06); }
+  td { color: var(--ink); line-height: 1.35; }
+  td:nth-child(2) { width: 120px; font-family: var(--mono); color: var(--muted); }
+  .jump-summary td:nth-child(2) { width: 120px; text-align: right; }
+  .note-field { min-width: 220px; }
+  .jump-meta { margin: 0 0 8px 0; color: var(--dim); font-family: var(--mono); font-size: 12px; }
+  a { color: var(--cyan); text-decoration-color: var(--edge-soft); }
+</style>
+</head>
+<body>
+<h1>Knowledge</h1>
+<a class="back-link" href="../index.html">Back to constellation index</a>
+<dl class="meta">
+  <dt>Jumps</dt><dd>32</dd>
+  <dt>Hue</dt><dd>268° · oklch(0.82 0.14 268)</dd>
+  <dt>Perks</dt><dd>18 x star-100 · 8 x star-200 · 4 x star-300 · 6 x star-400 · 9 x star-600 · 2 x star-800</dd>
+  <dt>Free</dt><dd>no free perks</dd>
+</dl>
+<p class="shape-concept"><span class="label">Intended image</span>open book: four visible pages with a central spine and inner page lines</p>
+<section class="image-comparison">
+  <figure class="image-panel">
+    <div class="preview-label">Current</div>
+    <!-- EDITABLE: cluster silhouette - markers expand the silhouette template to jump_count -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320"
+       color="oklch(0.82 0.14 268)"
+       style="background: radial-gradient(circle at 50% 60%, #07121a 0%, #03080d 75%)">
+    <title>Knowledge</title>
+    <desc>Knowledge as a constellation of its 32 jumps. One marker per jump.</desc>
+    <defs>
+      <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="transparent"/>
+        <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
+        <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
+        <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
+        <stop offset="1"    stop-color="transparent"/>
+      </linearGradient>
+      <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
+        <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
+          <g opacity="0.68" style="mix-blend-mode:screen">
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
+            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
+          </g>
+          <g opacity="0.32" style="mix-blend-mode:screen">
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
+            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
+          </g>
+          <circle r="2.2" fill="currentColor" opacity="0.16"/>
+          <circle r="1.4" fill="#fff"/>
+        </g>
+      </symbol>
+    </defs>
+
+    <!-- Background starfield (deterministic seed-2 LCG, 60 dots). -->
+    <g class="starfield">
+      <circle cx="305.9" cy="303.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="27.2" cy="267.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="214.3" cy="98.6" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="194.2" cy="186.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="137.8" cy="125.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="318.3" cy="303.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="142.4" cy="85.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="8.8" cy="148.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="121.6" cy="285.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="179.4" cy="75.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="104.0" cy="43.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="319.6" cy="215.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="285.9" cy="255.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="290.1" cy="244.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="113.2" cy="313.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="51.6" cy="241.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="147.7" cy="169.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="295.9" cy="160.3" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="113.3" cy="282.5" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="147.5" cy="181.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="231.6" cy="155.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="103.9" cy="223.9" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="290.5" cy="85.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="99.1" cy="306.4" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="161.4" cy="165.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="188.1" cy="99.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="163.8" cy="298.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="24.1" cy="262.5" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="290.4" cy="61.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="18.8" cy="208.9" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="72.5" cy="280.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="167.2" cy="273.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="67.4" cy="281.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="229.4" cy="10.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="55.0" cy="215.3" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="305.5" cy="8.1" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="6.8" cy="81.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="50.3" cy="58.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="123.4" cy="13.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="48.5" cy="11.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="196.9" cy="237.6" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="107.9" cy="9.9" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="245.1" cy="236.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="241.8" cy="276.0" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="151.3" cy="72.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="101.2" cy="32.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="279.9" cy="40.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="125.7" cy="164.7" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="307.1" cy="82.9" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="134.3" cy="5.8" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="45.0" cy="18.2" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="51.6" cy="30.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="162.6" cy="314.7" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="318.2" cy="74.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="80.2" cy="189.2" r="0.9" fill="#fff" opacity="0.55"/>
+      <circle cx="256.1" cy="227.0" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="135.4" cy="168.4" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="11.4" cy="130.8" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="231.6" cy="77.1" r="0.5" fill="#fff" opacity="0.3"/>
+      <circle cx="58.2" cy="74.1" r="0.5" fill="#fff" opacity="0.3"/>
+    </g>
+
+    <polyline class="cluster-outline" points="146.9,71.9 146.9,147.8 146.9,223.6 71.0,85.3 102.3,76.4 62.1,147.8 102.3,219.1 71.0,210.2 222.7,85.3 191.5,76.4 231.7,147.8 191.5,219.1 222.7,210.2 111.2,121.0 182.6,121.0 111.2,174.5 182.6,174.5 237.4,123.5 221.4,85.2 189.5,56.4 146.9,43.3 101.2,49.9 61.4,76.1 35.7,118.0 30.0,168.4 46.7,217.9 84.0,256.7 135.6,276.7 192.4,272.7 243.4,244.3 278.5,195.7 290.0,135.2 146.9,71.9"
+              fill="none" stroke="currentColor" stroke-opacity="0.32"
+              stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- One diffraction-spike marker per jump. -->
+    <g class="jump-markers">
+      <use href="#star-mark" x="131.9" y="56.9" width="30" height="30"/>
+      <use href="#star-mark" x="131.9" y="132.8" width="30" height="30"/>
+      <use href="#star-mark" x="131.9" y="208.6" width="30" height="30"/>
+      <use href="#star-mark" x="56.0" y="70.3" width="30" height="30"/>
+      <use href="#star-mark" x="87.3" y="61.4" width="30" height="30"/>
+      <use href="#star-mark" x="47.1" y="132.8" width="30" height="30"/>
+      <use href="#star-mark" x="87.3" y="204.1" width="30" height="30"/>
+      <use href="#star-mark" x="56.0" y="195.2" width="30" height="30"/>
+      <use href="#star-mark" x="207.7" y="70.3" width="30" height="30"/>
+      <use href="#star-mark" x="176.5" y="61.4" width="30" height="30"/>
+      <use href="#star-mark" x="216.7" y="132.8" width="30" height="30"/>
+      <use href="#star-mark" x="176.5" y="204.1" width="30" height="30"/>
+      <use href="#star-mark" x="207.7" y="195.2" width="30" height="30"/>
+      <use href="#star-mark" x="96.2" y="106.0" width="30" height="30"/>
+      <use href="#star-mark" x="167.6" y="106.0" width="30" height="30"/>
+      <use href="#star-mark" x="96.2" y="159.5" width="30" height="30"/>
+      <use href="#star-mark" x="167.6" y="159.5" width="30" height="30"/>
+      <use href="#star-mark" x="222.4" y="108.5" width="30" height="30"/>
+      <use href="#star-mark" x="206.4" y="70.2" width="30" height="30"/>
+      <use href="#star-mark" x="174.5" y="41.4" width="30" height="30"/>
+      <use href="#star-mark" x="131.9" y="28.3" width="30" height="30"/>
+      <use href="#star-mark" x="86.2" y="34.9" width="30" height="30"/>
+      <use href="#star-mark" x="46.4" y="61.1" width="30" height="30"/>
+      <use href="#star-mark" x="20.7" y="103.0" width="30" height="30"/>
+      <use href="#star-mark" x="15.0" y="153.4" width="30" height="30"/>
+      <use href="#star-mark" x="31.7" y="202.9" width="30" height="30"/>
+      <use href="#star-mark" x="69.0" y="241.7" width="30" height="30"/>
+      <use href="#star-mark" x="120.6" y="261.7" width="30" height="30"/>
+      <use href="#star-mark" x="177.4" y="257.7" width="30" height="30"/>
+      <use href="#star-mark" x="228.4" y="229.3" width="30" height="30"/>
+      <use href="#star-mark" x="263.5" y="180.7" width="30" height="30"/>
+      <use href="#star-mark" x="275.0" y="120.2" width="30" height="30"/>
+    </g>
+  </svg>
+  <!-- /EDITABLE -->
+  </figure>
+  <figure class="image-panel">
+    <div class="preview-label">Reference</div>
+    <div class="empty-reference">No reference.svg saved yet.</div>
+  </figure>
+</section>
+
+<section class="jump-summary">
+  <h2>Jump Summary</h2>
+  <table>
+    <thead>
+      <tr><th>Jump name</th><th>Total perks in jump</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+    <tr><td><a href="#star-trek-tng">Star Trek: TNG</a></td><td>12</td><td class="note-field"></td></tr>
+    <tr><td><a href="#40k-redux">40k Redux</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#halo">Halo</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#marvel-cinematic-universe">Marvel Cinematic Universe</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#skies-of-arcadia">Skies of Arcadia</a></td><td>2</td><td class="note-field"></td></tr>
+    <tr><td><a href="#adventure-time">Adventure Time</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#alpha-cenaturi">Alpha Cenaturi</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#asura-s-wrath">Asura&#x27;s Wrath</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#bastion">Bastion</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#bubblegum-crisis">Bubblegum Crisis</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#f-e-a-r">F.E.A.R.</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#fallout">Fallout</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#firefly">Firefly</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#full-metal-panic">Full Metal Panic</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#futurama">Futurama</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#gears-of-war">Gears of War</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#lord-of-light">Lord of Light</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#mass-effect">Mass Effect</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#raildex-science">Raildex Science</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#red-alert-3">Red Alert 3</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#red-faction">Red Faction</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#senki-zesshou-symphogear">Senki Zesshou Symphogear</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#starcraft">Starcraft</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#stargate-sg-1">Stargate SG-1</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#strike-witches">Strike Witches</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#teen-titans">Teen Titans</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#tenchi-muyo">Tenchi Muyo</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#terminator">Terminator</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#titanfall">Titanfall</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#valkyria-chronicles">Valkyria Chronicles</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#warhammer-40-000-light-of-terra-dlc-1-the-heathen-trail">Warhammer 40,000: Light of Terra DLC 1 - The Heathen Trail</a></td><td>1</td><td class="note-field"></td></tr>
+    <tr><td><a href="#xcom-2">XCOM 2</a></td><td>1</td><td class="note-field"></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="jump-details">
+  <h2>Perk Details</h2>
+  <section class="jump-detail" id="star-trek-tng">
+    <h3>Star Trek: TNG</h3>
+    <p class="jump-meta">12 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Skills: Combat</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Communications</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Engineering</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Espionage</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Medicine</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Navigation</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Physical Sciences</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Physics</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Piloting</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Robotics</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Stealth</td><td>100 CP</td><td></td></tr>
+      <tr><td>Skills: Weapons</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="40k-redux">
+    <h3>40k Redux</h3>
+    <p class="jump-meta">1 x 500 CP · 1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Arch-Magos</td><td>500 CP</td><td></td></tr>
+      <tr><td>Technical Training</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="halo">
+    <h3>Halo</h3>
+    <p class="jump-meta">1 x 600 CP · 1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Erudition</td><td>600 CP</td><td>Gladius-class Heavy Corvette</td></tr>
+      <tr><td>Engineer</td><td>200 CP</td><td>Standard Neural Interface, M274 Mongoose, M6C Magnum, M9 Fragmentation Grenade, UNSC Marine Corp Battle Dress Uniform</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="marvel-cinematic-universe">
+    <h3>Marvel Cinematic Universe</h3>
+    <p class="jump-meta">1 x 400 CP · 1 x ?</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>I Am Iron Man</td><td>400 CP</td><td></td></tr>
+      <tr><td>Retro-Engineer</td><td>?</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="skies-of-arcadia">
+    <h3>Skies of Arcadia</h3>
+    <p class="jump-meta">2 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Machinist</td><td>200 CP</td><td></td></tr>
+      <tr><td>Sky Machinist</td><td>200 CP</td><td>Cool Flag With Logo, Secret Handshake</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="adventure-time">
+    <h3>Adventure Time</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Analysis</td><td>300 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="alpha-cenaturi">
+    <h3>Alpha Cenaturi</h3>
+    <p class="jump-meta">1 x 400 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Technician</td><td>400 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="asura-s-wrath">
+    <h3>Asura&#x27;s Wrath</h3>
+    <p class="jump-meta">1 x 400 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Demigod Atelier</td><td>400 CP</td><td>Mantra Generation, Imposing Declaration of Title</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="bastion">
+    <h3>Bastion</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Build That Wall</td><td>100 CP</td><td>Phonograph</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="bubblegum-crisis">
+    <h3>Bubblegum Crisis</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Grease Monkey</td><td>300 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="f-e-a-r">
+    <h3>F.E.A.R.</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Feel It Out</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="fallout">
+    <h3>Fallout</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Certified Tech</td><td>600 CP</td><td>Skill Tag</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="firefly">
+    <h3>Firefly</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Machines, They Just Speak To Me</td><td>200 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="full-metal-panic">
+    <h3>Full Metal Panic</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Whispered</td><td>600 CP</td><td>ARM SLAVE M6 Bushnell</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="futurama">
+    <h3>Futurama</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Inventor</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="gears-of-war">
+    <h3>Gears of War</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Xenospecialist</td><td>200 CP</td><td>COG Armor, Combat Boots, MX8 Snub Pistol, COG Tags, Personal Digital Assistant, Weapon Reload System, Imulsion</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="lord-of-light">
+    <h3>Lord of Light</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>The Divine Machines</td><td>300 CP</td><td>Bright Spear</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="mass-effect">
+    <h3>Mass Effect</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Not A Stupid Grunt</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="raildex-science">
+    <h3>Raildex Science</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Hard Science</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="red-alert-3">
+    <h3>Red Alert 3</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Analysis</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="red-faction">
+    <h3>Red Faction</h3>
+    <p class="jump-meta">1 x 400 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>upgrades! Upgrades!! UPGRADES!!!</td><td>400 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="senki-zesshou-symphogear">
+    <h3>Senki Zesshou Symphogear</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Pagan Science</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="starcraft">
+    <h3>Starcraft</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Tech Expert</td><td>600 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="stargate-sg-1">
+    <h3>Stargate SG-1</h3>
+    <p class="jump-meta">1 x 600 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Xenoarcheaologist</td><td>600 CP</td><td>Round Telephone, Toxicology Reports, Unleash the Snark</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="strike-witches">
+    <h3>Strike Witches</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Technomage</td><td>200 CP</td><td>Bomber Jacket, Call sign</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="teen-titans">
+    <h3>Teen Titans</h3>
+    <p class="jump-meta">1 x 100 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Engineering</td><td>100 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="tenchi-muyo">
+    <h3>Tenchi Muyo</h3>
+    <p class="jump-meta">1 x 800 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>The Maddest Science Yet!</td><td>800 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="terminator">
+    <h3>Terminator</h3>
+    <p class="jump-meta">1 x 800 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Damaged Microchip</td><td>800 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="titanfall">
+    <h3>Titanfall</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>What&#x27;s This Do?</td><td>200 CP</td><td>Core Ability - Amp Core, Oi!</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="valkyria-chronicles">
+    <h3>Valkyria Chronicles</h3>
+    <p class="jump-meta">1 x 300 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Valkyrian Science</td><td>300 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="warhammer-40-000-light-of-terra-dlc-1-the-heathen-trail">
+    <h3>Warhammer 40,000: Light of Terra DLC 1 - The Heathen Trail</h3>
+    <p class="jump-meta">1 x 500 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>The Pleician Tome</td><td>500 CP</td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="jump-detail" id="xcom-2">
+    <h3>XCOM 2</h3>
+    <p class="jump-meta">1 x 200 CP</p>
+    <table>
+      <thead>
+        <tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Peak ADVENT Technology</td><td>200 CP</td><td>Flack Jacket</td></tr>
+      </tbody>
+    </table>
+  </section>
+</section>
+</body>
+</html>
