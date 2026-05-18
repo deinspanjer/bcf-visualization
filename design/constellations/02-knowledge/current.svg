@@ -1,141 +1,101 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320"
-       color="oklch(0.82 0.14 268)"
-       style="background: radial-gradient(circle at 50% 60%, #07121a 0%, #03080d 75%)">
+       color="oklch(0.82 0.14 268)">
     <title>Knowledge</title>
     <desc>Knowledge as a constellation of its 32 jumps. One marker per jump.</desc>
-    <defs>
-      <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0"    stop-color="transparent"/>
-        <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
-        <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
-        <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
-        <stop offset="1"    stop-color="transparent"/>
-      </linearGradient>
-      <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
-        <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
-          <g opacity="0.68" style="mix-blend-mode:screen">
-            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
-            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
-            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
-            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
-            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
-            <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
+    <defs xmlns="http://www.w3.org/2000/svg">
+        <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="transparent"/>
+          <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
+          <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
+          <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
+          <stop offset="1" stop-color="transparent"/>
+        </linearGradient>
+        <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
+          <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
+            <g opacity="0.68" style="mix-blend-mode:screen">
+              <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
+              <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
+              <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
+              <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
+              <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
+              <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
+            </g>
+            <g opacity="0.32" style="mix-blend-mode:screen">
+              <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
+              <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
+              <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
+              <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
+              <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
+              <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
+            </g>
+            <circle r="2.2" fill="currentColor" opacity="0.16"/>
+            <circle r="1.4" fill="#fff"/>
           </g>
-          <g opacity="0.32" style="mix-blend-mode:screen">
-            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
-            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
-            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
-            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
-            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
-            <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
-          </g>
-          <circle r="2.2" fill="currentColor" opacity="0.16"/>
-          <circle r="1.4" fill="#fff"/>
-        </g>
-      </symbol>
-    </defs>
+        </symbol>
+      </defs>
 
-    <!-- Background starfield (deterministic seed-2 LCG, 60 dots). -->
-    <g class="starfield">
-      <circle cx="305.9" cy="303.3" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="27.2" cy="267.4" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="214.3" cy="98.6" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="194.2" cy="186.0" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="137.8" cy="125.9" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="318.3" cy="303.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="142.4" cy="85.8" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="8.8" cy="148.8" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="121.6" cy="285.4" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="179.4" cy="75.6" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="104.0" cy="43.7" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="319.6" cy="215.8" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="285.9" cy="255.0" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="290.1" cy="244.1" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="113.2" cy="313.9" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="51.6" cy="241.3" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="147.7" cy="169.7" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="295.9" cy="160.3" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="113.3" cy="282.5" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="147.5" cy="181.7" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="231.6" cy="155.7" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="103.9" cy="223.9" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="290.5" cy="85.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="99.1" cy="306.4" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="161.4" cy="165.7" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="188.1" cy="99.8" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="163.8" cy="298.9" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="24.1" cy="262.5" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="290.4" cy="61.2" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="18.8" cy="208.9" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="72.5" cy="280.2" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="167.2" cy="273.3" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="67.4" cy="281.8" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="229.4" cy="10.2" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="55.0" cy="215.3" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="305.5" cy="8.1" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="6.8" cy="81.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="50.3" cy="58.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="123.4" cy="13.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="48.5" cy="11.6" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="196.9" cy="237.6" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="107.9" cy="9.9" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="245.1" cy="236.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="241.8" cy="276.0" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="151.3" cy="72.2" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="101.2" cy="32.7" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="279.9" cy="40.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="125.7" cy="164.7" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="307.1" cy="82.9" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="134.3" cy="5.8" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="45.0" cy="18.2" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="51.6" cy="30.7" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="162.6" cy="314.7" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="318.2" cy="74.4" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="80.2" cy="189.2" r="0.9" fill="#fff" opacity="0.55"/>
-      <circle cx="256.1" cy="227.0" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="135.4" cy="168.4" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="11.4" cy="130.8" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="231.6" cy="77.1" r="0.5" fill="#fff" opacity="0.3"/>
-      <circle cx="58.2" cy="74.1" r="0.5" fill="#fff" opacity="0.3"/>
-    </g>
+    <!-- Wireframe edges edited in tracing-workbench.html. -->
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="70,40 70,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="70,290 160,310"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,310 250,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="250,290 250,40"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="70,70 40,60"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="40,60 40,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="40,90 10,80"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="10,80 10,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="40,290 40,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="10,290 160,310"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="40,290 160,310"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,310 280,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,310 310,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="310,290 310,80"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="310,80 280,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="280,90 280,60"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="280,60 250,70"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="280,90 280,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,60 160,310"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="90,90 140,100"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="90,210 140,220"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="180,220 230,210"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="180,100 230,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="70,40 160,60"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,60 250,40"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="180,160 230,150"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="140,160 90,150"/>
 
-    <polyline class="cluster-outline" points="146.9,71.9 146.9,147.8 146.9,223.6 71.0,85.3 102.3,76.4 62.1,147.8 102.3,219.1 71.0,210.2 222.7,85.3 191.5,76.4 231.7,147.8 191.5,219.1 222.7,210.2 111.2,121.0 182.6,121.0 111.2,174.5 182.6,174.5 237.4,123.5 221.4,85.2 189.5,56.4 146.9,43.3 101.2,49.9 61.4,76.1 35.7,118.0 30.0,168.4 46.7,217.9 84.0,256.7 135.6,276.7 192.4,272.7 243.4,244.3 278.5,195.7 290.0,135.2 146.9,71.9"
-              fill="none" stroke="currentColor" stroke-opacity="0.32"
-              stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
-
-    <!-- One diffraction-spike marker per jump. -->
+    <!-- One diffraction-spike marker per unique vertex. -->
     <g class="jump-markers">
-      <use href="#star-mark" x="131.9" y="56.9" width="30" height="30"/>
-      <use href="#star-mark" x="131.9" y="132.8" width="30" height="30"/>
-      <use href="#star-mark" x="131.9" y="208.6" width="30" height="30"/>
-      <use href="#star-mark" x="56.0" y="70.3" width="30" height="30"/>
-      <use href="#star-mark" x="87.3" y="61.4" width="30" height="30"/>
-      <use href="#star-mark" x="47.1" y="132.8" width="30" height="30"/>
-      <use href="#star-mark" x="87.3" y="204.1" width="30" height="30"/>
-      <use href="#star-mark" x="56.0" y="195.2" width="30" height="30"/>
-      <use href="#star-mark" x="207.7" y="70.3" width="30" height="30"/>
-      <use href="#star-mark" x="176.5" y="61.4" width="30" height="30"/>
-      <use href="#star-mark" x="216.7" y="132.8" width="30" height="30"/>
-      <use href="#star-mark" x="176.5" y="204.1" width="30" height="30"/>
-      <use href="#star-mark" x="207.7" y="195.2" width="30" height="30"/>
-      <use href="#star-mark" x="96.2" y="106.0" width="30" height="30"/>
-      <use href="#star-mark" x="167.6" y="106.0" width="30" height="30"/>
-      <use href="#star-mark" x="96.2" y="159.5" width="30" height="30"/>
-      <use href="#star-mark" x="167.6" y="159.5" width="30" height="30"/>
-      <use href="#star-mark" x="222.4" y="108.5" width="30" height="30"/>
-      <use href="#star-mark" x="206.4" y="70.2" width="30" height="30"/>
-      <use href="#star-mark" x="174.5" y="41.4" width="30" height="30"/>
-      <use href="#star-mark" x="131.9" y="28.3" width="30" height="30"/>
-      <use href="#star-mark" x="86.2" y="34.9" width="30" height="30"/>
-      <use href="#star-mark" x="46.4" y="61.1" width="30" height="30"/>
-      <use href="#star-mark" x="20.7" y="103.0" width="30" height="30"/>
-      <use href="#star-mark" x="15.0" y="153.4" width="30" height="30"/>
-      <use href="#star-mark" x="31.7" y="202.9" width="30" height="30"/>
-      <use href="#star-mark" x="69.0" y="241.7" width="30" height="30"/>
-      <use href="#star-mark" x="120.6" y="261.7" width="30" height="30"/>
-      <use href="#star-mark" x="177.4" y="257.7" width="30" height="30"/>
-      <use href="#star-mark" x="228.4" y="229.3" width="30" height="30"/>
-      <use href="#star-mark" x="263.5" y="180.7" width="30" height="30"/>
-      <use href="#star-mark" x="275.0" y="120.2" width="30" height="30"/>
+      <use href="#star-mark" x="145" y="295" width="30" height="30"/>
+      <use href="#star-mark" x="145" y="45" width="30" height="30"/>
+      <use href="#star-mark" x="55" y="25" width="30" height="30"/>
+      <use href="#star-mark" x="235" y="25" width="30" height="30"/>
+      <use href="#star-mark" x="55" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="235" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="55" y="55" width="30" height="30"/>
+      <use href="#star-mark" x="235" y="55" width="30" height="30"/>
+      <use href="#star-mark" x="265" y="45" width="30" height="30"/>
+      <use href="#star-mark" x="25" y="45" width="30" height="30"/>
+      <use href="#star-mark" x="25" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="265" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="265" y="75" width="30" height="30"/>
+      <use href="#star-mark" x="295" y="65" width="30" height="30"/>
+      <use href="#star-mark" x="295" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="25" y="75" width="30" height="30"/>
+      <use href="#star-mark" x="-5" y="65" width="30" height="30"/>
+      <use href="#star-mark" x="-5" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="75" y="75" width="30" height="30"/>
+      <use href="#star-mark" x="125" y="85" width="30" height="30"/>
+      <use href="#star-mark" x="75" y="195" width="30" height="30"/>
+      <use href="#star-mark" x="125" y="205" width="30" height="30"/>
+      <use href="#star-mark" x="215" y="75" width="30" height="30"/>
+      <use href="#star-mark" x="165" y="85" width="30" height="30"/>
+      <use href="#star-mark" x="215" y="195" width="30" height="30"/>
+      <use href="#star-mark" x="165" y="205" width="30" height="30"/>
+      <use href="#star-mark" x="75" y="135" width="30" height="30"/>
+      <use href="#star-mark" x="125" y="145" width="30" height="30"/>
+      <use href="#star-mark" x="165" y="145" width="30" height="30"/>
+      <use href="#star-mark" x="215" y="135" width="30" height="30"/>
+      <use href="#star-mark" x="145" y="105" width="30" height="30"/>
+      <use href="#star-mark" x="145" y="185" width="30" height="30"/>
     </g>
   </svg>
