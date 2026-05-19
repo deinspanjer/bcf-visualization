@@ -151,7 +151,8 @@ def test_constellation_progress_hides_late_constellations_until_opened() -> None
           },
         ],
       };
-      const idx = buildConstellationProgressIndex(facts);
+      const order = ['Toolkits', 'Personal Reality', 'Capstone'];
+      const idx = buildConstellationProgressIndex(facts, order);
       const ch1 = idx.byChapter.get('1');
       const ch62 = idx.byChapter.get('62');
       const ch63 = idx.byChapter.get('63');

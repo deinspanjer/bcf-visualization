@@ -4,7 +4,6 @@ import {
   validateDataPackageManifest,
 } from "./data-contract.js";
 import {
-  DEFAULT_CONSTELLATION_ORDER,
   buildCoordinateModel,
   buildRollLogRows,
   fieldLogModel,
@@ -17,7 +16,7 @@ import {
 const DATA_BASE = "../data/derived";
 const PACKAGES_INDEX_URL = "../data/packages.json";
 const DATA_PACKAGE_PARAM = "dataPackage";
-const DATA_VERSION = "preview-port2";
+const DATA_VERSION = "phase9-rewrite";
 
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
@@ -57,23 +56,6 @@ const HUES = {
   "Alchemy": 170,
   "Capstone": 52,
   "Personal Reality": 130,
-};
-
-const SHAPES = {
-  "Toolkits": { outline: [[0.06, 0.32], [0.20, 0.42], [0.32, 0.46], [0.62, 0.49], [0.94, 0.50], [0.62, 0.51], [0.32, 0.54], [0.20, 0.60], [0.06, 0.70], [0.02, 0.50]], interior: [[0.46, 0.50], [0.78, 0.50]] },
-  "Knowledge": { outline: [[0.18, 0.20], [0.50, 0.30], [0.82, 0.20], [0.82, 0.78], [0.50, 0.72], [0.18, 0.78]], interior: [[0.34, 0.42], [0.34, 0.56], [0.66, 0.42], [0.66, 0.56], [0.50, 0.50]] },
-  "Vehicles": { outline: [[0.08, 0.62], [0.20, 0.50], [0.36, 0.40], [0.56, 0.36], [0.72, 0.42], [0.84, 0.48], [0.94, 0.55], [0.94, 0.70], [0.08, 0.70]], interior: [[0.26, 0.74], [0.74, 0.74], [0.46, 0.54], [0.66, 0.50]] },
-  "Time": { outline: [[0.20, 0.16], [0.80, 0.16], [0.50, 0.50], [0.80, 0.84], [0.20, 0.84], [0.50, 0.50]], interior: [[0.50, 0.30], [0.50, 0.40], [0.50, 0.66], [0.50, 0.76]] },
-  "Crafting": { outline: [[0.04, 0.30], [0.18, 0.40], [0.28, 0.36], [0.30, 0.48], [0.94, 0.54], [0.94, 0.62], [0.30, 0.66], [0.28, 0.74], [0.18, 0.70], [0.04, 0.78]], interior: [[0.18, 0.56], [0.60, 0.58]] },
-  "Clothing": { outline: [[0.42, 0.18], [0.58, 0.18], [0.72, 0.28], [0.92, 0.46], [0.78, 0.54], [0.78, 0.86], [0.22, 0.86], [0.22, 0.54], [0.08, 0.46], [0.28, 0.28]], interior: [[0.50, 0.34], [0.50, 0.62]] },
-  "Magic": { outline: [[0.50, 0.10], [0.40, 0.42], [0.18, 0.66], [0.10, 0.74], [0.50, 0.78], [0.90, 0.74], [0.82, 0.66], [0.60, 0.42]], interior: [[0.50, 0.54], [0.40, 0.62], [0.60, 0.62]] },
-  "Quality": { outline: [[0.50, 0.20], [0.84, 0.34], [0.70, 0.42], [0.50, 0.80], [0.30, 0.42], [0.16, 0.34]], interior: [[0.50, 0.32], [0.50, 0.46], [0.40, 0.60], [0.60, 0.60]] },
-  "Size": { outline: [[0.10, 0.30], [0.50, 0.18], [0.90, 0.30], [0.78, 0.52], [0.50, 0.42], [0.22, 0.52], [0.66, 0.74], [0.50, 0.66], [0.34, 0.74], [0.66, 0.84], [0.34, 0.84]], interior: [] },
-  "Resources and Durability": { outline: [[0.16, 0.20], [0.84, 0.20], [0.92, 0.32], [0.80, 0.58], [0.50, 0.90], [0.20, 0.58], [0.08, 0.32]], interior: [[0.50, 0.32], [0.50, 0.50], [0.50, 0.66]] },
-  "Magitech": { outline: [[0.50, 0.08], [0.82, 0.18], [0.92, 0.50], [0.82, 0.82], [0.50, 0.92], [0.18, 0.82], [0.08, 0.50], [0.18, 0.18]], interior: [[0.38, 0.34], [0.56, 0.46], [0.46, 0.54], [0.62, 0.68]] },
-  "Alchemy": { outline: [[0.42, 0.16], [0.58, 0.16], [0.58, 0.40], [0.84, 0.58], [0.86, 0.78], [0.50, 0.92], [0.14, 0.78], [0.16, 0.58], [0.42, 0.40]], interior: [[0.42, 0.70], [0.56, 0.62], [0.50, 0.80]] },
-  "Capstone": { outline: [[0.05, 0.85], [0.25, 0.55], [0.42, 0.70], [0.50, 0.18], [0.58, 0.70], [0.75, 0.55], [0.95, 0.85]], interior: [[0.50, 0.40], [0.50, 0.58]] },
-  "Personal Reality": { outline: [[0.18, 0.50], [0.50, 0.20], [0.68, 0.30], [0.68, 0.18], [0.78, 0.18], [0.78, 0.36], [0.82, 0.50], [0.82, 0.86], [0.18, 0.86]], interior: [[0.30, 0.68], [0.50, 0.70], [0.70, 0.68]] },
 };
 
 const POV_HUE_OVERRIDES = { Joe: 196, Taylor: 270, Aisha: 330, Lisa: 318, Rachel: 14, Alec: 60, Amy: 130, Vicky: 70, Dragon: 142, Colin: 230, Survey: 184 };
@@ -419,13 +401,21 @@ function normChapterTitle(fullTitle, chapterNum) {
 }
 
 function buildConstellations(wireframes) {
-  const byName = new Map((wireframes.cluster_constellations || []).map(c => [c.name, c]));
-  return DEFAULT_CONSTELLATION_ORDER.map(name => ({
-    name,
-    hue: HUES[name] ?? 196,
-    shape_concept: byName.get(name)?.shape_concept || name,
-    outline: SHAPES[name]?.outline || [],
-    interior: SHAPES[name]?.interior || [],
+  // Drives directly from the bundle's cluster_constellations (already in slot_position
+  // order from the Phase 4 builder). Marker positions and silhouette polylines are
+  // authored upstream — no heuristic shape table here.
+  return (wireframes.cluster_constellations || []).map(cluster => ({
+    name: cluster.name,
+    slug: cluster.slug,
+    hue: HUES[cluster.name] ?? 196,
+    shape_concept: cluster.shape_concept,
+    slot_position: cluster.slot_position,
+    revealed_at_chapter: cluster.revealed_at_chapter,
+    completed_at_chapter: cluster.completed_at_chapter,
+    entered_pool_at_chapter: cluster.entered_pool_at_chapter,
+    vertex_source: cluster.vertex_source,
+    marker_positions: cluster.marker_positions || [],
+    silhouette: cluster.silhouette || [],
   }));
 }
 
@@ -1171,19 +1161,88 @@ function renderCarousel() {
   return el("div", { class: "carousel-strip", style: { transform: `translateX(${-(virtualIndex * cardWidth + 160)}px)` } }, slots);
 }
 
+// Builds the shared <defs> (gradient + star-mark symbol) that each card SVG references.
+// Lifted verbatim from data/constellations/<cluster>/current.svg with ids prefixed `card-`
+// so cards in the same document don't collide with the constellation gallery's <defs>.
+// The star-mark uses fill="currentColor" so each <g style="color: ..."> wrapper tints it.
+function constellationCardDefs() {
+  return svgEl("defs", {},
+    svgEl("linearGradient", { id: "card-ray-grad", x1: "0", y1: "0", x2: "1", y2: "0" },
+      svgEl("stop", { offset: "0", "stop-color": "transparent" }),
+      svgEl("stop", { offset: "0.48", "stop-color": "#fff", "stop-opacity": "0.58" }),
+      svgEl("stop", { offset: "0.50", "stop-color": "#fff", "stop-opacity": "0.92" }),
+      svgEl("stop", { offset: "0.52", "stop-color": "#fff", "stop-opacity": "0.58" }),
+      svgEl("stop", { offset: "1", "stop-color": "transparent" }),
+    ),
+    svgEl("symbol", { id: "card-star-mark", viewBox: "-50 -50 100 100", overflow: "visible" },
+      svgEl("g", { filter: "drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)", opacity: "0.76" },
+        svgEl("g", { opacity: "0.68", style: "mix-blend-mode:screen" },
+          [[-3], [63], [117], [183], [237], [303]].map(([rot]) => svgEl("rect", {
+            x: "-32.00", y: "-0.390", width: "64.00", height: "0.780", rx: "0.390",
+            fill: "url(#card-ray-grad)", transform: `rotate(${rot.toFixed(2)})`,
+          })),
+        ),
+        svgEl("g", { opacity: "0.32", style: "mix-blend-mode:screen" },
+          [[27], [93], [147], [213], [267], [333]].map(([rot]) => svgEl("rect", {
+            x: "-18.00", y: "-0.125", width: "36.00", height: "0.250", rx: "0.125",
+            fill: "url(#card-ray-grad)", transform: `rotate(${rot.toFixed(2)})`,
+          })),
+        ),
+        svgEl("circle", { r: "2.2", fill: "currentColor", opacity: "0.16" }),
+        svgEl("circle", { r: "1.4", fill: "#fff" }),
+      ),
+    ),
+  );
+}
+
 function renderConstellationCard(con, active, flank) {
   const size = 320;
   const color = `oklch(0.82 0.14 ${con.hue})`;
-  const points = con.outline.length
-    ? con.outline.concat([con.outline[0]]).map(point => `${(point[0] * size).toFixed(1)},${(point[1] * size).toFixed(1)}`).join(" ")
-    : "";
+
+  // "Current chapter" for reveal gating: parseFloat handles "62" and "96.1" alike.
+  const currentChapter = chapterAtWord(app.wordPos);
+  const currentChapterFloat = parseFloat(currentChapter?.chapter_num);
+  const revealedFloat = parseFloat(con.revealed_at_chapter);
+  const silhouetteVisible = Number.isFinite(revealedFloat)
+    && Number.isFinite(currentChapterFloat)
+    && revealedFloat <= currentChapterFloat;
+
+  const silhouetteStroke = active ? "1.1" : "0.9";
+  const silhouetteOpacity = active ? "0.32" : "0.20";
+  const polylines = silhouetteVisible
+    ? (con.silhouette || []).map(polyline => svgEl("polyline", {
+        points: polyline.map(point => `${(point[0] * size).toFixed(1)},${(point[1] * size).toFixed(1)}`).join(" "),
+        fill: "none",
+        stroke: color,
+        "stroke-width": silhouetteStroke,
+        "stroke-linejoin": "round",
+        "stroke-linecap": "round",
+        opacity: silhouetteOpacity,
+      }))
+    : [];
+
+  const markerOpacity = active ? "1" : (flank ? "0.85" : "0.7");
+  const markers = (con.marker_positions || []).map(pos => svgEl("use", {
+    href: "#card-star-mark",
+    x: String((pos[0] * size) - 15),
+    y: String((pos[1] * size) - 15),
+    width: "30",
+    height: "30",
+  }));
+
   return el("div", { class: `const-card ${active ? "is-active" : ""} ${flank ? "is-flank" : ""}`, style: { "--hue": con.hue } },
     el("span", { class: "halo" }),
-    svgEl("svg", { viewBox: `0 0 ${size} ${size}`, width: size, height: size, class: "outline", style: "position:absolute;inset:0" },
-      svgEl("polyline", { points, fill: "none", stroke: color, "stroke-width": active ? "1.1" : "0.9", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: active ? "0.32" : "0.20" }),
+    svgEl("svg", {
+      viewBox: `0 0 ${size} ${size}`,
+      width: size,
+      height: size,
+      class: "outline",
+      style: `position:absolute;inset:0;color:${color};opacity:${markerOpacity}`,
+    },
+      constellationCardDefs(),
+      ...polylines,
+      svgEl("g", { class: "jump-markers" }, ...markers),
     ),
-    con.outline.map((point, index) => simpleStar({ key: index, color, cost: 300, visualSize: 30, opacity: active ? 1 : 0.85, left: point[0], top: point[1] })),
-    con.interior.map((point, index) => simpleStar({ key: index, color, cost: 150, visualSize: 20, opacity: active ? 0.95 : 0.7, left: point[0], top: point[1] })),
   );
 }
 
@@ -1317,11 +1376,12 @@ function perkListItem(perk, roll, free) {
 function renderConstellationBars() {
   const chapter = chapterAtWord(app.wordPos);
   const progressByName = new Map((chapter.constellation_progress || []).map(row => [row.name, row]));
+  const constellationNames = app.data.constellations.map(c => c.name);
   return el("div", { class: "panel panel-cut detail-panel" },
     el("div", { class: "panel-title" }, el("span", { class: "pip" }), " Constellation progress"),
     el("div", { class: "body" },
       el("div", { class: "constellation-bars" },
-        DEFAULT_CONSTELLATION_ORDER.map(name => {
+        constellationNames.map(name => {
           const progress = progressByName.get(name) || { discovered: 0, total: 0, discovered_pct: 0 };
           return el("div", { class: "bar-row" },
             el("span", { class: "name", text: name }),
