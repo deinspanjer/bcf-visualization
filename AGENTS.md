@@ -2,6 +2,15 @@
 
 - Run Python commands through the project virtual environment, for example
   `.venv/bin/python` and `.venv/bin/pytest`.
+- If `.venv/bin/python` is missing, bootstrap it with
+  `python3.12 -m venv .venv` when available, otherwise `python3 -m venv .venv`,
+  then run `.venv/bin/python -m pip install -e '.[dev]'`.
+  `pyproject.toml` is the dependency source of truth; do not add
+  `requirements*.txt` files or install dependencies from a second manifest.
+- Hydrate ignored generated data before running tests that read
+  `data/derived/*.json`: prefer `.venv/bin/python scripts/data_release.py
+  download-dev` for a fresh checkout, or use the Codex local environment's
+  worktree-copy fast path when it succeeds.
 - Use pytest for Python test execution and new Python tests.
 - Before reporting code, test, or generated-data changes as complete, run
   `.venv/bin/python scripts/verify.py`. If that command cannot be run, report

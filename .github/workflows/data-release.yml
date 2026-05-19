@@ -78,7 +78,7 @@ jobs:
               --asset "$SOURCE_DATA_ASSET"
           fi
           if [ "$REGENERATE" = "true" ]; then
-            python3 -m pip install -r requirements.txt
+            python3 -m pip install .
             if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
               mkdir -p data/raw
               cp data/private-source/Brocktons_Celestial_Forge.epub \
@@ -86,9 +86,12 @@ jobs:
             else
               python3 scripts/download_bcf_epub.py
             fi
+            python3 scripts/parse_chapters.py
+            python3 scripts/extract_chapter_sections.py
             python3 scripts/predict_rolls.py
             python3 scripts/derive_roll_facts.py
             python3 scripts/build_chapter_facts.py
+            python3 scripts/build_visualization_facts.py
           fi
           DATE="${{ inputs.package_date }}"
           BUILD="${{ inputs.build_number }}"

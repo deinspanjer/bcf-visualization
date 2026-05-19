@@ -64,6 +64,53 @@ def _write_tiny_package_source(path: Path) -> Path:
     return path
 
 
+def _write_legacy_runtime_tar(path: Path, package_id: str = "legacy-runtime") -> Path:
+    source = path / "source"
+    source.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "schema_version": 1,
+        "package_id": package_id,
+        "package_prefix": "bcf-visualization",
+        "package_kind": "runtime",
+        "package_date": "20260501",
+        "build_number": 1,
+        "generated_at": "2026-05-01T00:00:00Z",
+        "source_commit": "legacy",
+        "release_tag": "bcf-visualization-data-v20260501.1-ch1-1",
+        "story_chapter_ordinal": 1,
+        "story_chapter_num": "1",
+        "story_chapter_title": "1 Legacy",
+        "version_label": "BCF data 20260501.1, story ch 1 / 1",
+        "contract": "bcf-visualization-data",
+        "contract_version": 1,
+        "bundle_class": "pages-runtime",
+        "entrypoints": {"web": {"required": ["chapter_facts"], "optional": []}},
+        "files": {
+            "chapter_facts": {
+                "path": "chapter_facts.json",
+                "schema": "chapter_facts",
+                "schema_version": 1,
+                "size_bytes": 0,
+                "sha256": "",
+            }
+        },
+    }
+    chapter_facts = source / "chapter_facts.json"
+    chapter_facts.write_text(
+        json.dumps({"schema_version": 1, "chapters": [{"chapter_num": "1"}]}) + "\n"
+    )
+    meta = manifest["files"]["chapter_facts"]
+    meta["size_bytes"] = chapter_facts.stat().st_size
+    meta["sha256"] = hashlib.sha256(chapter_facts.read_bytes()).hexdigest()
+    (source / "data_package.json").write_text(json.dumps(manifest) + "\n")
+    tar_path = path / f"{package_id}.tar.gz"
+    with tarfile.open(tar_path, "w:gz") as tf:
+        for member in sorted(source.rglob("*")):
+            if member.is_file():
+                tf.add(member, arcname=member.relative_to(source).as_posix())
+    return tar_path
+
+
 def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     manifest = _load_json(DERIVED / "data_package.json")
     chapter_facts = _load_json(DERIVED / "chapter_facts.json")
@@ -517,6 +564,49 @@ def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> Non
         / "bcf-visualization-runtime-v20260509.10-ch2-2.5"
         / "data_package.json"
     ).is_file()
+
+
+def test_prepare_pages_can_skip_legacy_runtime_packages(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    legacy = _write_legacy_runtime_tar(tmp_path / "legacy")
+    source = _write_tiny_package_source(tmp_path / "source")
+    outputs = data_release.build_packages(
+        source_dir=source,
+        output_dir=tmp_path / "dist",
+        package_date="20260509",
+        build_number=10,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    index_path = data_release.prepare_pages(
+        runtime_tars=[legacy, outputs.runtime_tar],
+        site_dir=tmp_path / "site",
+        default_package_id="legacy-runtime",
+        skip_incompatible_runtime=True,
+    )
+
+    index = _load_json(index_path)
+    assert index["default_package_id"] == (
+        "bcf-visualization-runtime-v20260509.10-ch2-2.5"
+    )
+    assert [pkg["package_id"] for pkg in index["packages"]] == [
+        "bcf-visualization-runtime-v20260509.10-ch2-2.5"
+    ]
+    assert not (tmp_path / "site" / "data" / "packages" / "legacy-runtime").exists()
+
+
+def test_prepare_pages_still_rejects_legacy_runtime_by_default(tmp_path: Path) -> None:
+    from scripts import data_release
+
+    legacy = _write_legacy_runtime_tar(tmp_path / "legacy")
+
+    with pytest.raises(ValueError, match="runtime package missing required files"):
+        data_release.prepare_pages(
+            runtime_tars=[legacy],
+            site_dir=tmp_path / "site",
+        )
 
 
 def test_prepare_pages_records_smoke_status_for_each_package(tmp_path: Path) -> None:

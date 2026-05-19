@@ -67,7 +67,7 @@ jobs:
               --tag "$DEFAULT_DATA_BUNDLE_TAG" \
               --asset "$DEFAULT_DATA_DEV_ASSET"
           fi
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install '.[dev]'
           if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
             mkdir -p data/raw
             cp data/private-source/Brocktons_Celestial_Forge.epub \
@@ -75,9 +75,12 @@ jobs:
           else
             python3 scripts/download_bcf_epub.py
           fi
+          python3 scripts/parse_chapters.py
+          python3 scripts/extract_chapter_sections.py
           python3 scripts/predict_rolls.py
           python3 scripts/derive_roll_facts.py
           python3 scripts/build_chapter_facts.py
+          python3 scripts/build_visualization_facts.py
           DATE="$(date -u +%Y%m%d)"
           BUILD="$GITHUB_RUN_NUMBER"
           python3 scripts/data_release.py package \
@@ -127,11 +130,11 @@ jobs:
             --default-package-id "${{ steps.build.outputs.package_id }}" \
             --package-metadata-file .pages-runtimes/packages.json \
             --package-smoke-status "${{ steps.build.outputs.package_id }}=passed" \
-            --smoke-run-url "$SMOKE_RUN_URL"
+            --smoke-run-url "$SMOKE_RUN_URL" \
+            --skip-incompatible-runtime
 
       - name: Install browser smoke dependencies
         run: |
-          python3 -m pip install playwright
           python3 -m playwright install --with-deps chromium
 
       - name: Smoke test candidate data
@@ -174,7 +177,8 @@ jobs:
             --default-package-id "$DEFAULT_PACKAGE_ID" \
             --package-metadata-file .pages-runtimes/packages.json \
             --package-smoke-status "${{ steps.build.outputs.package_id }}=$SMOKE_STATUS" \
-            --smoke-run-url "$SMOKE_RUN_URL"
+            --smoke-run-url "$SMOKE_RUN_URL" \
+            --skip-incompatible-runtime
           python3 scripts/smoke_pages_site.py --site-dir _site
 
       - uses: actions/configure-pages@v6

@@ -10,10 +10,9 @@ python3 -m venv .venv
 . .venv/bin/activate
 
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 python -m pip install -e '.[dev]'
-python scripts/copy_bcf_epub_from_worktree.py
-python scripts/copy_bcf_data_from_worktree.py
+python scripts/copy_bcf_epub_from_worktree.py || python scripts/download_bcf_epub.py
+python scripts/copy_bcf_data_from_worktree.py || python scripts/data_release.py download-dev
 
 node --check web/app.js
 node --check web/data-contract.js
