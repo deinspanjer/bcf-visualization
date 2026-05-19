@@ -139,8 +139,8 @@ def smoke_browser(*, site_dir: Path) -> None:
             page.on("console", lambda msg: messages.append(f"{msg.type}: {msg.text}"))
             page.on("pageerror", lambda exc: messages.append(f"pageerror: {exc}"))
             page.goto(url, wait_until="networkidle")
-            page.wait_for_selector("#scrubber-container", timeout=15_000)
-            width = page.locator("#scrubber-container").bounding_box()["width"]
+            page.wait_for_selector("#scrubber-playhead", timeout=15_000)
+            width = page.locator(".scrubber-scroller").bounding_box()["width"]
             browser.close()
     errors = [msg for msg in messages if msg.startswith(("error:", "pageerror:"))]
     if errors:
