@@ -35,42 +35,42 @@
         </defs>
 
     <!-- Wireframe edges edited in tracing-workbench.html. -->
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,40 72,112 88,152 104,192 120,224 136,256"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,232 160,195 160,152 160,104 160,40"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,232 136,256"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,232 184,256"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="184,256 200,224"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="200,224 160,195"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,195 120,224"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="104,192 160,152"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,104 88,152"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,40 248,112"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="248,112 232,152"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="232,152 216,192"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="216,192 160,152"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="232,152 160,104"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="216,192 200,224"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,40 136,88"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,40 184,88"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 63.2,106.9 80.8,150.9 98.4,194.9 116.0,230.1 133.6,265.3"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,238.9 160.0,198.2 160.0,150.9 160.0,98.1 160.0,27.7"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,238.9 133.6,265.3"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,238.9 186.4,265.3"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="186.4,265.3 204.0,230.1"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="204.0,230.1 160.0,198.2"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,198.2 116.0,230.1"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="98.4,194.9 160.0,150.9"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,98.1 80.8,150.9"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 256.8,106.9"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="256.8,106.9 239.2,150.9"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="239.2,150.9 221.6,194.9"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="221.6,194.9 160.0,150.9"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="239.2,150.9 160.0,98.1"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="221.6,194.9 204.0,230.1"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 133.6,80.5"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 186.4,80.5"/>
 
     <!-- One diffraction-spike marker per unique vertex. -->
     <g class="jump-markers">
-      <use href="#star-mark" x="145" y="25" width="30" height="30"/>
-      <use href="#star-mark" x="57" y="97" width="30" height="30"/>
-      <use href="#star-mark" x="73" y="137" width="30" height="30"/>
-      <use href="#star-mark" x="89" y="177" width="30" height="30"/>
-      <use href="#star-mark" x="105" y="209" width="30" height="30"/>
-      <use href="#star-mark" x="121" y="241" width="30" height="30"/>
-      <use href="#star-mark" x="145" y="217" width="30" height="30"/>
-      <use href="#star-mark" x="145" y="180" width="30" height="30"/>
-      <use href="#star-mark" x="145" y="137" width="30" height="30"/>
-      <use href="#star-mark" x="145" y="89" width="30" height="30"/>
-      <use href="#star-mark" x="169" y="241" width="30" height="30"/>
-      <use href="#star-mark" x="185" y="209" width="30" height="30"/>
-      <use href="#star-mark" x="233" y="97" width="30" height="30"/>
-      <use href="#star-mark" x="217" y="137" width="30" height="30"/>
-      <use href="#star-mark" x="201" y="177" width="30" height="30"/>
-      <use href="#star-mark" x="121" y="73" width="30" height="30"/>
-      <use href="#star-mark" x="169" y="73" width="30" height="30"/>
+      <use href="#star-mark" x="145.0" y="12.7" width="30" height="30"/>
+      <use href="#star-mark" x="48.2" y="91.9" width="30" height="30"/>
+      <use href="#star-mark" x="65.8" y="135.9" width="30" height="30"/>
+      <use href="#star-mark" x="83.4" y="179.9" width="30" height="30"/>
+      <use href="#star-mark" x="101.0" y="215.1" width="30" height="30"/>
+      <use href="#star-mark" x="118.6" y="250.3" width="30" height="30"/>
+      <use href="#star-mark" x="145.0" y="223.9" width="30" height="30"/>
+      <use href="#star-mark" x="145.0" y="183.2" width="30" height="30"/>
+      <use href="#star-mark" x="145.0" y="135.9" width="30" height="30"/>
+      <use href="#star-mark" x="145.0" y="83.1" width="30" height="30"/>
+      <use href="#star-mark" x="171.4" y="250.3" width="30" height="30"/>
+      <use href="#star-mark" x="189.0" y="215.1" width="30" height="30"/>
+      <use href="#star-mark" x="241.8" y="91.9" width="30" height="30"/>
+      <use href="#star-mark" x="224.2" y="135.9" width="30" height="30"/>
+      <use href="#star-mark" x="206.6" y="179.9" width="30" height="30"/>
+      <use href="#star-mark" x="118.6" y="65.5" width="30" height="30"/>
+      <use href="#star-mark" x="171.4" y="65.5" width="30" height="30"/>
     </g>
   </svg>

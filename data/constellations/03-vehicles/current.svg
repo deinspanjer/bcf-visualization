@@ -35,28 +35,28 @@
         </defs>
 
     <!-- Wireframe edges edited in tracing-workbench.html. -->
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="0,230 0,180 100,160 120,120"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="120,230 210,230"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="320,180 320,230"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="40,230 0,230"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="120,120 240,120"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="240,120 320,180"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="290,230 320,230"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="11.3,227.8 11.3,181.3 104.3,162.7 122.9,125.5"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="122.9,227.8 206.6,227.8"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="308.9,181.3 308.9,227.8"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="48.5,227.8 11.3,227.8"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="122.9,125.5 234.5,125.5"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="234.5,125.5 308.9,181.3"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="281.0,227.8 308.9,227.8"/>
 
     <!-- One diffraction-spike marker per unique vertex. -->
     <g class="jump-markers">
-      <use href="#star-mark" x="-15" y="215" width="30" height="30"/>
-      <use href="#star-mark" x="-15" y="165" width="30" height="30"/>
-      <use href="#star-mark" x="85" y="145" width="30" height="30"/>
-      <use href="#star-mark" x="105" y="105" width="30" height="30"/>
-      <use href="#star-mark" x="105" y="215" width="30" height="30"/>
-      <use href="#star-mark" x="195" y="215" width="30" height="30"/>
-      <use href="#star-mark" x="225" y="105" width="30" height="30"/>
-      <use href="#star-mark" x="305" y="165" width="30" height="30"/>
-      <use href="#star-mark" x="305" y="215" width="30" height="30"/>
-      <use href="#star-mark" x="65" y="205" width="30" height="30"/>
-      <use href="#star-mark" x="235" y="205" width="30" height="30"/>
-      <use href="#star-mark" x="25" y="215" width="30" height="30"/>
-      <use href="#star-mark" x="275" y="215" width="30" height="30"/>
+      <use href="#star-mark" x="-3.7" y="212.8" width="30" height="30"/>
+      <use href="#star-mark" x="-3.7" y="166.3" width="30" height="30"/>
+      <use href="#star-mark" x="89.3" y="147.7" width="30" height="30"/>
+      <use href="#star-mark" x="107.9" y="110.5" width="30" height="30"/>
+      <use href="#star-mark" x="107.9" y="212.8" width="30" height="30"/>
+      <use href="#star-mark" x="191.6" y="212.8" width="30" height="30"/>
+      <use href="#star-mark" x="219.5" y="110.5" width="30" height="30"/>
+      <use href="#star-mark" x="293.9" y="166.3" width="30" height="30"/>
+      <use href="#star-mark" x="293.9" y="212.8" width="30" height="30"/>
+      <use href="#star-mark" x="70.7" y="203.5" width="30" height="30"/>
+      <use href="#star-mark" x="228.8" y="203.5" width="30" height="30"/>
+      <use href="#star-mark" x="33.5" y="212.8" width="30" height="30"/>
+      <use href="#star-mark" x="266.0" y="212.8" width="30" height="30"/>
     </g>
   </svg>
