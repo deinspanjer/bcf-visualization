@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/constellation_lifecycle.schema.json",
+  "title": "Constellation Lifecycle",
+  "description": "Per-constellation lifecycle milestones: when each of the 14 cluster-constellations was revealed to Joe, when (if ever) its outstanding perk list was exhausted (completed), and when it entered the active pool for new rolls.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "_source", "constellations"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "_source": { "type": "string" },
+    "constellations": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "items": { "$ref": "#/$defs/constellation_lifecycle" }
+    }
+  },
+  "$defs": {
+    "constellation_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "slug",
+        "slot_position",
+        "revealed_at_chapter",
+        "completed_at_chapter",
+        "entered_pool_at_chapter"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^\\d{2}-[a-z0-9-]+$"
+        },
+        "slot_position": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 14
+        },
+        "revealed_at_chapter": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "completed_at_chapter": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" }
+          ]
+        },
+        "entered_pool_at_chapter": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        }
+      }
+    }
+  }
+}
