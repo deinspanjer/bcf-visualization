@@ -64,7 +64,7 @@ Typical full regeneration order:
 .venv/bin/python scripts/derive_roll_outcomes.py
 .venv/bin/python scripts/derive_roll_facts.py
 .venv/bin/python scripts/build_chapter_facts.py
-.venv/bin/python scripts/build_visualization_facts.py
+scripts/rebuild_constellation_assets.sh
 .venv/bin/python scripts/spot_check.py
 .venv/bin/python scripts/make_charts.py
 ```

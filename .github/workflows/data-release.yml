@@ -91,7 +91,7 @@ jobs:
             python3 scripts/predict_rolls.py
             python3 scripts/derive_roll_facts.py
             python3 scripts/build_chapter_facts.py
-            python3 scripts/build_visualization_facts.py
+            scripts/rebuild_constellation_assets.sh
           fi
           DATE="${{ inputs.package_date }}"
           BUILD="${{ inputs.build_number }}"
