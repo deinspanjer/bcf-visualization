@@ -242,6 +242,12 @@ body::after {
   text-transform: uppercase;
 }
 .info-popover p { margin: 0 0 10px; }
+.info-popover p a {
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px solid var(--edge-faint);
+}
+.info-popover p a:hover { border-bottom-color: var(--cyan); }
 .info-popover .meta-row {
   margin-top: 12px;
   padding-top: 12px;

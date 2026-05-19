@@ -1,10 +1,3 @@
-export const DEFAULT_CONSTELLATION_ORDER = [
-  "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
-  "Clothing", "Magic", "Quality", "Size",
-  "Resources and Durability", "Magitech", "Alchemy",
-  "Capstone", "Personal Reality",
-];
-
 export function paidRollPerks(roll) {
   return (roll.purchased_perks || []).filter(perk => !perk.free);
 }
@@ -48,10 +41,13 @@ export function skippedPredictedRollTitle(marker, chapter) {
   return `ch ${chapterNum} · predicted roll ${rollNumber} · skipped to align with narrative mentions`;
 }
 
-export function buildConstellationProgressIndex(
-  facts,
-  constellationOrder = DEFAULT_CONSTELLATION_ORDER,
-) {
+// `constellationOrder` is required: callers (web app, tests) must pass the canonical
+// order — typically derived from `bundle.constellation_wireframes.cluster_constellations`
+// in slot_position order.
+export function buildConstellationProgressIndex(facts, constellationOrder) {
+  if (!Array.isArray(constellationOrder)) {
+    throw new TypeError("buildConstellationProgressIndex: constellationOrder must be an array");
+  }
   const byChapter = new Map();
   let constMax = 1;
   for (const chapter of facts.chapters || []) {

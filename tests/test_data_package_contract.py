@@ -29,7 +29,7 @@ def _write_tiny_package_source(path: Path) -> Path:
     )
     (path / "visualization_facts.json").write_text(
         json.dumps({
-            "schema_version": 1,
+            "schema_version": 2,
             "_source": "fixture",
             "_method": "fixture",
             "version": {
@@ -144,15 +144,28 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
         assert doc["schema_version"] == meta["schema_version"]
 
 
-def test_web_consumed_schemas_pin_contract_versions() -> None:
-    for schema_name in (
-        "chapter_facts",
-        "perk_directory",
-        "constellation_wireframes",
-    ):
+def test_web_consumed_schemas_const_pin_their_versions() -> None:
+    """Every schema in the web-consumed bundle must const-pin its
+    `schema_version`. This is the contract the data-package manifest
+    enforces: if a producer ships a new bundle version, the manifest's
+    per-file `schema_version` must match the schema's pin. Free-form
+    integer versions would let the manifest silently accept the wrong
+    document shape.
+
+    The specific pinned integers are moving targets per schema; the
+    invariant is that each one *is* pinned."""
+    for schema_name in ("chapter_facts", "perk_directory", "constellation_wireframes"):
         schema = _load_json(DERIVED / "_schemas" / f"{schema_name}.schema.json")
-        assert "schema_version" in schema["required"]
-        assert schema["properties"]["schema_version"] == {"const": 1}
+        assert "schema_version" in schema["required"], (
+            f"{schema_name}: schema_version must be in `required`"
+        )
+        prop = schema["properties"]["schema_version"]
+        assert "const" in prop, (
+            f"{schema_name}: schema_version must be const-pinned, not free-form"
+        )
+        assert isinstance(prop["const"], int) and prop["const"] >= 1, (
+            f"{schema_name}: schema_version const must be a positive integer"
+        )
 
 
 def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
@@ -206,7 +219,7 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
         expected_bundle_class="dev-derived",
     )
     assert dev_manifest["files"]["chapter_facts"]["schema_version"] == 1
-    assert dev_manifest["files"]["visualization_facts"]["schema_version"] == 1
+    assert dev_manifest["files"]["visualization_facts"]["schema_version"] == 2
 
 
 def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path: Path) -> None:
@@ -218,7 +231,7 @@ def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path:
     chapter_facts = {"schema_version": 1, "chapters": chapters}
     (derived / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
     viz_facts = {
-        "schema_version": 1,
+        "schema_version": 2,
         "_source": "fixture",
         "_method": "fixture",
         "version": {
@@ -290,7 +303,7 @@ def test_download_dev_keeps_dev_manifest_separate_and_writes_runtime_manifest(
     (source / "chapter_facts.json").write_text(json.dumps(chapter_facts) + "\n")
     (source / "visualization_facts.json").write_text(
         json.dumps({
-            "schema_version": 1,
+            "schema_version": 2,
             "_source": "fixture",
             "_method": "fixture",
             "version": {

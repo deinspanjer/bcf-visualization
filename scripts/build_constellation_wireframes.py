@@ -4,13 +4,13 @@ and every per-jump sub-constellation.
 Two-level model:
 
   1. Cluster constellation — themed by the constellation's NAME
-     (Toolkits → wrench outline, Knowledge → open book, …). Its
-     vertices are anchor points where the contained jumps' mini-
-     constellations sit. Vertex count per cluster is fixed by the
-     hand-designed shape; we map the actual jumps onto those vertices
-     in deterministic order (sorted by perk count desc, then name).
-     Extra jumps beyond the vertex slot count get tiled around the
-     shape on a small offset spiral so nothing is dropped.
+     (Toolkits → wrench outline, Knowledge → open book, …). Geometry
+     is hand-authored: each constellation has a curated SVG at
+     data/constellations/NN-<slug>/current.svg from which the Phase 4
+     extractor reads marker_positions (star anchors in unit-square
+     coords) and silhouette (polyline strokes for the constellation
+     outline). Lifecycle fields (revealed/completed/pool) come from
+     data/derived/constellation_lifecycle.json.
 
   2. Per-jump mini-constellation — themed by the jump's source media,
      as an abstract star pattern, NOT a literal logo. Stars are
@@ -20,10 +20,12 @@ Two-level model:
      so the renderer can fog/unfog as the scrubber moves through the
      timeline.
 
-Coordinates are normalized to roughly [-1, 1] x [-1, 1]; the renderer
-applies 3D positioning. Reads perk_directory.json so this includes
-unacquired perks ("Available", "Partial", etc.) as fog-able stars
-in the sky alongside the acquired ones.
+Coordinates for jump constellations are normalized to roughly
+[-1, 1] x [-1, 1]; for cluster constellations they are normalized to
+[0, 1] (extractor divides SVG pixel coords by the 320 viewBox). The
+renderer applies 3D positioning. Reads perk_directory.json so this
+includes unacquired perks ("Available", "Partial", etc.) as fog-able
+stars in the sky alongside the acquired ones.
 
 Run:
 
@@ -37,13 +39,17 @@ from __future__ import annotations
 
 import json
 import math
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 from _common import write_validated_json
+from extract_constellation_svgs import extract as extract_constellation_svgs
 
 ROOT = Path(__file__).resolve().parent.parent
 DIRECTORY = ROOT / "data" / "derived" / "perk_directory.json"
+LIFECYCLE = ROOT / "data" / "derived" / "constellation_lifecycle.json"
+CONSTELLATIONS_DIR = ROOT / "data" / "constellations"
 OUT = ROOT / "data" / "derived" / "constellation_wireframes.json"
 
 
@@ -61,313 +67,6 @@ def norm_jump(s: str | None) -> str | None:
     return s.replace("–", "-").replace("—", "-").replace("’", "'").strip()
 
 
-# ---------------------------------------------------------------------------
-# Cluster constellation shapes
-# ---------------------------------------------------------------------------
-#
-# Each cluster has a hand-designed silhouette themed by its name. The
-# vertex list is the seating chart for the contained jumps' mini-
-# constellations. Coordinates are in the unit square (-1..1).
-#
-# These were drawn on graph paper. Comments describe what each vertex
-# corresponds to so the silhouette is recognizable in the renderer's
-# debug overlay.
-
-CLUSTER_SHAPES: dict[str, dict] = {
-    # Toolkits → toolbox with tools protruding.
-    "Toolkits": {
-        "shape_concept": "toolbox: open box with a hammer and screwdriver sticking out",
-        "vertices": [
-            (-0.95,  0.45),  # upper jaw tip
-            (-0.95, -0.45),  # lower jaw tip
-            (-0.65,  0.55),  # upper jaw shoulder
-            (-0.65, -0.55),  # lower jaw shoulder
-            (-0.35,  0.30),  # upper neck
-            (-0.35, -0.30),  # lower neck
-            (-0.05,  0.18),  # handle upper edge
-            (-0.05, -0.18),  # handle lower edge
-            ( 0.30,  0.15),
-            ( 0.30, -0.15),
-            ( 0.65,  0.12),
-            ( 0.65, -0.12),
-            ( 0.95,  0.05),  # handle butt
-            ( 0.95, -0.05),
-            (-0.50,  0.00),  # bolt-grip center (inside the jaw)
-        ],
-    },
-
-    # Knowledge → open book viewed from above, four visible pages with a spine.
-    "Knowledge": {
-        "shape_concept": "open book: four visible pages with a central spine and inner page lines",
-        "vertices": [
-            ( 0.00,  0.85),  # top of spine
-            ( 0.00,  0.00),  # spine middle
-            ( 0.00, -0.85),  # bottom of spine
-            (-0.85,  0.70),  # left page top-outer
-            (-0.50,  0.80),  # left page top-inner
-            (-0.95,  0.00),  # left page midline
-            (-0.50, -0.80),  # left page bottom-inner
-            (-0.85, -0.70),  # left page bottom-outer
-            ( 0.85,  0.70),  # right page top-outer
-            ( 0.50,  0.80),  # right page top-inner
-            ( 0.95,  0.00),  # right page midline
-            ( 0.50, -0.80),  # right page bottom-inner
-            ( 0.85, -0.70),  # right page bottom-outer
-            (-0.40,  0.30),  # left text block
-            ( 0.40,  0.30),  # right text block
-            (-0.40, -0.30),
-            ( 0.40, -0.30),
-        ],
-    },
-
-    # Vehicles → side profile of a car: hood, roof, trunk, wheels.
-    "Vehicles": {
-        "shape_concept": "car side profile: hood line, roofline, trunk, and two wheels",
-        "vertices": [
-            (-0.95, -0.20),  # front bumper bottom
-            (-0.95,  0.05),  # front bumper top
-            (-0.70,  0.20),  # hood front
-            (-0.30,  0.30),  # windshield base
-            (-0.10,  0.65),  # roof front
-            ( 0.30,  0.65),  # roof rear
-            ( 0.55,  0.30),  # rear window base
-            ( 0.85,  0.20),  # trunk top
-            ( 0.95,  0.05),  # rear bumper top
-            ( 0.95, -0.20),  # rear bumper bottom
-            (-0.55, -0.55),  # front wheel
-            ( 0.55, -0.55),  # rear wheel
-            (-0.30, -0.10),  # door midpoint
-            ( 0.30, -0.10),  # rear door midpoint
-        ],
-    },
-
-    # Time → hourglass: two triangles pinching at the waist + sand grains.
-    "Time": {
-        "shape_concept": "hourglass: two stacked triangles pinching at the waist with falling-sand grains",
-        "vertices": [
-            (-0.80,  0.95),  # top frame left
-            ( 0.80,  0.95),  # top frame right
-            ( 0.00,  0.10),  # waist
-            (-0.80, -0.95),  # bottom frame left
-            ( 0.80, -0.95),  # bottom frame right
-            (-0.40,  0.55),  # upper sand left edge
-            ( 0.40,  0.55),  # upper sand right edge
-            (-0.40, -0.55),  # lower sand left edge
-            ( 0.40, -0.55),  # lower sand right edge
-            ( 0.00,  0.40),  # falling grain 1
-            ( 0.00, -0.20),  # falling grain 2
-            ( 0.00, -0.70),  # pile peak
-        ],
-    },
-
-    # Crafting → claw-hammer in profile.
-    "Crafting": {
-        "shape_concept": "claw hammer: split claw head, neck, long handle ending in a grip",
-        "vertices": [
-            (-0.85,  0.70),  # claw upper tip
-            (-0.85,  0.30),  # claw lower tip
-            (-0.55,  0.70),  # head top
-            (-0.55,  0.30),  # head bottom-front
-            (-0.30,  0.60),  # face strike point
-            (-0.30,  0.40),  # head bottom-rear
-            ( 0.00,  0.20),  # neck
-            ( 0.30,  0.00),
-            ( 0.55, -0.20),
-            ( 0.80, -0.45),  # handle midspan
-            ( 0.95, -0.75),  # grip end
-            ( 0.70, -0.85),  # grip ferrule
-        ],
-    },
-
-    # Clothing → tailor's mannequin / shirt outline.
-    "Clothing": {
-        "shape_concept": "shirt / dress-form silhouette: collar, shoulders, sleeves, hem",
-        "vertices": [
-            ( 0.00,  0.95),  # collar top
-            (-0.20,  0.80),  # collar left
-            ( 0.20,  0.80),  # collar right
-            (-0.65,  0.55),  # left shoulder
-            ( 0.65,  0.55),  # right shoulder
-            (-0.85,  0.10),  # left sleeve cuff
-            ( 0.85,  0.10),  # right sleeve cuff
-            (-0.55,  0.10),  # left underarm
-            ( 0.55,  0.10),  # right underarm
-            (-0.45, -0.35),  # left waist
-            ( 0.45, -0.35),  # right waist
-            (-0.55, -0.85),  # left hem
-            ( 0.55, -0.85),  # right hem
-            ( 0.00, -0.60),  # belt midpoint
-        ],
-    },
-
-    # Magic → wide-brim wizard hat with a crescent star.
-    "Magic": {
-        "shape_concept": "pointed wizard hat: wide brim, rising cone, star at the tip",
-        "vertices": [
-            ( 0.00,  0.95),  # tip / star
-            (-0.15,  0.55),
-            ( 0.15,  0.55),
-            (-0.30,  0.10),
-            ( 0.30,  0.10),
-            (-0.45, -0.30),
-            ( 0.45, -0.30),
-            (-0.95, -0.55),  # left brim
-            ( 0.95, -0.55),  # right brim
-            (-0.55, -0.55),
-            ( 0.55, -0.55),
-            ( 0.00, -0.55),  # brim center
-            (-0.20,  0.30),  # band sparkle left
-            ( 0.20,  0.30),  # band sparkle right
-        ],
-    },
-
-    # Quality → gem / brilliant-cut diamond from above.
-    "Quality": {
-        "shape_concept": "brilliant-cut diamond: table on top, crown facets, pavilion narrowing to a culet",
-        "vertices": [
-            ( 0.00,  0.95),  # culet at top of icon
-            (-0.55,  0.65),  # crown left
-            ( 0.55,  0.65),  # crown right
-            (-0.85,  0.30),  # table left
-            ( 0.85,  0.30),  # table right
-            (-0.85, -0.05),  # girdle left
-            ( 0.85, -0.05),  # girdle right
-            (-0.55, -0.40),  # pavilion left mid
-            ( 0.55, -0.40),  # pavilion right mid
-            ( 0.00, -0.95),  # bottom point
-            (-0.30,  0.30),  # facet
-            ( 0.30,  0.30),  # facet
-            ( 0.00,  0.10),  # center
-            ( 0.00, -0.50),  # lower center facet
-        ],
-    },
-
-    # Size → faceted growth spire.
-    "Size": {
-        "shape_concept": "faceted growth spire: pointed top, central spine, sloped side facets, and split lower fins",
-        "vertices": [
-            ( 0.00,  0.95),  # apex
-            (-0.30,  0.55),
-            ( 0.30,  0.55),
-            (-0.55,  0.20),
-            ( 0.55,  0.20),
-            (-0.80, -0.20),
-            ( 0.80, -0.20),
-            (-0.55, -0.55),  # base small triangle left
-            ( 0.55, -0.55),  # base small triangle right
-            ( 0.00, -0.85),  # base point
-            ( 0.00,  0.30),  # central spine
-            ( 0.00, -0.20),
-        ],
-    },
-
-    # Resources and Durability → anvil silhouette.
-    "Resources and Durability": {
-        "shape_concept": "anvil: long horn, flat top, waist, and broad base",
-        "vertices": [
-            ( 0.00,  0.95),  # top center
-            (-0.55,  0.85),  # top-left shoulder
-            ( 0.55,  0.85),  # top-right shoulder
-            (-0.85,  0.50),  # upper-left edge
-            ( 0.85,  0.50),  # upper-right edge
-            (-0.75,  0.00),
-            ( 0.75,  0.00),
-            (-0.55, -0.45),
-            ( 0.55, -0.45),
-            ( 0.00, -0.95),  # bottom point
-            ( 0.00,  0.30),  # boss top
-            (-0.20,  0.10),  # boss left
-            ( 0.20,  0.10),  # boss right
-            ( 0.00, -0.10),  # boss bottom
-        ],
-    },
-
-    # Magitech → diode circuit symbol feeding a lightning bolt.
-    "Magitech": {
-        "shape_concept": "diode circuit symbol leading into a lightning bolt",
-        "vertices": [
-            # gear teeth around a unit-ish circle
-            ( 1.00 * math.cos(a), 1.00 * math.sin(a))
-            for a in [i * math.pi / 4 for i in range(8)]
-        ] + [
-            # inner-tooth roots (smaller radius, offset by half-step)
-            ( 0.70 * math.cos(a), 0.70 * math.sin(a))
-            for a in [(i + 0.5) * math.pi / 4 for i in range(8)]
-        ] + [
-            # lightning bolt zig-zag (top-right -> center -> bottom-left)
-            ( 0.45,  0.60),
-            ( 0.05,  0.10),
-            ( 0.30, -0.10),
-            (-0.45, -0.60),
-            ( 0.00,  0.00),  # gear hub
-        ],
-    },
-
-    # Alchemy → Erlenmeyer flask.
-    "Alchemy": {
-        "shape_concept": "Erlenmeyer flask: narrow neck, sloped shoulders, and broad flat base",
-        "vertices": [
-            (-0.15,  0.95),  # neck rim left
-            ( 0.15,  0.95),  # neck rim right
-            (-0.15,  0.55),  # neck base left
-            ( 0.15,  0.55),  # neck base right
-            (-0.45,  0.40),  # shoulder left
-            ( 0.45,  0.40),  # shoulder right
-            (-0.85,  0.05),  # body left
-            ( 0.85,  0.05),  # body right
-            (-0.85, -0.45),  # body lower left
-            ( 0.85, -0.45),  # body lower right
-            (-0.45, -0.85),  # base left
-            ( 0.45, -0.85),  # base right
-            ( 0.00, -0.95),  # base center
-            ( 0.00,  0.75),  # bubble in neck
-            (-0.30,  0.20),  # bubble in body 1
-            ( 0.30, -0.10),  # bubble in body 2
-        ],
-    },
-
-    # Capstone → brick wall with highlighted capstone.
-    "Capstone": {
-        "shape_concept": "brick wall with a central capstone bearing a five-pointed star",
-        "vertices": [
-            ( 0.00,  0.95),  # main peak
-            (-0.25,  0.50),  # main slope upper-left
-            ( 0.25,  0.50),  # main slope upper-right
-            (-0.55,  0.10),
-            ( 0.55,  0.10),
-            (-0.85, -0.30),
-            ( 0.85, -0.30),
-            (-0.95, -0.85),  # base far left
-            ( 0.95, -0.85),  # base far right
-            (-0.40,  0.30),  # left foothill peak
-            ( 0.40,  0.30),  # right foothill peak
-            ( 0.00,  0.20),  # central ridge waypoint
-            ( 0.00, -0.85),  # base center
-        ],
-    },
-
-    # Personal Reality → planet nested inside a higher-dimensional frame.
-    "Personal Reality": {
-        "shape_concept": "planet in a nested hypercube: central world enclosed by perspective cubes and dimensional connector lines",
-        "vertices": [
-            ( 0.00,  0.95),  # roof peak
-            (-0.85,  0.20),  # roof eave left
-            ( 0.85,  0.20),  # roof eave right
-            (-0.85, -0.85),  # foundation left
-            ( 0.85, -0.85),  # foundation right
-            ( 0.45,  0.55),  # chimney top
-            ( 0.45,  0.20),  # chimney base
-            (-0.50,  0.00),  # window left
-            ( 0.50,  0.00),  # window right
-            (-0.10, -0.30),  # door top
-            (-0.10, -0.85),  # door bottom-left
-            ( 0.20, -0.85),  # door bottom-right
-            ( 0.20, -0.30),  # door top-right
-            (-0.30, -0.55),  # floor stud
-            ( 0.50, -0.55),  # floor stud
-        ],
-    },
-}
 
 
 # ---------------------------------------------------------------------------
@@ -1315,25 +1014,36 @@ def build_jump_constellation(
     }
 
 
+# ---------------------------------------------------------------------------
+# Cluster constellation assembly
+# ---------------------------------------------------------------------------
+
+CLUSTER_ORDER = [
+    "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
+    "Clothing", "Magic", "Quality", "Size",
+    "Resources and Durability", "Magitech", "Alchemy",
+    "Capstone", "Personal Reality",
+]
+
+
 def build_cluster_constellation(
     name: str,
-    spec: dict,
-    jumps_in: list[tuple[str, int]],
+    extracted: dict,
+    lifecycle: dict,
 ) -> dict:
-    """Lay out the contained jumps onto the cluster's hand-designed
-    vertex slots. Jumps with the most perks go onto the most
-    structurally important slots (the order in which we hand-listed
-    them in CLUSTER_SHAPES)."""
-    jumps_sorted = sorted(jumps_in, key=lambda kv: (-kv[1], kv[0]))
-    slots = spec["vertices"]
-    coords = assign_to_slots(jumps_sorted, slots)
+    """Assemble one cluster_constellations[] entry from the hand-authored
+    SVG geometry (via extract_constellation_svgs) and the lifecycle facts."""
     return {
         "name": name,
-        "shape_concept": spec["shape_concept"],
-        "cluster_vertices": [
-            {"jump": j, "x": round(x, 4), "y": round(y, 4)}
-            for (j, _), (x, y) in zip(jumps_sorted, coords)
-        ],
+        "slug": extracted["slug"],
+        "slot_position": lifecycle["slot_position"],
+        "shape_concept": extracted["intended_image"],
+        "vertex_source": extracted["vertex_source"],
+        "revealed_at_chapter":     lifecycle.get("revealed_at_chapter"),
+        "completed_at_chapter":    lifecycle.get("completed_at_chapter"),
+        "entered_pool_at_chapter": lifecycle.get("entered_pool_at_chapter"),
+        "marker_positions": extracted["marker_positions"],
+        "silhouette":       extracted["silhouette"],
     }
 
 
@@ -1356,48 +1066,69 @@ def main() -> None:
         key = (p["constellation"], norm_jump(p["jump"]))
         by_jump[key].append(p)
 
-    # Build per-jump entries
+    # Build per-jump entries (unchanged from the prior hand-designed/procedural
+    # mini-constellation pipeline).
     jump_entries = [
         build_jump_constellation(c, j, perks)
         for (c, j), perks in sorted(by_jump.items())
     ]
 
-    # Build cluster entries
-    per_const_jumps: dict[str, list[tuple[str, int]]] = defaultdict(list)
-    for (c, j), perks in by_jump.items():
-        per_const_jumps[c].append((j, len(perks)))
+    # ------------------------------------------------------------------
+    # Build cluster entries from hand-curated SVGs + lifecycle facts.
+    # ------------------------------------------------------------------
+    extracted = extract_constellation_svgs(CONSTELLATIONS_DIR)
+    lifecycle_doc = json.loads(LIFECYCLE.read_text())
+    lifecycle_by_name = {c["name"]: c for c in lifecycle_doc["constellations"]}
 
-    cluster_entries: list[dict] = []
-    cluster_order = [
-        "Toolkits", "Knowledge", "Vehicles", "Time", "Crafting",
-        "Clothing", "Magic", "Quality", "Size",
-        "Resources and Durability", "Magitech", "Alchemy",
-        "Capstone", "Personal Reality",
+    missing_extracted = [n for n in CLUSTER_ORDER if n not in extracted]
+    missing_lifecycle = [n for n in CLUSTER_ORDER if n not in lifecycle_by_name]
+    if missing_extracted or missing_lifecycle:
+        print(
+            "ERROR: build_constellation_wireframes: missing constellations\n"
+            f"  not in extractor:  {missing_extracted}\n"
+            f"  not in lifecycle:  {missing_lifecycle}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    cluster_entries = [
+        build_cluster_constellation(
+            name,
+            extracted[name],
+            lifecycle_by_name[name],
+        )
+        for name in CLUSTER_ORDER
     ]
-    for name in cluster_order:
-        spec = CLUSTER_SHAPES[name]
-        jumps_in = per_const_jumps.get(name, [])
-        cluster_entries.append(build_cluster_constellation(name, spec, jumps_in))
 
     payload = {
-        "schema_version": 1,
-        "_source": "data/derived/perk_directory.json (constellations + jumps); coordinates hand-designed in scripts/build_constellation_wireframes.py",
+        "schema_version": 2,
+        "_source": (
+            "data/constellations/NN-<slug>/current.svg + metadata.json "
+            "(hand-curated geometry); data/derived/constellation_lifecycle.json "
+            "(reveal/completion/pool); data/derived/perk_directory.json "
+            "(per-jump star patterns)"
+        ),
         "_count": len(cluster_entries),
         "_jumps_count": len(jump_entries),
         "_note": (
             "Two-level wireframe model. cluster_constellations[i] is one "
-            "of the 14 named constellations as a hand-drawn silhouette "
-            "themed by its name (e.g. Toolkits = wrench). Each cluster's "
-            "cluster_vertices array places the contained jumps in slots "
-            "along that silhouette, sorted by descending perk count so "
-            "the biggest sub-constellations sit on the most prominent "
-            "anchor points. jump_constellations is a per-jump star "
-            "pattern themed by the source media (abstract, never a "
-            "literal logo); stars are EVERY perk in the jump (acquired "
-            "or not), size encodes cost on a sqrt ramp (100=>~0.33, "
-            "800=>~0.94, null/free=>0.20). Each star carries its "
-            "directory id, status, and acquired_chapter_num so the "
-            "renderer can fog/unfog as the scrubber moves through time."
+            "of the 14 named constellations: geometry (marker_positions + "
+            "silhouette polylines) comes from the hand-authored SVG at "
+            "data/constellations/NN-<slug>/current.svg, normalized to the "
+            "[0,1] unit square via the 320-px viewBox. shape_concept is "
+            "the constellation's intended_image string from its "
+            "metadata.json sidecar. vertex_source records whether the "
+            "marker count was hand-aligned against jumps or perks. "
+            "Lifecycle fields (revealed/completed/pool) are carried over "
+            "from constellation_lifecycle.json so the renderer can fog/"
+            "unfog the constellation as the scrubber moves through time. "
+            "jump_constellations is a per-jump star pattern themed by the "
+            "source media (abstract, never a literal logo); stars are "
+            "EVERY perk in the jump (acquired or not), size encodes cost "
+            "on a sqrt ramp (100=>~0.33, 800=>~0.94, null/free=>0.20). "
+            "Each star carries its directory id, status, and "
+            "acquired_chapter_num so the renderer can fog/unfog as the "
+            "scrubber moves through time."
         ),
         "cluster_constellations": cluster_entries,
         "jump_constellations": jump_entries,

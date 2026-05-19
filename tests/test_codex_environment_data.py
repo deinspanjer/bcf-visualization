@@ -62,7 +62,7 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
         "https://example.test/bcf/data/packages.json": packages,
         "https://example.test/bcf/data/packages/pkg-a/data_package.json": manifest,
         "https://example.test/bcf/data/packages/pkg-a/visualization_facts.json": {
-            "schema_version": 1,
+            "schema_version": 2,
         },
     }
 
@@ -96,4 +96,4 @@ def test_download_deployed_package_writes_manifest_and_runtime_files(
 
     assert result == manifest
     assert json.loads((output / "data_package.json").read_text()) == manifest
-    assert json.loads((output / "visualization_facts.json").read_text()) == {"schema_version": 1}
+    assert json.loads((output / "visualization_facts.json").read_text()) == {"schema_version": 2}

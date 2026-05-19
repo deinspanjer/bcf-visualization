@@ -30,7 +30,7 @@ def _seed_inputs(tmp_path: Path) -> Path:
         ],
     }
     wireframes = {
-        "schema_version": 1,
+        "schema_version": 2,
         "_source": "fixture",
         "_count": 14,
         "_jumps_count": 0,

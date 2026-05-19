@@ -26,7 +26,7 @@ def test_web_contract_helpers_accept_supported_manifest() -> None:
         schema_version: 1,
         contract: 'bcf-visualization-data',
         contract_version: 1,
-        files: { visualization_facts: { path: 'visualization_facts.json', schema_version: 1 } },
+        files: { visualization_facts: { path: 'visualization_facts.json', schema_version: 2 } },
         entrypoints: { web: { required: ['visualization_facts'], optional: [] } },
       };
       const result = validateDataPackageManifest(manifest);

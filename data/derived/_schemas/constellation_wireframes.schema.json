@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bcf-visualization/derived/constellation_wireframes.schema.json",
   "title": "Constellation Wireframes",
-  "description": "2D star-pattern wireframes for the 14 named cluster-constellations and every per-jump sub-constellation. Each cluster shape is themed by the constellation's name (e.g. Toolkits = wrench outline) and its vertices mark where each contained jump's mini-constellation sits. Each per-jump shape is themed by the jump's source media as an abstract star pattern, never a literal logo. Coordinates are normalized to roughly the unit square; the renderer applies 3D sphere positioning. Star size encodes perk cost (small for 100 CP, ~1.0 for 800+ CP).",
+  "description": "2D star-pattern wireframes for the 14 named cluster-constellations and every per-jump sub-constellation. Each cluster shape is themed by the constellation's name (e.g. Toolkits = wrench outline) with hand-authored marker positions and silhouette polylines extracted from data/constellations/NN-<slug>/current.svg. Each per-jump shape is themed by the jump's source media as an abstract star pattern, never a literal logo. Coordinates are normalized to the unit square [0,1]; the renderer applies 3D sphere positioning. Star size encodes perk cost (small for 100 CP, ~1.0 for 800+ CP).",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "_source", "_count", "_jumps_count", "_note", "cluster_constellations", "jump_constellations"],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "_source": { "type": "string" },
     "_count":  { "type": "integer", "minimum": 0 },
     "_jumps_count": { "type": "integer", "minimum": 0 },
@@ -27,7 +27,11 @@
     "cluster": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "shape_concept", "cluster_vertices"],
+      "required": [
+        "name", "slug", "slot_position", "shape_concept", "vertex_source",
+        "revealed_at_chapter", "completed_at_chapter", "entered_pool_at_chapter",
+        "marker_positions", "silhouette"
+      ],
       "properties": {
         "name": {
           "enum": [
@@ -37,17 +41,34 @@
             "Capstone", "Personal Reality"
           ]
         },
+        "slug":          { "type": "string", "minLength": 1 },
+        "slot_position": { "type": "integer", "minimum": 1, "maximum": 14 },
         "shape_concept": { "type": "string", "minLength": 1 },
-        "cluster_vertices": {
+        "vertex_source": { "enum": ["jumps", "perks"] },
+        "revealed_at_chapter":     { "type": ["string", "null"] },
+        "completed_at_chapter":    { "type": ["string", "null"] },
+        "entered_pool_at_chapter": { "type": ["string", "null"] },
+        "marker_positions": {
           "type": "array",
+          "minItems": 1,
           "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["jump", "x", "y"],
-            "properties": {
-              "jump": { "type": "string", "minLength": 1 },
-              "x":    { "type": "number" },
-              "y":    { "type": "number" }
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "number" }
+          }
+        },
+        "silhouette": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "type": "number" }
             }
           }
         }

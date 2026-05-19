@@ -74,7 +74,7 @@ def _manifest(package_id: str) -> dict:
         "files": {
             "visualization_facts": {
                 "path": "visualization_facts.json",
-                "schema_version": 1,
+                "schema_version": 2,
             },
         },
         "entrypoints": {
@@ -231,20 +231,22 @@ def _chapter_facts() -> dict:
 def _wireframes() -> dict:
     clusters = []
     for index, name in enumerate(CONSTELLATION_NAMES):
-        jump = "Fixture Jump" if name == "Toolkits" else f"{name} Fixture"
+        x = 0.2 + (index % 4) * 0.18
+        y = 0.2 + (index // 4) * 0.18
         clusters.append({
             "name": name,
+            "slug": f"{index + 1:02d}-{name.lower().replace(' ', '-')}",
+            "slot_position": index + 1,
             "shape_concept": f"Synthetic {name} outline",
-            "cluster_vertices": [
-                {
-                    "jump": jump,
-                    "x": 0.2 + (index % 4) * 0.18,
-                    "y": 0.2 + (index // 4) * 0.18,
-                }
-            ],
+            "vertex_source": "jumps",
+            "revealed_at_chapter": "1",
+            "completed_at_chapter": None,
+            "entered_pool_at_chapter": "1",
+            "marker_positions": [[x, y]],
+            "silhouette": [],
         })
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "_source": "tests/helpers/web_runtime_site.py synthetic fixture",
         "_count": len(clusters),
         "_jumps_count": 1,
@@ -279,7 +281,7 @@ def _visualization_facts(package_id: str) -> dict:
     chapter_facts = _chapter_facts()
     wireframes = _wireframes()
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "_source": "tests/helpers/web_runtime_site.py",
         "_method": "synthetic test fixture",
         "version": {
