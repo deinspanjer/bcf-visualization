@@ -74,6 +74,21 @@ list (number, ordinal, title, href, exact word count). `data/raw/`
 holds the EPUB plus the AO3 navigate page; the SV threadmark scrape is
 no longer part of the pipeline.
 
+### Rebuild constellation assets
+
+After editing any `data/constellations/<slug>/current.svg` or
+`metadata.json` (hand-authored inputs), regenerate the derived
+lifecycle, wireframe JSON, web bundle, and per-cluster HTML pages with:
+
+```sh
+scripts/rebuild_constellation_assets.sh
+```
+
+This is the canonical entry point: the per-cluster pages and the
+top-level index under `data/constellations/` are generated artifacts
+and will be overwritten. `current.svg` and `metadata.json` are never
+written by the rebuild.
+
 Each derived JSON file should validate against its schema before being
 written. Structural drift should fail loudly.
 

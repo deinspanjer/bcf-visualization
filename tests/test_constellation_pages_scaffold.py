@@ -1,160 +1,180 @@
-from scripts.scaffold_constellation_pages import build_free_addons, page_html, root_index_html
+from scripts.scaffold_constellation_pages import (
+    GENERATED_BANNER,
+    jumps_for,
+    perks_for,
+    prefix_svg_ids,
+    render_cluster_page,
+    render_top_index,
+    status_string,
+)
 
 
-def test_free_addons_attach_to_each_paid_perk_in_multi_grab_roll() -> None:
-    jumps = [
-        {
-            "constellation": "Toolkits",
-            "jump": "GUNNM",
-            "stars": [
-                {"perk_name": "Civilian Equipment Package", "cost": 100},
-                {"perk_name": "Cyber-doctor Equipment Package", "cost": 200},
-            ],
-        }
-    ]
-    rolls = [
-        {
-            "constellation": "Toolkits",
-            "purchased_perk_jump": "GUNNM",
-            "purchased_perks": [
-                {"name": "Civilian Equipment Package"},
-                {"name": "Cyber-doctor Equipment Package"},
-            ],
-            "free_perks": [
-                {"name": "Heirloom Weapon", "jump": "GUNNM/Battle Angel Alita"},
-                {"name": "Rocket Hammer", "jump": "GUNNM/Battle Angel Alita"},
-            ],
-        }
-    ]
-
-    addons, unresolved = build_free_addons(jumps, rolls)
-
-    assert unresolved == []
-    assert addons[("Toolkits", "GUNNM", "Civilian Equipment Package")] == [
-        "Heirloom Weapon",
-        "Rocket Hammer",
-    ]
-    assert addons[("Toolkits", "GUNNM", "Cyber-doctor Equipment Package")] == [
-        "Heirloom Weapon",
-        "Rocket Hammer",
-    ]
-
-
-def test_free_addons_can_resolve_supplement_rolls_to_canonical_jump() -> None:
-    jumps = [
-        {
-            "constellation": "Toolkits",
-            "jump": "Personal Reality",
-            "stars": [{"perk_name": "Workshop", "cost": 100}],
-        }
-    ]
-    rolls = [
-        {
-            "constellation": "Toolkits",
-            "purchased_perk_jump": "Personal Reality Supplement",
-            "purchased_perks": [{"name": "Workshop"}],
-            "free_perks": [
-                {"name": "Access Key", "jump": "Personal Reality"},
-                {"name": "Entrance Hall", "jump": "Personal Reality"},
-            ],
-        }
-    ]
-
-    addons, unresolved = build_free_addons(jumps, rolls)
-
-    assert unresolved == []
-    assert addons[("Toolkits", "Personal Reality", "Workshop")] == [
-        "Access Key",
-        "Entrance Hall",
-    ]
-
-
-def test_free_addons_resolve_paid_perk_when_roll_constellation_is_drifted() -> None:
-    jumps = [
-        {
-            "constellation": "Crafting",
-            "jump": "Bloodborne",
-            "stars": [{"perk_name": "Workshop Artisan", "cost": 300}],
-        }
-    ]
-    rolls = [
-        {
-            "constellation": "Personal Reality",
-            "purchased_perk_jump": "Bloodborne",
-            "purchased_perks": [{"name": "Workshop Artisan"}],
-            "free_perks": [{"name": "Hunter", "jump": "Bloodborne", "constellation": "Crafting"}],
-        }
-    ]
-
-    addons, unresolved = build_free_addons(jumps, rolls)
-
-    assert unresolved == []
-    assert addons[("Crafting", "Bloodborne", "Workshop Artisan")] == ["Hunter"]
-
-
-def test_page_html_has_requested_tables_without_below_svg_caption() -> None:
-    cluster = {
-        "name": "Toolkits",
-        "shape_concept": "open-end wrench",
-    }
-    jumps = [
-        {
-            "constellation": "Toolkits",
-            "jump": "GUNNM",
-            "stars": [{"perk_name": "Civilian Equipment Package", "cost": 100}],
-        }
-    ]
-    addons = {
-        ("Toolkits", "GUNNM", "Civilian Equipment Package"): ["Heirloom Weapon"],
-    }
-
-    rendered = page_html(
-        cluster,
-        jumps,
-        "<!-- EDITABLE: cluster silhouette --><svg></svg><!-- /EDITABLE -->",
-        addons,
-        has_reference=True,
+def test_prefix_svg_ids_rewrites_id_decls_href_and_url_refs() -> None:
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg">'
+        '<defs><linearGradient id="ray-grad"/><symbol id="star-mark"/></defs>'
+        '<rect fill="url(#ray-grad)"/>'
+        '<use href="#star-mark"/>'
+        "</svg>"
     )
 
-    assert "<figcaption" not in rendered
-    assert '<div class="preview-label">Current</div>' in rendered
-    assert '<div class="preview-label">Reference</div>' in rendered
-    assert '<img class="reference-image" src="reference.svg" alt="Toolkits reference image"/>' in rendered
-    assert "<th>Jump name</th><th>Total perks in jump</th><th>Notes</th>" in rendered
-    assert '<td class="note-field"></td>' in rendered
-    assert "<tr><th>Perk name</th><th>Cost</th><th>Free add-ons</th></tr>" in rendered
-    assert "<td>Heirloom Weapon</td>" in rendered
-    assert '<a class="back-link" href="../index.html">Back to constellation index</a>' in rendered
+    out = prefix_svg_ids(svg, "01-toolkits")
+
+    assert 'id="01-toolkits-ray-grad"' in out
+    assert 'id="01-toolkits-star-mark"' in out
+    assert 'fill="url(#01-toolkits-ray-grad)"' in out
+    assert 'href="#01-toolkits-star-mark"' in out
+    # The original (unprefixed) ids must not survive
+    assert 'id="ray-grad"' not in out
+    assert 'href="#star-mark"' not in out
+    assert 'url(#ray-grad)' not in out
 
 
-def test_root_index_links_constellation_pages_in_order() -> None:
-    page_records = [
+def test_prefix_svg_ids_leaves_other_attributes_alone() -> None:
+    svg = '<svg data-id_str="keep-me" aria-labelledby="title"><title id="title">x</title></svg>'
+
+    out = prefix_svg_ids(svg, "07-magic")
+
+    assert 'data-id_str="keep-me"' in out
+    # The actual id="..." is rewritten, the aria-labelledby is left alone
+    # (it isn't in our rewrite scope; consumers should not rely on it inside
+    # inlined SVGs anyway).
+    assert 'id="07-magic-title"' in out
+
+
+def test_prefix_svg_ids_strips_xml_prolog() -> None:
+    svg = '<?xml version="1.0"?>\n<svg><defs><linearGradient id="g"/></defs></svg>'
+
+    out = prefix_svg_ids(svg, "12-alchemy")
+
+    assert not out.startswith("<?xml")
+    assert out.startswith("<svg>")
+    assert 'id="12-alchemy-g"' in out
+
+
+def test_jumps_for_sorts_by_perk_count_desc_then_name() -> None:
+    perks = [
+        {"constellation": "Toolkits", "jump": "Alpha", "name": "p1", "cost": 100},
+        {"constellation": "Toolkits", "jump": "Beta", "name": "p2", "cost": 100},
+        {"constellation": "Toolkits", "jump": "Beta", "name": "p3", "cost": 200},
+        {"constellation": "Other", "jump": "Beta", "name": "px", "cost": 100},
+    ]
+
+    jumps = jumps_for("Toolkits", perks)
+
+    assert [j["name"] for j in jumps] == ["Beta", "Alpha"]
+    assert [len(j["perks"]) for j in jumps] == [2, 1]
+
+
+def test_perks_for_sorts_by_jump_alpha_then_cost_desc() -> None:
+    perks = [
+        {"constellation": "Toolkits", "jump": "Beta", "name": "b1", "cost": 100},
+        {"constellation": "Toolkits", "jump": "Alpha", "name": "a1", "cost": 200},
+        {"constellation": "Toolkits", "jump": "Alpha", "name": "a2", "cost": 400},
+        {"constellation": "Toolkits", "jump": "Alpha", "name": "a3", "cost": None},
+    ]
+
+    out = perks_for("Toolkits", perks)
+
+    assert [(p["jump"], p["name"]) for p in out] == [
+        ("Alpha", "a2"),
+        ("Alpha", "a1"),
+        ("Alpha", "a3"),
+        ("Beta", "b1"),
+    ]
+
+
+def test_status_string_marks_incomplete_when_no_completed_chapter() -> None:
+    assert status_string({"revealed_at_chapter": "1", "completed_at_chapter": None}) == "revealed ch 1 · incomplete"
+    assert status_string({"revealed_at_chapter": "1", "completed_at_chapter": "97"}) == "revealed ch 1 · completed ch 97"
+
+
+def test_render_cluster_page_inlines_prefixed_svg_and_workbench_link() -> None:
+    cluster = {
+        "name": "Toolkits",
+        "slug": "01-toolkits",
+        "slot_position": 1,
+        "revealed_at_chapter": "1",
+        "completed_at_chapter": None,
+        "entered_pool_at_chapter": "1",
+    }
+    metadata = {"intended_image": "toolbox: open box with a hammer"}
+    svg_inline = '<svg><defs><linearGradient id="01-toolkits-g"/></defs></svg>'
+    jumps = [{"name": "GUNNM", "perks": [{"name": "Workshop"}]}]
+    perks = [{"jump": "GUNNM", "name": "Workshop", "cost": 100}]
+
+    rendered = render_cluster_page(
+        cluster=cluster, metadata=metadata, svg_inline=svg_inline, jumps=jumps, perks=perks
+    )
+
+    assert GENERATED_BANNER in rendered
+    assert "<title>Toolkits · Constellation</title>" in rendered
+    assert "01 · Toolkits" in rendered
+    assert "toolbox: open box with a hammer" in rendered
+    assert '../tracing-workbench.html?constellation=01-toolkits' in rendered
+    assert '../index.html' in rendered
+    assert svg_inline in rendered
+    assert "<td>GUNNM</td>" in rendered
+    assert "100 CP" in rendered
+
+
+def test_render_cluster_page_handles_completed_chapter() -> None:
+    cluster = {
+        "name": "Time",
+        "slug": "04-time",
+        "slot_position": 4,
+        "revealed_at_chapter": "3",
+        "completed_at_chapter": "113",
+        "entered_pool_at_chapter": "3",
+    }
+    rendered = render_cluster_page(
+        cluster=cluster,
+        metadata={"intended_image": "hourglass"},
+        svg_inline="<svg/>",
+        jumps=[],
+        perks=[],
+    )
+
+    assert "<dd>113</dd>" in rendered
+
+
+def test_render_top_index_lists_records_in_slot_order_with_unique_ids() -> None:
+    records = [
         {
-            "index": 1,
-            "cluster": {"name": "Toolkits", "shape_concept": "open-end wrench"},
-            "folder": "01-toolkits",
-            "jumps": [{"jump": "GUNNM", "stars": [{"perk_name": "Workshop"}]}],
-            "has_reference": True,
+            "cluster": {
+                "name": "Toolkits",
+                "slug": "01-toolkits",
+                "slot_position": 1,
+                "revealed_at_chapter": "1",
+                "completed_at_chapter": None,
+                "entered_pool_at_chapter": "1",
+            },
+            "svg_inline": '<svg><defs><linearGradient id="01-toolkits-g"/></defs></svg>',
+            "jump_count": 24,
+            "perk_count": 27,
         },
         {
-            "index": 2,
-            "cluster": {"name": "Knowledge", "shape_concept": "open book"},
-            "folder": "02-knowledge",
-            "jumps": [
-                {
-                    "jump": "Halo",
-                    "stars": [{"perk_name": "Engineer"}, {"perk_name": "Erudition"}],
-                }
-            ],
-            "has_reference": False,
+            "cluster": {
+                "name": "Knowledge",
+                "slug": "02-knowledge",
+                "slot_position": 2,
+                "revealed_at_chapter": "4",
+                "completed_at_chapter": None,
+                "entered_pool_at_chapter": "4",
+            },
+            "svg_inline": '<svg><defs><linearGradient id="02-knowledge-g"/></defs></svg>',
+            "jump_count": 18,
+            "perk_count": 47,
         },
     ]
 
-    rendered = root_index_html(page_records)
+    rendered = render_top_index(records)
 
+    assert GENERATED_BANNER in rendered
     assert '<a href="01-toolkits/index.html">Toolkits</a>' in rendered
     assert '<a href="02-knowledge/index.html">Knowledge</a>' in rendered
-    assert 'src="01-toolkits/current.svg"' in rendered
-    assert 'class="thumb reference-thumb" src="01-toolkits/reference.svg"' in rendered
-    assert '<span class="empty-thumb">none</span>' in rendered
-    assert "<tr><th>Order</th><th>Constellation</th><th>Current</th><th>Reference</th><th>Jumps</th><th>Perks</th><th>Intended image</th></tr>" in rendered
+    assert 'tracing-workbench.html?constellation=01-toolkits' in rendered
+    assert 'tracing-workbench.html?constellation=02-knowledge' in rendered
+    # ids are unique on the page (the inlined SVGs ship pre-prefixed)
+    assert rendered.count('id="01-toolkits-g"') == 1
+    assert rendered.count('id="02-knowledge-g"') == 1
