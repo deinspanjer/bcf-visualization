@@ -253,6 +253,10 @@ def validate_package_dir(
     return manifest
 
 
+def _is_legacy_runtime_package_error(exc: ValueError) -> bool:
+    return str(exc).startswith("runtime package missing required files:")
+
+
 def build_manifest(
     *,
     source_dir: Path = DERIVED,
@@ -686,6 +690,7 @@ def prepare_pages(
     smoke_run_url: str | None = None,
     package_metadata_by_package_id: dict[str, dict] | None = None,
     max_site_mb: int = 900,
+    skip_incompatible_runtime: bool = False,
 ) -> Path:
     if not runtime_tars:
         raise ValueError("at least one runtime tar is required")
@@ -704,7 +709,13 @@ def prepare_pages(
         with tempfile.TemporaryDirectory(prefix="bcf-pages-package-") as tmp:
             tmp_dir = Path(tmp)
             _safe_extract(tar_path, tmp_dir)
-            manifest = validate_package_dir(tmp_dir, expected_bundle_class="pages-runtime")
+            try:
+                manifest = validate_package_dir(tmp_dir, expected_bundle_class="pages-runtime")
+            except ValueError as exc:
+                if skip_incompatible_runtime and _is_legacy_runtime_package_error(exc):
+                    print(f"skipping incompatible runtime package {tar_path}: {exc}", file=sys.stderr)
+                    continue
+                raise
             package_id = manifest["package_id"]
             package_dir = packages_dir / package_id
             if package_dir.exists():
@@ -741,6 +752,19 @@ def prepare_pages(
             if package_smoke_run_url:
                 package_index_entry["smoke_run_url"] = package_smoke_run_url
             packages.append(package_index_entry)
+
+    if not packages:
+        raise ValueError("no compatible runtime packages were provided")
+
+    if default_package_id and not (packages_dir / default_package_id).exists():
+        if skip_incompatible_runtime:
+            print(
+                f"default package was not compatible and was skipped: {default_package_id}",
+                file=sys.stderr,
+            )
+            default_package_id = None
+        else:
+            raise ValueError(f"default package was not provided: {default_package_id}")
 
     default_package_id = default_package_id or packages[0]["package_id"]
     default_package = packages_dir / default_package_id
@@ -817,6 +841,7 @@ def download_dev_bundle(*, tag: str, asset: str, output_dir: Path = DERIVED) -> 
                 build_number=int(dev_manifest["build_number"]),
                 source_commit=str(dev_manifest["source_commit"]),
                 generated_at=str(dev_manifest["generated_at"]),
+                allow_missing_required=True,
             )
 
 
@@ -1090,6 +1115,11 @@ def main() -> None:
         help="existing packages metadata whose smoke status should be preserved",
     )
     p_pages.add_argument("--max-site-mb", type=int, default=900)
+    p_pages.add_argument(
+        "--skip-incompatible-runtime",
+        action="store_true",
+        help="skip older runtime tarballs that do not satisfy the current web data contract",
+    )
 
     p_publish = sub.add_parser("publish", help="publish package assets as a GitHub Release")
     p_publish.add_argument("--tag", required=True)
@@ -1197,6 +1227,7 @@ def main() -> None:
             smoke_run_url=args.smoke_run_url,
             package_metadata_by_package_id=package_metadata_by_package_id,
             max_site_mb=args.max_site_mb,
+            skip_incompatible_runtime=args.skip_incompatible_runtime,
         )
         print(out)
     elif args.cmd == "publish":

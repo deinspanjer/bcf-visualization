@@ -34,7 +34,18 @@ layout direction is settled.
 Run project Python commands through the checked-out virtual environment:
 use `.venv/bin/python` for scripts and `.venv/bin/pytest` for tests.
 If `.venv` has not been created yet, create/sync it before running the
-pipeline.
+pipeline:
+
+```sh
+python3.12 -m venv .venv  # use python3 if python3.12 is unavailable
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -e '.[dev]'
+```
+
+`pyproject.toml` is the only Python dependency manifest. Runtime
+dependencies live in `[project].dependencies`; development/test
+dependencies live in `[project.optional-dependencies].dev`. Do not add
+or use `requirements*.txt` files for this repo.
 
 Typical full regeneration order:
 
@@ -53,6 +64,7 @@ Typical full regeneration order:
 .venv/bin/python scripts/derive_roll_outcomes.py
 .venv/bin/python scripts/derive_roll_facts.py
 .venv/bin/python scripts/build_chapter_facts.py
+.venv/bin/python scripts/build_visualization_facts.py
 .venv/bin/python scripts/spot_check.py
 .venv/bin/python scripts/make_charts.py
 ```
@@ -79,14 +91,14 @@ fallback reconciliation.
 Refresh the local runtime manifest after regenerating web-consumed data:
 
 ```sh
-python3 scripts/data_release.py manifest --date YYYYMMDD --build-number N
+.venv/bin/python scripts/data_release.py manifest --date YYYYMMDD --build-number N
 ```
 
 Hydrate a fresh checkout from the validated maintainer bundle before
 running Forge Curator, data-invariant tests, or release packaging:
 
 ```sh
-python3 scripts/data_release.py download-dev
+.venv/bin/python scripts/data_release.py download-dev
 ```
 
 `download-dev` stores the downloaded dev-bundle manifest separately as
@@ -95,18 +107,21 @@ the local runtime manifest consumed by the browser and tests. Check for
 mixed or stale local generated data with:
 
 ```sh
-python3 scripts/data_release.py check-derived
+.venv/bin/python scripts/data_release.py check-derived
 ```
 
 Codex app environments hydrate data during setup. The local environment
-copies top-level generated JSON from another registered worktree, while
-the cloud environment downloads the deployed default Pages package into
-`data/derived/`.
+first tries to copy the EPUB and top-level generated JSON from another
+registered worktree, then falls back to downloading the EPUB and the
+maintainer dev bundle. The cloud environment downloads the EPUB and the
+maintainer dev bundle directly. The deployed Pages runtime package is
+not sufficient for local tests because it only contains web runtime
+entrypoints.
 
 Build release assets from the current derived data:
 
 ```sh
-python3 scripts/data_release.py package \
+.venv/bin/python scripts/data_release.py package \
   --date YYYYMMDD \
   --build-number N \
   --output-dir dist/data-packages
@@ -144,13 +159,13 @@ Publish the release before using it as a pinned Pages bundle.
 To hydrate a fresh checkout from a maintainer bundle:
 
 ```sh
-python3 scripts/data_release.py download-dev
+.venv/bin/python scripts/data_release.py download-dev
 ```
 
 To hydrate from a specific pinned bundle:
 
 ```sh
-python3 scripts/data_release.py download-dev \
+.venv/bin/python scripts/data_release.py download-dev \
   --tag bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER \
   --asset bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER.tar.gz
 ```
@@ -158,7 +173,7 @@ python3 scripts/data_release.py download-dev \
 To dry-run old data-release cleanup:
 
 ```sh
-python3 scripts/data_release.py cleanup \
+.venv/bin/python scripts/data_release.py cleanup \
   --keep-tag bcf-visualization-data-vYYYYMMDD.N-chORDINAL-CHAPTER
 ```
 

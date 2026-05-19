@@ -95,10 +95,14 @@ jobs:
             RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
             PREPARE_ARGS+=(--runtime-tar "$RUNTIME_TAR")
           fi
-          python3 scripts/data_release.py prepare-pages "${PREPARE_ARGS[@]}"
+          python3 scripts/data_release.py prepare-pages \
+            "${PREPARE_ARGS[@]}" \
+            --skip-incompatible-runtime
           PACKAGE_ID="$(python3 -c 'import json; print(json.load(open("_site/data/packages.json"))["default_package_id"])')"
-          python3 scripts/data_release.py prepare-pages "${PREPARE_ARGS[@]}" \
-            --package-smoke-status "$PACKAGE_ID=passed"
+          python3 scripts/data_release.py prepare-pages \
+            "${PREPARE_ARGS[@]}" \
+            --package-smoke-status "$PACKAGE_ID=passed" \
+            --skip-incompatible-runtime
           # Sanity check: nothing under data/raw/ should be in _site/
           if find _site -path '*data/raw*' -print -quit | grep -q .; then
             echo "ERROR: _site contains data/raw content" >&2
@@ -110,7 +114,7 @@ jobs:
 
       - name: Install browser smoke dependencies
         run: |
-          python3 -m pip install playwright
+          python3 -m pip install '.[dev]'
           python3 -m playwright install --with-deps chromium
 
       - name: Smoke test staged site
