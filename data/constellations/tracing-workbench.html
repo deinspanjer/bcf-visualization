@@ -1372,7 +1372,7 @@
 
   async function saveDirect() {
     if (!(state.sourceMode === "directory" && state.rootHandle && state.folder)) {
-      setMessage(dom.saveMessage, "Connect the design/constellations folder before direct save.", "warn");
+      setMessage(dom.saveMessage, "Connect the data/constellations folder before direct save.", "warn");
       return;
     }
     try {
@@ -1476,7 +1476,7 @@
     try {
       await loadIndexFromCurrentSource();
     } catch (error) {
-      setMessage(dom.sourceMessage, `Static fetch failed: ${error.message}. Use a local server from design/constellations, or connect the folder in a browser that supports directory access.`, "warn");
+      setMessage(dom.sourceMessage, `Static fetch failed: ${error.message}. Use a local server from data/constellations, or connect the folder in a browser that supports directory access.`, "warn");
     }
     renderStats();
   }

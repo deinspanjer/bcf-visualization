@@ -1,4 +1,4 @@
-"""Scaffold the design/constellations/ wireframe workspace.
+"""Scaffold the data/constellations/ wireframe workspace.
 
 Generates an editable SVG-based design surface for the 14 cluster
 constellations ("major arcana") and their 214 jumps ("minor arcana").
@@ -9,7 +9,7 @@ then a future sync script extracts edits back into the JSON layer.
 
 Folder tree produced:
 
-    design/constellations/
+    data/constellations/
       README.md
       _tokens.css
       _star-defs.svg
@@ -33,7 +33,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "derived"
-OUT = ROOT / "design" / "constellations"
+OUT = ROOT / "data" / "constellations"
 
 # Hue per constellation, lifted from redesign/data.js HUES.
 CONST_HUES = {
@@ -346,7 +346,7 @@ by `scripts/scaffold_design_wireframes.py`.
 ## Folder Layout
 
 ```
-design/constellations/
+data/constellations/
   README.md              ← you are here
   _tokens.css            ← design tokens (mirror of redesign/style.css :root)
   _star-defs.svg         ← shared <symbol>s for diffraction-spike stars

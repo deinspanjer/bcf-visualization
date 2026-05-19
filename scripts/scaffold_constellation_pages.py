@@ -1,4 +1,4 @@
-"""Scaffold constellation design pages under design/constellations.
+"""Scaffold constellation design pages under data/constellations.
 
 Each cluster constellation gets an ordered folder with an index.html page.
 The page embeds an editable cluster SVG followed by data-derived jump and
@@ -17,7 +17,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "derived"
-OUT = ROOT / "design" / "constellations"
+OUT = ROOT / "data" / "constellations"
 CURRENT_FILENAME = "current.svg"
 REFERENCE_FILENAME = "reference.svg"
 
