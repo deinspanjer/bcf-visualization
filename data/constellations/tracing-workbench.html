@@ -247,17 +247,7 @@
     vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
-  .reference-missing {
-    fill: rgba(255,255,255,0.04);
-    stroke: rgba(255,255,255,0.16);
-  }
-  .reference-text {
-    fill: var(--dim);
-    font-family: var(--mono);
-    font-size: 12px;
-    text-anchor: middle;
-    dominant-baseline: middle;
-  }
+  .segmented [role="radio"] { cursor: pointer; }
   @media (max-width: 980px) {
     body { overflow: auto; }
     .app { grid-template-columns: 1fr; height: auto; min-height: 100vh; }
@@ -282,7 +272,39 @@
         Constellation
         <select id="folderSelect"></select>
       </label>
-      <div id="sourceMessage" class="message">Loading constellation index...</div>
+      <div id="sourceMessage" class="message">Connect a folder to begin.</div>
+    </section>
+
+    <section class="section">
+      <h2>Metadata</h2>
+      <label>
+        Vertex source
+        <div class="segmented" id="vertexSourceButtons" role="radiogroup" aria-label="Vertex source">
+          <button type="button" data-vertex-source="jumps" class="active" role="radio" aria-checked="true">Jumps</button>
+          <button type="button" data-vertex-source="perks" role="radio" aria-checked="false">Perks</button>
+        </div>
+      </label>
+      <label>
+        Intended image
+        <textarea id="intendedImage" rows="3" spellcheck="true" placeholder="Short prose description of the intended visual" style="min-height: 70px;"></textarea>
+      </label>
+      <div id="metadataMessage" class="message">No constellation loaded.</div>
+    </section>
+
+    <section class="section">
+      <h2>Reference image</h2>
+      <label>
+        URL
+        <input id="referenceUrlInput" type="url" placeholder="https://example.com/sketch.png" autocomplete="off"/>
+      </label>
+      <label>
+        Upload
+        <input id="referenceFileInput" type="file" accept=".svg,.png,.jpg,.jpeg,.webp"/>
+      </label>
+      <div class="row">
+        <button id="referenceClear" type="button">Clear reference</button>
+      </div>
+      <div class="message">Reference image is local to this session and not saved with the constellation.</div>
     </section>
 
     <section class="section">
@@ -364,7 +386,7 @@
         <button id="downloadSvg" type="button">Download</button>
       </div>
       <button id="copySvg" type="button">Copy SVG</button>
-      <div id="saveMessage" class="message">Direct save needs the folder connection button in browsers that support it. Download and copy always export a replacement current.svg.</div>
+      <div id="saveMessage" class="message">Save writes both current.svg and metadata.json to the connected folder. Download exports both files. Copy SVG only emits current.svg (metadata is not copied).</div>
       <textarea id="exportText" spellcheck="false" aria-label="Exported current.svg"></textarea>
     </section>
   </aside>
@@ -378,6 +400,13 @@
   const XLINK_NS = "http://www.w3.org/1999/xlink";
   const FOLDER_RE = /^[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
   const VIEW_PADDING = 24;
+  const METADATA_SCHEMA_VERSION = 1;
+  const DEFAULT_VERTEX_SOURCE = "jumps";
+  const VERTEX_SOURCES = ["jumps", "perks"];
+  const IDB_NAME = "tracing-workbench";
+  const IDB_STORE = "handles";
+  const IDB_KEY_ROOT = "rootHandle";
+  const URL_PARAM = "constellation";
 
   const dom = {
     svg: document.getElementById("workbenchSvg"),
@@ -414,6 +443,12 @@
     zoomIn: document.getElementById("zoomIn"),
     zoomOut: document.getElementById("zoomOut"),
     zoomReset: document.getElementById("zoomReset"),
+    vertexSourceButtons: document.getElementById("vertexSourceButtons"),
+    intendedImage: document.getElementById("intendedImage"),
+    metadataMessage: document.getElementById("metadataMessage"),
+    referenceUrlInput: document.getElementById("referenceUrlInput"),
+    referenceFileInput: document.getElementById("referenceFileInput"),
+    referenceClear: document.getElementById("referenceClear"),
   };
 
   const state = {
@@ -421,7 +456,11 @@
     rootHandle: null,
     records: [],
     folder: "",
-    metadata: { name: "", jumps: 0, perks: 0, hasReference: false },
+    metadata: { name: "", jumps: 0, perks: 0 },
+    folderMetadata: { schema_version: METADATA_SCHEMA_VERSION, intended_image: "" },
+    folderMetadataValid: true,
+    vertexSource: DEFAULT_VERTEX_SOURCE,
+    loadedVertexSource: DEFAULT_VERTEX_SOURCE,
     original: null,
     vertices: [],
     chains: [],
@@ -435,12 +474,67 @@
     referenceUrl: "",
     referenceName: "",
     referenceKind: "",
+    referenceObjectUrl: false,
     viewport: null,
   };
 
   function setMessage(el, text, kind = "") {
     el.className = `message${kind ? ` ${kind}` : ""}`;
     el.textContent = text;
+  }
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!("indexedDB" in window)) { reject(new Error("IndexedDB unavailable")); return; }
+      const request = indexedDB.open(IDB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function idbGet(key) {
+    try {
+      const db = await idbOpen();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, "readonly");
+        const req = tx.objectStore(IDB_STORE).get(key);
+        req.onsuccess = () => resolve(req.result ?? null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function idbSet(key, value) {
+    try {
+      const db = await idbOpen();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, "readwrite");
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (_) {
+      // Best-effort persistence; ignore failures.
+    }
+  }
+
+  async function ensureHandlePermission(handle, requestIfNeeded) {
+    if (!handle || typeof handle.queryPermission !== "function") return true;
+    try {
+      const status = await handle.queryPermission({ mode: "readwrite" });
+      if (status === "granted") return true;
+      if (!requestIfNeeded) return false;
+      const next = await handle.requestPermission({ mode: "readwrite" });
+      return next === "granted";
+    } catch (_) {
+      return false;
+    }
   }
 
   function sanitizeFolder(folder) {
@@ -513,26 +607,6 @@
     return await fetchText(`${folder}/${name}`, required);
   }
 
-  async function readFolderBlob(folder, name, required = true) {
-    if (!sanitizeFolder(folder)) throw new Error(`Unsafe folder name: ${folder}`);
-    if (state.sourceMode === "directory" && state.rootHandle) {
-      try {
-        const dirHandle = await state.rootHandle.getDirectoryHandle(folder);
-        const fileHandle = await dirHandle.getFileHandle(name);
-        return await fileHandle.getFile();
-      } catch (error) {
-        if (!required) return null;
-        throw error;
-      }
-    }
-    const response = await fetch(`${folder}/${name}`, { cache: "no-store" });
-    if (!response.ok) {
-      if (!required) return null;
-      throw new Error(`Unable to load ${folder}/${name}: HTTP ${response.status}`);
-    }
-    return await response.blob();
-  }
-
   function parseIndexRecords(indexHtml) {
     const doc = new DOMParser().parseFromString(indexHtml, "text/html");
     const rows = [...doc.querySelectorAll("tbody tr")];
@@ -543,29 +617,51 @@
       const folder = sanitizeFolder(link.getAttribute("href").replace(/\/index\.html$/, ""));
       if (!folder) continue;
       const cells = [...row.children];
-      const currentImg = row.querySelector(`img[src="${folder}/current.svg"]`);
-      const referenceImg = row.querySelector(`img[src="${folder}/reference.svg"], img[src="${folder}/reference.png"]`);
       records.push({
         folder,
         name: link.textContent.trim(),
         jumps: parseNumber(cells[4]?.textContent),
         perks: parseNumber(cells[5]?.textContent),
         concept: cells[6]?.textContent.trim() || "",
-        hasCurrent: Boolean(currentImg),
-        hasReference: Boolean(referenceImg),
       });
     }
     return records;
   }
 
+  async function enumerateDirectoryRecords() {
+    const records = [];
+    if (!state.rootHandle || typeof state.rootHandle.entries !== "function") return records;
+    for await (const [name, entry] of state.rootHandle.entries()) {
+      if (entry.kind !== "directory") continue;
+      const folder = sanitizeFolder(name);
+      if (!folder) continue;
+      records.push({ folder, name: folder, jumps: 0, perks: 0, concept: "" });
+    }
+    records.sort((a, b) => a.folder.localeCompare(b.folder));
+    return records;
+  }
+
   async function loadIndexFromCurrentSource() {
-    const indexHtml = await readRootFile("index.html");
-    const records = parseIndexRecords(indexHtml);
-    if (!records.length) throw new Error("No constellation folders found in index.html.");
+    let records = [];
+    let usedFallback = false;
+    try {
+      const indexHtml = await readRootFile("index.html");
+      records = parseIndexRecords(indexHtml);
+    } catch (error) {
+      if (state.sourceMode !== "directory") throw error;
+      usedFallback = true;
+    }
+    if (!records.length && state.sourceMode === "directory") {
+      records = await enumerateDirectoryRecords();
+      usedFallback = true;
+    }
+    if (!records.length) throw new Error("No constellation folders found.");
     state.records = records;
     populateFolderSelect();
-    setMessage(dom.sourceMessage, `${records.length} constellations loaded from ${state.sourceMode === "directory" ? "connected folder" : "index.html"}.`, "good");
-    const requested = sanitizeFolder(new URLSearchParams(location.search).get("folder") || "");
+    const sourceLabel = state.sourceMode === "directory" ? "connected folder" : "index.html";
+    const extra = usedFallback ? " (directory scan)" : "";
+    setMessage(dom.sourceMessage, `${records.length} constellations loaded from ${sourceLabel}${extra}.`, "good");
+    const requested = sanitizeFolder(new URLSearchParams(location.search).get(URL_PARAM) || "");
     const first = records[0]?.folder || "";
     dom.folderSelect.value = records.some((record) => record.folder === requested) ? requested : first;
     if (dom.folderSelect.value) await loadConstellation(dom.folderSelect.value);
@@ -588,14 +684,31 @@
     }
     try {
       const handle = await window.showDirectoryPicker({ mode: "readwrite" });
-      state.sourceMode = "directory";
-      state.rootHandle = handle;
-      await loadIndexFromCurrentSource();
-      setMessage(dom.saveMessage, "Direct save is enabled. Exports write only the selected folder's current.svg.", "good");
+      await adoptRootHandle(handle, { persist: true });
     } catch (error) {
       if (error.name === "AbortError") return;
       setMessage(dom.sourceMessage, `Folder connection failed: ${error.message}`, "bad");
     }
+  }
+
+  async function adoptRootHandle(handle, { persist }) {
+    state.sourceMode = "directory";
+    state.rootHandle = handle;
+    if (persist) await idbSet(IDB_KEY_ROOT, handle);
+    await loadIndexFromCurrentSource();
+    setMessage(dom.saveMessage, "Direct save is enabled. Exports write current.svg and metadata.json for the selected constellation.", "good");
+  }
+
+  async function tryPersistedHandle() {
+    const handle = await idbGet(IDB_KEY_ROOT);
+    if (!handle) return false;
+    const ok = await ensureHandlePermission(handle, false);
+    if (!ok) {
+      setMessage(dom.sourceMessage, "Previously connected folder needs re-permission. Click \"Connect folder\".", "warn");
+      return false;
+    }
+    await adoptRootHandle(handle, { persist: false });
+    return true;
   }
 
   function parsePoints(pointsText) {
@@ -666,6 +779,9 @@
     const markerWidth = firstUse ? parseNumber(firstUse.getAttribute("width"), 30) : 30;
     const markerHeight = firstUse ? parseNumber(firstUse.getAttribute("height"), markerWidth) : markerWidth;
 
+    const rawVertexSource = svg.getAttribute("data-vertex-source");
+    const vertexSource = VERTEX_SOURCES.includes(rawVertexSource) ? rawVertexSource : "";
+
     return {
       viewBox,
       color: svg.getAttribute("color") || "oklch(0.82 0.14 196)",
@@ -679,6 +795,7 @@
       xmlText: svgText,
       vertices,
       chains,
+      vertexSource,
     };
   }
 
@@ -717,49 +834,133 @@
         name: record.name || folder,
         jumps: record.jumps || 0,
         perks: record.perks || 0,
-        hasReference: false,
       };
-      const [currentSvg, referenceSvg] = await Promise.all([
-        readFolderFile(folder, "current.svg"),
-        readFolderFile(folder, "reference.svg", false),
-      ]);
-      const referencePng = referenceSvg ? null : await readFolderBlob(folder, "reference.png", false);
+
+      const currentSvg = await readFolderFile(folder, "current.svg");
       state.original = parseSvg(currentSvg);
       state.vertices = state.original.vertices.map((vertex) => ({ ...vertex }));
       state.chains = state.original.chains.map((chain) => [...chain]);
       state.viewport = null;
-      revokeReferenceUrl();
-      if (referenceSvg) {
-        state.referenceUrl = URL.createObjectURL(new Blob([referenceSvg], { type: "image/svg+xml" }));
-        state.referenceName = "reference.svg";
-        state.referenceKind = "svg";
-        dom.referenceFit.value = "contain";
-        state.metadata.hasReference = true;
-      } else if (referencePng) {
-        state.referenceUrl = URL.createObjectURL(referencePng);
-        state.referenceName = "reference.png";
-        state.referenceKind = "raster";
-        dom.referenceFit.value = "cover";
-        state.metadata.hasReference = true;
+
+      const loadedSource = state.original.vertexSource;
+      if (loadedSource) {
+        state.loadedVertexSource = loadedSource;
+        state.vertexSource = loadedSource;
+        setMetadataMessage("");
+      } else {
+        state.loadedVertexSource = DEFAULT_VERTEX_SOURCE;
+        state.vertexSource = DEFAULT_VERTEX_SOURCE;
+        setMetadataMessage(`current.svg has no data-vertex-source attribute; defaulting to "${DEFAULT_VERTEX_SOURCE}".`, "warn");
       }
+      renderVertexSourceButtons();
+
+      await loadMetadataJson(folder);
+
       setStageViewBox();
       renderAll();
       writeExport();
-      const referenceNote = state.metadata.hasReference ? ` using ${state.referenceName}.` : " Reference image is unavailable for this folder.";
-      setMessage(dom.sourceMessage, `Loaded ${folder} from ${state.sourceMode === "directory" ? "connected folder" : "static fetch"}${referenceNote}`, state.metadata.hasReference ? "good" : "warn");
+      const sourceLabel = state.sourceMode === "directory" ? "connected folder" : "static fetch";
+      setMessage(dom.sourceMessage, `Loaded ${folder} from ${sourceLabel}.`, "good");
       dom.statusLine.textContent = `${state.metadata.name}: ${folder}/current.svg`;
       dom.svg.classList.remove("is-empty");
+      updateUrlParam(folder);
     } catch (error) {
       setMessage(dom.sourceMessage, `Load failed: ${error.message}`, "bad");
       dom.statusLine.textContent = "Load failed.";
     }
   }
 
+  async function loadMetadataJson(folder) {
+    let raw;
+    try {
+      raw = await readFolderFile(folder, "metadata.json");
+    } catch (error) {
+      state.folderMetadata = { schema_version: METADATA_SCHEMA_VERSION, intended_image: "" };
+      state.folderMetadataValid = true;
+      dom.intendedImage.value = "";
+      setMetadataMessage("metadata.json not found; will be created on save.", "warn");
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      state.folderMetadataValid = false;
+      dom.intendedImage.value = "";
+      setMetadataMessage(`metadata.json is not valid JSON: ${error.message}. Refusing to overwrite.`, "bad");
+      return;
+    }
+    if (!parsed || typeof parsed !== "object" || parsed.schema_version !== METADATA_SCHEMA_VERSION) {
+      state.folderMetadataValid = false;
+      dom.intendedImage.value = "";
+      setMetadataMessage(`metadata.json has schema_version ${JSON.stringify(parsed?.schema_version)} (expected ${METADATA_SCHEMA_VERSION}). Refusing to overwrite.`, "bad");
+      return;
+    }
+    state.folderMetadata = {
+      schema_version: METADATA_SCHEMA_VERSION,
+      intended_image: typeof parsed.intended_image === "string" ? parsed.intended_image : "",
+    };
+    state.folderMetadataValid = true;
+    dom.intendedImage.value = state.folderMetadata.intended_image;
+    if (!state.original?.vertexSource) {
+      // Keep the warning surfaced when SVG was missing the attribute.
+      return;
+    }
+    setMetadataMessage(`metadata.json loaded (schema_version ${METADATA_SCHEMA_VERSION}).`, "good");
+  }
+
+  function setMetadataMessage(text, kind = "") {
+    if (!text) {
+      dom.metadataMessage.className = "message";
+      dom.metadataMessage.textContent = "";
+      dom.metadataMessage.hidden = true;
+      return;
+    }
+    dom.metadataMessage.hidden = false;
+    setMessage(dom.metadataMessage, text, kind);
+  }
+
+  function renderVertexSourceButtons() {
+    for (const button of dom.vertexSourceButtons.querySelectorAll("button[data-vertex-source]")) {
+      const active = button.dataset.vertexSource === state.vertexSource;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-checked", active ? "true" : "false");
+    }
+  }
+
   function revokeReferenceUrl() {
-    if (state.referenceUrl) URL.revokeObjectURL(state.referenceUrl);
+    if (state.referenceObjectUrl && state.referenceUrl) URL.revokeObjectURL(state.referenceUrl);
     state.referenceUrl = "";
     state.referenceName = "";
     state.referenceKind = "";
+    state.referenceObjectUrl = false;
+  }
+
+  function setReferenceFromBlob(file) {
+    revokeReferenceUrl();
+    state.referenceUrl = URL.createObjectURL(file);
+    state.referenceName = file.name || "uploaded reference";
+    state.referenceKind = (file.type && file.type.includes("svg")) ? "svg" : "raster";
+    state.referenceObjectUrl = true;
+    dom.referenceFit.value = state.referenceKind === "svg" ? "contain" : "cover";
+    renderReference();
+  }
+
+  function setReferenceFromUrl(url) {
+    revokeReferenceUrl();
+    state.referenceUrl = url;
+    state.referenceName = url;
+    state.referenceKind = /\.svg($|\?)/i.test(url) ? "svg" : "raster";
+    state.referenceObjectUrl = false;
+    dom.referenceFit.value = state.referenceKind === "svg" ? "contain" : "cover";
+    renderReference();
+  }
+
+  function clearReference() {
+    revokeReferenceUrl();
+    dom.referenceUrlInput.value = "";
+    dom.referenceFileInput.value = "";
+    renderReference();
   }
 
   function setStageViewBox() {
@@ -858,31 +1059,16 @@
     if (!state.original) return;
     const box = state.original.viewBox;
     dom.referenceLayer.setAttribute("opacity", dom.referenceOpacity.value);
-    if (state.referenceUrl) {
-      const fit = dom.referenceFit.value === "cover" ? "xMidYMid slice" : "xMidYMid meet";
-      dom.referenceLayer.appendChild(createEl("image", {
-        href: state.referenceUrl,
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
-        preserveAspectRatio: fit,
-      }));
-      return;
-    }
-    dom.referenceLayer.appendChild(createEl("rect", {
-      class: "reference-missing",
+    if (!state.referenceUrl) return;
+    const fit = dom.referenceFit.value === "cover" ? "xMidYMid slice" : "xMidYMid meet";
+    dom.referenceLayer.appendChild(createEl("image", {
+      href: state.referenceUrl,
       x: box.x,
       y: box.y,
       width: box.width,
       height: box.height,
+      preserveAspectRatio: fit,
     }));
-    dom.referenceLayer.appendChild(createEl("text", {
-      class: "reference-text",
-      x: box.x + box.width / 2,
-      y: box.y + box.height / 2,
-    }));
-    dom.referenceLayer.lastChild.textContent = "reference.svg not found";
   }
 
   function vertexById(id) {
@@ -1320,7 +1506,8 @@
       const y = formatNumber(vertex.y - markerHeight / 2);
       return `      <use href="${escapeAttr(markerHref)}" x="${x}" y="${y}" width="${formatNumber(markerWidth)}" height="${formatNumber(markerHeight)}"/>`;
     }).join("\n");
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${escapeAttr(state.original.viewBox.text)}"\n       color="${escapeAttr(state.original.color)}">\n    <title>${escapeText(state.original.title)}</title>\n    <desc>${escapeText(state.original.desc)}</desc>\n${indentBlock(state.original.defs, 4)}\n\n    <!-- Wireframe edges edited in tracing-workbench.html. -->\n${polylines}\n\n    <!-- One diffraction-spike marker per unique vertex. -->\n    <g class="jump-markers">\n${uses}\n    </g>\n  </svg>\n`;
+    const vertexSource = VERTEX_SOURCES.includes(state.vertexSource) ? state.vertexSource : DEFAULT_VERTEX_SOURCE;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${escapeAttr(state.original.viewBox.text)}" data-vertex-source="${escapeAttr(vertexSource)}"\n       color="${escapeAttr(state.original.color)}">\n    <title>${escapeText(state.original.title)}</title>\n    <desc>${escapeText(state.original.desc)}</desc>\n${indentBlock(state.original.defs, 4)}\n\n    <!-- Wireframe edges edited in tracing-workbench.html. -->\n${polylines}\n\n    <!-- One diffraction-spike marker per unique vertex. -->\n    <g class="jump-markers">\n${uses}\n    </g>\n  </svg>\n`;
   }
 
   function indentBlock(text, spaces) {
@@ -1345,16 +1532,41 @@
     return svg;
   }
 
-  function downloadSvg() {
-    const svg = writeExport();
-    if (!svg) return;
-    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  function currentMetadataJson() {
+    const payload = {
+      schema_version: METADATA_SCHEMA_VERSION,
+      intended_image: dom.intendedImage.value || "",
+    };
+    return `${JSON.stringify(payload, null, 2)}\n`;
+  }
+
+  function guardMetadataWritable() {
+    if (state.folderMetadataValid) return true;
+    setMessage(dom.saveMessage, "metadata.json failed schema validation; refusing to overwrite. Fix the file on disk and reload.", "bad");
+    return false;
+  }
+
+  function triggerDownload(filename, blob) {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "current.svg";
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    setMessage(dom.saveMessage, `Downloaded replacement current.svg for ${state.folder}.`, "good");
+  }
+
+  function downloadSvg() {
+    if (!guardMetadataWritable()) return;
+    const svg = writeExport();
+    if (!svg) return;
+    const slug = state.folder || "constellation";
+    triggerDownload(`${slug}-current.svg`, new Blob([svg], { type: "image/svg+xml" }));
+    triggerDownload(`${slug}-metadata.json`, new Blob([currentMetadataJson()], { type: "application/json" }));
+    setMessage(
+      dom.saveMessage,
+      `Downloaded two files. Drop them into data/constellations/${slug}/ and rename to current.svg and metadata.json respectively.`,
+      "good",
+    );
   }
 
   async function copySvg() {
@@ -1362,7 +1574,7 @@
     if (!svg) return;
     try {
       await navigator.clipboard.writeText(svg);
-      setMessage(dom.saveMessage, "Copied replacement current.svg to the clipboard.", "good");
+      setMessage(dom.saveMessage, "Copied replacement current.svg to the clipboard. Metadata changes are NOT included; use Save or Download to persist metadata.json.", "warn");
     } catch (error) {
       dom.exportText.focus();
       dom.exportText.select();
@@ -1375,32 +1587,74 @@
       setMessage(dom.saveMessage, "Connect the data/constellations folder before direct save.", "warn");
       return;
     }
+    if (!guardMetadataWritable()) return;
     try {
       const svg = writeExport();
       parseSvg(svg);
       const dirHandle = await state.rootHandle.getDirectoryHandle(state.folder);
-      const fileHandle = await dirHandle.getFileHandle("current.svg");
-      const writable = await fileHandle.createWritable();
-      await writable.write(svg);
-      await writable.close();
-      setMessage(dom.saveMessage, `Saved ${state.folder}/current.svg.`, "good");
+      const granted = await ensureHandlePermission(dirHandle, true);
+      if (!granted) {
+        setMessage(dom.saveMessage, "Write permission was denied for the connected folder.", "bad");
+        return;
+      }
+      const svgHandle = await dirHandle.getFileHandle("current.svg", { create: true });
+      const svgWritable = await svgHandle.createWritable();
+      await svgWritable.write(svg);
+      await svgWritable.close();
+
+      const metaHandle = await dirHandle.getFileHandle("metadata.json", { create: true });
+      const metaWritable = await metaHandle.createWritable();
+      await metaWritable.write(currentMetadataJson());
+      await metaWritable.close();
+
+      state.loadedVertexSource = state.vertexSource;
+      state.folderMetadata = {
+        schema_version: METADATA_SCHEMA_VERSION,
+        intended_image: dom.intendedImage.value || "",
+      };
+      setMessage(dom.saveMessage, `Saved ${state.folder}/current.svg and metadata.json.`, "good");
     } catch (error) {
       setMessage(dom.saveMessage, `Direct save failed: ${error.message}`, "bad");
     }
   }
 
-  function updateUrlFolder(folder) {
+  function updateUrlParam(folder) {
     const url = new URL(location.href);
-    url.searchParams.set("folder", folder);
+    url.searchParams.set(URL_PARAM, folder);
     history.replaceState(null, "", url);
   }
 
   function bindEvents() {
     dom.connectDirectory.addEventListener("click", connectDirectory);
     dom.folderSelect.addEventListener("change", async () => {
-      updateUrlFolder(dom.folderSelect.value);
+      updateUrlParam(dom.folderSelect.value);
       await loadConstellation(dom.folderSelect.value);
     });
+    dom.vertexSourceButtons.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-vertex-source]");
+      if (!button) return;
+      const value = button.dataset.vertexSource;
+      if (!VERTEX_SOURCES.includes(value)) return;
+      state.vertexSource = value;
+      renderVertexSourceButtons();
+      writeExport();
+    });
+    dom.intendedImage.addEventListener("input", () => {
+      // Reflect edit in any subsequent save; no export refresh needed.
+    });
+    dom.referenceUrlInput.addEventListener("change", () => {
+      const value = dom.referenceUrlInput.value.trim();
+      if (!value) return;
+      dom.referenceFileInput.value = "";
+      setReferenceFromUrl(value);
+    });
+    dom.referenceFileInput.addEventListener("change", () => {
+      const file = dom.referenceFileInput.files?.[0];
+      if (!file) return;
+      dom.referenceUrlInput.value = "";
+      setReferenceFromBlob(file);
+    });
+    dom.referenceClear.addEventListener("click", clearReference);
     dom.toolButtons.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-tool]");
       if (button) setTool(button.dataset.tool);
@@ -1472,11 +1726,30 @@
 
   async function boot() {
     bindEvents();
+    renderVertexSourceButtons();
+    setMetadataMessage("");
     dom.connectDirectory.hidden = !("showDirectoryPicker" in window);
-    try {
-      await loadIndexFromCurrentSource();
-    } catch (error) {
-      setMessage(dom.sourceMessage, `Static fetch failed: ${error.message}. Use a local server from data/constellations, or connect the folder in a browser that supports directory access.`, "warn");
+    const hasPicker = "showDirectoryPicker" in window;
+    let connected = false;
+    if (hasPicker) {
+      try {
+        connected = await tryPersistedHandle();
+      } catch (_) {
+        connected = false;
+      }
+    }
+    if (!connected) {
+      try {
+        await loadIndexFromCurrentSource();
+        connected = true;
+      } catch (error) {
+        const hint = hasPicker
+          ? "Connect a folder to begin."
+          : `Static fetch failed: ${error.message}. Use a local server from data/constellations.`;
+        setMessage(dom.sourceMessage, hint, "warn");
+        dom.statusLine.textContent = "No constellation loaded.";
+        dom.svg.classList.add("is-empty");
+      }
     }
     renderStats();
   }
