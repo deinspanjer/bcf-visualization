@@ -51,7 +51,7 @@ def build(input_dir: Path) -> dict:
     ]
 
     bundle = {
-        "schema_version": 1,
+        "schema_version": 2,
         "_source": SOURCE,
         "_method": METHOD,
         "version": version,

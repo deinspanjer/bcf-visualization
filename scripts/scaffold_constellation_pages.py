@@ -275,8 +275,8 @@ def write_current_svg(path: Path, editable_block: str) -> None:
     path.write_text(svg.strip() + "\n")
 
 
-def scaled_points(vertices: list[dict[str, Any]]) -> list[tuple[float, float]]:
-    raw = [(float(v["x"]), float(v["y"])) for v in vertices]
+def scaled_points(vertices: list[list[float]]) -> list[tuple[float, float]]:
+    raw = [(float(v[0]), float(v[1])) for v in vertices]
     if not raw:
         return []
     min_x = min(x for x, _ in raw)
@@ -310,7 +310,7 @@ def starfield(seed: int) -> str:
 def generated_editable_block(cluster: dict[str, Any], index: int) -> str:
     name = cluster["name"]
     hue = CONST_HUES.get(name, 196)
-    vertices = cluster.get("cluster_vertices", [])
+    vertices = cluster.get("marker_positions", [])
     points = scaled_points(vertices)
     point_attr = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
     marker_uses = []
@@ -707,11 +707,13 @@ def main() -> None:
         editable = existing_editable_block(page) or generated_editable_block(cluster, index)
         editable = ensure_editable_hue(editable, CONST_HUES.get(cluster["name"], 196))
         write_current_svg(folder / CURRENT_FILENAME, editable)
-        ordered_jumps = [
-            jumps_by_constellation[cluster["name"]][vertex["jump"]]
-            for vertex in cluster.get("cluster_vertices", [])
-            if vertex["jump"] in jumps_by_constellation[cluster["name"]]
-        ]
+        # Jump ordering used to follow the cluster_vertices seating chart, which
+        # is gone in the hand-authored-SVG world. Sort by descending perk count
+        # then name so the densest/most-defining jumps surface first on the page.
+        ordered_jumps = sorted(
+            jumps_by_constellation[cluster["name"]].values(),
+            key=lambda j: (-len(j.get("stars", [])), j.get("jump", "")),
+        )
         has_reference = (folder / REFERENCE_FILENAME).exists()
         page_records.append(
             {

@@ -394,7 +394,7 @@ so the constellation hue propagates without per-star color values.
 
 ### Cluster silhouettes
 `_cluster.svg` ships with a placeholder convex-hull polyline derived
-from `cluster_vertices`. The `shape_concept` (e.g. "open-end wrench")
+from `marker_positions`. The `shape_concept` (e.g. "open-end wrench")
 is the artistic target — Design replaces the polyline with a
 hand-authored shape that matches the metaphor.
 
@@ -402,7 +402,7 @@ hand-authored shape that matches the metaphor.
 
 | Source of truth in JSON | Lives in SVG as |
 |---|---|
-| `cluster_constellations[].cluster_vertices[].{{x,y}}` | jump-anchor `<g>` `transform="translate(x y)"` in `_cluster.svg` |
+| `cluster_constellations[].marker_positions[]` | anchor `<g>` `transform="translate(x y)"` in `_cluster.svg` |
 | `jump_constellations[].stars[].{{x,y}}` | `<use>` `x` / `y` attributes in `<jump-slug>.svg` |
 | `jump_constellations[].stars[].cost` | implicit in `data-cost` and choice of bucket symbol |
 | `jump_constellations[].shape_concept` | `<desc>` element in jump SVG + paragraph in `.md` |
@@ -442,32 +442,27 @@ def color_for(hue: int) -> str:
     return f"oklch(0.78 0.13 {hue})"
 
 
-def write_cluster_svg(path: Path, const_name: str, hue: int, jumps: list, cluster_vertices: list) -> None:
+def write_cluster_svg(path: Path, const_name: str, hue: int, jumps: list, marker_positions: list) -> None:
     """Major-arcana wireframe.
 
     Pre-populated with: a placeholder convex-hull polyline derived from
-    cluster_vertices, plus a small dot + label at each jump anchor.
-    Design replaces the polyline with a hand-drawn silhouette matching
-    the constellation's `shape_concept`.
+    marker_positions, plus a small dot at each anchor. Anchors are no
+    longer 1:1 with jumps (marker count is hand-authored per the
+    constellation's silhouette); jump labels are dropped, leaving the
+    raw anchor lattice for Design to compose against.
     """
-    pts = [(v["x"], v["y"]) for v in cluster_vertices if v.get("x") is not None]
+    pts = [(float(v[0]), float(v[1])) for v in marker_positions]
     hull_pts = _convex_hull(pts) if len(pts) >= 3 else pts
     hull_d = " ".join(f"{x:.3f},{y:.3f}" for x, y in hull_pts)
 
     anchors = []
-    by_jump_pos = {v["jump"]: (v["x"], v["y"]) for v in cluster_vertices}
-    for j in sorted(jumps, key=lambda j: j["jump"].lower()):
-        jname = j["jump"]
-        pos = by_jump_pos.get(jname)
-        if pos is None:
-            continue
-        x, y = pos
+    for idx, (x, y) in enumerate(pts):
         anchors.append(
-f"""    <g class="jump-anchor" transform="translate({x:.3f} {y:.3f})"
-       data-jump-name="{_xml_attr(jname)}" data-jump-slug="{slug(jname)}">
+f"""    <g class="anchor" transform="translate({x:.3f} {y:.3f})"
+       data-anchor-index="{idx}">
       <circle r="0.018" fill="currentColor" opacity="0.65"/>
       <text x="0.028" y="0.012" font-family="ui-monospace, Menlo, monospace"
-            font-size="0.038" fill="currentColor" opacity="0.55">{_xml_text(jname)}</text>
+            font-size="0.038" fill="currentColor" opacity="0.55">anchor {idx}</text>
     </g>"""
         )
 
@@ -711,7 +706,7 @@ def main() -> None:
             folder / "_cluster.svg",
             const_name=name, hue=hue,
             jumps=const_jumps,
-            cluster_vertices=cluster.get("cluster_vertices", []),
+            marker_positions=cluster.get("marker_positions", []),
         )
         write_cluster_md(
             folder / "_cluster.md",

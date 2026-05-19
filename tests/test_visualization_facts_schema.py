@@ -24,9 +24,9 @@ def test_schema_requires_all_bundle_keys():
     }
 
 
-def test_schema_version_is_pinned_to_1():
+def test_schema_version_is_pinned_to_2():
     doc = json.loads(SCHEMA.read_text())
-    assert doc["properties"]["schema_version"] == {"const": 1}
+    assert doc["properties"]["schema_version"] == {"const": 2}
 
 
 def test_predicted_rolls_item_shape_uses_regime_not_cp_rule_regime():
