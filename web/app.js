@@ -16,7 +16,7 @@ import {
 const DATA_BASE = "../data/derived";
 const PACKAGES_INDEX_URL = "../data/packages.json";
 const DATA_PACKAGE_PARAM = "dataPackage";
-const DATA_VERSION = "phase9-rewrite";
+const DATA_VERSION = "phase9-info-link";
 
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
@@ -783,6 +783,16 @@ function renderInfoPopover() {
     el("h3", { text: "About" }),
     el("p", {}, "An interactive timeline for ", el("em", { text: "Brockton's Celestial Forge" }), " by LordRoustabout - scrub through the story to watch the Forge reach for power-cluster constellations."),
     el("p", { style: { color: "var(--muted)", fontSize: "12.5px" }, text: "The scrubber timeline plays in publish order; the sky carousel pans to whichever constellation the Forge has touched. Each star is a roll." }),
+    el("p", { class: "info-explore" },
+      "Browse every constellation and its perks at ",
+      el("a", {
+        href: "../data/constellations/index.html",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        text: "the constellation index",
+      }),
+      ".",
+    ),
     el("div", { class: "info-shortcuts" },
       el("h4", { text: "Keyboard shortcuts" }),
       el("dl", {},
