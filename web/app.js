@@ -1161,40 +1161,6 @@ function renderCarousel() {
   return el("div", { class: "carousel-strip", style: { transform: `translateX(${-(virtualIndex * cardWidth + 160)}px)` } }, slots);
 }
 
-// Builds the shared <defs> (gradient + star-mark symbol) that each card SVG references.
-// Lifted verbatim from data/constellations/<cluster>/current.svg with ids prefixed `card-`
-// so cards in the same document don't collide with the constellation gallery's <defs>.
-// The star-mark uses fill="currentColor" so each <g style="color: ..."> wrapper tints it.
-function constellationCardDefs() {
-  return svgEl("defs", {},
-    svgEl("linearGradient", { id: "card-ray-grad", x1: "0", y1: "0", x2: "1", y2: "0" },
-      svgEl("stop", { offset: "0", "stop-color": "transparent" }),
-      svgEl("stop", { offset: "0.48", "stop-color": "#fff", "stop-opacity": "0.58" }),
-      svgEl("stop", { offset: "0.50", "stop-color": "#fff", "stop-opacity": "0.92" }),
-      svgEl("stop", { offset: "0.52", "stop-color": "#fff", "stop-opacity": "0.58" }),
-      svgEl("stop", { offset: "1", "stop-color": "transparent" }),
-    ),
-    svgEl("symbol", { id: "card-star-mark", viewBox: "-50 -50 100 100", overflow: "visible" },
-      svgEl("g", { filter: "drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)", opacity: "0.76" },
-        svgEl("g", { opacity: "0.68", style: "mix-blend-mode:screen" },
-          [[-3], [63], [117], [183], [237], [303]].map(([rot]) => svgEl("rect", {
-            x: "-32.00", y: "-0.390", width: "64.00", height: "0.780", rx: "0.390",
-            fill: "url(#card-ray-grad)", transform: `rotate(${rot.toFixed(2)})`,
-          })),
-        ),
-        svgEl("g", { opacity: "0.32", style: "mix-blend-mode:screen" },
-          [[27], [93], [147], [213], [267], [333]].map(([rot]) => svgEl("rect", {
-            x: "-18.00", y: "-0.125", width: "36.00", height: "0.250", rx: "0.125",
-            fill: "url(#card-ray-grad)", transform: `rotate(${rot.toFixed(2)})`,
-          })),
-        ),
-        svgEl("circle", { r: "2.2", fill: "currentColor", opacity: "0.16" }),
-        svgEl("circle", { r: "1.4", fill: "#fff" }),
-      ),
-    ),
-  );
-}
-
 function renderConstellationCard(con, active, flank) {
   const size = 320;
   const color = `oklch(0.82 0.14 ${con.hue})`;
@@ -1221,28 +1187,21 @@ function renderConstellationCard(con, active, flank) {
       }))
     : [];
 
-  const markerOpacity = active ? "1" : (flank ? "0.85" : "0.7");
-  const markers = (con.marker_positions || []).map(pos => svgEl("use", {
-    href: "#card-star-mark",
-    x: String((pos[0] * size) - 15),
-    y: String((pos[1] * size) - 15),
-    width: "30",
-    height: "30",
-  }));
-
+  const markerOpacity = active ? 1 : 0.85;
   return el("div", { class: `const-card ${active ? "is-active" : ""} ${flank ? "is-flank" : ""}`, style: { "--hue": con.hue } },
     el("span", { class: "halo" }),
-    svgEl("svg", {
-      viewBox: `0 0 ${size} ${size}`,
-      width: size,
-      height: size,
-      class: "outline",
-      style: `position:absolute;inset:0;color:${color};opacity:${markerOpacity}`,
-    },
-      constellationCardDefs(),
+    svgEl("svg", { viewBox: `0 0 ${size} ${size}`, width: size, height: size, class: "outline", style: "position:absolute;inset:0" },
       ...polylines,
-      svgEl("g", { class: "jump-markers" }, ...markers),
     ),
+    (con.marker_positions || []).map((pos, index) => simpleStar({
+      key: index,
+      color,
+      cost: 300,
+      visualSize: 30,
+      opacity: markerOpacity,
+      left: pos[0],
+      top: pos[1],
+    })),
   );
 }
 
