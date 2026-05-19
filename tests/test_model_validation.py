@@ -19,6 +19,7 @@ from multi_grab import (  # noqa: E402
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
 )
+from _common import _load_schema  # noqa: E402
 from data_paths import DERIVED  # noqa: E402
 
 
@@ -28,7 +29,6 @@ PREDICTED_JSON = DERIVED / "predicted_rolls.json"
 ROLL_FACTS_JSON = DERIVED / "roll_facts.json"
 ROLL_VALIDATION_JSON = DERIVED / "roll_validation.json"
 CHAPTER_FACTS_JSON = DERIVED / "chapter_facts.json"
-ROLL_FACTS_SCHEMA_JSON = DERIVED / "_schemas" / "roll_facts.schema.json"
 
 
 def _chapter_nums() -> list[str]:
@@ -95,8 +95,7 @@ def test_roll_validation_reports_global_roll_capacity_checks() -> None:
 
 
 def test_roll_facts_use_evidence_quotes_contract() -> None:
-    schema = json.loads(ROLL_FACTS_SCHEMA_JSON.read_text())
-    validator = Draft202012Validator(schema)
+    validator = Draft202012Validator(_load_schema("roll_facts"))
     valid_quote = {
         "text": "synthetic quote",
         "mention_chapter_num": "1",

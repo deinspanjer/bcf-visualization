@@ -13,7 +13,6 @@ on:
       - 'figures/**'
       - 'index.html'
       - '.nojekyll'
-      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
     inputs:
       data_bundle_tag:

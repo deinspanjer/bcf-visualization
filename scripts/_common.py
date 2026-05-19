@@ -20,7 +20,12 @@ SCHEMA_DIR = ROOT / "data" / "derived" / "_schemas"
 
 def _load_schema(name: str) -> dict[str, Any]:
     path = SCHEMA_DIR / f"{name}.schema.json"
-    return json.loads(path.read_text())
+    schema = json.loads(path.read_text())
+    # All schema refs in this project are local fragments. Keeping the
+    # repository-relative $id here makes older jsonschema releases try to
+    # resolve those fragments as external URLs in CI.
+    schema.pop("$id", None)
+    return schema
 
 
 def write_validated_json(out_path: Path, payload: dict[str, Any], schema_name: str) -> None:
