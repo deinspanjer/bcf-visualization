@@ -87,45 +87,37 @@ def build_constellation_counts(perk_directory_path: Path):
 # ---------------------------------------------------------------------------
 # vertex_source resolution
 # ---------------------------------------------------------------------------
-_DESC_RE = re.compile(r"<desc>(.*?)</desc>", re.DOTALL)
+# Curator-supplied overrides for clusters whose marker count matches BOTH
+# jump count and perk count (the heuristic cannot distinguish). Decided
+# manually with the curator at migration time. Only Vehicles applies today
+# (1 perk per jump → 13 markers == 13 jumps == 13 perks).
+_CURATOR_OVERRIDES = {
+    "Vehicles": "jumps",
+}
 
 
-def get_svg_desc_vertex_source(svg_path: Path):
+def resolve_vertex_source(constellation_name: str,
+                          marker_count: int,
+                          jump_count: int,
+                          perk_count: int):
     """
-    Fallback: parse <desc> text and return 'jumps' or 'perks' if unambiguous, else None.
-    The desc format is: "<Name> as a constellation of its N <jumps|perks>. ..."
-    """
-    content = svg_path.read_text(encoding="utf-8")
-    m = _DESC_RE.search(content)
-    if not m:
-        return None
-    desc = m.group(1)
-    if "jumps" in desc:
-        return "jumps"
-    if "perks" in desc:
-        return "perks"
-    return None
+    Returns "perks", "jumps", or None (unresolved — caller must halt).
 
-
-def resolve_vertex_source(marker_count: int, jump_count: int, perk_count: int,
-                          svg_path: Path = None):
-    """
-    Returns "perks", "jumps", or None (unresolved).
-
-    Resolution rules:
+    Resolution rules (strict, per spec):
       perks  if marker_count == perk_count  AND marker_count != jump_count
       jumps  if marker_count == jump_count  AND marker_count != perk_count
-      tie    if marker_count == jump_count == perk_count: fall back to <desc> text
-      None   otherwise (truly ambiguous or no match)
+      None   otherwise — including the symmetric case where all three counts
+             are equal — UNLESS a curator override exists in _CURATOR_OVERRIDES.
+
+    `<desc>` text is NOT consulted: the field is curator-typed prose and
+    has been observed stale (e.g. Magitech `<desc>` says "10 jumps" but
+    the SVG is perks-driven with 12 markers).
     """
     if marker_count == perk_count and marker_count != jump_count:
         return "perks"
     if marker_count == jump_count and marker_count != perk_count:
         return "jumps"
-    # Tie-break: all three equal (e.g. Vehicles: 1 perk per jump)
-    if marker_count == jump_count == perk_count and svg_path is not None:
-        return get_svg_desc_vertex_source(svg_path)
-    return None
+    return _CURATOR_OVERRIDES.get(constellation_name)
 
 
 # ---------------------------------------------------------------------------
@@ -217,7 +209,9 @@ def main():
         marker_count = count_star_marks(svg_path)
         jump_count = counts["jumps"]
         perk_count = counts["perks"]
-        vertex_source = resolve_vertex_source(marker_count, jump_count, perk_count, svg_path)
+        vertex_source = resolve_vertex_source(
+            constellation_name, marker_count, jump_count, perk_count
+        )
 
         row = {
             "constellation": constellation_name,
