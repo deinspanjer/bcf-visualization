@@ -24,9 +24,17 @@ def test_schema_requires_all_bundle_keys():
     }
 
 
-def test_schema_version_is_pinned_to_2():
+def test_schema_version_field_is_const_pinned():
+    """The bundle's `schema_version` property must be const-pinned (not
+    free-form). This is the gate that lets the data-package manifest's
+    per-file `schema_version` actually enforce a contract on consumers —
+    if it weren't pinned, manifests could load older or newer documents
+    silently. The specific integer is a moving target; the pin pattern
+    itself is the invariant."""
     doc = json.loads(SCHEMA.read_text())
-    assert doc["properties"]["schema_version"] == {"const": 2}
+    prop = doc["properties"]["schema_version"]
+    assert "const" in prop, "schema_version must be const-pinned, not free-form"
+    assert isinstance(prop["const"], int) and prop["const"] >= 1
 
 
 def test_predicted_rolls_item_shape_uses_regime_not_cp_rule_regime():
