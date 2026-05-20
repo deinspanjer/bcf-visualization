@@ -509,6 +509,67 @@ class CurationPersistence:
         )
         return True
 
+    def move_roll_evidence_quote_between_indices(
+        self,
+        *,
+        source_chapter_num: str,
+        source_index: int,
+        target_chapter_num: str,
+        target_index: int,
+        quote: dict,
+    ) -> bool:
+        """Move one saved quote record between roll override rows.
+
+        This preserves the quote record exactly and writes one journaled
+        mutation so quote reassignments cannot be half-applied.
+        """
+        source_entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(source_chapter_num))
+        )
+        source_rolls = (source_entry or {}).get("rolls") or []
+        if not (1 <= int(source_index) <= len(source_rolls)):
+            return False
+        source_roll = source_rolls[int(source_index) - 1]
+        source_quotes = source_roll.get("evidence_quotes") or []
+        if quote not in source_quotes:
+            return False
+        before = deepcopy(self.chapter_roll_overrides)
+        target_roll = self.get_or_create_roll_at_index(
+            str(target_chapter_num), int(target_index)
+        )
+        target_quotes = target_roll.setdefault("evidence_quotes", [])
+        if quote not in target_quotes:
+            target_quotes.append(deepcopy(quote))
+        source_roll["evidence_quotes"] = [q for q in source_quotes if q != quote]
+        if (
+            not source_roll["evidence_quotes"]
+            and source_roll.get("display_position_policy") == "mention"
+            and str(source_roll.get("mention_chapter_num"))
+            == str(quote.get("mention_chapter_num"))
+            and source_roll.get("mention_word_position")
+            == quote.get("mention_word_position")
+        ):
+            source_roll["mention_chapter_num"] = None
+            source_roll["mention_word_position"] = None
+            source_roll["display_position_policy"] = None
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "move_roll_evidence_quote_between_indices",
+            self.chapter_roll_overrides_path,
+            str(source_chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "source_index": int(source_index),
+                "target_chapter_num": str(target_chapter_num),
+                "target_index": int(target_index),
+                "quote": quote,
+            },
+        )
+        return True
+
     def clear_roll_evidence_at_index(self, chapter_num: str, index: int) -> bool:
         """Clear curated narrative evidence from an existing override row."""
         entry = (

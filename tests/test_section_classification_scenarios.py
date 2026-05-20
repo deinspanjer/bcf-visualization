@@ -183,3 +183,74 @@ def test_build_section_classifications_promotes_plausible_section_with_mechanics
     assert classifications["8.1@1"]["counts_for_cp"] is True
     assert classifications["8.1@1"]["reason"].startswith("mechanics evidence override")
     assert classifications["8.1@2"]["counts_for_cp"] is False
+
+
+def test_build_section_classifications_preserves_curator_section_eligibility_toggle(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import build_section_classifications as classifier
+
+    root = tmp_path / "project"
+    sections_path = root / "data" / "derived" / "chapter_sections.json"
+    rolls_path = root / "data" / "derived" / "rolls.json"
+    obtained_path = root / "data" / "derived" / "obtained_perks.json"
+    out_path = root / "data" / "manual" / "section_classifications.json"
+    _write_json(
+        out_path,
+        {
+            "classifications": {
+                "8.1@1": {
+                    "chapter_num": "8.1",
+                    "section_index": 1,
+                    "header": "8.1 Interlude: Amy",
+                    "counts_for_cp": False,
+                    "reason": "curator toggle: ineligible",
+                }
+            }
+        },
+    )
+    sections_doc = {
+        "chapters": [
+            {
+                "chapter_num": "8.1",
+                "full_title": "8.1 Interlude: Amy",
+                "sections": [
+                    _section(
+                        header=None,
+                        word_count=400,
+                        sample="Amy waited in the hallway.",
+                        fp_count=0,
+                        tp_count=5,
+                    ),
+                    _section(
+                        header="8.1 Interlude: Amy",
+                        word_count=1200,
+                        sample="Amy spoke with Joe while the Forge stirred.",
+                        fp_count=0,
+                        tp_count=8,
+                    ),
+                    _section(
+                        header="Jumpchain abilities this chapter:",
+                        word_count=100,
+                        sample="Footer.",
+                    ),
+                ],
+            }
+        ]
+    }
+    _write_json(sections_path, sections_doc)
+    _write_json(rolls_path, {"rolls": [{"kind": "roll", "chapter_num": "8.1"}]})
+    _write_json(obtained_path, {"perks": []})
+
+    monkeypatch.setattr(classifier, "ROOT", root)
+    monkeypatch.setattr(classifier, "SECTIONS_JSON", sections_path)
+    monkeypatch.setattr(classifier, "ROLLS_JSON", rolls_path)
+    monkeypatch.setattr(classifier, "OBTAINED_JSON", obtained_path)
+    monkeypatch.setattr(classifier, "OUT", out_path)
+
+    classifier.main()
+    classifications = json.loads(out_path.read_text())["classifications"]
+
+    assert classifications["8.1@1"]["counts_for_cp"] is False
+    assert classifications["8.1@1"]["reason"] == "curator toggle: ineligible"

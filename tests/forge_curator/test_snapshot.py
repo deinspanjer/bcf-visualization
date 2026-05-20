@@ -78,3 +78,41 @@ def test_snapshot_includes_fixture_deferred_predicted_slots(
     assert deferred[0]["mention_chapter_num"] == "2"
     assert deferred[0]["roll_number"] == 1
     assert deferred[0]["evidence_quotes"] == []
+
+
+def test_snapshot_groups_source_deferred_rolls_before_current_rolls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    source_projected = dict(cs.derived.roll_facts[0])
+    source_projected.update(
+        {
+            "chapter_num": "1",
+            "roll_sequence_in_chapter": 2,
+            "mechanical_chapter_num": "1",
+            "mechanical_word_position": 20,
+            "mechanical_cumulative_word_offset": 20,
+            "display_chapter_num": "1",
+            "display_word_position": 20,
+            "display_cumulative_word_offset": 20,
+            "source_chapter_num": "2",
+            "source_roll_index": 1,
+            "source_word_position": 40,
+            "source_cumulative_word_offset": 120,
+            "visible_chapter_nums": ["1", "2"],
+        }
+    )
+    cs.derived.roll_facts = [source_projected, *cs.derived.roll_facts]
+    app.data.roll_facts["rolls"] = [source_projected, *app.data.roll_facts["rolls"]]
+
+    app.action_snapshot()
+    snapshot = json.loads(fixture.snapshot_path.read_text())
+
+    roll_kinds = [roll.get("display_kind") for roll in snapshot["rolls"]]
+    assert roll_kinds[0] == "source_deferred"
+    assert "chapter_roll" in roll_kinds
+    assert roll_kinds.index("source_deferred") < roll_kinds.index("chapter_roll")

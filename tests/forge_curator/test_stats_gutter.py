@@ -197,6 +197,49 @@ def test_stats_registers_deferred_predicted_slot_before_current_slots(
     ]
 
 
+def test_stats_groups_source_deferred_projection_with_deferred_rolls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    source_projected = dict(cs.derived.roll_facts[0])
+    source_projected.update(
+        {
+            "chapter_num": "1",
+            "roll_sequence_in_chapter": 2,
+            "mechanical_chapter_num": "1",
+            "mechanical_word_position": 20,
+            "mechanical_cumulative_word_offset": 20,
+            "display_chapter_num": "1",
+            "display_word_position": 20,
+            "display_cumulative_word_offset": 20,
+            "source_chapter_num": "2",
+            "source_roll_index": 1,
+            "source_word_position": 20,
+            "source_cumulative_word_offset": 100,
+            "visible_chapter_nums": ["1", "2"],
+        }
+    )
+    cs.derived.roll_facts = [source_projected, *cs.derived.roll_facts]
+    app.data.roll_facts["rolls"] = [source_projected, *app.data.roll_facts["rolls"]]
+
+    text, stats = _render_stats_text(app)
+    targets = list(stats._roll_line_targets.values())
+
+    assert "Deferred rolls" in text
+    assert "deferred from ch 1 #2 source" in text
+    assert targets[0]["display_kind"] == "source_deferred"
+    assert targets[0]["target_chapter_num"] == "1"
+    assert targets[0]["target_roll_index"] == 2
+    assert all(
+        target.get("display_kind") != "source_deferred"
+        for target in targets[1:]
+    )
+
+
 def test_roll_stat_line_repeats_q_for_each_evidence_quote(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -360,6 +403,33 @@ def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
     )
 
     assert "# 3 (19)" in line
+
+
+def test_roll_stat_line_labels_locationless_predicted_deferral_as_future(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+
+    line = app._format_roll_stat_line(
+        {
+            "display_kind": "predicted_slot",
+            "target_roll_index": 2,
+            "target_chapter_num": "2",
+            "mention_chapter_num": "3",
+            "mention_word_position": None,
+            "evidence_quotes": [],
+            "roll_number": 3,
+            "word_position": 40,
+            "outcome": "open",
+        },
+        " ",
+    )
+
+    assert "deferred to future chapter" in line
+    assert "deferred to ch 3" not in line
+    assert "at CP" not in line
 
 
 def test_skipped_slots_source_markers_status_and_click_targets_use_stats_model(

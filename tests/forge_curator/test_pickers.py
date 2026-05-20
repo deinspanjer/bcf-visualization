@@ -9,6 +9,8 @@ from textual.widgets import Button, OptionList, Static
 from scripts.forge_curator.app import (
     ConstellationPicker,
     PerkPicker,
+    QuoteMoveSourcePicker,
+    QuoteMoveTargetPicker,
     RollEvidencePicker,
     RollVisualizationPicker,
     SourceLinkPicker,
@@ -117,6 +119,52 @@ def test_roll_evidence_picker_label_uses_stable_target_index() -> None:
     )
 
     assert picker._roll_button_label(1, picker._rolls[0]).startswith("( ) #3")
+
+
+def test_quote_move_target_picker_selects_one_roll() -> None:
+    selected: list[dict] = []
+    picker = QuoteMoveTargetPicker(
+        rolls=[
+            {"target_chapter_num": "2", "target_roll_index": 1, "roll_number": 2},
+            {"target_chapter_num": "1", "target_roll_index": 1, "roll_number": 1},
+        ],
+        on_select=selected.append,
+    )
+
+    picker._select(2)
+
+    assert selected == [
+        {"target_chapter_num": "1", "target_roll_index": 1, "roll_number": 1}
+    ]
+
+
+def test_quote_move_source_picker_selects_quote_owner() -> None:
+    selected: list[dict] = []
+    picker = QuoteMoveSourcePicker(
+        sources=[
+            {
+                "target_chapter": "2",
+                "target_index": 1,
+                "quote": {"text": "first"},
+            },
+            {
+                "target_chapter": "2",
+                "target_index": 2,
+                "quote": {"text": "second"},
+            },
+        ],
+        on_select=selected.append,
+    )
+
+    picker._select(2)
+
+    assert selected == [
+        {
+            "target_chapter": "2",
+            "target_index": 2,
+            "quote": {"text": "second"},
+        }
+    ]
 
 
 def test_roll_visualization_picker_can_select_quote_mechanical_and_cursor() -> None:
