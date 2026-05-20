@@ -147,8 +147,10 @@ jobs:
           TAG="$(python3 scripts/data_release.py version-tag \
             --date "$DATE" \
             --build-number "$BUILD")"
-          RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
-          DEV_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-data-*.tar.gz' -print -quit)"
+          RUNTIME_TAR=".data-release/${TAG/bcf-visualization-data-/bcf-visualization-runtime-}.tar.gz"
+          DEV_TAR=".data-release/${TAG}.tar.gz"
+          test -f "$RUNTIME_TAR"
+          test -f "$DEV_TAR"
           PACKAGE_ID="$(python3 -c 'import json, sys, tarfile; tf = tarfile.open(sys.argv[1], "r:gz"); print(json.load(tf.extractfile("data_package.json"))["package_id"]); tf.close()' "$RUNTIME_TAR")"
           {
             echo "tag=$TAG"

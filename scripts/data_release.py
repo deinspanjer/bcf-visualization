@@ -605,6 +605,17 @@ def _write_checksums(paths: Iterable[Path], out_path: Path) -> None:
     out_path.write_text("\n".join(lines) + "\n")
 
 
+def _clear_package_outputs(output_dir: Path) -> None:
+    for pattern in (
+        f"{PACKAGE_PREFIX}-runtime-*.tar.gz",
+        f"{PACKAGE_PREFIX}-data-*.tar.gz",
+        "SHA256SUMS",
+    ):
+        for path in output_dir.glob(pattern):
+            if path.is_file():
+                path.unlink()
+
+
 def build_packages(
     *,
     source_dir: Path = DERIVED,
@@ -619,6 +630,7 @@ def build_packages(
     source_commit = source_commit or _git_commit()
     source_dir = source_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+    _clear_package_outputs(output_dir)
 
     story = _story_freshness(source_dir)
     release_tag = _release_tag(

@@ -83,6 +83,35 @@ def test_push_release_workflow_uses_visualization_facts_as_hydration_sentinel() 
     assert "[ ! -f data/derived/chapter_facts.json ]" not in text
 
 
+def test_candidate_release_assets_are_selected_by_current_tag() -> None:
+    text = _workflow_text("release.yml")
+
+    assert (
+        'RUNTIME_TAR=".data-release/'
+        '${TAG/bcf-visualization-data-/bcf-visualization-runtime-}.tar.gz"'
+    ) in text
+    assert 'DEV_TAR=".data-release/${TAG}.tar.gz"' in text
+    assert (
+        "find .data-release -maxdepth 1 "
+        "-name 'bcf-visualization-data-*.tar.gz' -print -quit"
+    ) not in text
+    assert (
+        "find .data-release -maxdepth 1 "
+        "-name 'bcf-visualization-runtime-*.tar.gz' -print -quit"
+    ) not in text
+
+
+def test_candidate_release_artifacts_are_not_tracked() -> None:
+    assert ".data-release/" in (ROOT / ".gitignore").read_text().splitlines()
+
+    tracked = subprocess.check_output(
+        ["git", "ls-files", ".data-release"],
+        cwd=ROOT,
+        text=True,
+    ).splitlines()
+    assert tracked == []
+
+
 def test_release_classification_uses_full_push_range_and_publishable_paths() -> None:
     text = _workflow_text("release.yml")
 

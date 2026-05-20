@@ -228,6 +228,41 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     assert dev_manifest["files"]["visualization_facts"]["schema_version"] == 2
 
 
+def test_package_command_replaces_stale_release_artifacts(tmp_path: Path) -> None:
+    from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "source")
+    output = tmp_path / "dist"
+    output.mkdir()
+    stale_runtime = output / "bcf-visualization-runtime-v20260501.1-ch1-1.tar.gz"
+    stale_dev = output / "bcf-visualization-data-v20260501.1-ch1-1.tar.gz"
+    unrelated = output / "operator-notes.txt"
+    stale_runtime.write_text("old runtime\n")
+    stale_dev.write_text("old dev\n")
+    (output / "SHA256SUMS").write_text("old checksums\n")
+    unrelated.write_text("keep me\n")
+
+    outputs = data_release.build_packages(
+        source_dir=source,
+        output_dir=output,
+        package_date="20260509",
+        build_number=7,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    assert not stale_runtime.exists()
+    assert not stale_dev.exists()
+    assert unrelated.read_text() == "keep me\n"
+    assert sorted(path.name for path in output.glob("*.tar.gz")) == [
+        outputs.dev_tar.name,
+        outputs.runtime_tar.name,
+    ]
+    assert set((output / "SHA256SUMS").read_text().splitlines()) == {
+        f"{hashlib.sha256(outputs.runtime_tar.read_bytes()).hexdigest()}  {outputs.runtime_tar.name}",
+        f"{hashlib.sha256(outputs.dev_tar.read_bytes()).hexdigest()}  {outputs.dev_tar.name}",
+    }
+
+
 def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path: Path) -> None:
     from scripts import data_release
 
