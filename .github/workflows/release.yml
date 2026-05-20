@@ -1,0 +1,304 @@
+name: Release data and Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['**']
+  workflow_dispatch:
+    inputs:
+      force_data_rebuild:
+        description: 'Rebuild data even if changed paths do not require it.'
+        required: true
+        default: false
+        type: boolean
+      data_bundle_tag:
+        description: 'Pinned published data release tag for web-only redeploys. Leave blank to use the deployed default package set.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release-pages
+  cancel-in-progress: false
+
+env:
+  DEFAULT_DATA_BUNDLE_TAG: bcf-visualization-data-v20260510.6-ch194-120.1
+  DEFAULT_DATA_DEV_ASSET: bcf-visualization-data-v20260510.6-ch194-120.1.tar.gz
+  DEFAULT_DATA_RUNTIME_ASSET: bcf-visualization-runtime-v20260510.6-ch194-120.1.tar.gz
+  DEPLOYED_PACKAGES_URL: https://deinspanjer.github.io/bcf-visualization/data/packages.json
+  PRIVATE_SOURCE_REPO: deinspanjer/bcf-visualization-private-source
+  PRIVATE_SOURCE_REF: source-v20260510.1
+  SMOKE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: classify
+        env:
+          FORCE_DATA_REBUILD: ${{ inputs.force_data_rebuild || false }}
+          DATA_BUNDLE_TAG: ${{ inputs.data_bundle_tag }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            : > changed_paths.txt
+          elif [ -n "$BEFORE_SHA" ] \
+              && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" > changed_paths.txt
+          else
+            git ls-files > changed_paths.txt
+          fi
+
+          data_changed=false
+          web_changed=false
+          while IFS= read -r path; do
+            case "$path" in
+              data/manual/*|data/raw/*|data/labeled/*|data/derived/_schemas/*|data/constellations/*|scripts/*.py|.github/workflows/release.yml|.github/workflows/data-release.yml)
+                data_changed=true
+                ;;
+            esac
+            case "$path" in
+              web/*|index.html|figures/*|.nojekyll|.github/workflows/release.yml|.github/workflows/deploy-pages.yml)
+                web_changed=true
+                ;;
+            esac
+          done < changed_paths.txt
+
+          if [ "$FORCE_DATA_REBUILD" = "true" ]; then
+            data_changed=true
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            web_changed=true
+          fi
+          if [ -n "$DATA_BUNDLE_TAG" ]; then
+            web_changed=true
+          fi
+
+          should_run=false
+          if [ "$data_changed" = "true" ] || [ "$web_changed" = "true" ]; then
+            should_run=true
+          fi
+
+          {
+            echo "data_changed=$data_changed"
+            echo "web_changed=$web_changed"
+            echo "should_run=$should_run"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Skip unrelated push
+        if: ${{ steps.classify.outputs.should_run != 'true' }}
+        run: echo "No data or web release inputs changed; skipping."
+
+      - name: Checkout private source files
+        if: ${{ steps.classify.outputs.data_changed == 'true' }}
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.PRIVATE_SOURCE_REPO }}
+          ref: ${{ env.PRIVATE_SOURCE_REF }}
+          path: data/private-source
+          ssh-key: ${{ secrets.BCF_PRIVATE_SOURCE_DEPLOY_KEY }}
+
+      - name: Build candidate data bundles
+        id: build
+        if: ${{ steps.classify.outputs.data_changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE_DATA_REBUILD: ${{ inputs.force_data_rebuild || false }}
+        run: |
+          set -euo pipefail
+          if [ ! -f data/derived/visualization_facts.json ]; then
+            python3 scripts/data_release.py download-dev \
+              --tag "$DEFAULT_DATA_BUNDLE_TAG" \
+              --asset "$DEFAULT_DATA_DEV_ASSET"
+          fi
+          python3 -m pip install '.[dev]'
+          if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
+            mkdir -p data/raw
+            cp data/private-source/Brocktons_Celestial_Forge.epub \
+              data/raw/Brocktons_Celestial_Forge.epub
+          else
+            python3 scripts/download_bcf_epub.py
+          fi
+          PIPELINE_ARGS=(--target data)
+          if [ "$FORCE_DATA_REBUILD" = "true" ]; then
+            PIPELINE_ARGS+=(--force)
+          fi
+          python3 scripts/pipeline.py "${PIPELINE_ARGS[@]}"
+          DATE="$(date -u +%Y%m%d)"
+          BUILD="$GITHUB_RUN_NUMBER"
+          python3 scripts/data_release.py package \
+            --output-dir .data-release \
+            --date "$DATE" \
+            --build-number "$BUILD" \
+            --source-commit "$GITHUB_SHA"
+          TAG="$(python3 scripts/data_release.py version-tag \
+            --date "$DATE" \
+            --build-number "$BUILD")"
+          RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
+          DEV_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-data-*.tar.gz' -print -quit)"
+          PACKAGE_ID="$(python3 -c 'import json, sys, tarfile; tf = tarfile.open(sys.argv[1], "r:gz"); print(json.load(tf.extractfile("data_package.json"))["package_id"]); tf.close()' "$RUNTIME_TAR")"
+          {
+            echo "tag=$TAG"
+            echo "runtime_tar=$RUNTIME_TAR"
+            echo "dev_tar=$DEV_TAR"
+            echo "package_id=$PACKAGE_ID"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download runtime packages for Pages
+        if: ${{ steps.classify.outputs.should_run == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATA_BUNDLE_TAG: ${{ inputs.data_bundle_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p .pages-runtimes
+          if [ -n "$DATA_BUNDLE_TAG" ]; then
+            DATA_RUNTIME_ASSET="${DATA_BUNDLE_TAG/bcf-visualization-data-/bcf-visualization-runtime-}.tar.gz"
+            gh release download "$DATA_BUNDLE_TAG" \
+              --pattern "$DATA_RUNTIME_ASSET" \
+              --dir .pages-runtimes
+            PACKAGE_ID="${DATA_RUNTIME_ASSET%.tar.gz}"
+            python3 -c 'import json, sys; package_id, tag = sys.argv[1], sys.argv[2]; print(json.dumps({"default_package_id": package_id, "packages": [{"package_id": package_id, "release_tag": tag, "smoke_status": "unknown"}]}))' \
+              "$PACKAGE_ID" "$DATA_BUNDLE_TAG" > .pages-runtimes/packages.json
+          else
+            python3 scripts/data_release.py download-pages-runtimes \
+              --packages-url "$DEPLOYED_PACKAGES_URL" \
+              --output-dir .pages-runtimes \
+              --fallback-tag "$DEFAULT_DATA_BUNDLE_TAG" \
+              --fallback-asset "$DEFAULT_DATA_RUNTIME_ASSET" \
+              --metadata-output .pages-runtimes/packages.json
+          fi
+
+      - name: Stage Pages site
+        if: ${{ steps.classify.outputs.should_run == 'true' }}
+        env:
+          NEW_RUNTIME_TAR: ${{ steps.build.outputs.runtime_tar }}
+          NEW_PACKAGE_ID: ${{ steps.build.outputs.package_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp .nojekyll index.html _site/
+          cp -r figures _site/
+
+          PREPARE_ARGS=(--site-dir _site)
+          while IFS= read -r runtime_tar; do
+            PREPARE_ARGS+=(--runtime-tar "$runtime_tar")
+          done < <(find .pages-runtimes -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print | sort)
+          if [ -n "$NEW_RUNTIME_TAR" ]; then
+            PREPARE_ARGS+=(--runtime-tar "$NEW_RUNTIME_TAR")
+            PREPARE_ARGS+=(--default-package-id "$NEW_PACKAGE_ID")
+          else
+            DEFAULT_PACKAGE_ID="$(python3 -c 'import json; print(json.load(open(".pages-runtimes/packages.json")).get("default_package_id") or "")')"
+            if [ -n "$DEFAULT_PACKAGE_ID" ]; then
+              PREPARE_ARGS+=(--default-package-id "$DEFAULT_PACKAGE_ID")
+            fi
+          fi
+          PREPARE_ARGS+=(--package-metadata-file .pages-runtimes/packages.json)
+
+          PRIMARY_RUNTIME_TAR="${NEW_RUNTIME_TAR:-}"
+          if [ -z "$PRIMARY_RUNTIME_TAR" ]; then
+            PRIMARY_RUNTIME_TAR="$(find .pages-runtimes -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print | sort | tail -n 1)"
+          fi
+          if [ -n "$PRIMARY_RUNTIME_TAR" ] && [ -f "$PRIMARY_RUNTIME_TAR" ]; then
+            mkdir -p data/derived
+            tar -xzf "$PRIMARY_RUNTIME_TAR" -C data/derived \
+              perk_directory.json \
+              constellation_lifecycle.json \
+              constellation_wireframes.json \
+              2>/dev/null || true
+          fi
+          if [ -f data/derived/perk_directory.json ] \
+              && [ -f data/derived/constellation_lifecycle.json ] \
+              && [ -f data/derived/constellation_wireframes.json ]; then
+            python3 scripts/scaffold_constellation_pages.py
+          else
+            echo "WARNING: runtime tarball missing optional scaffold inputs;" \
+                 "constellation pages will be absent from this deploy"
+          fi
+          cp -r web _site/
+
+          printf '%s\n' "${PREPARE_ARGS[@]}" > .prepare-pages-args
+          python3 scripts/data_release.py prepare-pages \
+            "${PREPARE_ARGS[@]}" \
+            --skip-incompatible-runtime
+          PACKAGE_ID="$(python3 -c 'import json; print(json.load(open("_site/data/packages.json"))["default_package_id"])')"
+          python3 scripts/data_release.py prepare-pages \
+            "${PREPARE_ARGS[@]}" \
+            --package-smoke-status "$PACKAGE_ID=passed" \
+            --skip-incompatible-runtime
+
+      - name: Install browser smoke dependencies
+        if: ${{ steps.classify.outputs.should_run == 'true' }}
+        run: |
+          python3 -m pip install '.[dev]'
+          python3 -m playwright install --with-deps chromium
+
+      - name: Smoke test staged site
+        id: smoke
+        if: ${{ steps.classify.outputs.should_run == 'true' }}
+        continue-on-error: true
+        run: |
+          python3 scripts/smoke_pages_site.py --site-dir _site --browser
+
+      - name: Publish candidate data release
+        if: ${{ always() && steps.classify.outputs.data_changed == 'true' && steps.build.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMOKE_STATUS: ${{ steps.smoke.outcome == 'success' && 'passed' || 'failed' }}
+        run: |
+          gh release create "${{ steps.build.outputs.tag }}" \
+            "${{ steps.build.outputs.runtime_tar }}" \
+            "${{ steps.build.outputs.dev_tar }}" \
+            .data-release/SHA256SUMS \
+            --title "BCF data ${{ steps.build.outputs.tag }}" \
+            --notes "Versioned BCF derived data bundle ${{ steps.build.outputs.tag }}. Smoke status: $SMOKE_STATUS. Run: $SMOKE_RUN_URL."
+
+      - name: Finalize Pages metadata
+        if: ${{ always() && steps.classify.outputs.should_run == 'true' }}
+        env:
+          NEW_PACKAGE_ID: ${{ steps.build.outputs.package_id }}
+          SMOKE_STATUS: ${{ steps.smoke.outcome == 'success' && 'passed' || 'failed' }}
+        run: |
+          set -euo pipefail
+          mapfile -t PREPARE_ARGS < .prepare-pages-args
+          EXTRA_ARGS=()
+          if [ -n "$NEW_PACKAGE_ID" ]; then
+            PREVIOUS_DEFAULT_ID="$(python3 -c 'import json; print(json.load(open(".pages-runtimes/packages.json")).get("default_package_id") or "")')"
+            DEFAULT_PACKAGE_ID="$NEW_PACKAGE_ID"
+            if [ "$SMOKE_STATUS" != "passed" ] && [ -n "$PREVIOUS_DEFAULT_ID" ]; then
+              DEFAULT_PACKAGE_ID="$PREVIOUS_DEFAULT_ID"
+            fi
+            EXTRA_ARGS+=(--default-package-id "$DEFAULT_PACKAGE_ID")
+            EXTRA_ARGS+=(--package-smoke-status "$NEW_PACKAGE_ID=$SMOKE_STATUS")
+            EXTRA_ARGS+=(--smoke-run-url "$SMOKE_RUN_URL")
+          else
+            PACKAGE_ID="$(python3 -c 'import json; print(json.load(open("_site/data/packages.json"))["default_package_id"])')"
+            EXTRA_ARGS+=(--package-smoke-status "$PACKAGE_ID=passed")
+          fi
+          python3 scripts/data_release.py prepare-pages \
+            "${PREPARE_ARGS[@]}" \
+            "${EXTRA_ARGS[@]}" \
+            --skip-incompatible-runtime
+          python3 scripts/smoke_pages_site.py --site-dir _site
+
+      - uses: actions/configure-pages@v6
+        if: ${{ always() && steps.classify.outputs.should_run == 'true' }}
+
+      - uses: actions/upload-pages-artifact@v5
+        if: ${{ always() && steps.classify.outputs.should_run == 'true' }}
+        with:
+          path: _site
+
+      - name: Deploy Pages
+        if: ${{ always() && steps.classify.outputs.should_run == 'true' }}
+        uses: actions/deploy-pages@v5

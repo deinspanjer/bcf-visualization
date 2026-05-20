@@ -849,6 +849,11 @@ def test_cleanup_release_dry_run_protects_workflow_and_deployed_tags(
             "isDraft": False,
             "name": "candidate",
         },
+        {
+            "tagName": "bcf-visualization-data-v20260510.6-ch194-120.1",
+            "isDraft": False,
+            "name": "protected workflow default",
+        },
     ]
     deleted: list[str] = []
 
@@ -882,6 +887,7 @@ def test_cleanup_release_dry_run_protects_workflow_and_deployed_tags(
         "bcf-visualization-data-v20260509.5-ch194-120.1"
     ]
     assert "bcf-visualization-data-v20260509.4-ch194-120.1" in plan.protected_tags
+    assert "bcf-visualization-data-v20260510.6-ch194-120.1" in plan.protected_tags
     assert deleted == []
 
 

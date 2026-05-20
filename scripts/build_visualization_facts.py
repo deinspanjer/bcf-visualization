@@ -9,9 +9,11 @@ from pathlib import Path
 try:
     from _common import write_validated_json
     from data_paths import DERIVED
+    from data_release import refresh_current_runtime_manifest
 except ModuleNotFoundError:
     from scripts._common import write_validated_json
     from scripts.data_paths import DERIVED
+    from scripts.data_release import refresh_current_runtime_manifest
 
 
 SOURCE = "scripts/build_visualization_facts.py"
@@ -104,6 +106,8 @@ def main() -> None:
 
     bundle = build(args.input_dir)
     write_validated_json(args.output, bundle, schema_name="visualization_facts")
+    if args.input_dir.resolve() == DERIVED.resolve():
+        refresh_current_runtime_manifest(source_dir=DERIVED)
 
 
 if __name__ == "__main__":
