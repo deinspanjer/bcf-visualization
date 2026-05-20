@@ -35,7 +35,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:7aaaf0b8bfce0dba"
+      "_fingerprint": "sha256:c51adc019093597a"
     },
     "67": {
       "rolls": [
@@ -88,7 +88,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:283d54f13519c08c"
+      "_fingerprint": "sha256:dd983a037ae8ca23"
     },
     "97": {
       "rolls": [
@@ -124,7 +124,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:4fd31463eecf762b"
+      "_fingerprint": "sha256:97397b4436c01b99"
     },
     "1": {
       "rolls": [
@@ -186,7 +186,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:7ebb46dc31a2eefe"
+      "_fingerprint": "sha256:d46016b6d33427b8"
     },
     "103": {
       "rolls": [
@@ -220,7 +220,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:f7209f9acd7aed3a"
+      "_fingerprint": "sha256:f14afc02f0a4b5ea"
     },
     "104": {
       "rolls": [
@@ -262,7 +262,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:66f1823d35e541f9"
+      "_fingerprint": "sha256:a8f65d53ea09000f"
     },
     "106": {
       "rolls": [
@@ -283,7 +283,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:9611e76a728c7af9"
+      "_fingerprint": "sha256:7cd1fc48422ea2d6"
     },
     "109": {
       "rolls": [
@@ -305,7 +305,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:74544d40c6ed5776"
+      "_fingerprint": "sha256:21d5e15fcb44aa8e"
     },
     "112": {
       "rolls": [
@@ -326,7 +326,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:ee22ab952788e969"
+      "_fingerprint": "sha256:2a44c219eaf85889"
     },
     "114": {
       "rolls": [
@@ -348,7 +348,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:47f2172f9c9ff3a0"
+      "_fingerprint": "sha256:48a34ebf3b5eb982"
     },
     "116.2": {
       "rolls": [
@@ -369,7 +369,7 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:f5d994ce4c4c20c4"
+      "_fingerprint": "sha256:597c8fe2dbc50f53"
     },
     "2": {
       "rolls": [
@@ -452,7 +452,7 @@
           "word_position": null,
           "mention_chapter_num": "3",
           "mention_word_position": 5566,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "During the fight with Oni Lee my power had failed to latch onto one of the larger motes from the Vehicle constellation.",
@@ -469,7 +469,7 @@
           "word_position": null,
           "mention_chapter_num": "3",
           "mention_word_position": 5588,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "This time it connected with a small mote from what turned out to be the 'Time' constellation.",
@@ -510,7 +510,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 1888,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "the approach of the Knowledge constellation within the Celestial Forge. My power failed to latch onto the nearest mote",
@@ -526,7 +526,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 5010,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "The Celestial Forge moved and focused on one of the arrays of powers. The Toolkits constellation was swinging towards me and my power latched onto a small mote, securing the connection. It was called Laboratorium.",
@@ -542,7 +542,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 7367,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "The next morning I woke up to the feeling of the Knowledge constellation in the Celestial Forge swinging by me. My power's reach was the strongest it had ever been and was just enough to latch on to a mid-sized mote. The ability was called 'Grease Monkey'.",
@@ -558,7 +558,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 9427,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "While I was waiting my power completely failed to grab a mote from one of the constellations I had yet to identify.",
@@ -573,13 +573,15 @@
     "5": {
       "rolls": [
         {
-          "perks": [],
-          "outcome": null,
-          "constellation": null,
+          "perks": [
+            "Smithing"
+          ],
+          "outcome": "hit",
+          "constellation": "Crafting",
           "word_position": null,
           "mention_chapter_num": "5",
           "mention_word_position": 4444,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "A new constellation approached and my power was latching onto a mote from it. It turned out to be the 'Crafting' constellation and the mote was 'Smithing'.",
@@ -587,6 +589,46 @@
               "mention_word_position": 4444
             }
           ]
+        },
+        {
+          "perks": [],
+          "outcome": "hit",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "5",
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "skipped": false,
+          "source_roll_number": 15,
+          "evidence_quotes": [
+            {
+              "text": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 1672
+            }
+          ],
+          "curator_note": null,
+          "source_deferred_to_chapter": "6"
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_roll_number": 16,
+          "evidence_quotes": [
+            {
+              "text": "a new constellation spun past in the Celestial Forge without my power linking to it.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 4289
+            }
+          ],
+          "curator_note": null,
+          "source_deferred_to_chapter": "6"
         }
       ],
       "_fingerprint": "sha256:0c9679799d77ae2a"
@@ -600,41 +642,8 @@
           "word_position": null,
           "mention_chapter_num": "6",
           "mention_word_position": 1672,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "curator_note": null,
-          "evidence_quotes": [
-            {
-              "text": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
-              "mention_chapter_num": "6",
-              "mention_word_position": 1672
-            }
-          ]
-        },
-        {
-          "perks": [],
-          "outcome": null,
-          "constellation": null,
-          "word_position": null,
-          "mention_chapter_num": "6",
-          "mention_word_position": 4289,
-          "display_position_policy": "mention",
-          "curator_note": null,
-          "evidence_quotes": [
-            {
-              "text": "a new constellation spun past in the Celestial Forge without my power linking to it.",
-              "mention_chapter_num": "6",
-              "mention_word_position": 4289
-            }
-          ]
-        },
-        {
-          "perks": [],
-          "outcome": null,
-          "constellation": null,
-          "word_position": null,
-          "mention_chapter_num": "6",
-          "mention_word_position": 6898,
-          "display_position_policy": "mention",
           "evidence_quotes": [
             {
               "text": "My power managed to link to a mote from a new constellation. The 'Magic' constellation.",
@@ -646,8 +655,7 @@
               "mention_chapter_num": "6",
               "mention_word_position": 6969
             }
-          ],
-          "curator_note": null
+          ]
         },
         {
           "perks": [],
@@ -655,16 +663,16 @@
           "constellation": null,
           "word_position": null,
           "mention_chapter_num": "6",
-          "mention_word_position": 7719,
-          "display_position_policy": "mention",
+          "mention_word_position": 4289,
+          "display_position_policy": "mechanical",
+          "curator_note": null,
           "evidence_quotes": [
             {
               "text": "While I worked my power failed to connect to another mote from the magic constellation. It spun off and my reach continued to build.",
               "mention_chapter_num": "6",
               "mention_word_position": 7719
             }
-          ],
-          "curator_note": null
+          ]
         },
         {
           "perks": [],
@@ -672,8 +680,8 @@
           "constellation": null,
           "word_position": null,
           "mention_chapter_num": "6",
-          "mention_word_position": 8696,
-          "display_position_policy": "mention",
+          "mention_word_position": 6898,
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "another constellation swung close in the Celestial Forge. This one was called 'Size'",
@@ -701,6 +709,7 @@
           "mention_chapter_num": "6.1",
           "mention_word_position": 1579,
           "display_position_policy": "source_marker",
+          "source_roll_number": 20,
           "evidence_quotes": [],
           "curator_note": "source-only roll anchor"
         },
@@ -712,7 +721,6 @@
           "mention_chapter_num": "7",
           "mention_word_position": 75,
           "display_position_policy": "mechanical",
-          "skipped": false,
           "source_roll_number": 21,
           "evidence_quotes": [
             {
@@ -737,7 +745,7 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 6.1 has 1 known attempts despite 0 predicted model slots."
       },
-      "_fingerprint": "sha256:d037f2c7a1646c26"
+      "_fingerprint": "sha256:none"
     },
     "7": {
       "rolls": [
@@ -793,7 +801,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:2c56f7708d2620a2"
+      "_fingerprint": "sha256:caba8c6a1bd2b6bd"
     },
     "8": {
       "rolls": [
@@ -871,7 +879,7 @@
           "curator_note": "skipped after ch8/ch8.1/ch9 reconciliation; likely edit drift rather than deferred evidence"
         }
       ],
-      "_fingerprint": "sha256:815b2cc5259ff4ee"
+      "_fingerprint": "sha256:860f2ef50c3626e9"
     },
     "8.1": {
       "rolls": [
@@ -966,7 +974,7 @@
           "curator_note": "skipped after moving ch8.1 evidence to earliest source-backed slots"
         }
       ],
-      "_fingerprint": "sha256:8f4431573f8c1f76"
+      "_fingerprint": "sha256:a83efe59711b6df8"
     },
     "9": {
       "rolls": [
@@ -1051,7 +1059,7 @@
           "curator_note": "uses the final ch9 predicted slot rather than inserting an unlogged second miss for \"a couple\""
         }
       ],
-      "_fingerprint": "sha256:006ef17e0029fdfd"
+      "_fingerprint": "sha256:ae0e201a7a5e4f12"
     },
     "10": {
       "rolls": [
@@ -1169,7 +1177,7 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 10 has 5 known attempts despite 4 predicted model slots."
       },
-      "_fingerprint": "sha256:3b832a4282ee83f3"
+      "_fingerprint": "sha256:fe84b910f1fb73cb"
     },
     "11": {
       "rolls": [
@@ -1255,7 +1263,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:b8312eafb9c3da0d"
+      "_fingerprint": "sha256:b0fb5d77a7c9f48b"
     },
     "12": {
       "rolls": [
@@ -1360,7 +1368,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:6f7fd50c65f42221"
+      "_fingerprint": "sha256:8bfbcb840239e0e3"
     },
     "13": {
       "rolls": [
@@ -1489,7 +1497,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:dca71a96c08c630d"
+      "_fingerprint": "sha256:4aa4580c9e8b3143"
     },
     "14": {
       "rolls": [
@@ -1627,7 +1635,7 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 14 has 6 known attempts despite 5 predicted model slots."
       },
-      "_fingerprint": "sha256:11203cb827d5e95e"
+      "_fingerprint": "sha256:be1fb1daf4ac0d27"
     },
     "15": {
       "rolls": [
@@ -1756,7 +1764,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:b8f2cafeea1f8e63"
+      "_fingerprint": "sha256:65d782bf155cf89a"
     },
     "16": {
       "rolls": [
@@ -1836,7 +1844,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:2765c265190c0815"
+      "_fingerprint": "sha256:514ec21025618f53"
     },
     "17": {
       "rolls": [
@@ -1984,7 +1992,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:36168569508b610e"
+      "_fingerprint": "sha256:e613106e2d53c42e"
     },
     "18": {
       "rolls": [
@@ -2092,7 +2100,7 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 18 has 6 known attempts despite 5 predicted model slots."
       },
-      "_fingerprint": "sha256:be99cafb7c3edeb4"
+      "_fingerprint": "sha256:11848c0daa957420"
     },
     "19": {
       "rolls": [
@@ -2260,7 +2268,7 @@
           "source_deferred_to_chapter": "20"
         }
       ],
-      "_fingerprint": "sha256:f7e629595aa6803d"
+      "_fingerprint": "sha256:fa72ac18be7ba000"
     },
     "20": {
       "rolls": [
@@ -2384,7 +2392,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:d0ea9da083adaa71"
+      "_fingerprint": "sha256:47d011c475180278"
     },
     "21": {
       "rolls": [
@@ -2529,7 +2537,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:0d5bac2ff49d0d90"
+      "_fingerprint": "sha256:293ce072f829c24f"
     },
     "22": {
       "rolls": [
@@ -2636,7 +2644,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:43fd3b4991dd2b73"
+      "_fingerprint": "sha256:f223fa5a74d15faf"
     },
     "23": {
       "rolls": [
@@ -2770,7 +2778,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:01f5215b6b80bc36"
+      "_fingerprint": "sha256:4a2b1cb5f9424b34"
     },
     "24": {
       "rolls": [
@@ -2926,7 +2934,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:cce25640f292bf86"
+      "_fingerprint": "sha256:784a65bc62c0d233"
     },
     "25": {
       "rolls": [
@@ -3063,7 +3071,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:b7c2f358d53ed5ac"
+      "_fingerprint": "sha256:fb5b87165c863de4"
     },
     "26": {
       "rolls": [
@@ -3180,7 +3188,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:57e2ce3856596307"
+      "_fingerprint": "sha256:52bb1537613bc0d4"
     },
     "27": {
       "rolls": [
@@ -3379,7 +3387,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:270d607b01908f72"
+      "_fingerprint": "sha256:5f89b3afca918bf3"
     },
     "28": {
       "rolls": [
@@ -3559,7 +3567,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:055d3b2510cfe3e6"
+      "_fingerprint": "sha256:3d66e86076366110"
     },
     "29": {
       "rolls": [
@@ -3728,7 +3736,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:e4368e2ac32b408b"
+      "_fingerprint": "sha256:fd5bb31de0f78345"
     },
     "30": {
       "rolls": [
@@ -4017,7 +4025,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c0d44b06d5839611"
+      "_fingerprint": "sha256:2c21cb2ad9a46f7f"
     },
     "31": {
       "rolls": [
@@ -4197,7 +4205,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:dcb155e5e657c698"
+      "_fingerprint": "sha256:37553df303613627"
     },
     "32": {
       "rolls": [
@@ -4379,7 +4387,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:13f736a0057c200c"
+      "_fingerprint": "sha256:19e9e8d4caa681ad"
     },
     "33": {
       "rolls": [
@@ -4518,7 +4526,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:d9699d31a8e43ae9"
+      "_fingerprint": "sha256:c742841404e20b28"
     },
     "34": {
       "rolls": [
@@ -4536,7 +4544,7 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:3ffa867439480ccf"
+      "_fingerprint": "sha256:45abe57fee3dda4c"
     }
   }
 }

@@ -84,6 +84,7 @@ web/constellations/**/.DS_Store
 .hf_cache/
 
 *.cast
+data/screenshots/
 data/manual/.session_journals/
 data/manual/.forge_curator_state.json
 data/manual/.forge_curator_snapshot.json

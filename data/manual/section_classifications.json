@@ -1,9 +1,9 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
   "_count": 508,
-  "_mc_sections": 143,
-  "_non_mc_sections": 365,
-  "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Curated span_overrides from existing entries are preserved across regeneration.",
+  "_mc_sections": 142,
+  "_non_mc_sections": 366,
+  "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Explicit curator section eligibility toggles and curated span_overrides from existing entries are preserved across regeneration.",
   "classifications": {
     "1@0": {
       "chapter_num": "1",
@@ -281,8 +281,8 @@
       "chapter_num": "6.1",
       "section_index": 1,
       "header": "6.1 Interlude: Taylor",
-      "counts_for_cp": true,
-      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'taylor')",
+      "counts_for_cp": false,
+      "reason": "curator toggle: ineligible (was: mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'taylor'))",
       "span_overrides": [
         {
           "word_offset_start": 3,

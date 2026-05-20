@@ -259,6 +259,14 @@ def merge_span_overrides(
     return out
 
 
+def curator_section_toggle(existing: dict) -> tuple[bool, str] | None:
+    """Return explicit curator section eligibility, if one exists."""
+    reason = str(existing.get("reason") or "")
+    if not reason.startswith("curator toggle:"):
+        return None
+    return bool(existing.get("counts_for_cp", True)), reason
+
+
 def main() -> None:
     sections_data = json.loads(SECTIONS_JSON.read_text())
     mechanics_chapters = mechanics_evidence_chapters()
@@ -282,6 +290,10 @@ def main() -> None:
             else:
                 counts, reason = classify(section, c["full_title"])
             key = f"{c['chapter_num']}@{i}"
+            existing = existing_classifications.get(key) or {}
+            curator_toggle = curator_section_toggle(existing)
+            if curator_toggle is not None:
+                counts, reason = curator_toggle
             classifications[key] = {
                 "chapter_num": c["chapter_num"],
                 "section_index": i,
@@ -289,7 +301,6 @@ def main() -> None:
                 "counts_for_cp": counts,
                 "reason": reason,
             }
-            existing = existing_classifications.get(key) or {}
             generated_spans = [
                 span for span in [header_span_override(section, section_word_start)]
                 if span is not None
@@ -309,6 +320,11 @@ def main() -> None:
         if (
             c["chapter_num"] in mechanics_chapters
             and not any(classifications[key]["counts_for_cp"] for key in chapter_keys)
+            and not any(
+                curator_section_toggle(existing_classifications.get(key) or {})
+                is not None
+                for key in chapter_keys
+            )
         ):
             override_index = mechanics_override_section_index(c["sections"])
             if override_index is not None:
@@ -336,8 +352,9 @@ def main() -> None:
         "_note": (
             "Per-section MC POV classifications, used by predict_rolls.py "
             "to compute CP-earning word counts. Overrides for ambiguous "
-            "headers are listed in the script. Curated span_overrides "
-            "from existing entries are preserved across regeneration."
+            "headers are listed in the script. Explicit curator section "
+            "eligibility toggles and curated span_overrides from existing "
+            "entries are preserved across regeneration."
         ),
         "classifications": classifications,
     }, indent=2, ensure_ascii=False) + "\n")
