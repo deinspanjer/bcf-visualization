@@ -38,7 +38,15 @@ PACKAGE_PREFIX = "bcf-visualization"
 SMOKE_STATUSES = {"passed", "failed", "unknown"}
 
 RUNTIME_REQUIRED = ["visualization_facts"]
-RUNTIME_OPTIONAL = []
+# Optional runtime inputs: shipped in the tarball so deploy-pages.yml can
+# regenerate the constellation-index HTML pages (web/constellations/) on
+# webapp-only redeploys without rebuilding upstream data. These three
+# files are the inputs to scripts/scaffold_constellation_pages.py.
+RUNTIME_OPTIONAL = [
+    "perk_directory",
+    "constellation_lifecycle",
+    "constellation_wireframes",
+]
 DEV_BUNDLE_MANIFEST_NAME = "_dev_data_package.json"
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(

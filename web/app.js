@@ -800,7 +800,7 @@ function renderInfoPopover() {
     el("p", { class: "info-explore" },
       "Browse every constellation and its perks at ",
       el("a", {
-        href: "../data/constellations/index.html",
+        href: "./constellations/index.html",
         target: "_blank",
         rel: "noopener noreferrer",
         text: "the constellation index",

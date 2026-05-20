@@ -19,6 +19,7 @@ class SmokeResult:
     package_id: str
     chapter_count: int
     roll_count: int
+    constellation_pages_count: int
 
 
 def _read_json(path: Path) -> dict:
@@ -97,11 +98,86 @@ def validate_site(*, site_dir: Path) -> SmokeResult:
     if roll_count == 0:
         raise RuntimeError("visualization_facts has no rolls to render")
 
+    constellation_pages_count = _validate_constellation_pages(
+        site_dir=site_dir, package_dir=package_dir, manifest=manifest,
+    )
+
     return SmokeResult(
         package_id=package_id,
         chapter_count=len(chapters),
         roll_count=roll_count,
+        constellation_pages_count=constellation_pages_count,
     )
+
+
+def _validate_constellation_pages(
+    *, site_dir: Path, package_dir: Path, manifest: dict
+) -> int:
+    """Assert every cluster from the canonical lifecycle data has a deployed
+    constellation page reachable at the path the info-popover link uses.
+
+    Driven by ``constellation_lifecycle.json`` (the canonical list of which
+    clusters exist) rather than by directory contents, so adding or
+    removing a cluster upstream automatically updates what the smoke
+    expects. If the lifecycle file isn't in the package (legacy runtime
+    without RUNTIME_OPTIONAL), the constellation index regen step in
+    deploy-pages.yml was skipped and we return 0 — caller decides whether
+    to fail.
+    """
+    files = manifest.get("files", {}) or {}
+    lifecycle_meta = files.get("constellation_lifecycle")
+    if not isinstance(lifecycle_meta, dict) or not isinstance(lifecycle_meta.get("path"), str):
+        # Optional runtime input absent — no canonical list to check against.
+        # Still flag if the staged site somehow has constellation pages anyway,
+        # so the smoke surfaces a "you forgot to update the manifest" case.
+        if (site_dir / "web" / "constellations" / "index.html").is_file():
+            raise RuntimeError(
+                "web/constellations/ is staged but the runtime manifest has "
+                "no constellation_lifecycle — these states must agree"
+            )
+        return 0
+
+    lifecycle_path = package_dir / lifecycle_meta["path"]
+    if not lifecycle_path.is_file():
+        raise RuntimeError(f"manifest references missing file: {lifecycle_path}")
+    lifecycle = _read_json(lifecycle_path)
+    clusters = lifecycle.get("constellations") or []
+    if not isinstance(clusters, list) or not clusters:
+        raise RuntimeError("constellation_lifecycle has no clusters")
+
+    top_index = site_dir / "web" / "constellations" / "index.html"
+    if not top_index.is_file():
+        raise RuntimeError(
+            "info-popover link target missing: "
+            f"{top_index.relative_to(site_dir)}"
+        )
+
+    missing: list[str] = []
+    miscontent: list[str] = []
+    for cluster in clusters:
+        if not isinstance(cluster, dict):
+            continue
+        slug = cluster.get("slug")
+        name = cluster.get("name")
+        if not isinstance(slug, str) or not isinstance(name, str):
+            continue
+        page = site_dir / "web" / "constellations" / slug / "index.html"
+        if not page.is_file():
+            missing.append(slug)
+            continue
+        body = page.read_text()
+        if name not in body:
+            miscontent.append(f"{slug} (expected name {name!r} in body)")
+
+    if missing:
+        raise RuntimeError(
+            f"constellation pages missing for: {', '.join(missing)}"
+        )
+    if miscontent:
+        raise RuntimeError(
+            "constellation pages have wrong content: " + "; ".join(miscontent)
+        )
+    return len(clusters)
 
 
 @contextlib.contextmanager
@@ -160,7 +236,9 @@ def main() -> None:
         smoke_browser(site_dir=args.site_dir)
     print(
         "smoke ok: "
-        f"{result.package_id}, chapters={result.chapter_count}, rolls={result.roll_count}"
+        f"{result.package_id}, chapters={result.chapter_count}, "
+        f"rolls={result.roll_count}, "
+        f"constellation_pages={result.constellation_pages_count}"
     )
 
 
