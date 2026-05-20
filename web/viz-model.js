@@ -82,52 +82,6 @@ export function buildConstellationProgressIndex(facts, constellationOrder) {
   return { byChapter, constMax };
 }
 
-export function buildCoordinateModel(facts) {
-  const chapters = facts.chapters || [];
-  const last = chapters[chapters.length - 1] || {};
-  const totalWords = last.cumulative_words_through_chapter || 0;
-  const totalCpWords = last.cumulative_cp_earning_words || 0;
-  const chapterSpans = chapters.map(chapter => ({
-    chapter_num: chapter.chapter_num,
-    start_word: chapter.cumulative_words_through_chapter - chapter.total_word_count,
-    end_word: chapter.cumulative_words_through_chapter,
-    start_cp: chapter.cumulative_cp_earning_words - chapter.cp_earning_word_count,
-    end_cp: chapter.cumulative_cp_earning_words,
-    chapter,
-  }));
-  const idxOf = new Map(chapters.map((chapter, index) => [chapter.chapter_num, index]));
-  return { chapters, chapterSpans, idxOf, totalWords, totalCpWords };
-}
-
-export function chapterAtWord(model, wordPos) {
-  if (wordPos < 0) return null;
-  if (wordPos >= model.totalWords) return model.chapters[model.chapters.length - 1] || null;
-  for (const span of model.chapterSpans) {
-    if (wordPos >= span.start_word && wordPos < span.end_word) return span.chapter;
-  }
-  return model.chapters[model.chapters.length - 1] || null;
-}
-
-export function rollWordPosition(model, roll, chapter, fallbackIndex = 0, fallbackTotal = 1) {
-  const displayChapterNum = roll.display_chapter_num || chapter.chapter_num;
-  const span = model.chapterSpans[model.idxOf.get(displayChapterNum)] ||
-    model.chapterSpans[model.idxOf.get(chapter.chapter_num)];
-  if (!span) return 0;
-  if (roll.display_word_position_epub != null) return roll.display_word_position_epub;
-  const cpPosition = roll.predicted_word_position_epub;
-  if (cpPosition == null) {
-    if (roll.source_kind === "trigger") return span.start_word;
-    const chapterWidth = Math.max(1, span.end_word - span.start_word);
-    const slot = (fallbackIndex + 1) / (fallbackTotal + 1);
-    return span.start_word + chapterWidth * slot;
-  }
-  if (span.end_cp > span.start_cp) {
-    const cpFrac = (cpPosition - span.start_cp) / (span.end_cp - span.start_cp);
-    return span.start_word + cpFrac * (span.end_word - span.start_word);
-  }
-  return (span.start_word + span.end_word) / 2;
-}
-
 export function rollDisplayName(roll) {
   const principal = (roll.purchased_perks || []).find(perk => !perk.free) ||
     (roll.purchased_perks || [])[0];
@@ -161,7 +115,7 @@ export function onRollPlaybackState(roll, wordPos, behavior = "normal") {
   if (!roll || normalized === "normal") {
     return { behavior: normalized, onRoll: false, speedMultiplier: 1 };
   }
-  const rollWord = roll.word_position ?? roll.display_word_position_epub;
+  const rollWord = roll.word_position;
   const distance = Math.abs(Number(wordPos) - Number(rollWord));
   if (!Number.isFinite(distance)) {
     return { behavior: normalized, onRoll: false, speedMultiplier: 1 };
