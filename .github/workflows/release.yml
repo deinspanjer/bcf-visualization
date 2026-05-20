@@ -63,7 +63,10 @@ jobs:
           web_changed=false
           while IFS= read -r path; do
             case "$path" in
-              data/manual/*|data/raw/*|data/labeled/*|data/derived/_schemas/*|data/constellations/*|scripts/*.py|.github/workflows/release.yml|.github/workflows/data-release.yml)
+              scripts/smoke_pages_site.py|scripts/scaffold_constellation_pages.py)
+                web_changed=true
+                ;;
+              data/manual/*|data/raw/*|data/labeled/*|data/derived/_schemas/*|data/constellations/*|scripts/*.py|.github/workflows/data-release.yml)
                 data_changed=true
                 ;;
             esac
