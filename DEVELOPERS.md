@@ -64,7 +64,7 @@ Typical full regeneration order:
 .venv/bin/python scripts/derive_roll_outcomes.py
 .venv/bin/python scripts/derive_roll_facts.py
 .venv/bin/python scripts/build_chapter_facts.py
-scripts/rebuild_constellation_assets.sh
+.venv/bin/python scripts/pipeline.py --target data
 .venv/bin/python scripts/spot_check.py
 .venv/bin/python scripts/make_charts.py
 ```
@@ -81,13 +81,15 @@ After editing any `data/constellations/<slug>/current.svg` or
 lifecycle, wireframe JSON, web bundle, and per-cluster HTML pages with:
 
 ```sh
-scripts/rebuild_constellation_assets.sh
+.venv/bin/python scripts/pipeline.py --target data --force
+.venv/bin/python scripts/scaffold_constellation_pages.py
 ```
 
-This is the canonical entry point: the per-cluster pages and the
-top-level index under `data/constellations/` are generated artifacts
-and will be overwritten. `current.svg` and `metadata.json` are never
-written by the rebuild.
+The pipeline is the canonical entry point for derived JSON. The
+per-cluster pages and the top-level index under `data/constellations/`
+are generated artifacts and will be overwritten by
+`scaffold_constellation_pages.py`. `current.svg` and `metadata.json`
+are never written by the rebuild.
 
 Each derived JSON file should validate against its schema before being
 written. Structural drift should fail loudly.

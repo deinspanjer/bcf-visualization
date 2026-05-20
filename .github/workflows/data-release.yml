@@ -68,7 +68,7 @@ jobs:
           SOURCE_DATA_ASSET: ${{ inputs.source_data_asset }}
           REGENERATE: ${{ inputs.regenerate }}
         run: |
-          if [ ! -f data/derived/chapter_facts.json ]; then
+          if [ ! -f data/derived/visualization_facts.json ]; then
             if [ -z "$SOURCE_DATA_TAG" ] || [ -z "$SOURCE_DATA_ASSET" ]; then
               echo "ERROR: data/derived is not hydrated; provide source_data_tag and source_data_asset" >&2
               exit 1
@@ -86,12 +86,7 @@ jobs:
             else
               python3 scripts/download_bcf_epub.py
             fi
-            python3 scripts/parse_chapters.py
-            python3 scripts/extract_chapter_sections.py
-            python3 scripts/predict_rolls.py
-            python3 scripts/derive_roll_facts.py
-            python3 scripts/build_chapter_facts.py
-            scripts/rebuild_constellation_assets.sh
+            python3 scripts/pipeline.py --target data --force
           fi
           DATE="${{ inputs.package_date }}"
           BUILD="${{ inputs.build_number }}"

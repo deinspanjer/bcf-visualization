@@ -1,18 +1,6 @@
 name: Deploy scrubber to GitHub Pages
 
-# Auto-deploy on pushes to main that touch publishable assets, and
-# allow manual dispatch for re-deploys without a code change. The path
-# filter avoids redeploying for doc/plan/script changes that don't
-# affect what's served on Pages.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'web/**'
-      - 'data/derived/**'
-      - 'figures/**'
-      - 'index.html'
-      - '.nojekyll'
   workflow_dispatch:
     inputs:
       data_bundle_tag:
@@ -70,7 +58,7 @@ jobs:
               --dir .data-release
             RUNTIME_TAR=".data-release/$DATA_RUNTIME_ASSET"
             PREPARE_ARGS+=(--runtime-tar "$RUNTIME_TAR")
-          elif [ ! -f data/derived/chapter_facts.json ]; then
+          elif [ ! -f data/derived/visualization_facts.json ]; then
             python3 scripts/data_release.py download-pages-runtimes \
               --packages-url "$DEPLOYED_PACKAGES_URL" \
               --output-dir .pages-runtimes \

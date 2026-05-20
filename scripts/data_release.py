@@ -146,6 +146,22 @@ def _safe_id_token(value: str) -> str:
 
 
 def _story_freshness(source_dir: Path) -> StoryFreshness:
+    visualization_facts = _read_json(source_dir / "visualization_facts.json")
+    chapters = visualization_facts.get("chapters") or []
+    if not chapters:
+        raise ValueError("visualization_facts.json has no chapters")
+    last = chapters[-1]
+    chapter_num = str(last.get("chapter_num") or "").strip()
+    if not chapter_num:
+        raise ValueError("latest chapter has no chapter_num")
+    return StoryFreshness(
+        chapter_ordinal=len(chapters),
+        chapter_num=chapter_num,
+        chapter_title=str(last.get("full_title") or chapter_num),
+    )
+
+
+def _bootstrap_story_freshness(source_dir: Path) -> StoryFreshness:
     chapter_facts = _read_json(source_dir / "chapter_facts.json")
     chapters = chapter_facts.get("chapters") or []
     if not chapters:
@@ -357,7 +373,10 @@ def write_current_runtime_manifest(
     allow_missing_required: bool = False,  # NEW
 ) -> Path:
     package_date = package_date or _today()
-    story = _story_freshness(source_dir)
+    if allow_missing_required and not (source_dir / "visualization_facts.json").exists():
+        story = _bootstrap_story_freshness(source_dir)
+    else:
+        story = _story_freshness(source_dir)
     release_tag = _release_tag(
         package_date=package_date,
         build_number=build_number,
@@ -523,6 +542,12 @@ def _check_predicted_rolls_fresh(source_dir: Path) -> list[str]:
             cp_words_by_chapter,
             load_regime_transitions(),
         )
+        cp_map = predict_rolls.build_map()
+        slot_counter: dict[str, int] = {}
+        for roll in expected:
+            roll.epub_offset = predict_rolls.cp_to_epub(cp_map, roll.cp_offset)
+            slot_counter[roll.chapter_num] = slot_counter.get(roll.chapter_num, 0) + 1
+            roll.slot_index = slot_counter[roll.chapter_num]
         actual_doc = _read_json(source_dir / "predicted_rolls.json")
         actual = actual_doc.get("predicted")
         expected_dicts = [asdict(roll) for roll in expected]
@@ -1043,6 +1068,7 @@ def cleanup_releases(
         _add_protected_tag(protected, tag, "--keep-tag")
     if protect_workflow_defaults:
         _merge_protected(protected, _workflow_default_tags([
+            ROOT / ".github" / "workflows" / "release.yml",
             ROOT / ".github" / "workflows" / "deploy-pages.yml",
             ROOT / ".github" / "workflows" / "data-release.yml",
         ]))
