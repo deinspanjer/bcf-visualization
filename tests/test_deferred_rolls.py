@@ -72,6 +72,31 @@ def test_override_loader_defaults_deferred_roll_fields(tmp_path: Path) -> None:
     assert rolls[1]["display_position_policy"] == "mechanical"
 
 
+def test_override_loader_preserves_unresolved_later_chapter_deferral(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "chapter_roll_overrides.json"
+    path.write_text(json.dumps({
+        "chapter_roll_overrides": {
+            "5": {
+                "rolls": [
+                    {
+                        "perks": [],
+                        "outcome": None,
+                        "deferred_to_later_chapter": True,
+                    },
+                ],
+            },
+        },
+    }))
+
+    roll = load_overrides(path)["chapter_roll_overrides"]["5"]["rolls"][0]
+
+    assert roll["deferred_to_later_chapter"] is True
+    assert roll["mention_chapter_num"] is None
+    assert roll["display_position_policy"] == "mechanical"
+
+
 def test_override_loader_preserves_skipped_roll_slots(tmp_path: Path) -> None:
     path = tmp_path / "chapter_roll_overrides.json"
     path.write_text(json.dumps({

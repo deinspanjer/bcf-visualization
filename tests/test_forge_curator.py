@@ -390,7 +390,7 @@ def test_actions_panel_lists_roll_display_controls() -> None:
     text = str(rendered) if rendered is not None else ""
 
     assert "⎵v  Roll display position" in text
-    assert "⎵d  Toggle evidence deferral to next chapter" in text
+    assert "⎵d  Toggle evidence deferral to later chapter" in text
 
 
 def test_actions_panel_omits_read_only_roll_structure_copy() -> None:

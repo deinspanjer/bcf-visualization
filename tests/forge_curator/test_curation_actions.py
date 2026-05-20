@@ -27,6 +27,50 @@ def _selected_prose(selection: tuple[int, int]) -> SimpleNamespace:
     )
 
 
+def _cursor_prose() -> SimpleNamespace:
+    return SimpleNamespace(
+        selection=None,
+        cursor=0,
+        anchor=None,
+        visual_mode=False,
+        visual_line_mode=False,
+        selected_text="",
+        refresh=lambda: None,
+    )
+
+
+def test_evidence_block_marks_quote_under_cursor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    cs = app.state.chapter
+    assert cs is not None
+    quote_start = cs.prose.text.find("forge motes connection")
+    assert quote_start >= 0
+    cs.cursor_char = quote_start + len("forge ")
+    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: _cursor_prose())
+
+    evidence = app._evidence_block(cs)
+
+    assert "▸ Q1 against ch 1 #1 (global #1)" in evidence
+
+
+def test_evidence_block_renders_without_mounted_prose_view(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    cs = app.state.chapter
+    assert cs is not None
+
+    evidence = app._evidence_block(cs)
+
+    assert "Q1 against ch 1 #1 (global #1)" in evidence
+
+
 def test_save_quote_action_writes_manual_roll_evidence_and_refreshes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -383,15 +427,17 @@ def test_defer_roll_action_toggles_manual_deferral_and_refreshes(
 
     overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
     roll = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
-    assert roll["mention_chapter_num"] == "2"
+    assert roll["mention_chapter_num"] is None
+    assert roll["deferred_to_later_chapter"] is True
     assert roll["display_position_policy"] == "mechanical"
-    assert refreshes == ["roll #1 evidence deferred to ch 2"]
+    assert refreshes == ["roll #1 evidence deferred to later chapter"]
 
     app._action_defer_roll_to_next_chapter("1")
 
     overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
     roll = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
     assert roll["mention_chapter_num"] == "1"
+    assert roll["deferred_to_later_chapter"] is False
     assert roll["display_position_policy"] == "mechanical"
     assert refreshes[-1] == "roll #1 evidence deferral cleared"
 
@@ -578,6 +624,41 @@ def test_source_assignment_action_can_target_deferred_predicted_slot(
             "mention_word_position": 20,
         }
     ]
+    assert refreshes == ["ch 1 roll #1 source = Roll 2"]
+
+
+def test_source_assignment_resolves_later_chapter_deferral_to_current_chapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app.persistence.mark_roll_deferred_to_later_chapter("1", 1)
+    refreshes: list[str] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+
+    def push_screen(screen) -> None:
+        target = next(
+            roll for roll in screen._targets
+            if roll.get("display_kind") == "deferred_in"
+            and roll.get("target_chapter_num") == "1"
+            and roll.get("target_roll_index") == 1
+        )
+        source = next(
+            roll for roll in screen._sources
+            if roll.get("roll_number") == 2
+        )
+        screen._on_confirm(target, source)
+
+    app.push_screen = push_screen
+
+    app._action_assign_source_roll("2")
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    saved = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    assert saved["deferred_to_later_chapter"] is False
+    assert saved["mention_chapter_num"] == "2"
+    assert saved["source_roll_number"] == 2
     assert refreshes == ["ch 1 roll #1 source = Roll 2"]
 
 

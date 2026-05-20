@@ -73,6 +73,9 @@ slot. Roll actions such as hit/miss, quote evidence, constellation, and
 perk selection target that original mechanical roll while still letting
 you work from the chapter where the evidence appears.
 
+The Evidence list marks the saved quote under the prose cursor with
+`▸`, matching the selected-roll marker used in the Rolls list.
+
 ## Persistence
 
 The page stores the current word position, zoom, and playback speed in

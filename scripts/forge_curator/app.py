@@ -31,9 +31,10 @@ from typing import NamedTuple
 from rich.console import Console
 from rich.text import Text
 from textual import events, on
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, ScreenStackError
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, OptionList, Static
 from textual.widgets.option_list import Option
@@ -738,7 +739,7 @@ class ActionsPanel(Static):
             "  ⎵S  Assign source roll to selected slot\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
-            "  ⎵d  Toggle evidence deferral to next chapter\n"
+            "  ⎵d  Toggle evidence deferral to later chapter\n"
             "  ⎵v  Roll display position\n"
             "  ⎵c  Set constellation\n"
             "  ⎵p  Set perks\n\n"
@@ -897,7 +898,7 @@ class HelpScreen(ModalScreen):
             "  <space>s         predicted slot = skipped\n"
             "  <space>S         assign source roll to selected slot\n"
             "  <space>_         source-only roll anchor at cursor\n"
-            "  <space>d         toggle roll evidence deferral to next chapter\n"
+            "  <space>d         toggle roll evidence deferral to later chapter\n"
             "  <space>D         remove annotation at current word\n"
             "  <space>h / m     last roll = hit / miss\n"
             "  <space>c / p     constellation / perks pickers\n"
@@ -2975,13 +2976,48 @@ class ForgeCuratorApp(App):
             .get("chapter_roll_overrides", {})
         )
         display_cp = self._chapter_cp_start(cn)
+
+        def _unresolved_locationless_deferral(override: dict) -> bool:
+            if override.get("skipped"):
+                return False
+            if override.get("source_roll_number") is not None:
+                return False
+            if override.get("evidence_quotes"):
+                return False
+            if override.get("mention_word_position") is not None:
+                return False
+            return True
+
+        def _later_than_target(target_chapter: str) -> bool:
+            return self._chapter_sort_key(str(target_chapter)) < self._chapter_sort_key(cn)
+
+        def _floating_deferral_visible(target_chapter: str, override: dict) -> bool:
+            return (
+                override.get("deferred_to_later_chapter")
+                and override.get("mention_chapter_num") is None
+                and _unresolved_locationless_deferral(override)
+                and _later_than_target(target_chapter)
+            )
+
+        def _concrete_deferral_visible(target_chapter: str, override: dict) -> bool:
+            if str(override.get("mention_chapter_num") or "") == cn:
+                return True
+            return (
+                override.get("mention_chapter_num") is not None
+                and _unresolved_locationless_deferral(override)
+                and _later_than_target(target_chapter)
+            )
+
         for target_chapter, entry in overrides.items():
             if str(target_chapter) == cn:
                 continue
             for idx, override in enumerate(entry.get("rolls") or [], start=1):
                 if not isinstance(override, dict):
                     continue
-                if str(override.get("mention_chapter_num") or "") != cn:
+                if not (
+                    _concrete_deferral_visible(str(target_chapter), override)
+                    or _floating_deferral_visible(str(target_chapter), override)
+                ):
                     continue
                 key = (str(target_chapter), int(idx))
                 if key in represented:
@@ -3016,6 +3052,9 @@ class ForgeCuratorApp(App):
                     "evidence_quotes": list(override.get("evidence_quotes") or []),
                     "use_stable_target_identity": False,
                     "skipped": bool(override.get("skipped")),
+                    "deferred_to_later_chapter": bool(
+                        override.get("deferred_to_later_chapter")
+                    ),
                 }
                 source_roll_number = override.get("source_roll_number")
                 if source_roll_number is not None:
@@ -3688,6 +3727,7 @@ class ForgeCuratorApp(App):
 
     def _evidence_block(self, cs) -> str:
         rows: list[str] = []
+        selected_quote_keys = self._selected_evidence_quote_keys()
         for roll in self._roll_evidence_picker_rolls(cs):
             if self._is_source_evidence_roll(roll):
                 target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
@@ -3707,8 +3747,17 @@ class ForgeCuratorApp(App):
                 target_index = roll.get("target_roll_index") or roll.get("index") or "?"
                 global_num = roll.get("roll_number")
                 global_part = f"global #{global_num}" if global_num is not None else "global #?"
+                quote_key = (
+                    str(roll.get("target_chapter_num") or cs.meta.chapter_num),
+                    int(target_index) if target_index != "?" else -1,
+                    text,
+                    str(quote.get("mention_chapter_num")),
+                    str(quote.get("mention_word_position")),
+                )
+                marker = "▸" if quote_key in selected_quote_keys else " "
                 rows.append(
-                    f"  Q{quote_idx} against ch {target_chapter} #{target_index} ({global_part})"
+                    f"  {marker} Q{quote_idx} against ch {target_chapter} "
+                    f"#{target_index} ({global_part})"
                 )
                 if quote_start >= 0:
                     quote_word = _word_index_for_char_offset(
@@ -3731,6 +3780,22 @@ class ForgeCuratorApp(App):
                         f"{_fmt_int(mention_word)}"
                     )
         return "\n".join(rows) if rows else "  (no evidence)"
+
+    def _selected_evidence_quote_keys(self) -> set[tuple[str, int, str, str, str]]:
+        try:
+            targets = self._roll_evidence_quote_targets_at_selection_or_cursor()
+        except (NoMatches, ScreenStackError):
+            return set()
+        return {
+            (
+                target["target_chapter"],
+                int(target["target_index"]),
+                str(target["quote"].get("text") or ""),
+                str(target["quote"].get("mention_chapter_num")),
+                str(target["quote"].get("mention_word_position")),
+            )
+            for target in targets
+        }
 
     def _perks_this_chapter_block(self, cs) -> str:
         lines: list[str] = []
@@ -4781,6 +4846,13 @@ class ForgeCuratorApp(App):
             self.persistence.assign_source_roll_at_index(
                 target_chapter, idx, source_roll_number,
             )
+            if target.get("deferred_to_later_chapter"):
+                self.persistence.update_roll_at_index(
+                    target_chapter,
+                    idx,
+                    mention_chapter_num=chapter_num,
+                    display_position_policy="mechanical",
+                )
             for quote in source_roll.get("evidence_quotes") or []:
                 if not isinstance(quote, dict) or not quote.get("text"):
                     continue
@@ -4999,8 +5071,10 @@ class ForgeCuratorApp(App):
         )
         persisted_source_deferred_to = persisted_roll.get("source_deferred_to_chapter")
         persisted_mention_chapter = persisted_roll.get("mention_chapter_num")
+        persisted_later_deferral = bool(persisted_roll.get("deferred_to_later_chapter"))
         if (
             target.get("display_kind") == "deferred_in"
+            or persisted_later_deferral
             or (
                 persisted_mention_chapter is not None
                 and str(persisted_mention_chapter) != str(target_chapter)
@@ -5013,14 +5087,14 @@ class ForgeCuratorApp(App):
             self.persistence.clear_source_roll_deferral(target_chapter, idx)
             self._post_curation_refresh(f"roll #{idx} source deferral cleared")
             return
-        next_chapter = self._next_chapter_num(chapter_num)
-        if next_chapter is None:
-            self._flash("defer evidence: no next chapter")
-            return
         if (
             target.get("roll_number") is not None
             and target.get("source_kind") in {"roll", "miss"}
         ):
+            next_chapter = self._next_chapter_num(chapter_num)
+            if next_chapter is None:
+                self._flash("defer evidence: no next chapter")
+                return
             self.persistence.mark_source_roll_deferred_to_chapter(
                 target_chapter,
                 idx,
@@ -5031,14 +5105,12 @@ class ForgeCuratorApp(App):
                 f"deferred to ch {next_chapter}"
             )
         else:
-            self.persistence.mark_roll_deferred_to_chapter(
+            self.persistence.mark_roll_deferred_to_later_chapter(
                 target_chapter,
                 idx,
-                next_chapter,
-                mention_word_position=None,
                 display_position_policy="mechanical",
             )
-            message = f"roll #{idx} evidence deferred to ch {next_chapter}"
+            message = f"roll #{idx} evidence deferred to later chapter"
         self._post_curation_refresh(message)
 
     def _action_resolve_model_discrepancy(self, chapter_num: str) -> None:

@@ -217,6 +217,7 @@ class CurationPersistence:
                 "skipped": False,
                 "source_roll_number": None,
                 "evidence_quotes": [],
+                "deferred_to_later_chapter": False,
                 "curator_note": None,
             })
         return rolls[index - 1]
@@ -288,6 +289,7 @@ class CurationPersistence:
                 roll["constellation"] = None
         if source_roll_number is not None:
             roll["source_roll_number"] = int(source_roll_number)
+            roll["deferred_to_later_chapter"] = False
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "update_roll_at_index", self.chapter_roll_overrides_path, str(chapter_num),
@@ -407,6 +409,17 @@ class CurationPersistence:
         was_empty = len(quotes) == 0
         if record not in quotes:
             quotes.append(record)
+        if roll.get("deferred_to_later_chapter"):
+            if mention_chapter_num is not None:
+                roll["mention_chapter_num"] = str(mention_chapter_num)
+            if mention_word_position is not None:
+                roll["mention_word_position"] = int(mention_word_position)
+            roll["display_position_policy"] = (
+                display_position_policy
+                or roll.get("display_position_policy")
+                or "mechanical"
+            )
+            roll["deferred_to_later_chapter"] = False
         if was_empty and display_position_policy is not None:
             if mention_chapter_num is not None:
                 roll["mention_chapter_num"] = str(mention_chapter_num)
@@ -451,6 +464,17 @@ class CurationPersistence:
             was_empty = len(quotes) == 0
             if record not in quotes:
                 quotes.append(record)
+            if roll.get("deferred_to_later_chapter"):
+                if mention_chapter_num is not None:
+                    roll["mention_chapter_num"] = str(mention_chapter_num)
+                if mention_word_position is not None:
+                    roll["mention_word_position"] = int(mention_word_position)
+                roll["display_position_policy"] = (
+                    display_position_policy
+                    or roll.get("display_position_policy")
+                    or "mechanical"
+                )
+                roll["deferred_to_later_chapter"] = False
             if was_empty and display_position_policy is not None:
                 if mention_chapter_num is not None:
                     roll["mention_chapter_num"] = str(mention_chapter_num)
@@ -632,6 +656,39 @@ class CurationPersistence:
         )
         return roll
 
+    def mark_roll_deferred_to_later_chapter(
+        self,
+        chapter_num: str,
+        index: int,
+        *,
+        display_position_policy: str = "mechanical",
+    ) -> dict:
+        """Mark an unresolved predicted slot as deferred to a later chapter.
+
+        Unlike concrete roll deferral, this leaves the mention chapter unset so
+        Forge Curator can surface the unresolved slot in every later chapter
+        until a source row or quote ties it to a specific chapter.
+        """
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["mention_chapter_num"] = None
+        roll["mention_word_position"] = None
+        roll["display_position_policy"] = display_position_policy
+        roll["deferred_to_later_chapter"] = True
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "mark_roll_deferred_to_later_chapter",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "index": index,
+                "display_position_policy": display_position_policy,
+            },
+        )
+        return roll
+
     def clear_roll_deferral(self, chapter_num: str, index: int) -> dict:
         """Remove roll-level deferral and keep display at the mechanical slot."""
         before = deepcopy(self.chapter_roll_overrides)
@@ -639,6 +696,7 @@ class CurationPersistence:
         roll["mention_chapter_num"] = str(chapter_num)
         roll["mention_word_position"] = None
         roll["display_position_policy"] = "mechanical"
+        roll["deferred_to_later_chapter"] = False
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "clear_roll_deferral",

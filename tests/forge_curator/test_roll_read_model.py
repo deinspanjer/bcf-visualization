@@ -1,10 +1,72 @@
 from __future__ import annotations
 
+import json
+import zipfile
 from pathlib import Path
 
 import pytest
 
-from tests.helpers.forge_curator_fixture import forge_curator_fixture
+from tests.helpers.forge_curator_fixture import (
+    _chapter_fact,
+    _chapter_html,
+    _chapter_words,
+    _roll_fact,
+    _section,
+    _write_json,
+    forge_curator_fixture,
+)
+
+
+def _add_fixture_chapter(fixture, chapter_num: str = "3") -> None:
+    title = f"{chapter_num} Fixture"
+    with zipfile.ZipFile(fixture.epub, "a") as zf:
+        zf.writestr(f"EPUB/chap_{chapter_num}.xhtml", _chapter_html(chapter_num))
+
+    chapters = json.loads((fixture.derived / "chapters.json").read_text())
+    chapters["chapters"].append({
+        "chapter_num": chapter_num,
+        "full_title": title,
+        "epub_href": f"chap_{chapter_num}.xhtml",
+        "sort_key": [int(chapter_num), 0],
+    })
+    _write_json(fixture.derived / "chapters.json", chapters)
+
+    sections = json.loads((fixture.derived / "chapter_sections.json").read_text())
+    sections["chapters"].append({
+        "chapter_num": chapter_num,
+        "full_title": title,
+        "epub_href": f"chap_{chapter_num}.xhtml",
+        "total_word_count": len(_chapter_words(chapter_num)),
+        "sections": [_section(chapter_num)],
+    })
+    _write_json(fixture.derived / "chapter_sections.json", sections)
+
+    chapter_facts = json.loads((fixture.derived / "chapter_facts.json").read_text())
+    cp_start = sum(
+        len(_chapter_words(ch["chapter_num"]))
+        for ch in chapters["chapters"]
+        if int(ch["chapter_num"]) < int(chapter_num)
+    )
+    chapter_facts["chapters"].append(_chapter_fact(chapter_num, title, cp_start=cp_start))
+    _write_json(fixture.derived / "chapter_facts.json", chapter_facts)
+
+    roll_facts = json.loads((fixture.derived / "roll_facts.json").read_text())
+    roll_facts["rolls"].append(_roll_fact(chapter_num, cp_start=cp_start))
+    _write_json(fixture.derived / "roll_facts.json", roll_facts)
+
+    predicted = json.loads((fixture.derived / "predicted_rolls.json").read_text())
+    predicted["predicted"].append({
+        "chapter_num": chapter_num,
+        "slot_index": 1,
+        "cp_offset": cp_start + 20,
+        "epub_offset": cp_start + 20,
+        "roll_number": int(chapter_num),
+    })
+    _write_json(fixture.derived / "predicted_rolls.json", predicted)
+
+    validation = json.loads((fixture.derived / "roll_validation.json").read_text())
+    validation["chapter_checks"].append({"chapter_num": chapter_num})
+    _write_json(fixture.derived / "roll_validation.json", validation)
 
 
 def test_roll_slot_rows_merge_assigned_rolls_and_open_predicted_slots(
@@ -60,6 +122,137 @@ def test_deferred_predicted_slot_is_first_source_assignment_target(
         ("2", 1),
         ("2", 2),
     ]
+
+
+def test_unresolved_later_chapter_deferral_projects_into_each_later_chapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _add_fixture_chapter(fixture)
+    _write_json(
+        fixture.manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "1": {
+                    "rolls": [
+                        {
+                            "perks": [],
+                            "outcome": None,
+                            "constellation": None,
+                            "word_position": None,
+                            "mention_chapter_num": None,
+                            "mention_word_position": None,
+                            "display_position_policy": "mechanical",
+                            "skipped": False,
+                            "source_roll_number": None,
+                            "evidence_quotes": [],
+                            "deferred_to_later_chapter": True,
+                        }
+                    ]
+                }
+            }
+        },
+    )
+
+    app_ch2 = fixture.loaded_app("2")
+    app_ch3 = fixture.loaded_app("3")
+
+    for app, visible_chapter in [(app_ch2, "2"), (app_ch3, "3")]:
+        cs = app.state.chapter
+        assert cs is not None
+        deferred = app._deferred_predicted_slot_rolls(cs)
+        assert [(row["target_chapter_num"], row["target_roll_index"]) for row in deferred] == [
+            ("1", 1)
+        ]
+        assert deferred[0]["visible_chapter_num"] == visible_chapter
+        assert deferred[0]["mention_chapter_num"] == visible_chapter
+
+
+def test_unresolved_concrete_chapter_deferral_stays_visible_in_later_chapters(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _add_fixture_chapter(fixture)
+    _write_json(
+        fixture.manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "1": {
+                    "rolls": [
+                        {
+                            "perks": [],
+                            "outcome": None,
+                            "constellation": None,
+                            "word_position": None,
+                            "mention_chapter_num": "2",
+                            "mention_word_position": None,
+                            "display_position_policy": "mechanical",
+                            "skipped": False,
+                            "source_roll_number": None,
+                            "evidence_quotes": [],
+                        }
+                    ]
+                }
+            }
+        },
+    )
+
+    app = fixture.loaded_app("3")
+    cs = app.state.chapter
+    assert cs is not None
+
+    deferred = app._deferred_predicted_slot_rolls(cs)
+
+    assert [(row["target_chapter_num"], row["target_roll_index"]) for row in deferred] == [
+        ("1", 1)
+    ]
+    assert deferred[0]["visible_chapter_num"] == "3"
+
+
+def test_later_chapter_deferral_stops_projecting_after_source_or_evidence_assignment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _add_fixture_chapter(fixture)
+    base_roll = {
+        "perks": [],
+        "outcome": None,
+        "constellation": None,
+        "word_position": None,
+        "mention_chapter_num": None,
+        "mention_word_position": None,
+        "display_position_policy": "mechanical",
+        "skipped": False,
+        "source_roll_number": None,
+        "evidence_quotes": [],
+        "deferred_to_later_chapter": True,
+    }
+
+    for resolved_fields in [
+        {"source_roll_number": 2},
+        {
+            "evidence_quotes": [
+                {
+                    "text": "later evidence",
+                    "mention_chapter_num": "2",
+                    "mention_word_position": 20,
+                }
+            ]
+        },
+    ]:
+        roll = {**base_roll, **resolved_fields}
+        _write_json(
+            fixture.manual / "chapter_roll_overrides.json",
+            {"chapter_roll_overrides": {"1": {"rolls": [roll]}}},
+        )
+        app = fixture.loaded_app("3")
+        cs = app.state.chapter
+        assert cs is not None
+
+        assert app._deferred_predicted_slot_rolls(cs) == []
 
 
 def test_same_chapter_rolls_remain_current_and_cross_chapter_display_is_deferred(
