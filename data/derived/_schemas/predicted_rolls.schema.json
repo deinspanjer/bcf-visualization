@@ -6,14 +6,15 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "_source", "_count", "_total_words_epub_exact",
+    "_source", "_count", "_total_cp_words", "_total_epub_words",
     "_regime_summary", "_validation_chapters_1_75",
     "predicted", "comparison_per_chapter"
   ],
   "properties": {
     "_source": { "type": "string" },
     "_count":  { "type": "integer", "minimum": 0 },
-    "_total_words_epub_exact": { "type": "integer", "minimum": 0 },
+    "_total_cp_words":   { "type": "integer", "minimum": 0 },
+    "_total_epub_words": { "type": "integer", "minimum": 0 },
     "_regime_summary": {
       "type": "object",
       "additionalProperties": false,
@@ -39,13 +40,15 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "roll_number", "word_position", "chapter_num",
-          "cp_rule_regime", "roll_trigger_cp_threshold"
+          "roll_number", "cp_offset", "epub_offset", "chapter_num",
+          "slot_index", "cp_rule_regime", "roll_trigger_cp_threshold"
         ],
         "properties": {
           "roll_number":               { "type": "integer", "minimum": 1 },
-          "word_position":             { "type": "integer", "minimum": 0 },
+          "cp_offset":                 { "type": "integer", "minimum": 0 },
+          "epub_offset":               { "type": "integer", "minimum": 0 },
           "chapter_num":               { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+          "slot_index":                { "type": "integer", "minimum": 1 },
           "cp_rule_regime":            { "enum": [1, 2, 3] },
           "roll_trigger_cp_threshold": { "enum": [100, 200] }
         }

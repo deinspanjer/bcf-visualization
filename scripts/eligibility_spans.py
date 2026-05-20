@@ -69,19 +69,20 @@ def section_span_overrides(
     return out
 
 
-def section_cp_word_count(
+def section_eligible_ranges(
     *,
     section_word_start: int,
     section_word_end: int,
     base_counts_for_cp: bool,
     span_overrides: list[dict[str, Any]],
-) -> int:
-    """Compute CP-earning words after manual span overrides.
+) -> list[tuple[int, int]]:
+    """Disjoint chapter-local CP-eligible word ranges within one section.
 
-    Section eligibility is the base state. Span overrides are then
-    applied in file order, so a later overlapping span wins.
+    Section eligibility is the base state; span overrides apply in file
+    order, so a later overlapping span wins. Output ranges are sorted
+    and disjoint.
     """
-    eligible = (
+    eligible: list[tuple[int, int]] = (
         [(int(section_word_start), int(section_word_end))]
         if base_counts_for_cp else []
     )
@@ -92,4 +93,23 @@ def section_cp_word_count(
             eligible = merge_word_ranges([*eligible, (start, end)])
         else:
             eligible = subtract_word_ranges(eligible, [(start, end)])
-    return sum(end - start for start, end in eligible)
+    return eligible
+
+
+def section_cp_word_count(
+    *,
+    section_word_start: int,
+    section_word_end: int,
+    base_counts_for_cp: bool,
+    span_overrides: list[dict[str, Any]],
+) -> int:
+    """Total CP-earning words in a section after manual span overrides."""
+    return sum(
+        end - start
+        for start, end in section_eligible_ranges(
+            section_word_start=section_word_start,
+            section_word_end=section_word_end,
+            base_counts_for_cp=base_counts_for_cp,
+            span_overrides=span_overrides,
+        )
+    )

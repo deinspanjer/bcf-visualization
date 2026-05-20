@@ -360,7 +360,7 @@ def infer_chapter_outcomes(
         outcome = override_outcomes.get(k, "unknown")
         result.append({
             "index": k,
-            "word_position": int(pred["word_position"]),
+            "word_position": int(pred["cp_offset"]),
             "outcome": outcome,
             "constellation": None,
             "purchased_perks": [],

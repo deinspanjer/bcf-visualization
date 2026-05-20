@@ -109,8 +109,8 @@ def test_distance_stats_use_predicted_curated_and_evidence_position_sources(
     fixture = forge_curator_fixture(tmp_path, monkeypatch)
     app = fixture.loaded_app("2")
     app.data.predicted["predicted"] = [
-        {"word_position": 60},
-        {"word_position": 140},
+        {"cp_offset": 60},
+        {"cp_offset": 140},
     ]
     app.data.roll_facts["rolls"] = [
         {

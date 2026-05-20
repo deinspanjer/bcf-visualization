@@ -240,10 +240,15 @@ class Event:
 @dataclass
 class PredictedRoll:
     roll_number: int
-    word_position: int
+    cp_offset: int           # cumulative CP-eligible words before this roll
     chapter_num: str
     cp_rule_regime: int
     roll_trigger_cp_threshold: int
+    epub_offset: int = 0     # EPUB-absolute word offset; stamped by the
+                             # orchestrator via cp_epub_map.cp_to_epub.
+    slot_index: int = 0      # 1-based index within this chapter's predicted
+                             # rolls (the canonical join key for narrative
+                             # evidence and curator anchoring).
 
 
 def simulate_story(
@@ -259,17 +264,21 @@ def simulate_story(
     Mid-chapter regime transitions (see ``regimes_for_chapter``) inject
     additional ``regime_change`` events at the transition word offsets.
 
-    Returns ``(predicted_rolls, chapter_word_start, chapter_word_end,
-    total_words)``.
+    Returns ``(predicted_rolls, chapter_cp_start, chapter_cp_end,
+    total_cp_words)``. All position values are on the CP-eligible word
+    axis: the simulator is fed per-chapter CP-eligible word counts and
+    walks them, so its ``last_word``, ``cumulative``, and
+    ``chapter_*_word`` quantities are CP-cumulative, not EPUB-absolute.
+    The orchestrator converts to EPUB via ``cp_epub_map.cp_to_epub``.
     """
     events: list[Event] = []
     cumulative = 0
-    chapter_word_start: dict[str, int] = {}
-    chapter_word_end: dict[str, int] = {}
+    chapter_cp_start: dict[str, int] = {}
+    chapter_cp_end: dict[str, int] = {}
 
     for c in chapters_in_order:
         cn = c["chapter_num"]
-        chapter_word_start[cn] = cumulative
+        chapter_cp_start[cn] = cumulative
         events.append(Event(word=cumulative, kind="chapter_start", chapter_num=cn))
         words = exact_words[c["full_title"]]
         chap_acqs = paid_by_chapter.get(cn, [])
@@ -299,7 +308,7 @@ def simulate_story(
                     perk_cost=0,
                 ))
         cumulative += words
-        chapter_word_end[cn] = cumulative
+        chapter_cp_end[cn] = cumulative
     total_words = cumulative
 
     # chapter_start at a position must come BEFORE acquisitions in
@@ -312,7 +321,7 @@ def simulate_story(
     banked_cp_x100 = 0
     shadow = ShadowState()
     if not chapters_in_order:
-        return predicted, chapter_word_start, chapter_word_end, total_words
+        return predicted, chapter_cp_start, chapter_cp_end, total_words
 
     current_chapter = chapters_in_order[0]["chapter_num"]
     current_regime = regime_for_chapter(current_chapter)
@@ -344,7 +353,7 @@ def simulate_story(
                 # Already at/over threshold — fire at last_word.
                 predicted.append(PredictedRoll(
                     roll_number=len(predicted) + 1,
-                    word_position=last_word,
+                    cp_offset=last_word,
                     chapter_num=current_chapter,
                     cp_rule_regime=current_regime,
                     roll_trigger_cp_threshold=REGIMES[current_regime]["cp_per_roll"],
@@ -365,7 +374,7 @@ def simulate_story(
             if banked_cp_x100 >= threshold_x100:
                 predicted.append(PredictedRoll(
                     roll_number=len(predicted) + 1,
-                    word_position=last_word,
+                    cp_offset=last_word,
                     chapter_num=current_chapter,
                     cp_rule_regime=current_regime,
                     roll_trigger_cp_threshold=REGIMES[current_regime]["cp_per_roll"],
@@ -415,7 +424,7 @@ def simulate_story(
                 shadow.remaining += sw
 
     advance_to(total_words)
-    return predicted, chapter_word_start, chapter_word_end, total_words
+    return predicted, chapter_cp_start, chapter_cp_end, total_words
 
 
 # ---------- per-chapter simulation (used by derive_roll_outcomes.py) --------

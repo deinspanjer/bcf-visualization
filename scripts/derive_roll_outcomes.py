@@ -169,10 +169,10 @@ def _build_chapter_slots(
     if n == 0 and k == 0:
         return [], banked_cp_in, (shadow_state or ShadowState()).copy()
 
-    # Real predicted slots (already sorted by word_position upstream, but
+    # Real predicted slots (already sorted by cp_offset upstream, but
     # sort defensively).
-    real = sorted(predicted, key=lambda r: r["word_position"])
-    real_positions = [r["word_position"] for r in real]
+    real = sorted(predicted, key=lambda r: r["cp_offset"])
+    real_positions = [r["cp_offset"] for r in real]
 
     # If we need more slots than predictions, synthesize the difference.
     extra = max(0, k - n)
@@ -184,7 +184,7 @@ def _build_chapter_slots(
     for r in real:
         slots.append({
             "chapter_num": chapter_num,
-            "word_position": r["word_position"],
+            "word_position": r["cp_offset"],
             "source": "predicted",
             "outcome": "miss",  # default; flipped to "hit" below
             "perk": None,

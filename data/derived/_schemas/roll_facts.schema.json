@@ -70,7 +70,8 @@
         "anchor_char_offset_in_chapter", "evidence_kind",
         "evidence_quotes", "raw", "source_row_index", "roll_sequence_in_chapter",
         "rolls_in_chapter", "slot_source",
-        "word_position", "cumulative_word_offset"
+        "word_position", "cumulative_word_offset",
+        "epub_word_offset_predicted", "epub_word_offset_curated"
       ],
       "properties": {
         "roll_key": { "type": "string", "minLength": 1 },
@@ -210,6 +211,12 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "cumulative_word_offset": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "epub_word_offset_predicted": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "epub_word_offset_curated": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         }
       }

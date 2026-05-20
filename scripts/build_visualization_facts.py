@@ -24,9 +24,31 @@ VERSION_FIELDS = (
     "story_chapter_title",
 )
 
-CHAPTER_FACTS_PAYLOAD_KEYS = ("shadow_periods", "in_world_timeline", "chapters")
+CHAPTER_FACTS_PAYLOAD_KEYS = ("shadow_periods", "in_world_timeline")
 WIREFRAME_PAYLOAD_KEYS = ("cluster_constellations", "jump_constellations")
-PREDICTED_META_KEYS = ("_count", "_total_words_epub_exact", "_regime_summary")
+PREDICTED_META_KEYS = ("_count", "_total_cp_words", "_total_epub_words", "_regime_summary")
+
+# Cascade positional fields kept on chapter_facts (still consumed by the
+# TUI) but stripped from the bundle. The UI reads only the canonical
+# epub_word_offset_{predicted,curated} now.
+BUNDLE_DROPPED_ROLL_FIELDS = (
+    "display_cumulative_word_offset",
+    "cumulative_word_offset",
+    "source_cumulative_word_offset",
+    "display_word_position_epub",
+    "predicted_word_position_epub",
+)
+
+
+def _project_bundle_roll(roll: dict) -> dict:
+    return {k: v for k, v in roll.items() if k not in BUNDLE_DROPPED_ROLL_FIELDS}
+
+
+def _project_bundle_chapter(chapter: dict) -> dict:
+    return {
+        **chapter,
+        "rolls": [_project_bundle_roll(r) for r in chapter.get("rolls", [])],
+    }
 
 
 def _read_json(path: Path) -> dict:
@@ -56,6 +78,7 @@ def build(input_dir: Path) -> dict:
         "_method": METHOD,
         "version": version,
         **{key: chapter_facts[key] for key in CHAPTER_FACTS_PAYLOAD_KEYS},
+        "chapters": [_project_bundle_chapter(c) for c in chapter_facts["chapters"]],
         "constellation_wireframes": {
             key: wireframes[key] for key in WIREFRAME_PAYLOAD_KEYS
         },

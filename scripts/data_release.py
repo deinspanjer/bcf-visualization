@@ -535,7 +535,7 @@ def _check_predicted_rolls_fresh(source_dir: Path) -> list[str]:
             "classifications; run scripts/predict_rolls.py before deriving "
             "roll_facts/chapter_facts"
         ]
-    if actual_doc.get("_total_words_epub_exact") != total_words:
+    if actual_doc.get("_total_cp_words") != total_words:
         return [
             "data/derived/predicted_rolls.json has a stale total word count; "
             "run scripts/predict_rolls.py"

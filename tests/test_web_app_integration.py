@@ -196,8 +196,8 @@ def test_web_app_detail_roll_log_filters_sorts_and_click_moves_playhead(tmp_path
                 "global_roll_number": 4,
                 "outcome": "hit",
                 "constellation": "Magic",
-                "predicted_word_position_epub": 8200,
-                "display_word_position_epub": 8200,
+                "epub_word_offset_predicted": 8200,
+                "epub_word_offset_curated": 8200,
                 "available_cp": 600,
                 "purchased_perk_cost_total": 600,
                 "purchased_perks": [
@@ -229,23 +229,24 @@ def test_web_app_detail_roll_log_filters_sorts_and_click_moves_playhead(tmp_path
             browser.close()
 
 
-def test_web_app_maps_predicted_cp_roll_positions_to_raw_word_positions(tmp_path):
+def test_web_app_displays_canonical_epub_word_offset_for_each_roll(tmp_path):
+    # The UI reads roll.epub_word_offset_predicted / epub_word_offset_curated
+    # directly — no client-side CP↔EPUB derivation. This test verifies that
+    # the EPUB position the bundle ships is what the scrubber, log, and
+    # playhead all use.
     playwright_api = pytest.importorskip("playwright.sync_api")
 
     with staged_web_runtime_site(tmp_path) as site:
         facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
         facts = json.loads(facts_path.read_text())
-        facts["chapters"][0]["cp_earning_word_count"] = 1000
-        facts["chapters"][0]["cumulative_cp_earning_words"] = 1000
-        facts["chapters"][1]["cp_earning_word_count"] = 4000
-        facts["chapters"][1]["cumulative_cp_earning_words"] = 5000
         facts["chapters"][1]["rolls"].append(
             {
                 "roll_number": 9,
                 "global_roll_number": 9,
                 "outcome": "hit",
                 "constellation": "Toolkits",
-                "predicted_word_position_epub": 2000,
+                "epub_word_offset_predicted": 4000,
+                "epub_word_offset_curated": 4000,
                 "available_cp": 100,
                 "purchased_perk_cost_total": 100,
                 "purchased_perks": [

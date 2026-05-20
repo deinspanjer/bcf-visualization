@@ -388,7 +388,7 @@ class ForgeCuratorData:
             p for p in self.predicted.get("predicted", [])
             if str(p.get("chapter_num")) == cn
         ]
-        preds.sort(key=lambda p: p.get("word_position") or 0)
+        preds.sort(key=lambda p: p.get("cp_offset") or 0)
 
         outs = [
             o for o in self.roll_outcomes.get("rolls", [])

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/chapter_alignment_fingerprints.schema.json",
+  "title": "Chapter Alignment Fingerprints",
+  "description": "Per-chapter sha256-prefixed hash of the canonical predicted-roll sequence. Curator records that name a predicted slot store this hash; a rebuild mismatch means the slot identity has moved.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["_source", "_count", "chapter_alignment_fingerprints"],
+  "properties": {
+    "_source": { "type": "string" },
+    "_count":  { "type": "integer", "minimum": 0 },
+    "chapter_alignment_fingerprints": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{16}$"
+      },
+      "propertyNames": {
+        "pattern": "^\\d+(\\.\\d+)?$"
+      }
+    }
+  }
+}

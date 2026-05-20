@@ -137,6 +137,8 @@ def test_roll_facts_use_evidence_quotes_contract() -> None:
         "rolled_perk_cost": 200,
         "miss_cost_estimate": 200,
         "predicted_word_position_epub": 100,
+        "epub_word_offset_predicted": 130,
+        "epub_word_offset_curated": 130,
         "predicted_char_offset_in_chapter": None,
         "anchor_char_offset_in_chapter": None,
         "evidence_kind": "curator_log",

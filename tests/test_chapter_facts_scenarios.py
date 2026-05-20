@@ -365,8 +365,10 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
         derived / "predicted_rolls.json",
         {
             "predicted": [
-                {"chapter_num": "1", "word_position": 400, "roll_number": 1},
-                {"chapter_num": "2", "word_position": 1500, "roll_number": 2},
+                {"chapter_num": "1", "slot_index": 1, "cp_offset": 400,
+                 "epub_offset": 400, "roll_number": 1},
+                {"chapter_num": "2", "slot_index": 1, "cp_offset": 1500,
+                 "epub_offset": 1500, "roll_number": 2},
             ]
         },
     )
@@ -644,31 +646,41 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
             "predicted": [
                 {
                     "chapter_num": "1",
-                    "word_position": 200,
+                    "slot_index": 1,
+                    "cp_offset": 200,
+                    "epub_offset": 200,
                     "roll_number": 1,
                     "roll_trigger_cp_threshold": 100,
                 },
                 {
                     "chapter_num": "2",
-                    "word_position": 1200,
+                    "slot_index": 1,
+                    "cp_offset": 1200,
+                    "epub_offset": 1200,
                     "roll_number": 2,
                     "roll_trigger_cp_threshold": 100,
                 },
                 {
                     "chapter_num": "2",
-                    "word_position": 1800,
+                    "slot_index": 2,
+                    "cp_offset": 1800,
+                    "epub_offset": 1800,
                     "roll_number": 3,
                     "roll_trigger_cp_threshold": 100,
                 },
                 {
                     "chapter_num": "3",
-                    "word_position": 2300,
+                    "slot_index": 1,
+                    "cp_offset": 2300,
+                    "epub_offset": 2300,
                     "roll_number": 3,
                     "roll_trigger_cp_threshold": 100,
                 },
                 {
                     "chapter_num": "3",
-                    "word_position": 2700,
+                    "slot_index": 2,
+                    "cp_offset": 2700,
+                    "epub_offset": 2700,
                     "roll_number": 4,
                     "roll_trigger_cp_threshold": 100,
                 },
@@ -679,10 +691,14 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
         derived / "roll_text_evidence.json",
         {
             "rolls": [
-                {"roll_number": 1, "chapter_num": "1", "predicted_word_position_epub": 200},
-                {"roll_number": 2, "chapter_num": "2", "predicted_word_position_epub": 1200},
-                {"roll_number": 3, "chapter_num": "3", "predicted_word_position_epub": 2300},
-                {"roll_number": 4, "chapter_num": "3", "predicted_word_position_epub": 2700},
+                {"roll_number": 1, "chapter_num": "1", "slot_index": 1,
+                 "cp_offset": 200, "epub_offset": 200},
+                {"roll_number": 2, "chapter_num": "2", "slot_index": 1,
+                 "cp_offset": 1200, "epub_offset": 1200},
+                {"roll_number": 3, "chapter_num": "3", "slot_index": 1,
+                 "cp_offset": 2300, "epub_offset": 2300},
+                {"roll_number": 4, "chapter_num": "3", "slot_index": 2,
+                 "cp_offset": 2700, "epub_offset": 2700},
             ]
         },
     )

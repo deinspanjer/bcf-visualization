@@ -261,7 +261,13 @@ def roll_base(
         "source_kind": source_kind,
         "outcome": outcome,
         "predicted_word_position_epub": (
-            ev.get("predicted_word_position_epub") if ev else None
+            ev.get("cp_offset") if ev else None
+        ),
+        "epub_word_offset_predicted": (
+            ev.get("epub_offset") if ev else None
+        ),
+        "epub_word_offset_curated": (
+            ev.get("epub_offset") if ev else None
         ),
         "predicted_char_offset_in_chapter": (
             ev.get("predicted_char_offset") if ev else None
@@ -402,14 +408,15 @@ def _build_scheduler_inputs() -> dict[str, dict]:
         words = chapter_words[cn]
         ws_global = chapter_word_start[cn]
         preds = pred_by_chapter.get(cn, [])
-        preds.sort(key=lambda r: int(r["word_position"]))
-        # Predicted slot list (chapter-local word_position). This is the
-        # model truth used for validation. The generation scheduler may
-        # synthesize fallback slots below so roll_facts can still carry
-        # source-derived rows, but validation keeps these counts separate.
+        preds.sort(key=lambda r: int(r["cp_offset"]))
+        # Predicted slot list (chapter-local CP-word offset). This is
+        # the model truth used for validation. The generation scheduler
+        # may synthesize fallback slots below so roll_facts can still
+        # carry source-derived rows, but validation keeps these counts
+        # separate.
         predicted_slots = [
             SlotInput(
-                word_position=max(0, int(r["word_position"]) - ws_global),
+                word_position=max(0, int(r["cp_offset"]) - ws_global),
                 roll_trigger_cp_threshold=int(
                     r.get("roll_trigger_cp_threshold")
                     or REGIMES[regime_for_chapter(cn)]["cp_per_roll"]
@@ -1571,7 +1578,15 @@ def main() -> None:
         scheduler_results[cn] = result
 
     by_name_jump, by_name = build_directory_lookup(directory)
-    evidence_by_roll = {e["roll_number"]: e for e in evidence_doc["rolls"]}
+    # Evidence is keyed by (chapter_num, slot_index) — NOT roll_number — to
+    # tolerate drift between curator and predictor roll-number sequences. Each
+    # predicted roll's evidence belongs to its mechanical chapter+slot; a
+    # curator row joins to it via the same key derived from its matched
+    # pred_slot.
+    evidence_by_chapter_slot = {
+        (str(e["chapter_num"]), int(e["slot_index"])): e
+        for e in evidence_doc["rolls"]
+    }
     outstanding_by_chapter = {
         c["chapter_num"]: c["before_chapter"]["by_constellation"]
         for c in outstanding_doc["chapters"]
@@ -1634,7 +1649,7 @@ def main() -> None:
                 pred_slot_by_local = {
                     max(
                         0,
-                        int(pred["word_position"])
+                        int(pred["cp_offset"])
                         - int(sched_inp["chapter_word_start"]),
                     ): pred
                     for pred in sched_inp["predicted_rolls"]
@@ -1670,8 +1685,10 @@ def main() -> None:
                         non_trigger_seq += 1
                     continue
                 roll_number = row.get("roll_number")
-                ev = evidence_by_roll.get(roll_number) if roll_number is not None else None
-                predicted_chapter_num = ev.get("chapter_num") if ev else None
+                # Evidence is joined later by (chapter_num, pred_slot.slot_index)
+                # once the pred_slot is matched. Initialize lazily.
+                ev: dict | None = None
+                predicted_chapter_num: str | None = None
                 outcome = "miss" if row["kind"] == "miss" else "hit"
                 source_kind = row["kind"]
                 available_cp = int_or_none(row.get("banked_before"))
@@ -1739,11 +1756,17 @@ def main() -> None:
                         else None
                     )
                 )
-                ev = (
-                    evidence_by_roll.get(canonical_roll_number)
-                    if canonical_roll_number is not None else None
+                # Join evidence by (chapter, slot_index). pred_slot — which is
+                # the chapter-local match for this curator row — is the
+                # canonical source of both. Falls back to None when the row has
+                # no matched predicted slot (rare; e.g. synthetic/trigger rows).
+                if pred_slot is not None:
+                    ev = evidence_by_chapter_slot.get(
+                        (str(pred_slot["chapter_num"]), int(pred_slot["slot_index"]))
+                    )
+                predicted_chapter_num = (
+                    ev.get("chapter_num") if ev else None
                 )
-                predicted_chapter_num = ev.get("chapter_num") if ev else None
                 owner_chapter_num = (
                     row.get("_mention_chapter_num")
                     if row.get("_mention_chapter_num") is not None
@@ -1761,7 +1784,16 @@ def main() -> None:
                     ev=ev,
                 )
                 if pred_slot is not None:
-                    record["predicted_word_position_epub"] = int(pred_slot["word_position"])
+                    # NB: cascade field is misnamed (CP-cumulative, not EPUB).
+                    # Phase D drops it; keep stamping for now so chapter_facts
+                    # consumers (TUI, etc.) keep working.
+                    record["predicted_word_position_epub"] = int(pred_slot["cp_offset"])
+                    # Canonical fields. epub_word_offset_curated defaults to
+                    # predicted; a future manual-override mechanism (the
+                    # "narrative-evidence override wins" rule) will overwrite
+                    # only the _curated field.
+                    record["epub_word_offset_predicted"] = int(pred_slot["epub_offset"])
+                    record["epub_word_offset_curated"] = int(pred_slot["epub_offset"])
                 word_position_local = int(slot.word_position) if slot is not None else None
                 cum_word = (
                     chapter_word_start_global.get(chapter_num, 0) + word_position_local
@@ -1904,7 +1936,7 @@ def main() -> None:
             pred_slot_by_local = {
                 max(
                     0,
-                    int(pred["word_position"])
+                    int(pred["cp_offset"])
                     - int(sched_inp["chapter_word_start"]),
                 ): pred
                 for pred in sched_inp["predicted_rolls"]
@@ -1917,7 +1949,9 @@ def main() -> None:
         # to each slot.
         for seq, (source_idx, row) in enumerate(rows, start=1):
             roll_number = row.get("roll_number")
-            ev = evidence_by_roll.get(roll_number) if roll_number is not None else None
+            # Evidence is joined later by (chapter, slot_index) using the
+            # matched pred_slot. Initialize lazily.
+            ev: dict | None = None
             assignment = (
                 sched_assignments[seq - 1]
                 if sched_assignments and seq - 1 < len(sched_assignments)
@@ -2048,7 +2082,10 @@ def main() -> None:
                     if slot.source == "predicted" else None
                 )
                 if pred_slot is not None:
-                    ev2 = evidence_by_roll.get(int(pred_slot["roll_number"]))
+                    ev2 = evidence_by_chapter_slot.get(
+                        (str(pred_slot["chapter_num"]),
+                         int(pred_slot["slot_index"]))
+                    )
                     record["roll_number"] = int(pred_slot["roll_number"])
                     record["predicted_chapter_num"] = (
                         ev2.get("chapter_num") if ev2 else pred_slot["chapter_num"]
@@ -2057,7 +2094,10 @@ def main() -> None:
                         record["predicted_chapter_num"] is not None
                         and str(record["predicted_chapter_num"]) != str(record["chapter_num"])
                     )
-                    record["predicted_word_position_epub"] = int(pred_slot["word_position"])
+                    # NB: cascade field is CP-cumulative; Phase D drops it.
+                    record["predicted_word_position_epub"] = int(pred_slot["cp_offset"])
+                    record["epub_word_offset_predicted"] = int(pred_slot["epub_offset"])
+                    record["epub_word_offset_curated"] = int(pred_slot["epub_offset"])
                     record["predicted_char_offset_in_chapter"] = (
                         ev2.get("predicted_char_offset") if ev2 else None
                     )
@@ -2071,6 +2111,8 @@ def main() -> None:
                     record["predicted_chapter_num"] = chapter_num
                     record["chapter_attribution_disagreement"] = False
                     record["predicted_word_position_epub"] = None
+                    record["epub_word_offset_predicted"] = None
+                    record["epub_word_offset_curated"] = None
                     record["predicted_char_offset_in_chapter"] = None
                     record["anchor_char_offset_in_chapter"] = None
                     record["evidence_kind"] = "synthetic"
