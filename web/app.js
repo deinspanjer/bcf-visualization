@@ -5,6 +5,9 @@ import {
 } from "./data-contract.js";
 import {
   buildRollLogRows,
+  buildConstellationKnowledgeIndex,
+  buildSkyCarouselLayout,
+  constellationOutlineVisibleForRoll,
   fieldLogModel,
   onRollPlaybackState,
   paidRollPerks,
@@ -1207,65 +1210,62 @@ function renderViewportFrame() {
 function renderCarousel() {
   const rolls = app.data.story.rolls;
   const cardWidth = 348;
+  const minCardSpacing = 440;
   const cardHalf = 160; // half of visual card width (320px), used to center the active card on the playhead
   if (!rolls.length) {
     return el("div", { class: "carousel-strip", style: { transform: `translateX(${-cardHalf}px)` } });
   }
-  // Position cards in word-space so motion is uniform in story-words rather than
-  // roll-index. Average inter-roll gap maps to one card width, preserving the
-  // visual density we had before in median-density stretches; bursts compress,
-  // droughts spread out and the playhead drifts through empty sky.
+  // Position cards in word-space, then enforce a visual floor so dense early
+  // roll bursts do not collapse named constellations into one another.
   const totalWords = Math.max(1, app.data.story.total_words || rolls.at(-1).word_position);
-  const pxPerWord = (rolls.length * cardWidth) / totalWords;
-  const playheadPx = app.wordPos * pxPerWord;
-  const renderRadiusPx = cardWidth * 6;
+  const layout = buildSkyCarouselLayout(rolls, {
+    totalWords,
+    wordPos: app.wordPos,
+    averageCardWidth: cardWidth,
+    minCardSpacing,
+  });
+  const playheadPx = layout.playheadPx;
+  const renderRadiusPx = minCardSpacing * 6;
   const activeRadiusPx = cardWidth * 0.4;
-  const flankRadiusPx = cardWidth * 1.3;
+  const flankRadiusPx = minCardSpacing * 1.15;
+  const knowledgeIndex = buildConstellationKnowledgeIndex(rolls);
 
   // Pick a single "nearest" roll to mark active so overlapping cards in a
   // dense burst don't all flare at once.
   let nearestIndex = -1;
   let nearestDistPx = Infinity;
   for (let i = 0; i < rolls.length; i += 1) {
-    const distPx = Math.abs(rolls[i].word_position * pxPerWord - playheadPx);
+    const distPx = Math.abs(layout.positions[i] - playheadPx);
     if (distPx < nearestDistPx) {
       nearestDistPx = distPx;
       nearestIndex = i;
     }
-    if (rolls[i].word_position * pxPerWord - playheadPx > renderRadiusPx) break;
   }
 
   const slots = [];
   for (let i = 0; i < rolls.length; i += 1) {
     const roll = rolls[i];
-    const cardPx = roll.word_position * pxPerWord;
+    const cardPx = layout.positions[i];
     const distPx = Math.abs(cardPx - playheadPx);
     if (distPx > renderRadiusPx) continue;
     const active = i === nearestIndex && distPx < activeRadiusPx;
     const flank = !active && distPx < flankRadiusPx;
     const con = roll.constellation ? app.data.conByName[roll.constellation] : null;
+    const outlineVisible = constellationOutlineVisibleForRoll(roll, knowledgeIndex);
     slots.push(el("div", { class: "carousel-slot", style: { left: `${cardPx}px` } },
-      con ? renderConstellationCard(con, active, flank) : renderUnresolvedCard(active, flank),
+      con ? renderConstellationCard(con, active, flank, outlineVisible) : renderUnresolvedCard(active, flank),
     ));
   }
   return el("div", { class: "carousel-strip", style: { transform: `translateX(${-(playheadPx + cardHalf)}px)` } }, slots);
 }
 
-function renderConstellationCard(con, active, flank) {
+function renderConstellationCard(con, active, flank, outlineVisible) {
   const size = 320;
   const color = `oklch(0.82 0.14 ${con.hue})`;
 
-  // "Current chapter" for reveal gating: parseFloat handles "62" and "96.1" alike.
-  const currentChapter = chapterAtWord(app.wordPos);
-  const currentChapterFloat = parseFloat(currentChapter?.chapter_num);
-  const revealedFloat = parseFloat(con.revealed_at_chapter);
-  const silhouetteVisible = Number.isFinite(revealedFloat)
-    && Number.isFinite(currentChapterFloat)
-    && revealedFloat <= currentChapterFloat;
-
   const silhouetteStroke = active ? "1.1" : "0.9";
   const silhouetteOpacity = active ? "0.32" : "0.20";
-  const polylines = silhouetteVisible
+  const polylines = outlineVisible
     ? (con.silhouette || []).map(polyline => svgEl("polyline", {
         points: polyline.map(point => `${(point[0] * size).toFixed(1)},${(point[1] * size).toFixed(1)}`).join(" "),
         fill: "none",

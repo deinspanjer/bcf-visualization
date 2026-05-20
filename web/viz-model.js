@@ -128,6 +128,94 @@ export function onRollPlaybackState(roll, wordPos, behavior = "normal") {
   return { behavior: normalized, onRoll, speedMultiplier: onRoll ? 0.04 : 1 };
 }
 
+function finiteNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function rollOrderValue(roll) {
+  return finiteNumber(roll?.roll_number)
+    ?? finiteNumber(roll?.global_roll_number)
+    ?? finiteNumber(roll?.source_roll_index)
+    ?? finiteNumber(roll?.word_position)
+    ?? finiteNumber(roll?.epub_word_offset_curated)
+    ?? finiteNumber(roll?.epub_word_offset_predicted)
+    ?? Infinity;
+}
+
+export function buildSkyCarouselLayout(rolls, options = {}) {
+  const rows = Array.isArray(rolls) ? rolls : [];
+  const averageCardWidth = finiteNumber(options.averageCardWidth) ?? 348;
+  const minCardSpacing = finiteNumber(options.minCardSpacing) ?? 440;
+  const totalWords = Math.max(
+    1,
+    finiteNumber(options.totalWords)
+      ?? finiteNumber(rows.at(-1)?.word_position)
+      ?? 1,
+  );
+  const wordPos = finiteNumber(options.wordPos) ?? 0;
+  const pxPerWord = (rows.length * averageCardWidth) / totalWords;
+  const playheadPx = wordPos * pxPerWord;
+  const positions = rows.map(roll => (finiteNumber(roll?.word_position) ?? 0) * pxPerWord);
+
+  if (positions.length > 1) {
+    let nearestIndex = 0;
+    let nearestDistance = Infinity;
+    for (let index = 0; index < positions.length; index += 1) {
+      const distance = Math.abs(positions[index] - playheadPx);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    }
+
+    let start = nearestIndex;
+    while (start > 0 && positions[start] - positions[start - 1] < minCardSpacing) {
+      start -= 1;
+    }
+    let end = nearestIndex;
+    while (end < positions.length - 1 && positions[end + 1] - positions[end] < minCardSpacing) {
+      end += 1;
+    }
+
+    if (start !== end) {
+      const anchor = positions[nearestIndex];
+      for (let index = start; index <= end; index += 1) {
+        positions[index] = anchor + (index - nearestIndex) * minCardSpacing;
+      }
+    }
+  }
+  return { positions, playheadPx, pxPerWord };
+}
+
+function rollAcquiresConstellation(roll) {
+  if (!roll?.constellation || roll.outcome !== "hit") return false;
+  return (roll.purchased_perks || []).length > 0
+    || (roll.free_perks || []).length > 0
+    || Boolean(roll.rolled_perk_name)
+    || rollTotalCost(roll) > 0;
+}
+
+export function buildConstellationKnowledgeIndex(rolls) {
+  const firstKnownByConstellation = new Map();
+  for (const roll of rolls || []) {
+    if (!rollAcquiresConstellation(roll)) continue;
+    const order = rollOrderValue(roll);
+    const current = firstKnownByConstellation.get(roll.constellation);
+    if (!current || order < current.order) {
+      firstKnownByConstellation.set(roll.constellation, { order, roll });
+    }
+  }
+  return firstKnownByConstellation;
+}
+
+export function constellationOutlineVisibleForRoll(roll, knowledgeIndex) {
+  if (!roll?.constellation) return false;
+  const firstKnown = knowledgeIndex?.get?.(roll.constellation);
+  if (!firstKnown) return false;
+  return rollOrderValue(roll) >= firstKnown.order;
+}
+
 export function buildRollLogRows(rolls, currentWord, options = {}) {
   const filter = options.filter || "all";
   const sort = options.sort || "roll";

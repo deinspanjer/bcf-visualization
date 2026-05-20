@@ -257,6 +257,160 @@ def test_on_roll_behavior_windows_classify_normal_pause_and_bullet_time() -> Non
     }
 
 
+def test_sky_carousel_layout_preserves_minimum_spacing_for_close_rolls() -> None:
+    source = """
+      import { buildSkyCarouselLayout } from './web/viz-model.js';
+      const rolls = [
+        { roll_number: 1, word_position: 2253 },
+        { roll_number: 2, word_position: 4253 },
+        { roll_number: 3, word_position: 6253 },
+      ];
+      const layout = buildSkyCarouselLayout(rolls, {
+        totalWords: 2_600_000,
+        wordPos: 4253,
+        averageCardWidth: 348,
+        minCardSpacing: 440,
+      });
+      console.log(JSON.stringify({
+        gaps: [
+          layout.positions[1] - layout.positions[0],
+          layout.positions[2] - layout.positions[1],
+        ],
+        playheadPx: layout.playheadPx,
+        activePx: layout.positions[1],
+      }));
+    """
+    result = json.loads(_node_eval(source))
+    assert result["gaps"] == [440, 440]
+    assert result["playheadPx"] == result["activePx"]
+
+
+def test_sky_carousel_layout_leaves_roll_droughts_empty_after_dense_groups() -> None:
+    source = """
+      import { buildSkyCarouselLayout } from './web/viz-model.js';
+      const rolls = [
+        { roll_number: 1, word_position: 0 },
+        { roll_number: 2, word_position: 2_000 },
+        { roll_number: 3, word_position: 4_000 },
+        { roll_number: 4, word_position: 900_000 },
+      ];
+      const layout = buildSkyCarouselLayout(rolls, {
+        totalWords: 1_000_000,
+        wordPos: 450_000,
+        averageCardWidth: 348,
+        minCardSpacing: 440,
+      });
+      const desiredLast = rolls[3].word_position * layout.pxPerWord;
+      console.log(JSON.stringify({
+        playheadPx: layout.playheadPx,
+        positions: layout.positions,
+        desiredLast,
+        nearestCardDistance: Math.min(
+          ...layout.positions.map(position => Math.abs(position - layout.playheadPx)),
+        ),
+      }));
+    """
+    result = json.loads(_node_eval(source))
+    assert result["positions"][3] == result["desiredLast"]
+    assert result["nearestCardDistance"] > 440
+
+
+def test_constellation_outlines_are_roll_time_knowledge_not_later_playback_state() -> None:
+    source = """
+      import {
+        buildConstellationKnowledgeIndex,
+        constellationOutlineVisibleForRoll,
+      } from './web/viz-model.js';
+      const alchemyMissBeforeReveal = {
+        roll_number: 1,
+        outcome: 'miss',
+        constellation: 'Alchemy',
+        word_position: 2253,
+        purchased_perks: [],
+        free_perks: [],
+      };
+      const clothingHit = {
+        roll_number: 2,
+        outcome: 'hit',
+        constellation: 'Clothing',
+        word_position: 4253,
+        purchased_perks: [{ name: 'Fashion', cost: 200 }],
+        free_perks: [],
+      };
+      const alchemyHit = {
+        roll_number: 5,
+        outcome: 'hit',
+        constellation: 'Alchemy',
+        word_position: 10581,
+        purchased_perks: [{ name: 'Alchemist', cost: 200 }],
+        free_perks: [],
+      };
+      const alchemyMissAfterReveal = {
+        roll_number: 6,
+        outcome: 'miss',
+        constellation: 'Alchemy',
+        word_position: 12581,
+        purchased_perks: [],
+        free_perks: [],
+      };
+      const knowledge = buildConstellationKnowledgeIndex([
+        alchemyMissBeforeReveal,
+        clothingHit,
+        alchemyHit,
+        alchemyMissAfterReveal,
+      ]);
+      console.log(JSON.stringify({
+        alchemyMissBeforeReveal: constellationOutlineVisibleForRoll(alchemyMissBeforeReveal, knowledge),
+        clothingHit: constellationOutlineVisibleForRoll(clothingHit, knowledge),
+        alchemyHit: constellationOutlineVisibleForRoll(alchemyHit, knowledge),
+        alchemyMissAfterReveal: constellationOutlineVisibleForRoll(alchemyMissAfterReveal, knowledge),
+      }));
+    """
+    assert json.loads(_node_eval(source)) == {
+        "alchemyMissBeforeReveal": False,
+        "clothingHit": True,
+        "alchemyHit": True,
+        "alchemyMissAfterReveal": True,
+    }
+
+
+def test_constellation_outline_knowledge_uses_roll_order_before_display_position() -> None:
+    source = """
+      import {
+        buildConstellationKnowledgeIndex,
+        constellationOutlineVisibleForRoll,
+      } from './web/viz-model.js';
+      const missDisplayedLater = {
+        roll_number: 1,
+        outcome: 'miss',
+        constellation: 'Alchemy',
+        word_position: 5_000,
+        purchased_perks: [],
+        free_perks: [],
+      };
+      const hitDisplayedEarlier = {
+        roll_number: 2,
+        outcome: 'hit',
+        constellation: 'Alchemy',
+        word_position: 1_000,
+        purchased_perks: [{ name: 'Alchemist', cost: 200 }],
+        free_perks: [],
+      };
+      const knowledge = buildConstellationKnowledgeIndex([
+        missDisplayedLater,
+        hitDisplayedEarlier,
+      ]);
+      console.log(JSON.stringify({
+        missDisplayedLater: constellationOutlineVisibleForRoll(missDisplayedLater, knowledge),
+        hitDisplayedEarlier: constellationOutlineVisibleForRoll(hitDisplayedEarlier, knowledge),
+      }));
+    """
+    assert json.loads(_node_eval(source)) == {
+        "missDisplayedLater": False,
+        "hitDisplayedEarlier": True,
+    }
+
+
 def test_roll_log_filtering_sorting_and_click_targets_use_word_positions() -> None:
     source = """
       import { buildRollLogRows } from './web/viz-model.js';
