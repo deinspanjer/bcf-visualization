@@ -22,6 +22,14 @@ class SmokeResult:
     constellation_pages_count: int
 
 
+@dataclass(frozen=True)
+class EarlyChapterProbe:
+    chapter_num: str
+    word_position: int
+    hits: int
+    misses: int
+
+
 def _read_json(path: Path) -> dict:
     try:
         return json.loads(path.read_text())
@@ -43,6 +51,27 @@ def _default_package(index: dict) -> dict:
     if not isinstance(package, dict):
         raise RuntimeError("first package entry is malformed")
     return package
+
+
+def _default_runtime_paths(site_dir: Path) -> tuple[Path, Path]:
+    site_dir = site_dir.resolve()
+    index = _read_json(site_dir / "data" / "packages.json")
+    package = _default_package(index)
+    package_path = package.get("path")
+    if not isinstance(package_path, str):
+        raise RuntimeError("default package entry is missing path")
+    package_dir = (site_dir / package_path).resolve()
+    try:
+        package_dir.relative_to(site_dir)
+    except ValueError as exc:
+        raise RuntimeError(f"default package path escapes staged site: {package_path}") from exc
+
+    manifest = _read_json(package_dir / "data_package.json")
+    files = manifest.get("files")
+    viz_meta = files.get("visualization_facts") if isinstance(files, dict) else None
+    if not isinstance(viz_meta, dict) or not isinstance(viz_meta.get("path"), str):
+        raise RuntimeError("visualization_facts file metadata is missing")
+    return package_dir, package_dir / viz_meta["path"]
 
 
 def validate_site(*, site_dir: Path) -> SmokeResult:
@@ -180,6 +209,94 @@ def _validate_constellation_pages(
     return len(clusters)
 
 
+def _finite_number(value: object) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number == number and number not in {float("inf"), float("-inf")} else None
+
+
+def _roll_word_position(
+    *, raw_roll: dict, chapter_start: int, chapter_end: int, index: int, total_rolls: int
+) -> int:
+    for key in (
+        "epub_word_offset_predicted",
+        "display_word_position_epub",
+        "cumulative_word_offset",
+        "display_cumulative_word_offset",
+        "source_cumulative_word_offset",
+    ):
+        position = _finite_number(raw_roll.get(key))
+        if position is not None:
+            return max(0, round(position))
+
+    chapter_span = max(0, chapter_end - chapter_start)
+    for key in (
+        "display_word_position",
+        "word_position",
+        "source_word_position",
+        "mechanical_word_position",
+    ):
+        local_position = _finite_number(raw_roll.get(key))
+        if local_position is None:
+            continue
+        return round(chapter_start + min(max(local_position, 0), chapter_span))
+
+    if raw_roll.get("source_kind") == "trigger":
+        return round(chapter_start)
+    fraction = (index + 1) / ((total_rolls or 0) + 1)
+    return round(chapter_start + chapter_span * fraction)
+
+
+def _early_chapter_probe(facts: dict) -> EarlyChapterProbe:
+    chapters = facts.get("chapters")
+    if not isinstance(chapters, list) or not chapters or not isinstance(chapters[0], dict):
+        raise RuntimeError("visualization_facts has no first chapter for browser smoke")
+
+    first = chapters[0]
+    first_chapter_num = str(first.get("chapter_num") or "1")
+    first_chapter_words = int(_finite_number(first.get("total_word_count")) or 0)
+    probe_word = max(0, first_chapter_words - 1)
+
+    chapter_start = 0
+    hits = 0
+    misses = 0
+    for chapter in chapters:
+        if not isinstance(chapter, dict):
+            continue
+        chapter_words = int(_finite_number(chapter.get("total_word_count")) or 0)
+        chapter_end = chapter_start + chapter_words
+        rolls = chapter.get("rolls")
+        if isinstance(rolls, list):
+            for index, raw_roll in enumerate(rolls):
+                if not isinstance(raw_roll, dict):
+                    continue
+                position = _roll_word_position(
+                    raw_roll=raw_roll,
+                    chapter_start=chapter_start,
+                    chapter_end=chapter_end,
+                    index=index,
+                    total_rolls=len(rolls),
+                )
+                if position > probe_word:
+                    continue
+                if raw_roll.get("outcome") == "hit":
+                    hits += 1
+                elif raw_roll.get("outcome") == "miss":
+                    misses += 1
+        chapter_start = chapter_end
+
+    return EarlyChapterProbe(
+        chapter_num=first_chapter_num,
+        word_position=probe_word,
+        hits=hits,
+        misses=misses,
+    )
+
+
 @contextlib.contextmanager
 def _served_site(site_dir: Path) -> Iterator[str]:
     handler = lambda *args, **kwargs: http.server.SimpleHTTPRequestHandler(  # noqa: E731
@@ -207,22 +324,50 @@ def smoke_browser(*, site_dir: Path) -> None:
             "`python3 -m playwright install chromium`"
         ) from exc
 
+    _package_dir, viz_path = _default_runtime_paths(site_dir)
+    probe = _early_chapter_probe(_read_json(viz_path))
+
     with _served_site(site_dir) as url:
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page(viewport={"width": 1280, "height": 900})
+            page.add_init_script(
+                """
+                localStorage.setItem("bcf:preview-port-storage-version", "2");
+                localStorage.setItem("bcf:bookmark:word_position", String(window.__BCF_SMOKE_WORD__));
+                localStorage.setItem("bcf:mode", "playthrough");
+                """.replace("window.__BCF_SMOKE_WORD__", str(probe.word_position))
+            )
             messages: list[str] = []
             page.on("console", lambda msg: messages.append(f"{msg.type}: {msg.text}"))
             page.on("pageerror", lambda exc: messages.append(f"pageerror: {exc}"))
             page.goto(url, wait_until="networkidle")
             page.wait_for_selector("#scrubber-playhead", timeout=15_000)
             width = page.locator(".scrubber-scroller").bounding_box()["width"]
+            stat_text = page.locator(".stat-strip").inner_text(timeout=15_000)
             browser.close()
     errors = [msg for msg in messages if msg.startswith(("error:", "pageerror:"))]
     if errors:
         raise RuntimeError("browser console errors during smoke: " + "; ".join(errors))
     if width <= 0:
         raise RuntimeError("scrubber rendered with zero width")
+    expected_fragments = (
+        f"ch {probe.chapter_num}",
+        f"{probe.hits} hits",
+        f"{probe.misses} misses",
+    )
+    stat_text_normalized = " ".join(stat_text.lower().split())
+    missing = [
+        fragment
+        for fragment in expected_fragments
+        if fragment.lower() not in stat_text_normalized
+    ]
+    if missing:
+        raise RuntimeError(
+            "early chapter roll counts mismatch: expected stat strip to include "
+            f"{', '.join(expected_fragments)} at word {probe.word_position}; "
+            f"missing {', '.join(missing)} from {stat_text!r}"
+        )
 
 
 def main() -> None:

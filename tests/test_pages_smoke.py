@@ -116,6 +116,8 @@ def test_browser_smoke_waits_for_current_scrubber_dom(tmp_path: Path, monkeypatc
     _write_minimal_site(site)
     waited: list[str] = []
     measured: list[str] = []
+    init_scripts: list[str] = []
+    stat_reads: list[str] = []
 
     class FakeLocator:
         def __init__(self, selector: str) -> None:
@@ -125,7 +127,14 @@ def test_browser_smoke_waits_for_current_scrubber_dom(tmp_path: Path, monkeypatc
             measured.append(self.selector)
             return {"width": 1280}
 
+        def inner_text(self, **_kwargs: object) -> str:
+            stat_reads.append(self.selector)
+            return "ch 1 position\n99 words\n0 hits\n1 misses"
+
     class FakePage:
+        def add_init_script(self, source: str) -> None:
+            init_scripts.append(source)
+
         def on(self, *_args: object) -> None:
             return None
 
@@ -177,3 +186,79 @@ def test_browser_smoke_waits_for_current_scrubber_dom(tmp_path: Path, monkeypatc
 
     assert waited == ["#scrubber-playhead"]
     assert measured == [".scrubber-scroller"]
+    assert stat_reads == [".stat-strip"]
+    assert "bcf:bookmark:word_position" in init_scripts[0]
+    assert "99" in init_scripts[0]
+
+
+def test_browser_smoke_rejects_early_chapter_roll_count_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts import smoke_pages_site
+
+    site = tmp_path / "site"
+    _write_minimal_site(site)
+
+    class FakeLocator:
+        def __init__(self, selector: str) -> None:
+            self.selector = selector
+
+        def bounding_box(self) -> dict[str, int]:
+            return {"width": 1280}
+
+        def inner_text(self, **_kwargs: object) -> str:
+            return "ch 1 position\n99 words\n17 hits\n15 misses"
+
+    class FakePage:
+        def add_init_script(self, *_args: object) -> None:
+            return None
+
+        def on(self, *_args: object) -> None:
+            return None
+
+        def goto(self, *_args: object, **_kwargs: object) -> None:
+            return None
+
+        def wait_for_selector(self, *_args: object, **_kwargs: object) -> None:
+            return None
+
+        def locator(self, selector: str) -> FakeLocator:
+            return FakeLocator(selector)
+
+    class FakeBrowser:
+        def new_page(self, **_kwargs: object) -> FakePage:
+            return FakePage()
+
+        def close(self) -> None:
+            return None
+
+    class FakeChromium:
+        def launch(self) -> FakeBrowser:
+            return FakeBrowser()
+
+    class FakePlaywright:
+        chromium = FakeChromium()
+
+        def __enter__(self) -> "FakePlaywright":
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    @contextmanager
+    def fake_served_site(_site_dir: Path):
+        yield "http://127.0.0.1:1/web/"
+
+    fake_playwright_module = types.SimpleNamespace(
+        sync_playwright=lambda: FakePlaywright()
+    )
+
+    monkeypatch.setattr(smoke_pages_site, "_served_site", fake_served_site)
+    monkeypatch.setitem(
+        sys.modules,
+        "playwright.sync_api",
+        fake_playwright_module,
+    )
+
+    with pytest.raises(RuntimeError, match="early chapter roll counts mismatch"):
+        smoke_pages_site.smoke_browser(site_dir=site)
