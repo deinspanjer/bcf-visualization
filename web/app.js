@@ -748,10 +748,19 @@ function renderAppShell() {
     renderHeader(),
     app.portraitDismissed ? null : renderPortraitBanner(),
     el("main", { class: "app-main" },
-      renderScrubber(app.mode === "detail"),
-      renderScrubberControls(),
-      renderStatStrip(),
-      app.mode === "detail" ? renderDetail() : renderPlaythrough(),
+      app.mode === "playthrough"
+        ? [
+            renderPlaythrough(),
+            renderScrubber(false),
+            renderScrubberControls(),
+            renderStatStrip(),
+          ]
+        : [
+            renderScrubber(true),
+            renderScrubberControls(),
+            renderStatStrip(),
+            renderDetail(),
+          ],
     ),
   );
 }

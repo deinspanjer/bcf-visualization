@@ -42,6 +42,12 @@ def _page_with_console_capture(
     return page, messages
 
 
+def _main_child_classes(page):
+    return page.locator(".app-main").evaluate(
+        "(main) => [...main.children].map(node => node.className || node.id || node.tagName.toLowerCase())"
+    )
+
+
 def test_web_app_loads_preview_playthrough_without_obsolete_sky_dom(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
@@ -52,6 +58,10 @@ def test_web_app_loads_preview_playthrough_without_obsolete_sky_dom(tmp_path):
 
             expect = playwright_api.expect
             expect(page.locator(".app-header")).to_be_visible()
+            main_children = _main_child_classes(page)
+            playthrough_idx = next(i for i, class_name in enumerate(main_children) if "playthrough" in class_name)
+            scrubber_idx = next(i for i, class_name in enumerate(main_children) if "scrubber" in class_name)
+            assert playthrough_idx < scrubber_idx
             expect(page.locator(".scrubber.panel-cut")).to_be_visible()
             expect(page.locator(".playthrough .viewport")).to_be_visible()
             expect(page.locator(".carousel-strip")).to_have_count(1)
@@ -86,6 +96,13 @@ def test_web_app_mode_switch_toggles_detail_and_persists(tmp_path):
             expect(page.locator("#mode-detail")).to_have_class(re.compile(r"\bis-active\b"))
             expect(page.locator(".detail")).to_be_visible()
             expect(page.locator("#detail-roll-log-panel")).to_be_visible()
+            main_children = _main_child_classes(page)
+            scrubber_idx = next(i for i, class_name in enumerate(main_children) if "scrubber" in class_name)
+            controls_idx = next(i for i, class_name in enumerate(main_children) if "scrubber-controls" in class_name)
+            stats_idx = next(i for i, class_name in enumerate(main_children) if "stat-strip" in class_name)
+            detail_idx = next(i for i, class_name in enumerate(main_children) if class_name == "detail")
+            assert scrubber_idx < controls_idx < stats_idx < detail_idx
+            assert page.locator(".playthrough").count() == 0
             assert page.evaluate("localStorage.getItem('bcf:mode')") == "detail"
 
             page.reload(wait_until="networkidle")
@@ -393,4 +410,3 @@ def test_web_app_keyboard_controls_move_clamp_and_ignore_text_input_focus(tmp_pa
             assert console_messages == []
 
             browser.close()
-
