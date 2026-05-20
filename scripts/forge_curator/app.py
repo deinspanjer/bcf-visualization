@@ -2176,7 +2176,7 @@ class ForgeCuratorApp(App):
         for roll in cs.derived.predicted_rolls:
             if str(roll.get("chapter_num")) != cn:
                 continue
-            global_cp = roll.get("word_position")
+            global_cp = roll.get("cp_offset")
             if global_cp is None:
                 continue
             _add(int(global_cp) - chapter_cp_start)
@@ -2530,7 +2530,7 @@ class ForgeCuratorApp(App):
     def _predicted_roll_global_positions(self) -> list[int]:
         positions: list[int] = []
         for roll in self.data.predicted.get("predicted", []):
-            pos = roll.get("word_position")
+            pos = roll.get("cp_offset")
             if pos is not None:
                 positions.append(int(pos))
         return sorted(set(positions))
@@ -2772,7 +2772,7 @@ class ForgeCuratorApp(App):
         for idx, roll in enumerate(cs.derived.predicted_rolls, start=1):
             if str(roll.get("chapter_num")) != cn:
                 continue
-            global_cp = roll.get("word_position")
+            global_cp = roll.get("cp_offset")
             if global_cp is None:
                 continue
             local_cp = int(global_cp) - chapter_cp_start
@@ -2837,7 +2837,7 @@ class ForgeCuratorApp(App):
             roll for roll in self.data.predicted.get("predicted", [])
             if str(roll.get("chapter_num")) == str(chapter_num)
         ]
-        rows.sort(key=lambda roll: roll.get("word_position") or 0)
+        rows.sort(key=lambda roll: roll.get("cp_offset") or 0)
         if not (1 <= int(index) <= len(rows)):
             return None
         return rows[int(index) - 1]
@@ -2876,7 +2876,7 @@ class ForgeCuratorApp(App):
                 predicted = self._predicted_roll_for_chapter_index(target_chapter, idx)
                 if predicted is None:
                     continue
-                global_cp = int(predicted.get("word_position") or 0)
+                global_cp = int(predicted.get("cp_offset") or 0)
                 local_cp = global_cp - self._chapter_cp_start(str(target_chapter))
                 row = {
                     "index": None,

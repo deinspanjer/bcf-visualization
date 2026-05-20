@@ -20,7 +20,7 @@ def _predicted(
     return [
         {
             "chapter_num": chapter_num,
-            "word_position": position,
+            "cp_offset": position,
             "roll_number": index,
             "cp_rule_regime": cp_rule_regime,
             "roll_trigger_cp_threshold": index * 100,

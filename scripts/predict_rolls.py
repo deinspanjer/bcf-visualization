@@ -34,6 +34,7 @@ roll counts for chapters 76+ where the curator stopped maintaining.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import asdict
 
@@ -45,6 +46,7 @@ from multi_grab import (
     unit_principal_cost,
     unit_total_cost,
 )
+from cp_epub_map import build_map, cp_to_epub
 from eligibility_spans import section_cp_word_count, section_span_overrides
 from regime_simulator import (
     REGIMES,
@@ -62,6 +64,7 @@ ROLLS_JSON = DERIVED / "rolls.json"
 SECTIONS_JSON = DERIVED / "chapter_sections.json"
 CLASSIFICATIONS_JSON = MANUAL / "section_classifications.json"
 OUT = DERIVED / "predicted_rolls.json"
+ALIGNMENT_OUT = DERIVED / "chapter_alignment_fingerprints.json"
 
 
 # Regime model lives in scripts/regime_simulator.py; re-exported above.
@@ -135,6 +138,45 @@ def _simulate(chapters_in_order, paid_by_chapter, exact_words, transitions=None)
     )
 
 
+# ---------- per-chapter alignment fingerprints -----------------------------
+
+
+def chapter_alignment_fingerprint(predicted_rolls: list[dict]) -> str:
+    """Hash the canonical-form predicted-roll sequence for one chapter.
+
+    Captures every upstream cause of a position shift — eligibility map
+    edits, regime transitions, prior-chapter shadow events, in-chapter
+    perk purchases — because all of them end up moving (cp_offset,
+    epub_offset, regime, threshold). Curator records that name a roll
+    by chapter+index store this hash; a mismatch on rebuild means the
+    named roll has moved and the curator must re-align.
+    """
+    canonical = [
+        (
+            int(r["roll_number"]),
+            int(r["cp_offset"]),
+            int(r["epub_offset"]),
+            int(r["cp_rule_regime"]),
+            int(r["roll_trigger_cp_threshold"]),
+        )
+        for r in predicted_rolls
+    ]
+    payload = json.dumps(canonical, separators=(",", ":")).encode()
+    return "sha256:" + hashlib.sha256(payload).hexdigest()[:16]
+
+
+def compute_alignment_fingerprints(predicted: list[dict]) -> dict[str, str]:
+    """Per-chapter fingerprints keyed by chapter_num."""
+    by_chapter: dict[str, list[dict]] = {}
+    for roll in predicted:
+        cn = str(roll["chapter_num"])
+        by_chapter.setdefault(cn, []).append(roll)
+    return {
+        cn: chapter_alignment_fingerprint(rolls)
+        for cn, rolls in by_chapter.items()
+    }
+
+
 # ---------- per-chapter prediction ------------------------------------------
 
 
@@ -187,16 +229,25 @@ def predict_chapter(
             "principal_cost": unit_principal_cost(unit),
         })
 
-    predicted, chap_start, chap_end, _ = simulate_story(
+    predicted, chap_cp_start, chap_cp_end, _ = simulate_story(
         chapters, paid_by_chapter, cp_words, transitions,
     )
+    cp_map = build_map()
+    slot_counter: dict[str, int] = {}
+    for p in predicted:
+        p.epub_offset = cp_to_epub(cp_map, p.cp_offset)
+        slot_counter[p.chapter_num] = slot_counter.get(p.chapter_num, 0) + 1
+        p.slot_index = slot_counter[p.chapter_num]
+    cn = str(chapter_num)
     return {
-        "chapter_num": str(chapter_num),
+        "chapter_num": cn,
         "predicted": [
-            asdict(p) for p in predicted if str(p.chapter_num) == str(chapter_num)
+            asdict(p) for p in predicted if str(p.chapter_num) == cn
         ],
-        "chapter_word_start": chap_start.get(str(chapter_num)),
-        "chapter_word_end": chap_end.get(str(chapter_num)),
+        "chapter_cp_start": chap_cp_start.get(cn),
+        "chapter_cp_end": chap_cp_end.get(cn),
+        "chapter_epub_start": cp_map.chapter_epub_start.get(cn),
+        "chapter_epub_end": cp_map.chapter_epub_end.get(cn),
     }
 
 
@@ -245,9 +296,15 @@ def main() -> None:
 
     transitions = load_regime_transitions()
 
-    predicted, chap_start, chap_end, total_words = _simulate(
+    predicted, chap_cp_start, chap_cp_end, total_cp_words = _simulate(
         chapters, paid_by_chapter, cp_words, transitions,
     )
+    cp_map = build_map()
+    slot_counter: dict[str, int] = {}
+    for p in predicted:
+        p.epub_offset = cp_to_epub(cp_map, p.cp_offset)
+        slot_counter[p.chapter_num] = slot_counter.get(p.chapter_num, 0) + 1
+        p.slot_index = slot_counter[p.chapter_num]
 
     # Cross-validate per-chapter roll counts against rolls.json (ch 1-75).
     rolls_data = json.loads(ROLLS_JSON.read_text())
@@ -277,7 +334,8 @@ def main() -> None:
             "documented three-regime model."
         ),
         "_count": len(predicted),
-        "_total_words_epub_exact": total_words,
+        "_total_cp_words": total_cp_words,
+        "_total_epub_words": cp_map.total_epub_words,
         "_regime_summary": {
             "1": "ch 1-91: 100 CP / 2000 words, roll every 100 CP",
             "2": "ch 92-96: 100 CP / 2000 words, roll every 200 CP",
@@ -297,6 +355,23 @@ def main() -> None:
     }
 
     write_validated_json(OUT, payload, "predicted_rolls")
+
+    fingerprints = compute_alignment_fingerprints(payload["predicted"])
+    write_validated_json(
+        ALIGNMENT_OUT,
+        {
+            "_source": (
+                "sha256(canonical predicted-roll sequence) per chapter, "
+                "from predicted_rolls.json. Curator records that anchor "
+                "to a specific predicted slot store this hash; a "
+                "mismatch on rebuild means the slot has moved and the "
+                "curator must re-align."
+            ),
+            "_count": len(fingerprints),
+            "chapter_alignment_fingerprints": fingerprints,
+        },
+        "chapter_alignment_fingerprints",
+    )
 
     # Print a small summary
     by_regime = {1: 0, 2: 0, 3: 0}

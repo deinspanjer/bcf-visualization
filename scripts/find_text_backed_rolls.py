@@ -195,7 +195,7 @@ def main() -> None:
         ch_evs.sort(key=lambda e: e["anchor_offset"])
 
     # Build cumulative-CP-words per chapter so we can convert
-    # predicted.word_position (EPUB-cumulative) to within-chapter index.
+    # predicted.cp_offset (CP-cumulative) to within-chapter index.
     #
     # BUG FIX: previously this used sections_by_chap[cn]["cp_earning_word_count"],
     # which is the pre-computed value written by extract_chapter_sections.py using
@@ -249,7 +249,7 @@ def main() -> None:
         word_idx = chapter_word_index.get(ch, [])
         chapter_html = chapter_html_cache.get(ch, "")
         # Within-chapter word index (0-based) of the predicted position.
-        target_word_in_chapter = p["word_position"] - cum_cp_before.get(ch, 0)
+        target_word_in_chapter = p["cp_offset"] - cum_cp_before.get(ch, 0)
         # Clamp to valid range; if predicted pushes past the chapter's
         # CP-word count, the predicted lands at the chapter's tail.
         if word_idx and target_word_in_chapter >= len(word_idx):
@@ -330,9 +330,11 @@ def main() -> None:
         out_rolls.append({
             "roll_number": p["roll_number"],
             "chapter_num": ch,
+            "slot_index": p["slot_index"],
             "cp_rule_regime": p["cp_rule_regime"],
             "roll_trigger_cp_threshold": p["roll_trigger_cp_threshold"],
-            "predicted_word_position_epub": p["word_position"],
+            "cp_offset": p["cp_offset"],
+            "epub_offset": p["epub_offset"],
             "predicted_word_in_chapter": target_word_in_chapter,
             "predicted_char_offset": center_char,
             "anchor_string": anchor_string,

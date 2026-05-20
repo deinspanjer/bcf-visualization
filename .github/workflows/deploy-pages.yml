@@ -39,14 +39,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Stage publishable subset
-        # Only the scrubber, runtime data package, and figure PNGs go to
-        # Pages. The EPUBs, MHTs, and xlsx in data/raw/ are explicitly
-        # excluded so source prose isn't republished by a Pages deploy.
+      - name: Stage non-web subset
+        # The scrubber (web/) is staged later — AFTER we regenerate
+        # web/constellations/ from runtime-tarball inputs — so we can
+        # ship up-to-date constellation pages on a webapp-only redeploy.
+        # data/raw/ is explicitly excluded so source prose isn't republished.
         run: |
           mkdir -p _site
           cp .nojekyll index.html _site/
-          cp -r web      _site/
           cp -r figures  _site/
 
       - name: Stage data package
@@ -94,6 +94,38 @@ jobs:
             RUNTIME_TAR="$(find .data-release -maxdepth 1 -name 'bcf-visualization-runtime-*.tar.gz' -print -quit)"
             PREPARE_ARGS+=(--runtime-tar "$RUNTIME_TAR")
           fi
+
+          # Regenerate web/constellations/ from the optional inputs in the
+          # chosen runtime tarball, then stage the scrubber. Old tarballs
+          # (pre-RUNTIME_OPTIONAL) don't carry these files; in that case
+          # the constellation pages won't be staged and the info-popover
+          # link 404s — recoverable by triggering a fresh data release.
+          PRIMARY_RUNTIME_TAR=""
+          prev=""
+          for token in "${PREPARE_ARGS[@]}"; do
+            if [ "$prev" = "--runtime-tar" ] && [ -z "$PRIMARY_RUNTIME_TAR" ]; then
+              PRIMARY_RUNTIME_TAR="$token"
+            fi
+            prev="$token"
+          done
+          if [ -n "$PRIMARY_RUNTIME_TAR" ] && [ -f "$PRIMARY_RUNTIME_TAR" ]; then
+            mkdir -p data/derived
+            tar -xzf "$PRIMARY_RUNTIME_TAR" -C data/derived \
+              perk_directory.json \
+              constellation_lifecycle.json \
+              constellation_wireframes.json \
+              2>/dev/null || true
+          fi
+          if [ -f data/derived/perk_directory.json ] \
+              && [ -f data/derived/constellation_lifecycle.json ] \
+              && [ -f data/derived/constellation_wireframes.json ]; then
+            python3 scripts/scaffold_constellation_pages.py
+          else
+            echo "WARNING: runtime tarball missing optional scaffold inputs;" \
+                 "constellation pages will be absent from this deploy"
+          fi
+          cp -r web _site/
+
           python3 scripts/data_release.py prepare-pages \
             "${PREPARE_ARGS[@]}" \
             --skip-incompatible-runtime

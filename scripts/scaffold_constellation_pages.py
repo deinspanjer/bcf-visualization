@@ -6,15 +6,17 @@ generated `index.html` files are idempotent — running the script twice
 produces the same bytes. `current.svg` and `metadata.json` are inputs
 only and are never written by this script.
 
-Inputs:
+Inputs (read from data/, never written):
     data/derived/perk_directory.json
     data/derived/constellation_lifecycle.json
+    data/derived/constellation_wireframes.json   (vertex_source per cluster)
     data/constellations/<slug>/metadata.json
     data/constellations/<slug>/current.svg
 
-Outputs:
-    data/constellations/<slug>/index.html        (14 per-cluster pages)
-    data/constellations/index.html               (top-level index)
+Outputs (written under web/ so the existing `cp -r web _site/` in the
+deploy workflows stages them alongside the scrubber):
+    web/constellations/<slug>/index.html         (14 per-cluster pages)
+    web/constellations/index.html                (top-level index)
 """
 
 from __future__ import annotations
@@ -28,7 +30,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DERIVED = ROOT / "data" / "derived"
-OUT = ROOT / "data" / "constellations"
+INPUTS = ROOT / "data" / "constellations"
+OUT = ROOT / "web" / "constellations"
 CURRENT_FILENAME = "current.svg"
 METADATA_FILENAME = "metadata.json"
 INDEX_FILENAME = "index.html"
@@ -101,6 +104,14 @@ def load_lifecycle() -> list[dict[str, Any]]:
 def load_perks() -> list[dict[str, Any]]:
     data = load_json(DATA_DERIVED / "perk_directory.json")
     return [p for p in data["perks"] if p.get("constellation") != FELYNE_CONSTELLATION]
+
+
+def load_wireframes_by_slug() -> dict[str, dict[str, Any]]:
+    """Per-cluster wireframe data keyed by slug. Carries ``vertex_source``
+    (``"jumps"`` or ``"perks"``) and marker count — both author-driven
+    properties of the SVG, surfaced by build_constellation_wireframes.py."""
+    data = load_json(DATA_DERIVED / "constellation_wireframes.json")
+    return {c["slug"]: c for c in data.get("cluster_constellations", [])}
 
 
 def jumps_for(constellation: str, perks: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -279,6 +290,7 @@ def render_perks_table(perks: list[dict[str, Any]]) -> str:
 def render_cluster_page(
     cluster: dict[str, Any],
     metadata: dict[str, Any],
+    wireframe: dict[str, Any],
     svg_inline: str,
     jumps: list[dict[str, Any]],
     perks: list[dict[str, Any]],
@@ -289,11 +301,16 @@ def render_cluster_page(
     intended_image = metadata.get("intended_image", "")
     perk_count = len(perks)
     jump_count = len(jumps)
+    vertex_source = wireframe.get("vertex_source") or "jumps"
+    marker_count = len(wireframe.get("marker_positions") or [])
+    vertex_kind_label = "perks" if vertex_source == "perks" else "jumps"
+    vertex_summary = f"{marker_count} {vertex_kind_label} · one marker per {vertex_kind_label[:-1]}"
 
     meta_dl = (
         '  <dl class="meta">\n'
         f'    <dt>Slot</dt><dd>{slot:02d}</dd>\n'
         f'    <dt>Slug</dt><dd>{escape(slug)}</dd>\n'
+        f'    <dt>Vertices</dt><dd>{escape(vertex_summary)}</dd>\n'
         f'    <dt>Jumps</dt><dd>{jump_count}</dd>\n'
         f'    <dt>Perks</dt><dd>{perk_count}</dd>\n'
         f'    <dt>Revealed at chapter</dt><dd>{escape(cluster.get("revealed_at_chapter") or "—")}</dd>\n'
@@ -303,6 +320,23 @@ def render_cluster_page(
     )
 
     workbench_href = f"../{WORKBENCH_FILENAME}?constellation={slug}"
+
+    # Render the vertex-source table first, with a "(vertices)" tag in the
+    # heading so the reader knows which list maps onto the SVG markers.
+    if vertex_source == "perks":
+        primary_html = (
+            "<h2>Perks <small>(vertices)</small></h2>\n"
+            f"{render_perks_table(perks)}\n"
+            "<h2>Jumps</h2>\n"
+            f"{render_jumps_table(jumps)}"
+        )
+    else:
+        primary_html = (
+            "<h2>Jumps <small>(vertices)</small></h2>\n"
+            f"{render_jumps_table(jumps)}\n"
+            "<h2>Perks</h2>\n"
+            f"{render_perks_table(perks)}"
+        )
 
     return (
         "<!DOCTYPE html>\n"
@@ -326,10 +360,7 @@ def render_cluster_page(
         '<div class="current-svg">\n'
         f"{svg_inline}\n"
         "</div>\n"
-        "<h2>Jumps</h2>\n"
-        f"{render_jumps_table(jumps)}\n"
-        "<h2>Perks</h2>\n"
-        f"{render_perks_table(perks)}\n"
+        f"{primary_html}\n"
         "</body>\n"
         "</html>\n"
     )
@@ -344,11 +375,15 @@ def render_top_index(records: list[dict[str, Any]]) -> str:
         slot = cluster["slot_position"]
         per_page = f"{escape(slug)}/index.html"
         workbench = f"{WORKBENCH_FILENAME}?constellation={slug}"
+        vertex_source = rec["vertex_source"]
+        vertex_kind_label = "perks" if vertex_source == "perks" else "jumps"
+        vertex_summary = f"{rec['marker_count']} {vertex_kind_label}"
         rows.append(
             "    <tr>"
             f"<td class=\"num\">{slot:02d}</td>"
             f"<td class=\"name\"><a href=\"{escape(per_page)}\">{escape(name)}</a></td>"
             f"<td class=\"thumb-cell\"><span class=\"thumb\">{rec['svg_inline']}</span></td>"
+            f"<td class=\"vertex {escape(vertex_source)}\">{escape(vertex_summary)}</td>"
             f"<td class=\"num\">{rec['jump_count']}</td>"
             f"<td class=\"num\">{rec['perk_count']}</td>"
             f"<td class=\"status\">{escape(status_string(cluster))}</td>"
@@ -375,11 +410,13 @@ def render_top_index(records: list[dict[str, Any]]) -> str:
         '<p class="lede">All 14 cluster constellations in slot order. '
         "Click <em>Details</em> for the per-cluster page, or "
         "<em>Edit</em> to open the tracing workbench preloaded with that "
-        "constellation.</p>\n"
+        "constellation. The <strong>Vertices</strong> column lists what each "
+        "marker on the constellation represents (a jump or a perk).</p>\n"
         "<table>\n"
         "  <thead>\n"
         "    <tr>"
         "<th>Slot</th><th>Name</th><th>Current</th>"
+        "<th>Vertices</th>"
         "<th>Jumps</th><th>Perks</th><th>Status</th><th>Actions</th>"
         "</tr>\n"
         "  </thead>\n"
@@ -398,19 +435,29 @@ def render_top_index(records: list[dict[str, Any]]) -> str:
 def main() -> None:
     lifecycle = load_lifecycle()
     perks = load_perks()
+    wireframes_by_slug = load_wireframes_by_slug()
     # Preserve the slot_position order from lifecycle (already 1..14).
     clusters = sorted(lifecycle, key=lambda c: c["slot_position"])
 
     records: list[dict[str, Any]] = []
     for cluster in clusters:
         slug = cluster["slug"]
-        folder = OUT / slug
-        if not folder.exists():
-            raise SystemExit(f"missing constellation folder: {folder}")
-        metadata_path = folder / METADATA_FILENAME
-        svg_path = folder / CURRENT_FILENAME
+        inputs_folder = INPUTS / slug
+        if not inputs_folder.exists():
+            raise SystemExit(f"missing constellation inputs folder: {inputs_folder}")
+        wireframe = wireframes_by_slug.get(slug)
+        if wireframe is None:
+            raise SystemExit(
+                f"missing wireframe entry for {slug}; "
+                "run scripts/build_constellation_wireframes.py first"
+            )
+        metadata_path = inputs_folder / METADATA_FILENAME
+        svg_path = inputs_folder / CURRENT_FILENAME
         metadata = load_json(metadata_path)
         svg_text = svg_path.read_text()
+
+        out_folder = OUT / slug
+        out_folder.mkdir(parents=True, exist_ok=True)
 
         cluster_jumps = jumps_for(cluster["name"], perks)
         cluster_perks = perks_for(cluster["name"], perks)
@@ -419,11 +466,12 @@ def main() -> None:
         page_html = render_cluster_page(
             cluster=cluster,
             metadata=metadata,
+            wireframe=wireframe,
             svg_inline=svg_inline,
             jumps=cluster_jumps,
             perks=cluster_perks,
         )
-        (folder / INDEX_FILENAME).write_text(page_html)
+        (out_folder / INDEX_FILENAME).write_text(page_html)
 
         records.append(
             {
@@ -431,9 +479,12 @@ def main() -> None:
                 "svg_inline": svg_inline,
                 "jump_count": len(cluster_jumps),
                 "perk_count": len(cluster_perks),
+                "vertex_source": wireframe.get("vertex_source") or "jumps",
+                "marker_count": len(wireframe.get("marker_positions") or []),
             }
         )
 
+    OUT.mkdir(parents=True, exist_ok=True)
     (OUT / INDEX_FILENAME).write_text(render_top_index(records))
 
     print(f"Wrote {len(records)} per-cluster pages + 1 top-level index under {OUT.relative_to(ROOT)}")

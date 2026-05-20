@@ -183,6 +183,7 @@
         "purchased_perk_jump", "free_perks",
         "word_position", "cumulative_word_offset",
         "predicted_word_position_epub", "display_word_position_epub",
+        "epub_word_offset_predicted", "epub_word_offset_curated",
         "predicted_char_offset_in_chapter",
         "anchor_char_offset_in_chapter", "evidence_kind",
         "evidence_quotes",
@@ -296,6 +297,12 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "display_word_position_epub": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "epub_word_offset_predicted": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "epub_word_offset_curated": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "predicted_char_offset_in_chapter": {

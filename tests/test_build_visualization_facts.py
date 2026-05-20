@@ -41,15 +41,17 @@ def _seed_inputs(tmp_path: Path) -> Path:
     predicted = {
         "_source": "fixture",
         "_count": 1,
-        "_total_words_epub_exact": 2000,
+        "_total_cp_words": 2000,
+        "_total_epub_words": 2253,
         "_regime_summary": {"1": "a", "2": "b", "3": "c"},
         "_validation_chapters_1_75": {
             "actual_total_attempts": 0,
             "predicted_total_in_same_chapters": 0,
         },
         "predicted": [
-            {"roll_number": 1, "word_position": 2000, "chapter_num": "1",
-             "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100},
+            {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
+             "chapter_num": "1", "slot_index": 1, "cp_rule_regime": 1,
+             "roll_trigger_cp_threshold": 100},
         ],
         "comparison_per_chapter": [],
     }
@@ -87,9 +89,14 @@ def test_bundle_version_matches_manifest(tmp_path: Path):
     assert bundle["version"]["build_number"] == 1
 
 
-def test_bundle_chapters_preserved_verbatim(tmp_path: Path):
+def test_bundle_chapters_projected_with_rolls_list(tmp_path: Path):
+    # Bundle projects each chapter through _project_bundle_chapter, which
+    # strips the cascade positional fields from rolls and ensures a `rolls`
+    # array exists. Fixtures with no rolls round-trip with an empty list.
     bundle = build(_seed_inputs(tmp_path))
-    assert bundle["chapters"] == [{"chapter_num": "1", "full_title": "1 Fixture"}]
+    assert bundle["chapters"] == [
+        {"chapter_num": "1", "full_title": "1 Fixture", "rolls": []},
+    ]
 
 
 def test_bundle_source_method_describe_bundler(tmp_path: Path):
@@ -109,8 +116,9 @@ def test_bundle_predicted_rolls_renames_cp_rule_regime_to_regime(tmp_path: Path)
     the render-side reader at web/app.js:1021 (`tick.regime`). Synthetic ticks already use `regime`."""
     bundle = build(_seed_inputs(tmp_path))
     assert bundle["predicted_rolls"] == [
-        {"roll_number": 1, "word_position": 2000, "chapter_num": "1",
-         "regime": 1, "roll_trigger_cp_threshold": 100},
+        {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
+         "chapter_num": "1", "slot_index": 1, "regime": 1,
+         "roll_trigger_cp_threshold": 100},
     ]
     for row in bundle["predicted_rolls"]:
         assert "cp_rule_regime" not in row, (

@@ -244,15 +244,20 @@ def forge_curator_fixture(tmp_path: Path, monkeypatch) -> ForgeCuratorFixture:
         derived / "predicted_rolls.json",
         {
             "predicted": [
-                {"chapter_num": "1", "word_position": 20, "roll_number": 1},
+                {"chapter_num": "1", "slot_index": 1, "cp_offset": 20,
+                 "epub_offset": 20, "roll_number": 1},
                 {
                     "chapter_num": "2",
-                    "word_position": len(_chapter_words("1")) + 20,
+                    "slot_index": 1,
+                    "cp_offset": len(_chapter_words("1")) + 20,
+                    "epub_offset": len(_chapter_words("1")) + 20,
                     "roll_number": 2,
                 },
                 {
                     "chapter_num": "2",
-                    "word_position": len(_chapter_words("1")) + 40,
+                    "slot_index": 2,
+                    "cp_offset": len(_chapter_words("1")) + 40,
+                    "epub_offset": len(_chapter_words("1")) + 40,
                     "roll_number": 3,
                 },
             ]

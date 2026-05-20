@@ -93,8 +93,8 @@ def test_skipped_roll_override_exports_predicted_slot_marker() -> None:
     markers = _skipped_predicted_roll_markers(
         "9",
         [
-            {"roll_number": 34, "word_position": 102000, "chapter_num": "9"},
-            {"roll_number": 35, "word_position": 104000, "chapter_num": "9"},
+            {"roll_number": 34, "cp_offset": 102000, "chapter_num": "9"},
+            {"roll_number": 35, "cp_offset": 104000, "chapter_num": "9"},
         ],
         {
             "rolls": [

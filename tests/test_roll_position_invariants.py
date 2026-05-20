@@ -24,6 +24,7 @@ from predict_rolls import (  # noqa: E402
     _load_cp_words_per_chapter,
     _simulate,
 )
+from cp_epub_map import build_map, cp_to_epub  # noqa: E402
 from regime_simulator import load_regime_transitions  # noqa: E402
 from data_paths import DERIVED  # noqa: E402
 
@@ -61,6 +62,12 @@ def _simulated_rolls() -> tuple[list[dict], dict[str, int]]:
         cp_words,
         load_regime_transitions(),
     )
+    cp_map = build_map()
+    slot_counter: dict[str, int] = {}
+    for p in predicted:
+        p.epub_offset = cp_to_epub(cp_map, p.cp_offset)
+        slot_counter[p.chapter_num] = slot_counter.get(p.chapter_num, 0) + 1
+        p.slot_index = slot_counter[p.chapter_num]
     return [asdict(roll) for roll in predicted], chapter_starts
 
 
@@ -74,7 +81,7 @@ def test_predicted_rolls_match_global_cp_simulator_and_regimes() -> None:
 def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> None:
     predicted, chapter_starts = _simulated_rolls()
     predicted_by_position = {
-        int(roll["word_position"]): roll
+        int(roll["cp_offset"]): roll
         for roll in predicted
     }
 
@@ -110,7 +117,7 @@ def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> Non
             mechanical_chapter_num = str(
                 roll.get("mechanical_chapter_num") or roll["chapter_num"]
             )
-            expected_global = int(predicted_roll["word_position"])
+            expected_global = int(predicted_roll["cp_offset"])
             expected_local = (
                 expected_global - int(chapter_starts[mechanical_chapter_num])
             )

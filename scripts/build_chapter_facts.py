@@ -40,6 +40,7 @@ import zipfile
 from collections import Counter
 
 from _common import write_validated_json
+from chapter_alignment import fail_if_misaligned
 from data_paths import DERIVED, MANUAL, RAW, ROOT
 from data_release import refresh_current_runtime_manifest
 from eligibility_spans import (
@@ -264,7 +265,7 @@ def _predicted_rolls_by_chapter(predicted_doc: dict) -> dict[str, list[dict]]:
             continue
         by_chapter.setdefault(chapter_num, []).append(roll)
     for rolls in by_chapter.values():
-        rolls.sort(key=lambda roll: int(roll.get("word_position") or 0))
+        rolls.sort(key=lambda roll: int(roll.get("cp_offset") or 0))
     return by_chapter
 
 
@@ -285,7 +286,10 @@ def _skipped_predicted_roll_markers(
         if predicted_index < 0 or predicted_index >= len(predicted_rolls):
             continue
         predicted_roll = predicted_rolls[predicted_index]
-        predicted_word_position = int(predicted_roll["word_position"])
+        # NB: this is the simulator's CP-cumulative position. The
+        # downstream field is misnamed `_epub` — fixed in Phase C when
+        # the bundle switches to epub_offset.
+        predicted_word_position = int(predicted_roll["cp_offset"])
         markers.append({
             "slot_index": slot_index,
             "roll_number": int(predicted_roll["roll_number"]),
@@ -306,6 +310,11 @@ def _skipped_predicted_roll_markers(
 def main() -> None:
     if not EPUB.exists():
         raise SystemExit(f"missing {EPUB.relative_to(ROOT)}")
+
+    # Re-alignment guard. Errors out before doing any join work if a
+    # chapter's curator overrides are anchored to a stale predicted-
+    # roll shape. See scripts/chapter_alignment.py for diagnostics.
+    fail_if_misaligned()
 
     chapters = json.loads(CHAPTERS.read_text())["chapters"]
     chapters.sort(key=lambda c: tuple(c["sort_key"]))
@@ -633,6 +642,8 @@ def main() -> None:
                 "cumulative_word_offset": display_pos,
                 "predicted_word_position_epub": roll["predicted_word_position_epub"],
                 "display_word_position_epub": display_pos,
+                "epub_word_offset_predicted": roll.get("epub_word_offset_predicted"),
+                "epub_word_offset_curated": roll.get("epub_word_offset_curated"),
                 "predicted_char_offset_in_chapter": roll["predicted_char_offset_in_chapter"],
                 "anchor_char_offset_in_chapter": roll["anchor_char_offset_in_chapter"],
                 "evidence_kind": roll["evidence_kind"],

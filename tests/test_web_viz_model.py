@@ -286,21 +286,11 @@ def test_roll_log_filtering_sorting_and_click_targets_use_word_positions() -> No
     }
 
 
-def test_coordinate_helpers_map_predicted_cp_ticks_to_raw_word_scrubber_positions() -> None:
-    source = """
-      import { buildCoordinateModel, rollWordPosition } from './web/viz-model.js';
-      const facts = { chapters: [
-        { chapter_num: '1', total_word_count: 1000, cumulative_words_through_chapter: 1000,
-          cp_earning_word_count: 500, cumulative_cp_earning_words: 500 },
-        { chapter_num: '2', total_word_count: 2000, cumulative_words_through_chapter: 3000,
-          cp_earning_word_count: 1000, cumulative_cp_earning_words: 1500 },
-      ]};
-      const model = buildCoordinateModel(facts);
-      const mapped = rollWordPosition(model, { predicted_word_position_epub: 1000 }, facts.chapters[1]);
-      const displayOverride = rollWordPosition(model, { display_word_position_epub: 2500, predicted_word_position_epub: 1000 }, facts.chapters[1]);
-      console.log(JSON.stringify({ mapped, displayOverride }));
-    """
-    assert json.loads(_node_eval(source)) == {
-        "mapped": 2000,
-        "displayOverride": 2500,
-    }
+# The old cascade + cp-fraction coordinate helpers are gone. Predicted and
+# curated positions are now canonical fields on every bundle roll
+# (`epub_word_offset_predicted` / `epub_word_offset_curated`), computed in
+# the pipeline via scripts/cp_epub_map.py. UI position selection is
+# trivial; the invariants live in:
+#   tests/test_cp_epub_map.py
+#   tests/test_chapter_alignment_fingerprints.py
+#   tests/test_roll_position_invariants.py

@@ -1,5 +1,5 @@
 {
-  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list \u2014 grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "chapter_roll_overrides": {
     "65": {
       "rolls": [
@@ -34,7 +34,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:7aaaf0b8bfce0dba"
     },
     "67": {
       "rolls": [
@@ -50,7 +51,7 @@
           "word_position": null,
           "evidence_quotes": [
             {
-              "text": "Two motes with another smaller one attached and another unrelated mote — four independent connections.",
+              "text": "Two motes with another smaller one attached and another unrelated mote \u2014 four independent connections.",
               "mention_chapter_num": "67",
               "mention_word_position": null
             }
@@ -86,14 +87,15 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:283d54f13519c08c"
     },
     "97": {
       "rolls": [
         {
           "perks": [
             "Additional Space - Starting Area",
-            "Additional Space – Lofty Loft"
+            "Additional Space \u2013 Lofty Loft"
           ],
           "outcome": "hit",
           "constellation": "Personal Reality",
@@ -121,7 +123,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:4fd31463eecf762b"
     },
     "1": {
       "rolls": [
@@ -159,7 +162,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:7c51b436fd7992c5"
     },
     "100": {
       "rolls": [
@@ -181,7 +185,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:7ebb46dc31a2eefe"
     },
     "103": {
       "rolls": [
@@ -214,7 +219,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:f7209f9acd7aed3a"
     },
     "104": {
       "rolls": [
@@ -224,10 +230,10 @@
             "Entrance Hall - Fleet",
             "Entrance Hall - Some Old Friends",
             "Entrance Hall - The Matrix",
-            "Entrance Hall – Aisha",
-            "Entrance Hall – Survey",
-            "Entrance Hall – Tetra",
-            "Entrance Hall – Tybalt"
+            "Entrance Hall \u2013 Aisha",
+            "Entrance Hall \u2013 Survey",
+            "Entrance Hall \u2013 Tetra",
+            "Entrance Hall \u2013 Tybalt"
           ],
           "outcome": "hit",
           "constellation": "Toolkits",
@@ -255,7 +261,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:66f1823d35e541f9"
     },
     "106": {
       "rolls": [
@@ -275,7 +282,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:9611e76a728c7af9"
     },
     "109": {
       "rolls": [
@@ -296,7 +304,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:74544d40c6ed5776"
     },
     "112": {
       "rolls": [
@@ -316,7 +325,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:ee22ab952788e969"
     },
     "114": {
       "rolls": [
@@ -337,7 +347,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:47f2172f9c9ff3a0"
     },
     "116.2": {
       "rolls": [
@@ -357,7 +368,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:f5d994ce4c4c20c4"
     },
     "2": {
       "rolls": [
@@ -428,7 +440,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:4f261e6d1f46bb61"
     },
     "3": {
       "rolls": [
@@ -485,7 +498,8 @@
           "source_roll_number": 9,
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:773ae28888f36573"
     },
     "4": {
       "rolls": [
@@ -553,7 +567,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:19c38e63a3d19a62"
     },
     "5": {
       "rolls": [
@@ -573,7 +588,8 @@
             }
           ]
         }
-      ]
+      ],
+      "_fingerprint": "sha256:0c9679799d77ae2a"
     },
     "6": {
       "rolls": [
@@ -672,7 +688,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:bd628edee580df65"
     },
     "6.1": {
       "rolls": [
@@ -719,7 +736,8 @@
         ],
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 6.1 has 1 known attempts despite 0 predicted model slots."
-      }
+      },
+      "_fingerprint": "sha256:d037f2c7a1646c26"
     },
     "7": {
       "rolls": [
@@ -774,7 +792,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:2c56f7708d2620a2"
     },
     "8": {
       "rolls": [
@@ -851,7 +870,8 @@
           "evidence_quotes": [],
           "curator_note": "skipped after ch8/ch8.1/ch9 reconciliation; likely edit drift rather than deferred evidence"
         }
-      ]
+      ],
+      "_fingerprint": "sha256:815b2cc5259ff4ee"
     },
     "8.1": {
       "rolls": [
@@ -945,7 +965,8 @@
           "evidence_quotes": [],
           "curator_note": "skipped after moving ch8.1 evidence to earliest source-backed slots"
         }
-      ]
+      ],
+      "_fingerprint": "sha256:8f4431573f8c1f76"
     },
     "9": {
       "rolls": [
@@ -1029,7 +1050,8 @@
           ],
           "curator_note": "uses the final ch9 predicted slot rather than inserting an unlogged second miss for \"a couple\""
         }
-      ]
+      ],
+      "_fingerprint": "sha256:006ef17e0029fdfd"
     },
     "10": {
       "rolls": [
@@ -1146,7 +1168,8 @@
         ],
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 10 has 5 known attempts despite 4 predicted model slots."
-      }
+      },
+      "_fingerprint": "sha256:3b832a4282ee83f3"
     },
     "11": {
       "rolls": [
@@ -1231,7 +1254,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:b8312eafb9c3da0d"
     },
     "12": {
       "rolls": [
@@ -1335,7 +1359,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:6f7fd50c65f42221"
     },
     "13": {
       "rolls": [
@@ -1463,7 +1488,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:dca71a96c08c630d"
     },
     "14": {
       "rolls": [
@@ -1600,7 +1626,8 @@
         ],
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 14 has 6 known attempts despite 5 predicted model slots."
-      }
+      },
+      "_fingerprint": "sha256:11203cb827d5e95e"
     },
     "15": {
       "rolls": [
@@ -1728,7 +1755,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:b8f2cafeea1f8e63"
     },
     "16": {
       "rolls": [
@@ -1807,7 +1835,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:2765c265190c0815"
     },
     "17": {
       "rolls": [
@@ -1954,7 +1983,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:36168569508b610e"
     },
     "18": {
       "rolls": [
@@ -2061,7 +2091,8 @@
         ],
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 18 has 6 known attempts despite 5 predicted model slots."
-      }
+      },
+      "_fingerprint": "sha256:be99cafb7c3edeb4"
     },
     "19": {
       "rolls": [
@@ -2228,7 +2259,8 @@
           "curator_note": null,
           "source_deferred_to_chapter": "20"
         }
-      ]
+      ],
+      "_fingerprint": "sha256:f7e629595aa6803d"
     },
     "20": {
       "rolls": [
@@ -2351,7 +2383,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:d0ea9da083adaa71"
     },
     "21": {
       "rolls": [
@@ -2495,7 +2528,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:0d5bac2ff49d0d90"
     },
     "22": {
       "rolls": [
@@ -2601,7 +2635,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:43fd3b4991dd2b73"
     },
     "23": {
       "rolls": [
@@ -2734,7 +2769,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:01f5215b6b80bc36"
     },
     "24": {
       "rolls": [
@@ -2889,7 +2925,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:cce25640f292bf86"
     },
     "25": {
       "rolls": [
@@ -3025,7 +3062,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:b7c2f358d53ed5ac"
     },
     "26": {
       "rolls": [
@@ -3141,7 +3179,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:57e2ce3856596307"
     },
     "27": {
       "rolls": [
@@ -3339,7 +3378,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:270d607b01908f72"
     },
     "28": {
       "rolls": [
@@ -3518,7 +3558,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:055d3b2510cfe3e6"
     },
     "29": {
       "rolls": [
@@ -3686,7 +3727,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:e4368e2ac32b408b"
     },
     "30": {
       "rolls": [
@@ -3974,7 +4016,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:c0d44b06d5839611"
     },
     "31": {
       "rolls": [
@@ -4153,7 +4196,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:dcb155e5e657c698"
     },
     "32": {
       "rolls": [
@@ -4334,7 +4378,8 @@
           ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:13f736a0057c200c"
     },
     "33": {
       "rolls": [
@@ -4472,7 +4517,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:d9699d31a8e43ae9"
     },
     "34": {
       "rolls": [
@@ -4489,7 +4535,8 @@
           "evidence_quotes": [],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:3ffa867439480ccf"
     }
   }
 }

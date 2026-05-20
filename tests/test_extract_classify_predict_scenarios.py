@@ -112,7 +112,7 @@ def test_extract_classify_predict_uses_curated_section_eligibility(
         multi_overrides={"chapter_roll_overrides": {}},
     )
 
-    assert [roll["word_position"] for roll in predicted["predicted"]] == [2000, 4000]
+    assert [roll["cp_offset"] for roll in predicted["predicted"]] == [2000, 4000]
     assert [roll["roll_trigger_cp_threshold"] for roll in predicted["predicted"]] == [
         100,
         100,

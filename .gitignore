@@ -66,6 +66,19 @@ data/labeled/sections/_*.jsonl
 # download-dev when working from a fresh checkout.
 data/derived/*.json
 
+# Generated constellation HTML — rebuilt by
+# scripts/scaffold_constellation_pages.py from canonical inputs in
+# data/constellations/<slug>/{current.svg,metadata.json} plus three
+# derived JSONs. The deploy workflows regenerate before staging web/.
+web/constellations/index.html
+web/constellations/*/index.html
+
+# macOS finder noise under the constellation dirs
+data/constellations/.DS_Store
+data/constellations/**/.DS_Store
+web/constellations/.DS_Store
+web/constellations/**/.DS_Store
+
 # uv / Hugging Face caches
 .uv/
 .hf_cache/

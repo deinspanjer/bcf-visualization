@@ -99,12 +99,14 @@ def test_render_cluster_page_inlines_prefixed_svg_and_workbench_link() -> None:
         "entered_pool_at_chapter": "1",
     }
     metadata = {"intended_image": "toolbox: open box with a hammer"}
+    wireframe = {"vertex_source": "jumps", "marker_positions": [1] * 24}
     svg_inline = '<svg><defs><linearGradient id="01-toolkits-g"/></defs></svg>'
     jumps = [{"name": "GUNNM", "perks": [{"name": "Workshop"}]}]
     perks = [{"jump": "GUNNM", "name": "Workshop", "cost": 100}]
 
     rendered = render_cluster_page(
-        cluster=cluster, metadata=metadata, svg_inline=svg_inline, jumps=jumps, perks=perks
+        cluster=cluster, metadata=metadata, wireframe=wireframe,
+        svg_inline=svg_inline, jumps=jumps, perks=perks,
     )
 
     assert GENERATED_BANNER in rendered
@@ -116,6 +118,10 @@ def test_render_cluster_page_inlines_prefixed_svg_and_workbench_link() -> None:
     assert svg_inline in rendered
     assert "<td>GUNNM</td>" in rendered
     assert "100 CP" in rendered
+    # Vertex-source is surfaced in the meta dl and tags the vertex-side
+    # table heading so a reader can tell which list maps onto the markers.
+    assert "<dt>Vertices</dt><dd>24 jumps · one marker per jump</dd>" in rendered
+    assert "<h2>Jumps <small>(vertices)</small></h2>" in rendered
 
 
 def test_render_cluster_page_handles_completed_chapter() -> None:
@@ -130,12 +136,39 @@ def test_render_cluster_page_handles_completed_chapter() -> None:
     rendered = render_cluster_page(
         cluster=cluster,
         metadata={"intended_image": "hourglass"},
+        wireframe={"vertex_source": "jumps", "marker_positions": [1] * 11},
         svg_inline="<svg/>",
         jumps=[],
         perks=[],
     )
 
     assert "<dd>113</dd>" in rendered
+
+
+def test_render_cluster_page_perk_vertex_source_promotes_perks_section() -> None:
+    # When the SVG is drawn against perks (not jumps), the perks table is the
+    # vertex source — it should come FIRST and carry the "(vertices)" tag.
+    cluster = {
+        "name": "Personal Reality",
+        "slug": "14-personal-reality",
+        "slot_position": 14,
+        "revealed_at_chapter": "62",
+        "completed_at_chapter": None,
+        "entered_pool_at_chapter": "62",
+    }
+    rendered = render_cluster_page(
+        cluster=cluster,
+        metadata={"intended_image": "planet in a nested hypercube"},
+        wireframe={"vertex_source": "perks", "marker_positions": [1] * 124},
+        svg_inline="<svg/>",
+        jumps=[],
+        perks=[],
+    )
+
+    assert "<dt>Vertices</dt><dd>124 perks · one marker per perk</dd>" in rendered
+    assert "<h2>Perks <small>(vertices)</small></h2>" in rendered
+    # Perks heading appears BEFORE plain Jumps heading in source order.
+    assert rendered.index("(vertices)") < rendered.index("<h2>Jumps</h2>")
 
 
 def test_render_top_index_lists_records_in_slot_order_with_unique_ids() -> None:
@@ -152,6 +185,8 @@ def test_render_top_index_lists_records_in_slot_order_with_unique_ids() -> None:
             "svg_inline": '<svg><defs><linearGradient id="01-toolkits-g"/></defs></svg>',
             "jump_count": 24,
             "perk_count": 27,
+            "vertex_source": "jumps",
+            "marker_count": 24,
         },
         {
             "cluster": {
@@ -165,6 +200,8 @@ def test_render_top_index_lists_records_in_slot_order_with_unique_ids() -> None:
             "svg_inline": '<svg><defs><linearGradient id="02-knowledge-g"/></defs></svg>',
             "jump_count": 18,
             "perk_count": 47,
+            "vertex_source": "jumps",
+            "marker_count": 32,
         },
     ]
 

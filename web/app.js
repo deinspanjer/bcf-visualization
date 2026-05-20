@@ -4,12 +4,10 @@ import {
   validateDataPackageManifest,
 } from "./data-contract.js";
 import {
-  buildCoordinateModel,
   buildRollLogRows,
   fieldLogModel,
   onRollPlaybackState,
   paidRollPerks,
-  rollWordPosition as modelRollWordPosition,
   rollTotalCost,
 } from "./viz-model.js";
 
@@ -23,6 +21,7 @@ const LS_SPEED = "bcf:playback:speed:v2";
 const LS_ZOOM = "bcf:timeline:zoom";
 const LS_MODE = "bcf:mode";
 const LS_ON_ROLL_BEHAVIOR = "bcf:on-roll-behavior";
+const LS_ROLL_LOCATION = "bcf:roll-location";
 const LS_FIELD_LOG_HIDDEN = "bcf:field-log:hidden";
 const LS_PORTRAIT_DISMISSED = "bcf:portrait-dismissed";
 const LS_STORAGE_VERSION = "bcf:preview-port-storage-version";
@@ -31,6 +30,8 @@ const DEFAULT_WORD_POS = 450_000;
 const DEFAULT_SPEED = 5_000;
 const DEFAULT_ZOOM = 2.75;
 const DEFAULT_ON_ROLL_BEHAVIOR = "pause";
+const ROLL_LOCATIONS = ["predicted", "curated"];
+const DEFAULT_ROLL_LOCATION = "predicted";
 
 const STORY_LINKS = [
   { label: "SV", href: "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" },
@@ -75,6 +76,7 @@ const app = {
   speed: readStoredNumber(LS_SPEED, DEFAULT_SPEED),
   zoom: clamp(readStoredNumber(LS_ZOOM, DEFAULT_ZOOM), 0.5, 6),
   onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ["normal", "pause", "bullet-time"], DEFAULT_ON_ROLL_BEHAVIOR),
+  rollLocation: readStoredChoice(LS_ROLL_LOCATION, ROLL_LOCATIONS, DEFAULT_ROLL_LOCATION),
   fieldLogHidden: readStoredBoolean(LS_FIELD_LOG_HIDDEN, false),
   portraitDismissed: readStoredBoolean(LS_PORTRAIT_DISMISSED, false),
   rollFilter: "all",
@@ -169,7 +171,7 @@ function store(key, value) {
 function migratePreviewStorage() {
   try {
     if (localStorage.getItem(LS_STORAGE_VERSION) === STORAGE_VERSION) return;
-    for (const key of [LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR, LS_FIELD_LOG_HIDDEN]) {
+    for (const key of [LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR, LS_ROLL_LOCATION, LS_FIELD_LOG_HIDDEN]) {
       localStorage.removeItem(key);
     }
     localStorage.setItem(LS_STORAGE_VERSION, STORAGE_VERSION);
@@ -272,10 +274,14 @@ async function loadRuntime() {
 }
 
 function buildStory(chapterFacts) {
+  // Each roll in chapter_facts already ships canonical EPUB positions
+  // (`epub_word_offset_predicted` and `epub_word_offset_curated`) computed
+  // by the bundler via the cp↔epub map. The UI just selects which field
+  // drives `roll.word_position`; the mode toggle re-selects without
+  // re-deriving.
   const chapters = [];
   const rolls = [];
   const sections = [];
-  const coordinateModel = buildCoordinateModel(chapterFacts);
   let runningStart = 0;
   let runningCpCum = 0;
 
@@ -329,7 +335,8 @@ function buildStory(chapterFacts) {
     }
 
     (ch.rolls || []).forEach((rawRoll, index) => {
-      const wordPosition = rollWordPosition(coordinateModel, rawRoll, ch, chapter, index, ch.rolls.length);
+      const wpPredicted = rawRoll.epub_word_offset_predicted ?? null;
+      const wpCurated = rawRoll.epub_word_offset_curated ?? wpPredicted;
       const roll = {
         uid: `${ch.chapter_num}#${rawRoll.roll_sequence_in_chapter ?? index + 1}`,
         roll_number: rawRoll.roll_number ?? rawRoll.global_roll_number ?? `${ch.chapter_num}.${index + 1}`,
@@ -339,7 +346,9 @@ function buildStory(chapterFacts) {
         outcome: rawRoll.outcome || "unknown",
         constellation: rawRoll.constellation,
         jump: rawRoll.purchased_perk_jump || rawRoll.jump || rawRoll.free_perks?.[0]?.jump || null,
-        word_position: Math.round(wordPosition),
+        word_position_predicted: wpPredicted,
+        word_position_curated: wpCurated,
+        word_position: app.rollLocation === "predicted" ? wpPredicted : wpCurated,
         purchased_perks: rawRoll.purchased_perks || [],
         free_perks: rawRoll.free_perks || [],
         purchased_perk_jump: rawRoll.purchased_perk_jump,
@@ -374,7 +383,7 @@ function buildStory(chapterFacts) {
     }
   }
 
-  rolls.sort((a, b) => a.word_position - b.word_position);
+  rolls.sort((a, b) => (a.word_position ?? 0) - (b.word_position ?? 0));
   return {
     chapters,
     rolls,
@@ -382,17 +391,6 @@ function buildStory(chapterFacts) {
     total_words: chapters[chapters.length - 1]?.word_end || 0,
     shadow_periods: chapterFacts.shadow_periods || [],
   };
-}
-
-function rollWordPosition(coordinateModel, rawRoll, rawChapter, chapter, index, total) {
-  if (rawRoll.display_cumulative_word_offset != null) return rawRoll.display_cumulative_word_offset;
-  if (rawRoll.cumulative_word_offset != null) return rawRoll.cumulative_word_offset;
-  if (rawRoll.source_cumulative_word_offset != null) return rawRoll.source_cumulative_word_offset;
-  if (rawRoll.display_word_position_epub != null || rawRoll.predicted_word_position_epub != null) {
-    return modelRollWordPosition(coordinateModel, rawRoll, rawChapter, index, total);
-  }
-  const slot = (index + 1) / ((total || 1) + 1);
-  return chapter.word_start + slot * Math.max(1, chapter.word_end - chapter.word_start);
 }
 
 function normChapterTitle(fullTitle, chapterNum) {
@@ -587,6 +585,22 @@ function setWordPos(value) {
 function setMode(mode) {
   app.mode = mode;
   store(LS_MODE, mode);
+  render();
+}
+
+function setRollLocation(value) {
+  if (!ROLL_LOCATIONS.includes(value)) return;
+  app.rollLocation = value;
+  store(LS_ROLL_LOCATION, value);
+  if (app.data) {
+    const field = value === "predicted" ? "word_position_predicted" : "word_position_curated";
+    for (const roll of app.data.story.rolls) {
+      roll.word_position = roll[field] ?? roll.word_position_predicted;
+    }
+    app.data.story.rolls.sort(
+      (a, b) => (a.word_position ?? 0) - (b.word_position ?? 0),
+    );
+  }
   render();
 }
 
@@ -786,7 +800,7 @@ function renderInfoPopover() {
     el("p", { class: "info-explore" },
       "Browse every constellation and its perks at ",
       el("a", {
-        href: "../data/constellations/index.html",
+        href: "./constellations/index.html",
         target: "_blank",
         rel: "noopener noreferrer",
         text: "the constellation index",
@@ -1084,6 +1098,17 @@ function renderScrubberControls() {
         text: value,
       })),
     ),
+    el("span", { class: "control-divider", "aria-hidden": "true" }),
+    el("span", { class: "control-label", text: "roll location" }),
+    el("div", { class: "app-mode-switch roll-mode-switch", role: "group", "aria-label": "Source of each roll's word position" },
+      ROLL_LOCATIONS.map(value => el("button", {
+        class: app.rollLocation === value ? "is-active" : "",
+        type: "button",
+        "aria-pressed": app.rollLocation === value,
+        onClick: () => setRollLocation(value),
+        text: value,
+      })),
+    ),
     el("button", { class: "btn ghost", id: "reset-bookmark", type: "button", onClick: () => { app.playing = false; setWordPos(0); }, text: "reset" }),
   );
 }
@@ -1144,31 +1169,48 @@ function renderViewportFrame() {
 function renderCarousel() {
   const rolls = app.data.story.rolls;
   const cardWidth = 348;
-  let virtualIndex = 0;
-  if (rolls.length) {
-    if (app.wordPos >= rolls.at(-1).word_position) virtualIndex = rolls.length - 1;
-    else {
-      const nextIndex = rolls.findIndex(roll => roll.word_position > app.wordPos);
-      if (nextIndex <= 0) virtualIndex = 0;
-      else {
-        const prev = rolls[nextIndex - 1];
-        const next = rolls[nextIndex];
-        virtualIndex = nextIndex - 1 + ((app.wordPos - prev.word_position) / Math.max(1, next.word_position - prev.word_position));
-      }
-    }
+  const cardHalf = 160; // half of visual card width (320px), used to center the active card on the playhead
+  if (!rolls.length) {
+    return el("div", { class: "carousel-strip", style: { transform: `translateX(${-cardHalf}px)` } });
   }
-  const min = Math.max(0, Math.floor(virtualIndex) - 5);
-  const max = Math.min(rolls.length - 1, Math.ceil(virtualIndex) + 5);
+  // Position cards in word-space so motion is uniform in story-words rather than
+  // roll-index. Average inter-roll gap maps to one card width, preserving the
+  // visual density we had before in median-density stretches; bursts compress,
+  // droughts spread out and the playhead drifts through empty sky.
+  const totalWords = Math.max(1, app.data.story.total_words || rolls.at(-1).word_position);
+  const pxPerWord = (rolls.length * cardWidth) / totalWords;
+  const playheadPx = app.wordPos * pxPerWord;
+  const renderRadiusPx = cardWidth * 6;
+  const activeRadiusPx = cardWidth * 0.4;
+  const flankRadiusPx = cardWidth * 1.3;
+
+  // Pick a single "nearest" roll to mark active so overlapping cards in a
+  // dense burst don't all flare at once.
+  let nearestIndex = -1;
+  let nearestDistPx = Infinity;
+  for (let i = 0; i < rolls.length; i += 1) {
+    const distPx = Math.abs(rolls[i].word_position * pxPerWord - playheadPx);
+    if (distPx < nearestDistPx) {
+      nearestDistPx = distPx;
+      nearestIndex = i;
+    }
+    if (rolls[i].word_position * pxPerWord - playheadPx > renderRadiusPx) break;
+  }
+
   const slots = [];
-  for (let index = min; index <= max; index += 1) {
-    const roll = rolls[index];
+  for (let i = 0; i < rolls.length; i += 1) {
+    const roll = rolls[i];
+    const cardPx = roll.word_position * pxPerWord;
+    const distPx = Math.abs(cardPx - playheadPx);
+    if (distPx > renderRadiusPx) continue;
+    const active = i === nearestIndex && distPx < activeRadiusPx;
+    const flank = !active && distPx < flankRadiusPx;
     const con = roll.constellation ? app.data.conByName[roll.constellation] : null;
-    const distance = Math.abs(index - virtualIndex);
-    slots.push(el("div", { class: "carousel-slot", style: { left: `${index * cardWidth}px` } },
-      con ? renderConstellationCard(con, distance < 0.4, distance >= 0.4 && distance < 1.3) : renderUnresolvedCard(distance < 0.4, distance >= 0.4 && distance < 1.3),
+    slots.push(el("div", { class: "carousel-slot", style: { left: `${cardPx}px` } },
+      con ? renderConstellationCard(con, active, flank) : renderUnresolvedCard(active, flank),
     ));
   }
-  return el("div", { class: "carousel-strip", style: { transform: `translateX(${-(virtualIndex * cardWidth + 160)}px)` } }, slots);
+  return el("div", { class: "carousel-strip", style: { transform: `translateX(${-(playheadPx + cardHalf)}px)` } }, slots);
 }
 
 function renderConstellationCard(con, active, flank) {

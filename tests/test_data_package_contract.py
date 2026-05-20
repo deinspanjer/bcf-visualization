@@ -132,7 +132,13 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     assert manifest["contract_version"] == 1
     assert manifest["bundle_class"] == "pages-runtime"
     assert manifest["entrypoints"]["web"]["required"] == ["visualization_facts"]
-    assert manifest["entrypoints"]["web"].get("optional", []) == []
+    # Optional entrypoints carry inputs that deploy-pages.yml needs to
+    # regenerate the constellation index. See data_release.RUNTIME_OPTIONAL.
+    assert manifest["entrypoints"]["web"].get("optional", []) == [
+        "perk_directory",
+        "constellation_lifecycle",
+        "constellation_wireframes",
+    ]
 
     for name, meta in manifest["files"].items():
         path = DERIVED / meta["path"]

@@ -43,8 +43,8 @@ def test_predicted_rolls_item_shape_uses_regime_not_cp_rule_regime():
     doc = json.loads(SCHEMA.read_text())
     item = doc["properties"]["predicted_rolls"]["items"]
     assert set(item["required"]) == {
-        "roll_number", "word_position", "chapter_num",
-        "regime", "roll_trigger_cp_threshold",
+        "roll_number", "cp_offset", "epub_offset", "chapter_num",
+        "slot_index", "regime", "roll_trigger_cp_threshold",
     }
     assert item["properties"]["regime"]["enum"] == [1, 2, 3]
     assert "cp_rule_regime" not in item["properties"], (
