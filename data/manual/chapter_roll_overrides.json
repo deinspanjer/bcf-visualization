@@ -439,7 +439,7 @@
           "word_position": null,
           "mention_chapter_num": "3",
           "mention_word_position": 5566,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "During the fight with Oni Lee my power had failed to latch onto one of the larger motes from the Vehicle constellation.",
@@ -456,7 +456,7 @@
           "word_position": null,
           "mention_chapter_num": "3",
           "mention_word_position": 5588,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "This time it connected with a small mote from what turned out to be the 'Time' constellation.",
@@ -496,7 +496,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 1888,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "the approach of the Knowledge constellation within the Celestial Forge. My power failed to latch onto the nearest mote",
@@ -512,7 +512,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 5010,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "The Celestial Forge moved and focused on one of the arrays of powers. The Toolkits constellation was swinging towards me and my power latched onto a small mote, securing the connection. It was called Laboratorium.",
@@ -528,7 +528,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 7367,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "The next morning I woke up to the feeling of the Knowledge constellation in the Celestial Forge swinging by me. My power's reach was the strongest it had ever been and was just enough to latch on to a mid-sized mote. The ability was called 'Grease Monkey'.",
@@ -544,7 +544,7 @@
           "word_position": null,
           "mention_chapter_num": "4",
           "mention_word_position": 9427,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "While I was waiting my power completely failed to grab a mote from one of the constellations I had yet to identify.",
@@ -564,7 +564,7 @@
           "word_position": null,
           "mention_chapter_num": "5",
           "mention_word_position": 4444,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "A new constellation approached and my power was latching onto a mote from it. It turned out to be the 'Crafting' constellation and the mote was 'Smithing'.",
@@ -572,6 +572,46 @@
               "mention_word_position": 4444
             }
           ]
+        },
+        {
+          "perks": [],
+          "outcome": "hit",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": "5",
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "skipped": false,
+          "source_roll_number": 15,
+          "evidence_quotes": [
+            {
+              "text": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 1672
+            }
+          ],
+          "curator_note": null,
+          "source_deferred_to_chapter": "6"
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_roll_number": 16,
+          "evidence_quotes": [
+            {
+              "text": "a new constellation spun past in the Celestial Forge without my power linking to it.",
+              "mention_chapter_num": "6",
+              "mention_word_position": 4289
+            }
+          ],
+          "curator_note": null,
+          "source_deferred_to_chapter": "6"
         }
       ]
     },
@@ -584,41 +624,8 @@
           "word_position": null,
           "mention_chapter_num": "6",
           "mention_word_position": 1672,
-          "display_position_policy": "mention",
+          "display_position_policy": "mechanical",
           "curator_note": null,
-          "evidence_quotes": [
-            {
-              "text": "The Vehicles constellation swung towards me and my power latched onto a mote from it.",
-              "mention_chapter_num": "6",
-              "mention_word_position": 1672
-            }
-          ]
-        },
-        {
-          "perks": [],
-          "outcome": null,
-          "constellation": null,
-          "word_position": null,
-          "mention_chapter_num": "6",
-          "mention_word_position": 4289,
-          "display_position_policy": "mention",
-          "curator_note": null,
-          "evidence_quotes": [
-            {
-              "text": "a new constellation spun past in the Celestial Forge without my power linking to it.",
-              "mention_chapter_num": "6",
-              "mention_word_position": 4289
-            }
-          ]
-        },
-        {
-          "perks": [],
-          "outcome": null,
-          "constellation": null,
-          "word_position": null,
-          "mention_chapter_num": "6",
-          "mention_word_position": 6898,
-          "display_position_policy": "mention",
           "evidence_quotes": [
             {
               "text": "My power managed to link to a mote from a new constellation. The 'Magic' constellation.",
@@ -630,8 +637,7 @@
               "mention_chapter_num": "6",
               "mention_word_position": 6969
             }
-          ],
-          "curator_note": null
+          ]
         },
         {
           "perks": [],
@@ -639,16 +645,16 @@
           "constellation": null,
           "word_position": null,
           "mention_chapter_num": "6",
-          "mention_word_position": 7719,
-          "display_position_policy": "mention",
+          "mention_word_position": 4289,
+          "display_position_policy": "mechanical",
+          "curator_note": null,
           "evidence_quotes": [
             {
               "text": "While I worked my power failed to connect to another mote from the magic constellation. It spun off and my reach continued to build.",
               "mention_chapter_num": "6",
               "mention_word_position": 7719
             }
-          ],
-          "curator_note": null
+          ]
         },
         {
           "perks": [],
@@ -656,8 +662,8 @@
           "constellation": null,
           "word_position": null,
           "mention_chapter_num": "6",
-          "mention_word_position": 8696,
-          "display_position_policy": "mention",
+          "mention_word_position": 6898,
+          "display_position_policy": "mechanical",
           "evidence_quotes": [
             {
               "text": "another constellation swung close in the Celestial Forge. This one was called 'Size'",
@@ -671,21 +677,18 @@
             }
           ],
           "curator_note": null
-        }
-      ]
-    },
-    "6.1": {
-      "rolls": [
+        },
         {
           "perks": [],
           "outcome": null,
           "constellation": null,
           "word_position": null,
-          "mention_chapter_num": "6.1",
-          "mention_word_position": 1579,
-          "display_position_policy": "source_marker",
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": "mechanical",
+          "source_roll_number": 20,
           "evidence_quotes": [],
-          "curator_note": "source-only roll anchor"
+          "curator_note": null
         },
         {
           "perks": [],
@@ -695,7 +698,6 @@
           "mention_chapter_num": "7",
           "mention_word_position": 75,
           "display_position_policy": "mechanical",
-          "skipped": false,
           "source_roll_number": 21,
           "evidence_quotes": [
             {
@@ -711,15 +713,7 @@
           ],
           "curator_note": null
         }
-      ],
-      "model_validation_resolution": {
-        "status": "resolved",
-        "resolved_issue_codes": [
-          "known_attempts_exceed_predicted_slots"
-        ],
-        "reason_code": "curator_confirmed_extra_attempt",
-        "note": "Curator confirmed chapter 6.1 has 1 known attempts despite 0 predicted model slots."
-      }
+      ]
     },
     "7": {
       "rolls": [

@@ -1,9 +1,9 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
-  "_count": 508,
-  "_mc_sections": 143,
-  "_non_mc_sections": 365,
-  "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Curated span_overrides from existing entries are preserved across regeneration.",
+  "_count": 504,
+  "_mc_sections": 142,
+  "_non_mc_sections": 362,
+  "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Explicit curator section eligibility toggles and curated span_overrides from existing entries are preserved across regeneration.",
   "classifications": {
     "1@0": {
       "chapter_num": "1",
@@ -281,8 +281,8 @@
       "chapter_num": "6.1",
       "section_index": 1,
       "header": "6.1 Interlude: Taylor",
-      "counts_for_cp": true,
-      "reason": "mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'taylor')",
+      "counts_for_cp": false,
+      "reason": "curator toggle: ineligible (was: mechanics evidence override: curator roll/acquisition exists in chapter, so at least one narrative section must count for CP (was: chapter-title interlude 'taylor'))",
       "span_overrides": [
         {
           "word_offset_start": 3,
@@ -8466,54 +8466,6 @@
           "reason_code": "section_header",
           "note": "generated from chapter section header",
           "excerpt": "Interlude Kurt"
-        }
-      ]
-    },
-    "120.2@0": {
-      "chapter_num": "120.2",
-      "section_index": 0,
-      "header": null,
-      "counts_for_cp": false,
-      "reason": "implicit but tiny (6w) — scaffolding/AN"
-    },
-    "120.2@1": {
-      "chapter_num": "120.2",
-      "section_index": 1,
-      "header": "120.2 Interlude Accord - Preamble Mike",
-      "counts_for_cp": false,
-      "reason": "chapter-title interlude 'accord'"
-    },
-    "120.2@2": {
-      "chapter_num": "120.2",
-      "section_index": 2,
-      "header": "Preamble Mike",
-      "counts_for_cp": false,
-      "reason": "preamble 'mike' (non-Joe)",
-      "span_overrides": [
-        {
-          "word_offset_start": 12,
-          "word_offset_end": 14,
-          "counts_for_cp": false,
-          "reason_code": "section_header",
-          "note": "generated from chapter section header",
-          "excerpt": "Preamble Mike"
-        }
-      ]
-    },
-    "120.2@3": {
-      "chapter_num": "120.2",
-      "section_index": 3,
-      "header": "Interlude Accord",
-      "counts_for_cp": false,
-      "reason": "interlude 'accord' (non-Joe)",
-      "span_overrides": [
-        {
-          "word_offset_start": 6677,
-          "word_offset_end": 6679,
-          "counts_for_cp": false,
-          "reason_code": "section_header",
-          "note": "generated from chapter section header",
-          "excerpt": "Interlude Accord"
         }
       ]
     }
