@@ -334,9 +334,11 @@ function buildStory(chapterFacts) {
       sectionStart += width;
     }
 
-    (ch.rolls || []).forEach((rawRoll, index) => {
-      const wpPredicted = rawRoll.epub_word_offset_predicted ?? null;
-      const wpCurated = rawRoll.epub_word_offset_curated ?? wpPredicted;
+    const rawRolls = ch.rolls || [];
+    rawRolls.forEach((rawRoll, index) => {
+      const fallbackWordPosition = resolveRollWordPosition(rawRoll, chapter, index, rawRolls.length);
+      const wpPredicted = rawRoll.epub_word_offset_predicted ?? fallbackWordPosition;
+      const wpCurated = rawRoll.epub_word_offset_curated ?? fallbackWordPosition ?? wpPredicted;
       const roll = {
         uid: `${ch.chapter_num}#${rawRoll.roll_sequence_in_chapter ?? index + 1}`,
         roll_number: rawRoll.roll_number ?? rawRoll.global_roll_number ?? `${ch.chapter_num}.${index + 1}`,
@@ -396,6 +398,42 @@ function buildStory(chapterFacts) {
 function normChapterTitle(fullTitle, chapterNum) {
   const prefix = `${chapterNum} `;
   return String(fullTitle).startsWith(prefix) ? String(fullTitle).slice(prefix.length) : String(fullTitle);
+}
+
+function finiteNumber(value) {
+  if (value == null || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function resolveRollWordPosition(rawRoll, chapter, index, totalRolls) {
+  for (const key of [
+    "display_word_position_epub",
+    "cumulative_word_offset",
+    "display_cumulative_word_offset",
+    "source_cumulative_word_offset",
+  ]) {
+    const position = finiteNumber(rawRoll[key]);
+    if (position != null) return Math.max(0, Math.round(position));
+  }
+
+  const chapterStart = finiteNumber(chapter.word_start) ?? 0;
+  const chapterEnd = finiteNumber(chapter.word_end) ?? chapterStart;
+  const chapterSpan = Math.max(0, chapterEnd - chapterStart);
+  for (const key of [
+    "display_word_position",
+    "word_position",
+    "source_word_position",
+    "mechanical_word_position",
+  ]) {
+    const localPosition = finiteNumber(rawRoll[key]);
+    if (localPosition == null) continue;
+    return Math.round(chapterStart + clamp(localPosition, 0, chapterSpan));
+  }
+
+  if (rawRoll.source_kind === "trigger") return Math.round(chapterStart);
+  const fraction = (index + 1) / ((totalRolls || 0) + 1);
+  return Math.round(chapterStart + chapterSpan * fraction);
 }
 
 function buildConstellations(wireframes) {

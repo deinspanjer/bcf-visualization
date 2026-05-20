@@ -280,6 +280,54 @@ def test_web_app_displays_canonical_epub_word_offset_for_each_roll(tmp_path):
             browser.close()
 
 
+def test_web_app_places_rolls_without_epub_offsets_inside_their_chapter(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+        facts = json.loads(facts_path.read_text())
+        facts["chapters"][2]["rolls"].append(
+            {
+                "roll_number": 99,
+                "global_roll_number": 99,
+                "outcome": "hit",
+                "constellation": "Magic",
+                "word_position": 600,
+                "available_cp": 600,
+                "purchased_perk_cost_total": 600,
+                "purchased_perks": [
+                    {"name": "Late Unmapped", "cost": 600, "constellation": "Magic", "free": False},
+                ],
+                "free_perks": [],
+            }
+        )
+        facts_path.write_text(json.dumps(facts, indent=2, sort_keys=True) + "\n")
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "0",
+                    "bcf:mode": "detail",
+                },
+            )
+
+            expect = playwright_api.expect
+            expect(page.locator(".stat-strip")).to_contain_text("0 hits")
+            page.keyboard.press("End")
+            row = page.locator("#detail-roll-log-body tr").filter(has_text="Late Unmapped")
+            expect(row).to_be_visible()
+            expect(row.locator("td").nth(2)).to_have_text("7,600")
+            row.click()
+            expect(page.locator("#scrubber-playhead")).to_have_attribute("aria-valuenow", "7600")
+            assert console_messages == []
+
+            browser.close()
+
+
 def test_web_app_pause_on_roll_can_resume_without_manual_scrubbing(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
@@ -345,5 +393,4 @@ def test_web_app_keyboard_controls_move_clamp_and_ignore_text_input_focus(tmp_pa
             assert console_messages == []
 
             browser.close()
-
 
