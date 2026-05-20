@@ -42,6 +42,7 @@ tests/.tmp-data/
 # Source EPUBs - copyrighted prose, kept locally, not redistributed via git.
 # See README "Source material" section for where to obtain these.
 data/raw/*.epub
+data/raw/Brocktons_Celestial_Forge.source.json
 
 # Private source files live in a separate private repository. The local
 # checkout is nested here for maintainer convenience but must never be

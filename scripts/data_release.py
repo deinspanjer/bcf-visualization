@@ -48,6 +48,7 @@ RUNTIME_OPTIONAL = [
     "constellation_wireframes",
 ]
 DEV_BUNDLE_MANIFEST_NAME = "_dev_data_package.json"
+SOURCE_EPUB_METADATA_NAME = "Brocktons_Celestial_Forge.source.json"
 PACKAGE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 DATA_RELEASE_RE = re.compile(
     r"^(?:data-v\d{8}\.\d+|bcf-visualization-data-v\d{8}\.\d+-ch\d+-[A-Za-z0-9_.-]+)$"
@@ -159,6 +160,97 @@ def _story_freshness(source_dir: Path) -> StoryFreshness:
         chapter_num=chapter_num,
         chapter_title=str(last.get("full_title") or chapter_num),
     )
+
+
+def _chapter_facts_story(source_dir: Path) -> StoryFreshness | None:
+    path = source_dir / "chapter_facts.json"
+    if not path.exists():
+        return None
+    chapter_facts = _read_json(path)
+    chapters = chapter_facts.get("chapters") or []
+    if not chapters:
+        raise ValueError("chapter_facts.json has no chapters")
+    last = chapters[-1]
+    chapter_num = str(last.get("chapter_num") or "").strip()
+    if not chapter_num:
+        raise ValueError("latest chapter_facts chapter has no chapter_num")
+    return StoryFreshness(
+        chapter_ordinal=len(chapters),
+        chapter_num=chapter_num,
+        chapter_title=str(last.get("full_title") or chapter_num),
+    )
+
+
+def _source_epub_metadata_path(source_dir: Path) -> Path | None:
+    source_dir = source_dir.resolve()
+    if source_dir.name == "derived" and source_dir.parent.name == "data":
+        return source_dir.parent / "raw" / SOURCE_EPUB_METADATA_NAME
+    return None
+
+
+def _source_epub_metadata(source_dir: Path) -> dict | None:
+    path = _source_epub_metadata_path(source_dir)
+    if path is None or not path.exists():
+        return None
+    raw = _read_json(path)
+    metadata = {
+        "source_kind": raw.get("source_kind"),
+        "private_source_commit": raw.get("private_source_commit"),
+        "epub_sha256": raw.get("epub_sha256"),
+        "chapter_count": raw.get("chapter_count"),
+        "last_chapter_num": raw.get("last_chapter_num"),
+        "last_chapter_title": raw.get("last_chapter_title"),
+    }
+    required = [
+        "source_kind",
+        "epub_sha256",
+        "chapter_count",
+        "last_chapter_num",
+        "last_chapter_title",
+    ]
+    missing = [name for name in required if metadata.get(name) in (None, "")]
+    if missing:
+        try:
+            display_path = path.relative_to(ROOT)
+        except ValueError:
+            display_path = path
+        raise ValueError(
+            f"{display_path} missing source EPUB fields: {', '.join(missing)}"
+        )
+    return metadata
+
+
+def _validate_source_epub_story(
+    *,
+    source_dir: Path,
+    story: StoryFreshness,
+    source_epub: dict | None,
+) -> None:
+    if not source_epub:
+        return
+    chapter_count = int(source_epub["chapter_count"])
+    last_num = str(source_epub["last_chapter_num"])
+    last_title = str(source_epub["last_chapter_title"])
+    if chapter_count != story.chapter_ordinal:
+        raise ValueError(
+            f"source EPUB chapter_count {chapter_count} does not match "
+            f"package story_chapter_ordinal {story.chapter_ordinal}"
+        )
+    if last_num != story.chapter_num:
+        raise ValueError(
+            f"source EPUB last_chapter_num {last_num!r} does not match "
+            f"package story_chapter_num {story.chapter_num!r}"
+        )
+    if last_title != story.chapter_title:
+        raise ValueError(
+            f"source EPUB last_chapter_title {last_title!r} does not match "
+            f"package story_chapter_title {story.chapter_title!r}"
+        )
+    chapter_facts_story = _chapter_facts_story(source_dir)
+    if chapter_facts_story and chapter_facts_story != story:
+        raise ValueError(
+            "chapter_facts.json latest story does not match package story fields"
+        )
 
 
 def _bootstrap_story_freshness(source_dir: Path) -> StoryFreshness:
@@ -303,6 +395,12 @@ def build_manifest(
     source_dir = source_dir.resolve()
     generated_at = generated_at or _utc_now()
     source_commit = source_commit or _git_commit()
+    source_epub = _source_epub_metadata(source_dir)
+    _validate_source_epub_story(
+        source_dir=source_dir,
+        story=story,
+        source_epub=source_epub,
+    )
 
     if bundle_class == "pages-runtime":
         file_names = [
@@ -329,7 +427,7 @@ def build_manifest(
     if missing_required and not allow_missing_required:  # MODIFIED
         raise FileNotFoundError(f"missing runtime data files: {', '.join(missing_required)}")
 
-    return {
+    manifest = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "package_id": package_id,
         "package_prefix": PACKAGE_PREFIX,
@@ -361,6 +459,9 @@ def build_manifest(
         },
         "files": files,
     }
+    if source_epub:
+        manifest["source_epub"] = source_epub
+    return manifest
 
 
 def write_current_runtime_manifest(
@@ -791,6 +892,8 @@ def prepare_pages(
                 "smoke_status": smoke_status,
                 "path": f"data/packages/{package_id}",
             }
+            if manifest.get("source_epub"):
+                package_index_entry["source_epub"] = manifest["source_epub"]
             package_smoke_run_url = existing_metadata.get("smoke_run_url")
             if package_id in smoke_status_by_package_id and smoke_run_url:
                 package_smoke_run_url = smoke_run_url

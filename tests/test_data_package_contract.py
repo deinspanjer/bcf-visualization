@@ -64,6 +64,30 @@ def _write_tiny_package_source(path: Path) -> Path:
     return path
 
 
+def _write_source_epub_metadata(
+    path: Path,
+    *,
+    chapter_count: int = 2,
+    last_chapter_num: str = "2.5",
+    last_chapter_title: str = "2.5 Fixture Finale",
+) -> Path:
+    source = path.parent / "raw" / "Brocktons_Celestial_Forge.source.json"
+    source.parent.mkdir(parents=True, exist_ok=True)
+    source.write_text(
+        json.dumps({
+            "schema_version": 1,
+            "source_kind": "private-source",
+            "source_path": "data/private-source/Brocktons_Celestial_Forge.epub",
+            "private_source_commit": "abc123",
+            "epub_sha256": "0" * 64,
+            "chapter_count": chapter_count,
+            "last_chapter_num": last_chapter_num,
+            "last_chapter_title": last_chapter_title,
+        }) + "\n"
+    )
+    return source
+
+
 def _write_legacy_runtime_tar(path: Path, package_id: str = "legacy-runtime") -> Path:
     source = path / "source"
     source.mkdir(parents=True, exist_ok=True)
@@ -226,6 +250,60 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     )
     assert dev_manifest["files"]["chapter_facts"]["schema_version"] == 1
     assert dev_manifest["files"]["visualization_facts"]["schema_version"] == 2
+
+
+def test_package_manifests_include_source_epub_metadata(tmp_path: Path) -> None:
+    from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "data" / "derived")
+    _write_source_epub_metadata(source)
+
+    outputs = data_release.build_packages(
+        source_dir=source,
+        output_dir=tmp_path / "dist",
+        package_date="20260509",
+        build_number=7,
+        source_commit="test-commit",
+        generated_at="2026-05-09T12:00:00Z",
+    )
+
+    with tarfile.open(outputs.runtime_tar, "r:gz") as tf:
+        runtime_manifest = json.loads(tf.extractfile("data_package.json").read())
+    with tarfile.open(outputs.dev_tar, "r:gz") as tf:
+        dev_manifest = json.loads(tf.extractfile("data_package.json").read())
+
+    expected = {
+        "source_kind": "private-source",
+        "private_source_commit": "abc123",
+        "epub_sha256": "0" * 64,
+        "chapter_count": 2,
+        "last_chapter_num": "2.5",
+        "last_chapter_title": "2.5 Fixture Finale",
+    }
+    assert runtime_manifest["source_epub"] == expected
+    assert dev_manifest["source_epub"] == expected
+
+
+def test_package_rejects_source_epub_metadata_that_disagrees_with_generated_story(
+    tmp_path: Path,
+) -> None:
+    from scripts import data_release
+    source = _write_tiny_package_source(tmp_path / "data" / "derived")
+    _write_source_epub_metadata(
+        source,
+        chapter_count=3,
+        last_chapter_num="3",
+        last_chapter_title="3 New Chapter",
+    )
+
+    with pytest.raises(ValueError, match="source EPUB chapter_count 3 does not match"):
+        data_release.build_packages(
+            source_dir=source,
+            output_dir=tmp_path / "dist",
+            package_date="20260509",
+            build_number=7,
+            source_commit="test-commit",
+            generated_at="2026-05-09T12:00:00Z",
+        )
 
 
 def test_package_command_replaces_stale_release_artifacts(tmp_path: Path) -> None:

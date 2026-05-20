@@ -74,6 +74,25 @@ list (number, ordinal, title, href, exact word count). `data/raw/`
 holds the EPUB plus the AO3 navigate page; the SV threadmark scrape is
 no longer part of the pipeline.
 
+Before running a source-EPUB-backed pipeline on a fresh checkout, hydrate
+the EPUB from an already-present source:
+
+```sh
+.venv/bin/python scripts/hydrate_source_epub.py
+```
+
+The maintainer path is to update the private source repository's default
+branch with the current `Brocktons_Celestial_Forge.epub`, then checkout
+or refresh it at `data/private-source/`. The hydration script prefers
+`data/private-source/Brocktons_Celestial_Forge.epub`, copies it into
+`data/raw/`, and writes `data/raw/Brocktons_Celestial_Forge.source.json`
+for release manifests.
+
+The contributor path does not require private repository access: place a
+compatible EPUB at `data/raw/Brocktons_Celestial_Forge.epub`, run the
+hydration script, then run the pipeline and verification gate. The script
+does not download from FicHub or any other network source.
+
 ### Rebuild constellation assets
 
 After editing any `data/constellations/<slug>/current.svg` or
@@ -144,11 +163,20 @@ Build release assets from the current derived data:
   --output-dir dist/data-packages
 ```
 
-The GitHub `Build data release` workflow hydrates from the latest
-validated maintainer bundle when needed, then regenerates the roll facts
-and chapter facts from committed manual inputs before packaging by
-default. Use the workflow's `regenerate=false` input only when you
+The GitHub `Build data release` workflow hydrates generated JSON from
+the latest validated maintainer bundle when needed. When regeneration is
+enabled, it checks out the private source repository at `main` by
+default, runs `scripts/hydrate_source_epub.py`, then runs the pipeline
+from committed manual inputs before packaging. Use the workflow's
+`private_source_ref` input only for exact rebuild pins such as a tag or
+commit SHA; private-source tags are optional rebuild pins, not the
+normal source update mechanism. Use `regenerate=false` only when you
 intentionally want to republish exactly hydrated derived data.
+
+Package manifests include the source EPUB summary from
+`data/raw/Brocktons_Celestial_Forge.source.json` when present. Packaging
+fails if the source EPUB chapter count or latest chapter does not match
+the generated `chapter_facts.json` and package story fields.
 
 The package command writes two assets:
 

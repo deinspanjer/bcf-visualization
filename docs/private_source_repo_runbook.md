@@ -24,7 +24,7 @@ That command:
 - copies `data/raw/Brocktons_Celestial_Forge.epub` into the private repo
 - writes `Brocktons_Celestial_Forge.metadata.json`
 - commits the private source update when content changed
-- creates a date/build ordinal tag such as `source-v20260510.1`
+- creates a date/build ordinal exact-rebuild tag such as `source-vYYYYMMDD.N`
 - pushes the private repo branch and tag
 
 To fetch a fresh EPUB through FicHub locally instead of copying the existing
@@ -35,7 +35,20 @@ local EPUB:
 ```
 
 Use `--no-push` to update the local private clone without committing or
-pushing.
+pushing. The normal maintainer release path follows the private repo default
+branch (`main`); tags are only pins for exact rebuilds.
+
+After the private repo has the desired EPUB, hydrate the public checkout:
+
+```sh
+.venv/bin/python scripts/hydrate_source_epub.py
+```
+
+The hydration script copies `data/private-source/Brocktons_Celestial_Forge.epub`
+to `data/raw/Brocktons_Celestial_Forge.epub` and writes
+`data/raw/Brocktons_Celestial_Forge.source.json`. It is non-networked; if the
+private checkout is unavailable, contributors can place a compatible EPUB at
+`data/raw/Brocktons_Celestial_Forge.epub` and run the same command.
 
 ## Metadata Sidecar
 
@@ -75,16 +88,16 @@ The workflow input `private_source_repo` defaults to:
 deinspanjer/bcf-visualization-private-source
 ```
 
-The workflow input `private_source_ref` defaults to the currently configured
-source tag. Update it when intentionally building from a newer private source
-tag, for example:
+The workflow input `private_source_ref` defaults to the private repo default
+branch:
 
 ```text
-source-v20260510.1
+main
 ```
 
-Set it to blank only if intentionally falling back to `scripts/download_bcf_epub.py`
-and FicHub.
+Override it only for exact rebuilds from a tag or commit SHA. The release
+workflow no longer downloads from FicHub; if private source is unavailable, an
+already-present `data/raw/Brocktons_Celestial_Forge.epub` is the fallback.
 
 ## Fork Setup
 
@@ -98,7 +111,8 @@ Someone forking the project should:
 6. Add the private key as `BCF_PRIVATE_SOURCE_DEPLOY_KEY` in the public fork's
    Actions secrets.
 7. Run `Build data release` with `private_source_repo=OWNER/PRIVATE-REPO` and
-   `private_source_ref=source-vYYYYMMDD.N`.
+   the default `private_source_ref=main`, or with a tag/commit only for a pinned
+   rebuild.
 
 Do not use a broad personal access token unless deploy keys are not viable.
 Deploy keys keep access scoped to exactly one private source repository.

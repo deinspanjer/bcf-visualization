@@ -76,6 +76,24 @@ def test_release_regeneration_uses_dependency_graph_runner() -> None:
         assert "scripts/rebuild_constellation_assets.sh" not in text, workflow
 
 
+def test_release_workflows_use_explicit_source_epub_hydration() -> None:
+    for workflow in ("release.yml", "data-release.yml"):
+        text = _workflow_text(workflow)
+        assert "python3 scripts/hydrate_source_epub.py" in text, workflow
+        assert "cp data/private-source/Brocktons_Celestial_Forge.epub" not in text, workflow
+        assert "python3 scripts/download_bcf_epub.py" not in text, workflow
+
+
+def test_release_workflows_default_private_source_ref_to_main() -> None:
+    release_text = _workflow_text("release.yml")
+    data_release_text = _workflow_text("data-release.yml")
+
+    assert "PRIVATE_SOURCE_REF: main" in release_text
+    assert "default: 'main'" in data_release_text
+    assert "source-v20260510.1" not in release_text
+    assert "source-v20260510.1" not in data_release_text
+
+
 def test_push_release_workflow_uses_visualization_facts_as_hydration_sentinel() -> None:
     text = _workflow_text("release.yml")
 

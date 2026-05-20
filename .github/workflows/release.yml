@@ -15,6 +15,16 @@ on:
         description: 'Pinned published data release tag for web-only redeploys. Leave blank to use the deployed default package set.'
         required: false
         type: string
+      private_source_repo:
+        description: 'Private repository containing source EPUB files. Leave blank to use the maintainer default.'
+        required: false
+        default: 'deinspanjer/bcf-visualization-private-source'
+        type: string
+      private_source_ref:
+        description: 'Private source repo ref/tag/commit to checkout for exact rebuilds. Default branch HEAD is the normal update path.'
+        required: false
+        default: 'main'
+        type: string
 
 permissions:
   contents: write
@@ -31,7 +41,7 @@ env:
   DEFAULT_DATA_RUNTIME_ASSET: bcf-visualization-runtime-v20260510.6-ch194-120.1.tar.gz
   DEPLOYED_PACKAGES_URL: https://deinspanjer.github.io/bcf-visualization/data/packages.json
   PRIVATE_SOURCE_REPO: deinspanjer/bcf-visualization-private-source
-  PRIVATE_SOURCE_REF: source-v20260510.1
+  PRIVATE_SOURCE_REF: main
   SMOKE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
@@ -104,10 +114,11 @@ jobs:
 
       - name: Checkout private source files
         if: ${{ steps.classify.outputs.data_changed == 'true' }}
+        continue-on-error: true
         uses: actions/checkout@v6
         with:
-          repository: ${{ env.PRIVATE_SOURCE_REPO }}
-          ref: ${{ env.PRIVATE_SOURCE_REF }}
+          repository: ${{ inputs.private_source_repo || env.PRIVATE_SOURCE_REPO }}
+          ref: ${{ inputs.private_source_ref || env.PRIVATE_SOURCE_REF }}
           path: data/private-source
           ssh-key: ${{ secrets.BCF_PRIVATE_SOURCE_DEPLOY_KEY }}
 
@@ -125,13 +136,7 @@ jobs:
               --asset "$DEFAULT_DATA_DEV_ASSET"
           fi
           python3 -m pip install '.[dev]'
-          if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
-            mkdir -p data/raw
-            cp data/private-source/Brocktons_Celestial_Forge.epub \
-              data/raw/Brocktons_Celestial_Forge.epub
-          else
-            python3 scripts/download_bcf_epub.py
-          fi
+          python3 scripts/hydrate_source_epub.py
           PIPELINE_ARGS=(--target data)
           if [ "$FORCE_DATA_REBUILD" = "true" ]; then
             PIPELINE_ARGS+=(--force)

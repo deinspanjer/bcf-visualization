@@ -32,14 +32,14 @@ on:
         default: true
         type: boolean
       private_source_repo:
-        description: 'Private repository containing source EPUB files. Leave blank to fall back to FicHub download.'
+        description: 'Private repository containing source EPUB files. Leave blank to use an existing data/raw EPUB.'
         required: false
         default: 'deinspanjer/bcf-visualization-private-source'
         type: string
       private_source_ref:
-        description: 'Private source repo ref/tag to checkout.'
+        description: 'Private source repo ref/tag/commit to checkout for exact rebuilds. Default branch HEAD is the normal update path.'
         required: false
-        default: 'source-v20260510.1'
+        default: 'main'
         type: string
 
 permissions:
@@ -53,6 +53,7 @@ jobs:
 
       - name: Checkout private source files
         if: ${{ inputs.private_source_repo != '' }}
+        continue-on-error: true
         uses: actions/checkout@v6
         with:
           repository: ${{ inputs.private_source_repo }}
@@ -68,6 +69,7 @@ jobs:
           SOURCE_DATA_ASSET: ${{ inputs.source_data_asset }}
           REGENERATE: ${{ inputs.regenerate }}
         run: |
+          set -euo pipefail
           if [ ! -f data/derived/visualization_facts.json ]; then
             if [ -z "$SOURCE_DATA_TAG" ] || [ -z "$SOURCE_DATA_ASSET" ]; then
               echo "ERROR: data/derived is not hydrated; provide source_data_tag and source_data_asset" >&2
@@ -79,13 +81,7 @@ jobs:
           fi
           if [ "$REGENERATE" = "true" ]; then
             python3 -m pip install .
-            if [ -f data/private-source/Brocktons_Celestial_Forge.epub ]; then
-              mkdir -p data/raw
-              cp data/private-source/Brocktons_Celestial_Forge.epub \
-                data/raw/Brocktons_Celestial_Forge.epub
-            else
-              python3 scripts/download_bcf_epub.py
-            fi
+            python3 scripts/hydrate_source_epub.py
             python3 scripts/pipeline.py --target data --force
           fi
           DATE="${{ inputs.package_date }}"
