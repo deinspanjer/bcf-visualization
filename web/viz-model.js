@@ -169,20 +169,20 @@ export function buildSkyCarouselLayout(rolls, options = {}) {
       }
     }
 
-    let start = nearestIndex;
-    while (start > 0 && positions[start] - positions[start - 1] < minCardSpacing) {
-      start -= 1;
+    // Enforce minimum spacing in BOTH directions anchored at the playhead's
+    // nearest roll. A single rightward `max(positions[i], prev + min)` sweep
+    // (and the mirrored leftward `min(positions[i], next - min)` sweep) keeps
+    // naturally-spaced rolls at their pxPerWord positions while spreading any
+    // cluster — not just the one touching the playhead — that sits closer
+    // than `minCardSpacing`. The anchor stays put so the active card remains
+    // centered on the playhead.
+    for (let index = nearestIndex + 1; index < positions.length; index += 1) {
+      const floor = positions[index - 1] + minCardSpacing;
+      if (positions[index] < floor) positions[index] = floor;
     }
-    let end = nearestIndex;
-    while (end < positions.length - 1 && positions[end + 1] - positions[end] < minCardSpacing) {
-      end += 1;
-    }
-
-    if (start !== end) {
-      const anchor = positions[nearestIndex];
-      for (let index = start; index <= end; index += 1) {
-        positions[index] = anchor + (index - nearestIndex) * minCardSpacing;
-      }
+    for (let index = nearestIndex - 1; index >= 0; index -= 1) {
+      const ceiling = positions[index + 1] - minCardSpacing;
+      if (positions[index] > ceiling) positions[index] = ceiling;
     }
   }
   return { positions, playheadPx, pxPerWord };

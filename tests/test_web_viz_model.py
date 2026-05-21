@@ -315,6 +315,45 @@ def test_sky_carousel_layout_leaves_roll_droughts_empty_after_dense_groups() -> 
     assert result["nearestCardDistance"] > 440
 
 
+def test_sky_carousel_layout_spreads_every_dense_cluster_in_view() -> None:
+    # Two dense clusters separated by a gap that is just wider than
+    # minCardSpacing — exactly the early-story shape that produced overlapping
+    # constellation cards on the right half of the viewport (rolls #10–#13)
+    # while the playhead sat on the left-side cluster (rolls near #9). The
+    # old single-cluster spread left the far-side cluster un-separated.
+    source = """
+      import { buildSkyCarouselLayout } from './web/viz-model.js';
+      const rolls = [
+        { roll_number: 1, word_position: 12_581 },
+        { roll_number: 2, word_position: 14_866 },
+        { roll_number: 3, word_position: 16_866 },
+        { roll_number: 4, word_position: 18_866 },
+        { roll_number: 5, word_position: 24_378 },
+        { roll_number: 6, word_position: 26_378 },
+        { roll_number: 7, word_position: 28_378 },
+        { roll_number: 8, word_position: 30_378 },
+      ];
+      const layout = buildSkyCarouselLayout(rolls, {
+        totalWords: 2_645_680,
+        wordPos: 21_000,
+        averageCardWidth: 348,
+        minCardSpacing: 440,
+      });
+      const gaps = [];
+      for (let i = 1; i < layout.positions.length; i += 1) {
+        gaps.push(layout.positions[i] - layout.positions[i - 1]);
+      }
+      console.log(JSON.stringify({ gaps, positions: layout.positions }));
+    """
+    result = json.loads(_node_eval(source))
+    # Every adjacent pair must be at least minCardSpacing apart, on BOTH
+    # sides of the playhead — not only inside the playhead's own cluster.
+    for gap in result["gaps"]:
+        assert gap >= 440 - 1e-6, (
+            f"gap {gap} < 440 (positions={result['positions']})"
+        )
+
+
 def test_constellation_outlines_are_roll_time_knowledge_not_later_playback_state() -> None:
     source = """
       import {
