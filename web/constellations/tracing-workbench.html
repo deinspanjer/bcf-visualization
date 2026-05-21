@@ -592,6 +592,11 @@
     return await fetchText(name, required);
   }
 
+  function staticConstellationDataBase() {
+    const directory = location.pathname.replace(/[^/]*$/, "");
+    return directory.endsWith("/web/constellations/") ? "../../data/constellations/" : "";
+  }
+
   async function readFolderFile(folder, name, required = true) {
     if (!sanitizeFolder(folder)) throw new Error(`Unsafe folder name: ${folder}`);
     if (state.sourceMode === "directory" && state.rootHandle) {
@@ -604,7 +609,7 @@
         throw error;
       }
     }
-    return await fetchText(`${folder}/${name}`, required);
+    return await fetchText(`${staticConstellationDataBase()}${folder}/${name}`, required);
   }
 
   function parseIndexRecords(indexHtml) {

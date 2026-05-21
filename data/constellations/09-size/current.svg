@@ -3,74 +3,74 @@
     <title>Size</title>
     <desc>Size as a constellation of its 8 jumps. One marker per jump.</desc>
     <defs xmlns="http://www.w3.org/2000/svg">
-          <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="transparent"/>
-            <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
-            <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
-            <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
-            <stop offset="1" stop-color="transparent"/>
-          </linearGradient>
-          <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
-            <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
-              <g opacity="0.68" style="mix-blend-mode:screen">
-                <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
-                <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
-                <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
-                <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
-                <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
-                <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
-              </g>
-              <g opacity="0.32" style="mix-blend-mode:screen">
-                <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
-                <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
-                <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
-                <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
-                <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
-                <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
-              </g>
-              <circle r="2.2" fill="currentColor" opacity="0.16"/>
-              <circle r="1.4" fill="#fff"/>
-            </g>
-          </symbol>
-        </defs>
+                  <linearGradient id="ray-grad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stop-color="transparent"/>
+                    <stop offset="0.48" stop-color="#fff" stop-opacity="0.58"/>
+                    <stop offset="0.50" stop-color="#fff" stop-opacity="0.92"/>
+                    <stop offset="0.52" stop-color="#fff" stop-opacity="0.58"/>
+                    <stop offset="1" stop-color="transparent"/>
+                  </linearGradient>
+                  <symbol id="star-mark" viewBox="-50 -50 100 100" overflow="visible">
+                    <g filter="drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px currentColor)" opacity="0.76">
+                      <g opacity="0.68" style="mix-blend-mode:screen">
+                        <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(-3.00)"/>
+                        <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(63.00)"/>
+                        <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(117.00)"/>
+                        <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(183.00)"/>
+                        <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(237.00)"/>
+                        <rect x="-32.00" y="-0.390" width="64.00" height="0.780" rx="0.390" fill="url(#ray-grad)" transform="rotate(303.00)"/>
+                      </g>
+                      <g opacity="0.32" style="mix-blend-mode:screen">
+                        <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(27.00)"/>
+                        <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(93.00)"/>
+                        <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(147.00)"/>
+                        <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(213.00)"/>
+                        <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(267.00)"/>
+                        <rect x="-18.00" y="-0.125" width="36.00" height="0.250" rx="0.125" fill="url(#ray-grad)" transform="rotate(333.00)"/>
+                      </g>
+                      <circle r="2.2" fill="currentColor" opacity="0.16"/>
+                      <circle r="1.4" fill="#fff"/>
+                    </g>
+                  </symbol>
+                </defs>
 
     <!-- Wireframe edges edited in tracing-workbench.html. -->
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 63.2,106.9 80.8,150.9 98.4,194.9 116.0,230.1 133.6,265.3"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,238.9 160.0,198.2 160.0,150.9 160.0,98.1 160.0,27.7"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,238.9 133.6,265.3"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,238.9 186.4,265.3"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="186.4,265.3 204.0,230.1"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="204.0,230.1 160.0,198.2"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,198.2 116.0,230.1"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="98.4,194.9 160.0,150.9"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,98.1 80.8,150.9"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 256.8,106.9"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="256.8,106.9 239.2,150.9"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="239.2,150.9 221.6,194.9"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="221.6,194.9 160.0,150.9"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="239.2,150.9 160.0,98.1"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="221.6,194.9 204.0,230.1"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 133.6,80.5"/>
-    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160.0,27.7 186.4,80.5"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="70,180 10,170"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="70,180 135,240"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="135,240 135,290"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="135,290 215,310"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="215,310 225,260"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="225,260 135,240"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="310,100 280,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="280,90 250,85"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="250,85 215,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="215,90 195,70"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="195,70 160,95"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="160,95 185,115"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="185,115 215,90"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="205,140 195,165"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="205,175 195,165"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="205,175 215,165"/>
+    <polyline class="cluster-outline" fill="none" stroke="currentColor" stroke-opacity="0.32" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" points="205,140 215,165"/>
 
     <!-- One diffraction-spike marker per unique vertex. -->
     <g class="jump-markers">
-      <use href="#star-mark" x="145.0" y="12.7" width="30" height="30"/>
-      <use href="#star-mark" x="48.2" y="91.9" width="30" height="30"/>
-      <use href="#star-mark" x="65.8" y="135.9" width="30" height="30"/>
-      <use href="#star-mark" x="83.4" y="179.9" width="30" height="30"/>
-      <use href="#star-mark" x="101.0" y="215.1" width="30" height="30"/>
-      <use href="#star-mark" x="118.6" y="250.3" width="30" height="30"/>
-      <use href="#star-mark" x="145.0" y="223.9" width="30" height="30"/>
-      <use href="#star-mark" x="145.0" y="183.2" width="30" height="30"/>
-      <use href="#star-mark" x="145.0" y="135.9" width="30" height="30"/>
-      <use href="#star-mark" x="145.0" y="83.1" width="30" height="30"/>
-      <use href="#star-mark" x="171.4" y="250.3" width="30" height="30"/>
-      <use href="#star-mark" x="189.0" y="215.1" width="30" height="30"/>
-      <use href="#star-mark" x="241.8" y="91.9" width="30" height="30"/>
-      <use href="#star-mark" x="224.2" y="135.9" width="30" height="30"/>
-      <use href="#star-mark" x="206.6" y="179.9" width="30" height="30"/>
-      <use href="#star-mark" x="118.6" y="65.5" width="30" height="30"/>
-      <use href="#star-mark" x="171.4" y="65.5" width="30" height="30"/>
+      <use href="#star-mark" x="55" y="165" width="30" height="30"/>
+      <use href="#star-mark" x="-5" y="155" width="30" height="30"/>
+      <use href="#star-mark" x="120" y="225" width="30" height="30"/>
+      <use href="#star-mark" x="120" y="275" width="30" height="30"/>
+      <use href="#star-mark" x="200" y="295" width="30" height="30"/>
+      <use href="#star-mark" x="210" y="245" width="30" height="30"/>
+      <use href="#star-mark" x="295" y="85" width="30" height="30"/>
+      <use href="#star-mark" x="265" y="75" width="30" height="30"/>
+      <use href="#star-mark" x="235" y="70" width="30" height="30"/>
+      <use href="#star-mark" x="200" y="75" width="30" height="30"/>
+      <use href="#star-mark" x="180" y="55" width="30" height="30"/>
+      <use href="#star-mark" x="145" y="80" width="30" height="30"/>
+      <use href="#star-mark" x="170" y="100" width="30" height="30"/>
+      <use href="#star-mark" x="190" y="125" width="30" height="30"/>
+      <use href="#star-mark" x="180" y="150" width="30" height="30"/>
+      <use href="#star-mark" x="190" y="160" width="30" height="30"/>
+      <use href="#star-mark" x="200" y="150" width="30" height="30"/>
     </g>
   </svg>
