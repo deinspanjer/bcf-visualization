@@ -236,27 +236,57 @@ def test_field_log_uses_evidence_quotes_and_placeholder_without_synthetic_prose(
     }
 
 
-def test_on_roll_behavior_windows_classify_normal_pause_and_bullet_time() -> None:
-    # Phase 0 of the cinematic roll-focus rollout unified the pause and
-    # bullet-time onRoll windows onto ROLL_FIRING_WINDOW_WORDS (700) — the
-    # bullet-time window narrowed from the legacy 1500 to match pause.
+def test_on_roll_behavior_windows_classify_cinematic_pause_and_quick() -> None:
+    # The decoupled cinematic redesign collapses the three behaviors onto
+    # a single firing window (ROLL_FIRING_WINDOW_WORDS = 700):
+    #   - cinematic + pause: lock during firing (onRoll=True inside the
+    #     window). wordPos lock is enforced in app.js by suppressing
+    #     advance, not by speedMultiplier scaling.
+    #   - quick: no lock, never reports onRoll — scrubber flies through.
+    # speedMultiplier is preserved in the return shape but is always 1 now;
+    # the lock is binary (advance vs hold), not a slowdown.
     source = """
       import { onRollPlaybackState } from './web/viz-model.js';
       const roll = { word_position: 10000 };
       console.log(JSON.stringify({
-        normal: onRollPlaybackState(roll, 10010, 'normal'),
+        cinematic: onRollPlaybackState(roll, 10650, 'cinematic'),
+        cinematicOutside: onRollPlaybackState(roll, 10750, 'cinematic'),
         pause: onRollPlaybackState(roll, 10650, 'pause'),
         pauseOutside: onRollPlaybackState(roll, 10750, 'pause'),
-        bullet: onRollPlaybackState(roll, 10650, 'bullet-time'),
-        bulletOutside: onRollPlaybackState(roll, 10750, 'bullet-time'),
+        quickInside: onRollPlaybackState(roll, 10010, 'quick'),
+        quickOutside: onRollPlaybackState(roll, 10750, 'quick'),
+        defaultIsCinematic: onRollPlaybackState(roll, 10650),
       }));
     """
     assert json.loads(_node_eval(source)) == {
-        "normal": {"behavior": "normal", "onRoll": False, "speedMultiplier": 1},
-        "pause": {"behavior": "pause", "onRoll": True, "speedMultiplier": 0},
+        "cinematic": {"behavior": "cinematic", "onRoll": True, "speedMultiplier": 1},
+        "cinematicOutside": {"behavior": "cinematic", "onRoll": False, "speedMultiplier": 1},
+        "pause": {"behavior": "pause", "onRoll": True, "speedMultiplier": 1},
         "pauseOutside": {"behavior": "pause", "onRoll": False, "speedMultiplier": 1},
-        "bullet": {"behavior": "bullet-time", "onRoll": True, "speedMultiplier": 0.04},
-        "bulletOutside": {"behavior": "bullet-time", "onRoll": False, "speedMultiplier": 1},
+        "quickInside": {"behavior": "quick", "onRoll": False, "speedMultiplier": 1},
+        "quickOutside": {"behavior": "quick", "onRoll": False, "speedMultiplier": 1},
+        "defaultIsCinematic": {"behavior": "cinematic", "onRoll": True, "speedMultiplier": 1},
+    }
+
+
+def test_on_roll_behavior_falls_back_to_cinematic_for_unknown_values() -> None:
+    # Stale localStorage values from the prior `normal` / `bullet-time` schema
+    # must not survive — readStoredChoice in app.js handles that fallback at
+    # boot, and onRollPlaybackState's own behavior normalization belt-and-
+    # suspenders the same default.
+    source = """
+      import { onRollPlaybackState } from './web/viz-model.js';
+      const roll = { word_position: 10000 };
+      console.log(JSON.stringify({
+        normal: onRollPlaybackState(roll, 10650, 'normal'),
+        bullet: onRollPlaybackState(roll, 10650, 'bullet-time'),
+        empty: onRollPlaybackState(roll, 10650, ''),
+      }));
+    """
+    assert json.loads(_node_eval(source)) == {
+        "normal": {"behavior": "cinematic", "onRoll": True, "speedMultiplier": 1},
+        "bullet": {"behavior": "cinematic", "onRoll": True, "speedMultiplier": 1},
+        "empty": {"behavior": "cinematic", "onRoll": True, "speedMultiplier": 1},
     }
 
 
@@ -482,26 +512,26 @@ def test_roll_log_filtering_sorting_and_click_targets_use_word_positions() -> No
     }
 
 
-def test_focus_anim_duration_scales_with_on_roll_behavior() -> None:
-    # Phase 1 of the cinematic roll-focus rollout. bullet-time pacing was
-    # signed off as "0.5× speed" which means HALF speed → DOUBLE wall-clock
-    # duration. normal and pause both play at 1× speed (the camera still pans
-    # at normal cinematic pace even when word advance is paused).
+def test_focus_anim_duration_is_constant_across_behaviors() -> None:
+    # Under the decoupled cinematic redesign, the animation always plays out
+    # at full wall-clock pace — wordPos is locked during firing so there's
+    # no longer a need to stretch or compress the camera duration to match
+    # word advance. focusAnimDurationFor ignores its argument.
     source = """
       import { focusAnimDurationFor, FOCUS_ANIM_DURATION_MS } from './web/viz-model.js';
       console.log(JSON.stringify({
         base: FOCUS_ANIM_DURATION_MS,
-        normal: focusAnimDurationFor('normal'),
+        cinematic: focusAnimDurationFor('cinematic'),
         pause: focusAnimDurationFor('pause'),
-        bullet: focusAnimDurationFor('bullet-time'),
+        quick: focusAnimDurationFor('quick'),
         unknown: focusAnimDurationFor('something-else'),
       }));
     """
     assert json.loads(_node_eval(source)) == {
         "base": 2800,
-        "normal": 2800,
+        "cinematic": 2800,
         "pause": 2800,
-        "bullet": 5600,
+        "quick": 2800,
         "unknown": 2800,
     }
 
@@ -896,3 +926,108 @@ def test_halo_binary_offset_and_jump_radius_world_exported() -> None:
     result = json.loads(_node_eval(source))
     assert result["offset"] == {"x": 5, "y": 1}
     assert result["jumpRadius"] == 70
+
+
+# Unknown-constellation stand-in resolution. The curator's source records some
+# misses without knowing which constellation would have been hit; the cinematic
+# falls back to an unrevealed constellation as a placeholder shape so the camera
+# has something to focus on. The renderer reads `isUnknownConstellationStandIn`
+# to apply a dashed silhouette treatment.
+_STAND_IN_DATA_FIXTURE = """
+  const data = {
+    clusterAnchors: new Map([
+      ['Toolkits', { vertexSource: 'jumps', byJump: new Map(), byPerkId: new Map(), jumpByPerkId: new Map() }],
+      ['Knowledge', { vertexSource: 'jumps', byJump: new Map(), byPerkId: new Map(), jumpByPerkId: new Map() }],
+      ['Vehicles', { vertexSource: 'jumps', byJump: new Map(), byPerkId: new Map(), jumpByPerkId: new Map() }],
+      ['Time', { vertexSource: 'jumps', byJump: new Map(), byPerkId: new Map(), jumpByPerkId: new Map() }],
+    ]),
+    jumpWireframeByKey: new Map(),
+    wireframes: { jump_constellations: [] },
+    story: {
+      chapters: [
+        { chapter_num: '1', constellation_progress: [
+          { name: 'Toolkits', count: 1 },
+          { name: 'Knowledge', count: 0 },
+          { name: 'Vehicles', count: 0 },
+          { name: 'Time', count: 0 },
+        ] },
+        { chapter_num: '2', constellation_progress: [
+          { name: 'Toolkits', count: 2 },
+          { name: 'Knowledge', count: 1 },
+          { name: 'Vehicles', count: 0 },
+          { name: 'Time', count: 0 },
+        ] },
+      ],
+    },
+  };
+"""
+
+
+def test_focus_scene_picks_stand_in_for_unknown_constellation_miss() -> None:
+    source = f"""
+      import {{ focusScene }} from './web/viz-model.js';
+      {_STAND_IN_DATA_FIXTURE}
+      const roll = {{
+        roll_number: 13,
+        outcome: 'miss',
+        constellation: null,
+        chapter_num: '2',
+        purchased_perks: [],
+        free_perks: [],
+      }};
+      const scene = focusScene(roll, data);
+      console.log(JSON.stringify({{
+        isStandIn: scene.isUnknownConstellationStandIn,
+        resolved: scene.resolvedConstellation,
+        branch: scene.branch,
+      }}));
+    """
+    result = json.loads(_node_eval(source))
+    assert result["isStandIn"] is True
+    assert result["branch"] == "miss"
+    # Through ch 2, Toolkits and Knowledge are revealed; stand-in must be one
+    # of the still-unrevealed clusters.
+    assert result["resolved"] in {"Vehicles", "Time"}
+
+
+def test_focus_scene_deterministic_stand_in_pick() -> None:
+    source = f"""
+      import {{ focusScene }} from './web/viz-model.js';
+      {_STAND_IN_DATA_FIXTURE}
+      const roll = {{
+        roll_number: 13,
+        outcome: 'miss',
+        constellation: null,
+        chapter_num: '2',
+        purchased_perks: [],
+        free_perks: [],
+      }};
+      const a = focusScene(roll, data);
+      const b = focusScene(roll, data);
+      console.log(JSON.stringify({{ a: a.resolvedConstellation, b: b.resolvedConstellation }}));
+    """
+    result = json.loads(_node_eval(source))
+    assert result["a"] == result["b"]
+
+
+def test_focus_scene_does_not_set_stand_in_flag_for_known_constellation_misses() -> None:
+    source = f"""
+      import {{ focusScene }} from './web/viz-model.js';
+      {_STAND_IN_DATA_FIXTURE}
+      const roll = {{
+        roll_number: 7,
+        outcome: 'miss',
+        constellation: 'Toolkits',
+        chapter_num: '2',
+        purchased_perks: [],
+        free_perks: [],
+      }};
+      const scene = focusScene(roll, data);
+      console.log(JSON.stringify({{
+        isStandIn: scene.isUnknownConstellationStandIn,
+        resolved: scene.resolvedConstellation,
+      }}));
+    """
+    result = json.loads(_node_eval(source))
+    assert result["isStandIn"] is False
+    assert result["resolved"] == "Toolkits"

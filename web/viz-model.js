@@ -1,17 +1,17 @@
 // Half-width of the word-distance window inside which the scrubber is treated
 // as "firing" / locked onto a roll. Used both by the playthrough renderer
-// (firing flag) and the playback-state machine (onRoll for pause + bullet-time).
+// (firing flag) and the playback-state machine (onRoll for cinematic + pause).
 // Single source of truth — do not duplicate this literal.
 export const ROLL_FIRING_WINDOW_WORDS = 700;
 
-// Cinematic roll-focus animation duration (Phase 1). The clock advances over
-// FOCUS_ANIM_DURATION_MS of wall-clock time. bullet-time scales the on-roll
-// playback speed to 0.04× word advance, but the camera should pan at HALF
-// speed (2× wall-clock duration) so it's still legibly cinematic without
-// dragging on for tens of seconds.
+// Cinematic roll-focus animation duration. Cinematic playback decouples the
+// camera animation from word advance: while firing, wordPos locks to the
+// roll's word_position so the cinematic plays out at wall-clock pace
+// regardless of the configured words/second. After the cinematic completes
+// (t >= 1), `cinematic` mode auto-resumes word advance; `pause` mode holds
+// until the user presses play.
 export const FOCUS_ANIM_DURATION_MS = 2800;
-export function focusAnimDurationFor(behavior) {
-  if (behavior === "bullet-time") return FOCUS_ANIM_DURATION_MS * 2.0;
+export function focusAnimDurationFor(_behavior) {
   return FOCUS_ANIM_DURATION_MS;
 }
 
@@ -164,11 +164,21 @@ export function fieldLogModel(roll, chapter) {
   };
 }
 
-export function onRollPlaybackState(roll, wordPos, behavior = "normal") {
-  const normalized = behavior === "pause" || behavior === "bullet-time"
+// On-roll playback decision. The three behaviors share a single firing
+// window (ROLL_FIRING_WINDOW_WORDS):
+//   - cinematic: wordPos locks during firing, cinematic plays full wall-clock
+//     duration, auto-resumes when the animation completes.
+//   - pause: wordPos locks during firing, cinematic plays, holds the final
+//     state until the user presses play.
+//   - quick: no lock, no cinematic — the scrubber flies through at base speed.
+// `speedMultiplier` is preserved in the return shape for the quick path and
+// for outside-window callers, but the lock during firing is enforced in
+// app.js by suppressing wordPos advance — not by multiplier scaling.
+export function onRollPlaybackState(roll, wordPos, behavior = "cinematic") {
+  const normalized = behavior === "pause" || behavior === "quick"
     ? behavior
-    : "normal";
-  if (!roll || normalized === "normal") {
+    : "cinematic";
+  if (!roll || normalized === "quick") {
     return { behavior: normalized, onRoll: false, speedMultiplier: 1 };
   }
   const rollWord = roll.word_position;
@@ -176,12 +186,8 @@ export function onRollPlaybackState(roll, wordPos, behavior = "normal") {
   if (!Number.isFinite(distance)) {
     return { behavior: normalized, onRoll: false, speedMultiplier: 1 };
   }
-  if (normalized === "pause") {
-    const onRoll = distance <= ROLL_FIRING_WINDOW_WORDS;
-    return { behavior: normalized, onRoll, speedMultiplier: onRoll ? 0 : 1 };
-  }
   const onRoll = distance <= ROLL_FIRING_WINDOW_WORDS;
-  return { behavior: normalized, onRoll, speedMultiplier: onRoll ? 0.04 : 1 };
+  return { behavior: normalized, onRoll, speedMultiplier: 1 };
 }
 
 function finiteNumber(value) {
@@ -420,11 +426,62 @@ function rollJumpKey(roll) {
   return roll?.purchased_perk_jump || roll?.jump || null;
 }
 
-function inferMissCandidate(roll, wf, allStarsInConstellation) {
+// Stable 32-bit hash for deterministic stand-in selection. Seeded by a roll
+// identifier so the same miss-with-unknown-constellation always picks the
+// same stand-in across re-renders.
+function hashSeed(key) {
+  const str = String(key ?? "");
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// Resolve a stand-in constellation for misses where the curator's source
+// records no constellation. Prefer ones still unrevealed through the roll's
+// chapter (per `chapter.constellation_progress[*].count == 0`); fall back to
+// all known constellations so the animation still plays gracefully at end of
+// story. Returns the constellation name or null when no candidates exist.
+function resolveStandInConstellation(roll, data) {
+  const anchors = data?.clusterAnchors;
+  if (!anchors || typeof anchors.keys !== "function") return null;
+  const allNames = Array.from(anchors.keys());
+  if (!allNames.length) return null;
+
+  const chapters = data?.story?.chapters || [];
+  const rollChapter = roll?.chapter_num;
+  const revealed = new Set();
+  if (chapters.length && rollChapter != null) {
+    for (const chapter of chapters) {
+      // Walk forward through the story until (inclusive of) the roll's chapter.
+      // Anything with count > 0 in any prior or current chapter is revealed.
+      for (const row of (chapter.constellation_progress || [])) {
+        if (row && Number(row.count || 0) > 0) revealed.add(row.name);
+      }
+      if (String(chapter.chapter_num) === String(rollChapter)) break;
+    }
+  }
+
+  const unrevealed = allNames.filter(name => !revealed.has(name));
+  const pool = unrevealed.length ? unrevealed : allNames;
+  const seedKey = roll?.uid ?? roll?.roll_number ?? roll?.word_position ?? roll?.chapter_num ?? "";
+  const idx = hashSeed(seedKey) % pool.length;
+  return pool[idx];
+}
+
+function inferMissCandidate(roll, wf, allStarsInConstellation, { isStandIn = false } = {}) {
   const avail = Number(roll?.available_cp ?? 0);
   const est = roll?.miss_cost_estimate != null ? Number(roll.miss_cost_estimate) : null;
   const sourceStars = wf?.stars?.length ? wf.stars : (allStarsInConstellation || []);
-  const stars = sourceStars.filter(star => star && star.status !== "Obtained");
+  // For stand-in constellations the character demonstrably hasn't reached that
+  // constellation yet (the curator's source didn't even know which one it was),
+  // so the wireframe's "Obtained" markers are end-of-story state, irrelevant
+  // to this roll. Don't filter them out — otherwise stand-ins for fully-
+  // discovered constellations (Time, Resources and Durability, etc.) leave
+  // the candidate pool empty and the camera anchors at world center.
+  const stars = isStandIn ? sourceStars : sourceStars.filter(star => star && star.status !== "Obtained");
   if (!stars.length) return null;
   const tooExpensive = stars.filter(star => Number(star.cost || 0) > avail);
   const pool = (tooExpensive.length ? tooExpensive : stars).slice();
@@ -437,7 +494,29 @@ function inferMissCandidate(roll, wf, allStarsInConstellation) {
 }
 
 export function focusScene(roll, data) {
-  const constellation = roll?.constellation || null;
+  const isMiss = roll?.outcome === "miss";
+  const rawConstellation = roll?.constellation || null;
+  const anchorsMap = data?.clusterAnchors;
+  const constellationKnown = rawConstellation
+    && anchorsMap
+    && typeof anchorsMap.has === "function"
+    && anchorsMap.has(rawConstellation);
+
+  // Stand-in resolution: when the curator's source records a miss but doesn't
+  // know which constellation it would have hit, swap in a still-unrevealed
+  // constellation so the camera has something to focus on. Deterministic by
+  // roll so re-renders stay stable. The renderer reads
+  // `isUnknownConstellationStandIn` to apply the dashed silhouette treatment.
+  let isUnknownConstellationStandIn = false;
+  let constellation = rawConstellation;
+  if (isMiss && !constellationKnown) {
+    const standIn = resolveStandInConstellation(roll, data);
+    if (standIn) {
+      constellation = standIn;
+      isUnknownConstellationStandIn = true;
+    }
+  }
+
   const jumpName = rollJumpKey(roll);
   const wf = (constellation && jumpName && data?.jumpWireframeByKey)
     ? data.jumpWireframeByKey.get(`${constellation}::${jumpName}`)
@@ -473,7 +552,7 @@ export function focusScene(roll, data) {
         if (j.constellation === constellation) constellationStars = constellationStars.concat(j.stars || []);
       }
     }
-    missCandidate = inferMissCandidate(roll, wf, constellationStars);
+    missCandidate = inferMissCandidate(roll, wf, constellationStars, { isStandIn: isUnknownConstellationStandIn });
   }
 
   // ---------- anchorWorld ----------
@@ -569,6 +648,8 @@ export function focusScene(roll, data) {
     freeStars,
     vertexSource: clusterEntry?.vertexSource ?? null,
     starWorldById,
+    resolvedConstellation: constellation,
+    isUnknownConstellationStandIn,
   };
 }
 

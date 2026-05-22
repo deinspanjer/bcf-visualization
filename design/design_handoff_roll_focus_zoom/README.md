@@ -24,7 +24,7 @@ The files in this bundle are **design references created in HTML/CSS/SVG** — a
 
 ## Animation Timeline
 
-A roll-focus animation runs for ~2.8 seconds in normal playback (faster if `onRollBehavior` is "normal", slower if "bullet-time"). All effects are parameterized by `t` ∈ [0, 1] across that duration. Times below are normalized `t` values; convert to milliseconds using the configured animation duration.
+A roll-focus animation runs for a fixed ~2.8 seconds of wall-clock time. During firing the scrubber's word position locks to the roll's word position so the cinematic plays at full pace regardless of the configured words/second. All effects are parameterized by `t` ∈ [0, 1] across that duration. Times below are normalized `t` values; convert to milliseconds using the configured animation duration. `onRollBehavior` is `cinematic` (default — auto-resume on completion), `pause` (hold final frame until the user presses play), or `quick` (skip the cinematic entirely).
 
 | t        | Phase            | What happens                                                                                             |
 |----------|------------------|----------------------------------------------------------------------------------------------------------|
@@ -275,7 +275,7 @@ The animation prototype's `animation.js` is the most thoroughly iterated artifac
 1. **Layout swap first** (already in-flight per a separate task): move the sky view above the scrubber.
 2. **Remove `renderJumpFocus()`** entirely. Remove the HUD indicator labels inside the stage frame.
 3. **Add the background starscape layer** as a separate SVG behind the main stage SVG, fixed in screen space.
-4. **Wire up the timing state machine**: when the scrubber lands on a roll that's within the firing window, kick off a `t` interpolation across the configured animation duration. Drive all effects from `t`. Respect `onRollBehavior` (normal / pause / bullet-time) for duration scaling.
+4. **Wire up the timing state machine**: when the scrubber lands on a roll that's within the firing window, lock wordPos to the roll's word_position and kick off a `t` interpolation across the configured animation duration. Drive all effects from `t`. Respect `onRollBehavior` (cinematic / pause / quick) — `cinematic` auto-resumes word advance when `t >= 1`; `pause` holds the final frame until the user presses play; `quick` skips the cinematic entirely.
 5. **Implement camera/viewBox interpolation** between the wide/reveal/hit states using `easeInOutCubic`.
 6. **Add the motion blur filter group** wrapping the silhouette + cluster-marker rendering.
 7. **Implement the split** — switch from rendering the focal jump's cluster marker to rendering the jump's interior perks, fading in over t=0.40 → 0.58.

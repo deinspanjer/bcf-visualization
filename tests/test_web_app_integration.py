@@ -72,7 +72,7 @@ def test_web_app_loads_preview_playthrough_without_obsolete_sky_dom(tmp_path):
             expect(page.locator("#playback-speed")).to_have_value("5000")
             expect(page.locator("#zoom-readout")).to_have_text("2.75×")
             assert page.locator(".scrubber-track.axis .predicted-tick").count() <= 20
-            expect(page.locator(".roll-mode-switch button", has_text="pause")).to_have_class(
+            expect(page.locator(".roll-mode-switch button", has_text="cinematic")).to_have_class(
                 re.compile(r"\bis-active\b")
             )
             expect(page.locator("#sky-section")).to_have_count(0)

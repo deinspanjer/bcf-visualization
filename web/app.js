@@ -63,7 +63,8 @@ const STORAGE_VERSION = "2";
 const DEFAULT_WORD_POS = 450_000;
 const DEFAULT_SPEED = 5_000;
 const DEFAULT_ZOOM = 2.75;
-const DEFAULT_ON_ROLL_BEHAVIOR = "pause";
+const DEFAULT_ON_ROLL_BEHAVIOR = "cinematic";
+const ON_ROLL_BEHAVIORS = ["cinematic", "pause", "quick"];
 const ROLL_LOCATIONS = ["predicted", "curated"];
 const DEFAULT_ROLL_LOCATION = "predicted";
 
@@ -92,13 +93,12 @@ const app = {
   playing: false,
   speed: readStoredNumber(LS_SPEED, DEFAULT_SPEED),
   zoom: clamp(readStoredNumber(LS_ZOOM, DEFAULT_ZOOM), 0.5, 6),
-  onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ["normal", "pause", "bullet-time"], DEFAULT_ON_ROLL_BEHAVIOR),
+  onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ON_ROLL_BEHAVIORS, DEFAULT_ON_ROLL_BEHAVIOR),
   rollLocation: readStoredChoice(LS_ROLL_LOCATION, ROLL_LOCATIONS, DEFAULT_ROLL_LOCATION),
   fieldLogHidden: readStoredBoolean(LS_FIELD_LOG_HIDDEN, false),
   portraitDismissed: readStoredBoolean(LS_PORTRAIT_DISMISSED, false),
   rollFilter: "all",
   rollSort: "roll",
-  pauseBypassRollUid: null,
   raf: null,
   lastFrame: 0,
   // Cinematic roll-focus animation state (Phase 1). Captured when the
@@ -140,17 +140,39 @@ function focusAnimTick() {
   app.focusAnimRaf = requestAnimationFrame(focusAnimTick);
 }
 
+// True while the cinematic camera is locking the scrubber in place. The lock
+// runs from animation start through t >= 1 in `pause` mode (held until the
+// user presses play) and through t < 1 in `cinematic` mode (auto-resumes
+// when the camera move finishes).
+function focusAnimIsLocking() {
+  const anim = app.focusAnim;
+  if (!anim) return false;
+  if (anim.behavior === "pause") return true;
+  return currentFocusAnimT() < 1;
+}
+
 function startFocusAnim(roll, behavior) {
   if (app.focusAnimRaf != null) {
     cancelAnimationFrame(app.focusAnimRaf);
     app.focusAnimRaf = null;
   }
+  const lockedWordPos = Math.round(Number(roll.word_position) || 0);
   app.focusAnim = {
     rollUid: String(roll.uid),
     startMs: performance.now(),
     durationMs: focusAnimDurationFor(behavior),
     outcome: roll.outcome === "hit" ? "hit" : "miss",
+    lockedWordPos,
+    behavior,
   };
+  // Snap the scrubber to the roll's word position so the visible cursor jumps
+  // to the firing point — this is the "cut" that signals the cinematic has
+  // begun. We write directly (not through setWordPos) to avoid the
+  // scrub-cancel logic clearing the focusAnim we just created.
+  if (app.data) {
+    app.wordPos = lockedWordPos;
+    store(LS_BOOKMARK, app.wordPos);
+  }
   if (PREFERS_REDUCED_MOTION) return;
   app.focusAnimRaf = requestAnimationFrame(focusAnimTick);
 }
@@ -425,6 +447,7 @@ function buildStory(chapterFacts) {
         mechanical_chapter_num: rawRoll.mechanical_chapter_num,
         display_chapter_num: rawRoll.display_chapter_num,
         outcome: rawRoll.outcome || "unknown",
+        source_kind: rawRoll.source_kind || null,
         constellation: rawRoll.constellation,
         jump: rawRoll.purchased_perk_jump || rawRoll.jump || rawRoll.free_perks?.[0]?.jump || null,
         word_position_predicted: wpPredicted,
@@ -653,8 +676,16 @@ function formatRollLabel(roll) {
 
 function setWordPos(value) {
   if (!app.data) return;
-  app.pauseBypassRollUid = null;
-  app.wordPos = Math.round(clamp(value, 0, app.data.story.total_words));
+  const next = Math.round(clamp(value, 0, app.data.story.total_words));
+  // User-initiated scrubs cancel a running focus animation when they move
+  // the playhead away from the locked position. tickPlayback drives wordPos
+  // directly (not through setWordPos), so we never accidentally cancel from
+  // auto-resume.
+  if (app.focusAnim) {
+    const drift = Math.abs(next - (app.focusAnim.lockedWordPos ?? next));
+    if (drift > 5) clearFocusAnim();
+  }
+  app.wordPos = next;
   store(LS_BOOKMARK, app.wordPos);
   render();
 }
@@ -690,11 +721,14 @@ function setFieldLogHidden(hidden) {
 function startPlayback() {
   if (!app.data || app.playing) return;
   if (app.wordPos >= app.data.story.total_words) setWordPos(0);
-  const currentRoll = lastRollAtWord(app.wordPos);
-  const rollState = onRollPlaybackState(currentRoll, app.wordPos, app.onRollBehavior);
-  app.pauseBypassRollUid = rollState.behavior === "pause" && rollState.onRoll
-    ? currentRoll?.uid || null
-    : null;
+  // If the user hits play while a `pause`-mode cinematic is holding on its
+  // final frame, clear that focusAnim so playback can resume past the roll.
+  // Without this the lock would re-grab on the very next render. The roll's
+  // firing window is still open, so we don't re-trigger the cinematic for
+  // the same roll — see startFocusAnim trigger logic.
+  if (app.focusAnim && app.onRollBehavior === "pause" && currentFocusAnimT() >= 1) {
+    app.focusAnim = { ...app.focusAnim, behavior: "cinematic" };
+  }
   app.playing = true;
   // While playing, tickPlayback drives render(). If a focus-anim RAF is in
   // flight from a prior paused state, cancel it now so we don't double-render
@@ -716,6 +750,21 @@ function stopPlayback() {
 }
 
 function togglePlayback() {
+  // Special case: user is in `pause` mode with a held cinematic (t >= 1, lock
+  // still engaged). They're already `app.playing = true` — pressing space here
+  // means "advance past this roll", not "pause playback". Reclassify the held
+  // anim to `cinematic` so the next tickPlayback releases the lock and word
+  // advance resumes from the locked position. Single keypress to escape.
+  if (
+    app.focusAnim
+    && app.focusAnim.behavior === "pause"
+    && currentFocusAnimT() >= 1
+  ) {
+    app.focusAnim = { ...app.focusAnim, behavior: "cinematic" };
+    if (!app.playing) startPlayback();
+    else render();  // keep playing; next tick sees the lock released
+    return;
+  }
   if (app.playing) stopPlayback();
   else startPlayback();
 }
@@ -724,21 +773,20 @@ function tickPlayback(now) {
   if (!app.playing || !app.data) return;
   const dt = Math.max(0, (now - app.lastFrame) / 1000);
   app.lastFrame = now;
-  const currentRoll = lastRollAtWord(app.wordPos);
-  const rollState = onRollPlaybackState(currentRoll, app.wordPos, app.onRollBehavior);
-  if (app.pauseBypassRollUid && (!rollState.onRoll || currentRoll?.uid !== app.pauseBypassRollUid)) {
-    app.pauseBypassRollUid = null;
-  }
-  if (
-    rollState.behavior === "pause" &&
-    rollState.onRoll &&
-    currentRoll?.uid !== app.pauseBypassRollUid
-  ) {
-    stopPlayback();
+  // Cinematic + pause modes lock wordPos while the camera animation is
+  // running. The lock window depends on behavior:
+  //   - cinematic: lock while t < 1, then auto-resume word advance.
+  //   - pause: lock for the full focusAnim lifetime (until the user scrubs
+  //     out of the firing window or hits play again — but tickPlayback
+  //     itself never resumes; the user pressing pause+play recomputes).
+  // In both locked cases we still render() to keep the cinematic camera
+  // advancing, but we skip the wordPos write so the scrubber stays parked.
+  if (focusAnimIsLocking()) {
+    render();
+    app.raf = requestAnimationFrame(tickPlayback);
     return;
   }
-  const speedMultiplier = currentRoll?.uid === app.pauseBypassRollUid ? 1 : rollState.speedMultiplier;
-  const next = app.wordPos + app.speed * speedMultiplier * dt;
+  const next = app.wordPos + app.speed * dt;
   if (next >= app.data.story.total_words) {
     app.wordPos = app.data.story.total_words;
     store(LS_BOOKMARK, app.wordPos);
@@ -1156,7 +1204,14 @@ function renderScrubberControls() {
       type: "button",
       "aria-label": app.playing ? "Pause" : "Play",
       title: app.playing ? "Pause (space)" : "Play (space)",
-      onClick: togglePlayback,
+      // No onClick here — the play/pause button is the hottest control during
+      // cinematic playback (60fps render rebuilds the DOM every frame, which
+      // breaks the click-fires-on-same-node browser invariant for
+      // mousedown/mouseup pairs). Click is delegated from document.body via
+      // data-action, which works regardless of which generation of the
+      // button received each half of the click. Native buttons still fire
+      // click on Enter/Space, so keyboard activation continues to work.
+      "data-action": "toggle-playback",
       text: app.playing ? "❚❚" : "▶",
     }),
     el("label", { class: "control-label" },
@@ -1183,11 +1238,14 @@ function renderScrubberControls() {
     el("span", { class: "control-divider", "aria-hidden": "true" }),
     el("span", { class: "control-label", text: "on roll" }),
     el("div", { class: "app-mode-switch roll-mode-switch", role: "group", "aria-label": "Behavior when the Forge fires a roll" },
-      ["normal", "pause", "bullet-time"].map(value => el("button", {
+      ON_ROLL_BEHAVIORS.map(value => el("button", {
         class: app.onRollBehavior === value ? "is-active" : "",
         type: "button",
         "aria-pressed": app.onRollBehavior === value,
-        onClick: () => { app.onRollBehavior = value; store(LS_ON_ROLL_BEHAVIOR, value); render(); },
+        // Delegated through data-action so a click landing during a
+        // cinematic render (rebuilds at 60fps) still fires.
+        "data-action": "set-on-roll-behavior",
+        "data-on-roll-behavior": value,
         text: value,
       })),
     ),
@@ -1202,7 +1260,16 @@ function renderScrubberControls() {
         text: value,
       })),
     ),
-    el("button", { class: "btn ghost", id: "reset-bookmark", type: "button", onClick: () => { app.playing = false; setWordPos(0); }, text: "reset" }),
+    el("button", {
+      class: "btn ghost",
+      id: "reset-bookmark",
+      type: "button",
+      // Delegated — reset is a frequent escape hatch during cinematic
+      // playback, so it needs the same delegated-click reliability as
+      // play/pause.
+      "data-action": "reset-bookmark",
+      text: "reset",
+    }),
   );
 }
 
@@ -1224,12 +1291,21 @@ function renderPlaythrough() {
   const lastRoll = lastRollAtWord(app.wordPos);
   const firing = lastRoll && Math.abs(app.wordPos - lastRoll.word_position) <= ROLL_FIRING_WINDOW_WORDS;
 
-  // Phase 1 trigger: capture / clear the cinematic roll-focus animation
-  // clock based on whether the scrubber is inside the firing window. The
-  // clock is decoupled from playback — it runs even while paused (pause
-  // mode) and at real-time wall-clock pacing in bullet-time, where word
-  // advance is 0.04× but the camera still needs to pan cinematically.
-  if (firing && lastRoll) {
+  // Cinematic trigger: capture / clear the roll-focus animation clock based
+  // on whether the scrubber is inside the firing window. The clock is
+  // decoupled from playback — wordPos locks to roll.word_position during the
+  // animation (see tickPlayback's focusAnimIsLocking check) so the cinematic
+  // plays at wall-clock pace regardless of base speed.
+  //
+  // Two cases skip the cinematic:
+  //   1. `quick` mode — the user opted out; scrubber flies through.
+  //   2. `source_kind === "trigger"` rolls — these are starting bonuses (the
+  //      chapter-1 trigger event sits at word 0), not forge rolls. The
+  //      firing flag itself remains true so the field log readout still
+  //      shows the perk, but we don't run a cinematic for them.
+  const cinematicEligible = app.onRollBehavior !== "quick"
+    && lastRoll?.source_kind !== "trigger";
+  if (firing && lastRoll && cinematicEligible) {
     const uid = String(lastRoll.uid);
     if (!app.focusAnim || app.focusAnim.rollUid !== uid) {
       startFocusAnim(lastRoll, app.onRollBehavior);
@@ -1238,12 +1314,16 @@ function renderPlaythrough() {
     clearFocusAnim();
   }
 
-  const scene = firing && lastRoll ? focusScene(lastRoll, app.data) : null;
+  // The sky camera only renders when we've actually started a focus
+  // animation — trigger-event rolls and `quick` mode keep the carousel
+  // visible without a cinematic handoff.
+  const cinematicActive = !!app.focusAnim && firing && lastRoll;
+  const scene = cinematicActive ? focusScene(lastRoll, app.data) : null;
   const focusT = currentFocusAnimT();
 
   return el("div", { class: `playthrough ${app.fieldLogHidden ? "field-log-hidden" : ""}` },
     el("div", { class: "viewport" },
-      renderCarousel(scene ? focusT : null),
+      renderCarousel(scene ? focusT : null, firing && cinematicActive),
       renderViewportFrame(),
       scene ? renderSkyCamera(lastRoll, scene, focusT) : null,
     ),
@@ -1260,7 +1340,7 @@ function renderViewportFrame() {
   );
 }
 
-function renderCarousel(focusT = null) {
+function renderCarousel(focusT = null, firingCinematic = false) {
   const rolls = app.data.story.rolls;
   const cardWidth = 348;
   const minCardSpacing = 440;
@@ -1312,7 +1392,13 @@ function renderCarousel(focusT = null) {
     const flank = !active && distPx < flankRadiusPx;
     const con = roll.constellation ? app.data.conByName[roll.constellation] : null;
     const outlineVisible = constellationOutlineVisibleForRoll(roll, knowledgeIndex);
-    slots.push(el("div", { class: "carousel-slot", style: { left: `${cardPx}px` } },
+    // Active-card pop-out: when the cinematic is firing, the active
+    // constellation card hides instantly so its outline doesn't double up
+    // with the sky-camera SVG during the t = 0.10–0.45 cross-fade. The strip
+    // opacity still smoothly fades the surrounding (non-active) cards.
+    const slotStyle = { left: `${cardPx}px` };
+    if (firingCinematic && active) slotStyle.opacity = "0";
+    slots.push(el("div", { class: "carousel-slot", style: slotStyle },
       con ? renderConstellationCard(con, active, flank, outlineVisible) : renderUnresolvedCard(active, flank),
     ));
   }
@@ -1394,8 +1480,12 @@ function renderSkyCamera(roll, scene, t) {
   // → 0.45). Avoids a flash of nothing during the handoff.
   const cameraOpacity = Math.min(1, Math.max(0, phase(t, 0.05, 0.15)));
 
-  const con = roll.constellation ? app.data.conByName[roll.constellation] : null;
+  // Prefer the scene's resolvedConstellation so stand-in misses (where
+  // `roll.constellation == null`) render against the swapped-in wireframe.
+  const conName = scene.resolvedConstellation || roll.constellation || null;
+  const con = conName ? app.data.conByName[conName] : null;
   const color = `oklch(0.82 0.14 ${scene.hue})`;
+  const isStandIn = scene.isUnknownConstellationStandIn === true;
 
   // ---------- progress curves ----------
   const blur = motionBlurStdDeviation(t);
@@ -1425,20 +1515,25 @@ function renderSkyCamera(roll, scene, t) {
   }
 
   // ---------- silhouette polylines ----------
+  // Stand-in misses (curator recorded a miss but doesn't know the
+  // constellation) get a dashed silhouette so the unfamiliarity reads at
+  // a glance — no name label is shown anywhere, but the line treatment
+  // cues "this is a placeholder shape."
+  const silhouetteAttrs = {
+    fill: "none",
+    stroke: color,
+    "stroke-width": "1.6",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+    "vector-effect": "non-scaling-stroke",
+  };
+  if (isStandIn) silhouetteAttrs["stroke-dasharray"] = "4 3";
   const silhouettePolylines = (con?.silhouette || []).map(polyline => {
     const points = polyline.map(point => {
       const [wx, wy] = clusterLocalToWorld(point[0], point[1]);
       return `${wx.toFixed(1)},${wy.toFixed(1)}`;
     }).join(" ");
-    return svgEl("polyline", {
-      points,
-      fill: "none",
-      stroke: color,
-      "stroke-width": "1.6",
-      "stroke-linecap": "round",
-      "stroke-linejoin": "round",
-      "vector-effect": "non-scaling-stroke",
-    });
+    return svgEl("polyline", { ...silhouetteAttrs, points });
   });
 
   // ---------- vertex pins (tiny circles beneath each cluster marker) ----------
@@ -1684,8 +1779,12 @@ function renderSkyCamera(roll, scene, t) {
   // focal and non-focal). Interior perks stay outside the blur so they read
   // crisp as they emerge.
   const blurGroupProps = blur > 0.4 ? { filter: "url(#cam-motion-blur)" } : {};
+  // Stand-in silhouettes ride at ~0.45/0.62 ≈ 0.726 of the normal opacity so
+  // the dashes don't read as a brighter outline; the silhOp curve still drives
+  // the fade-in/out timing.
+  const silhScale = isStandIn ? 0.726 : 1;
   const blurGroup = svgEl("g", blurGroupProps,
-    svgEl("g", { opacity: silhOp.toFixed(3) }, ...silhouettePolylines),
+    svgEl("g", { opacity: (silhOp * silhScale).toFixed(3) }, ...silhouettePolylines),
     svgEl("g", { opacity: pinOp.toFixed(3) }, ...vertexPins),
     svgEl("g", { opacity: nonFocalClusterOp.toFixed(3) }, ...nonFocalMarkers),
     svgEl("g", { opacity: focalClusterOp.toFixed(3) }, ...focalMarkerNodes),
@@ -1805,9 +1904,17 @@ function renderBeam(scene, t, view) {
   const apexY = lerp(bottomY, focal[1], reach);
   const beamLen = Math.max(1, bottomY - apexY);
 
-  const apexW = lerp(4, 0, reach);
+  // Apex always tapers to a true point (width 0) regardless of reach. The
+  // prototype's `lerp(4, 0, reach)` only landed at zero at full reach (hit);
+  // on a miss the beam stalls at reach=0.78, leaving a ~0.88-wide flat top
+  // where the gradient is brightest — a visible hard edge stamping out the
+  // "beam stops before the mote" visual. With apex=0 the polygon's tip is a
+  // single point that the gaussian blur dissolves into the void at any
+  // reach state, matching the design intent ("Apex tapers to a true point …
+  // so the gaussian blur dissolves the tip into the void on misses").
+  const apexW = 0;
   const baseW = 72;
-  const coreApexW = lerp(2, 0, reach);
+  const coreApexW = 0;
   const coreBaseW = 22;
 
   const outerPts = [
@@ -2281,6 +2388,40 @@ function centerScrubber() {
   const target = clamp(x - scroller.clientWidth / 2, 0, Math.max(0, stack.scrollWidth - scroller.clientWidth));
   scroller.scrollLeft = target;
 }
+
+// Module-level click delegation. Render() rebuilds the entire DOM tree on
+// every frame (including the 60fps cinematic-anim ticks), so per-button
+// onClick handlers attached during a render can be silently destroyed
+// between the user's mousedown and mouseup — the browser then refuses to
+// fire `click`. Routing the click through a stable document.body listener
+// fixes that for any control flagged with data-action. Keyboard activation
+// (Enter/Space on a focused button) still fires `click` natively, so it
+// works through the same path without needing keyboard handling here.
+document.body.addEventListener("click", event => {
+  const target = event.target.closest("[data-action]");
+  if (!target) return;
+  const action = target.dataset.action;
+  if (action === "toggle-playback") {
+    togglePlayback();
+    event.preventDefault();
+  } else if (action === "reset-bookmark") {
+    app.playing = false;
+    if (app.focusAnim) clearFocusAnim();
+    setWordPos(0);
+    event.preventDefault();
+  } else if (action === "set-on-roll-behavior") {
+    const value = target.dataset.onRollBehavior;
+    if (ON_ROLL_BEHAVIORS.includes(value)) {
+      app.onRollBehavior = value;
+      store(LS_ON_ROLL_BEHAVIOR, value);
+      // Switching to `quick` mid-firing should clear any running cinematic
+      // so the scrubber resumes flowing immediately.
+      if (value === "quick" && app.focusAnim) clearFocusAnim();
+      render();
+    }
+    event.preventDefault();
+  }
+});
 
 window.addEventListener("keydown", event => {
   if (!app.data) return;
