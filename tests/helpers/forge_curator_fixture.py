@@ -124,6 +124,7 @@ def _roll_fact(chapter_num: str, *, cp_start: int) -> dict:
         "available_cp": 100,
         "banked_cp_after_roll": 0,
         "rolled_perk_name": None,
+        "rolled_perk_instance": None,
         "rolled_perk_cost": None,
         "miss_cost_estimate": 100,
         "rolls_in_chapter": 1,

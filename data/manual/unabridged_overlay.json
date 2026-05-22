@@ -1,0 +1,65 @@
+{
+  "_notes": "Curator-side patches applied by scripts/build_perk_directory.py after parsing the Unabridged List sheet of Brocktons_Celestial_Forge_Reference.xlsx. Survives upstream xlsx republication. Keyed by (constellation, jump). Each patch may add canonical perk names that the upstream author indexed elsewhere (e.g. only in column 5 full-text), or remove names that conceptually collapse to a different canonical (see perk_aliases.json). The top-level repeatable_perks list tags canonical names that are repeatable per author intent but that the upstream Complete List of Perks sheet doesn't carry the Repeatable flag for at the directory's (name, jump) key.",
+  "jump_patches": [
+    {
+      "constellation": "Alchemy",
+      "jump": "Fate/",
+      "remove_names": ["Transmutation", "Alchemy"],
+      "add_names": ["Thaumaturgical Focus"],
+      "rationale": "Upstream xlsx indexed two sub-instances of one repeatable perk as standalone perks. Canonical parent is `Thaumaturgical Focus` (matches Workshop: X, Unnatural Skill: X pattern). Rolls 290 and 359 both resolve here via perk_aliases.json."
+    },
+    {
+      "constellation": "Crafting",
+      "jump": "Fate Servant Supplement",
+      "add_names": ["Class Jumper"],
+      "rationale": "Acquired in roll 375 (ch 55). Upstream xlsx has it in col 5 full-text but not col 2."
+    },
+    {
+      "constellation": "Knowledge",
+      "jump": "Skies of Arcadia",
+      "add_names": ["Sky Machinist"],
+      "rationale": "Acquired in roll 385 (ch 55.1). Upstream xlsx col-5-only."
+    },
+    {
+      "constellation": "Magic",
+      "jump": "Inukami",
+      "add_names": ["Talisman Trained"],
+      "rationale": "Acquired in roll 276 (ch 43). Upstream xlsx col-5-only."
+    },
+    {
+      "constellation": "Quality",
+      "jump": "The World Ends With You",
+      "add_names": ["Natural Puppy"],
+      "rationale": "Acquired in roll 303 (ch 46). Upstream xlsx col-5-only."
+    },
+    {
+      "constellation": "Size",
+      "jump": "Zoids: Legacy",
+      "add_names": [
+        "Accelerator Equipment",
+        "Doppler Field Generator",
+        "Electron Shield Generators"
+      ],
+      "rationale": "Acquired in roll 381 (ch 55.1). Costs are denominated in Customization Points (3, 5, 2) — the build pipeline multiplies non-CP cost units by 100 to derive effective CP cost for visualization (200/300/500). Upstream xlsx col-5-only."
+    },
+    {
+      "constellation": "Toolkits",
+      "jump": "GUNNM",
+      "add_names": ["Civilian Equipment Package"],
+      "rationale": "Acquired in roll 98 (ch 21). Upstream xlsx col-5-only."
+    },
+    {
+      "constellation": "Resources and Durability",
+      "jump": "Fallout 4",
+      "add_names": ["Starting Gear"],
+      "rationale": "Free ride-along of paid 'Scrapper' purchase in roll 189 (ch 34). Upstream Reference.xlsx Obtained Perks sheet records it as a standalone non-free 0-cost row, which fails to fold into any Unabridged parent and surfaces as an obtained_supplemental. Promoting to first-class unabridged-tier resolves the leftover supplemental and gives it a wireframe star."
+    }
+  ],
+  "repeatable_perks": [
+    "Entrance Hall",
+    "Minor Blessing",
+    "Thaumaturgical Focus",
+    "Valuable Memories",
+    "Workshop"
+  ]
+}

@@ -134,6 +134,7 @@ def test_roll_facts_use_evidence_quotes_contract() -> None:
         "purchased_perk_jump": None,
         "free_perks": [],
         "rolled_perk_name": None,
+        "rolled_perk_instance": None,
         "rolled_perk_cost": 200,
         "miss_cost_estimate": 200,
         "predicted_word_position_epub": 100,

@@ -281,7 +281,8 @@
         "anchor_char_offset_in_chapter", "evidence_kind",
         "evidence_quotes",
         "available_cp", "banked_cp_after_roll",
-        "rolled_perk_name", "rolled_perk_cost", "miss_cost_estimate",
+        "rolled_perk_name", "rolled_perk_instance",
+        "rolled_perk_cost", "miss_cost_estimate",
         "roll_sequence_in_chapter", "rolls_in_chapter",
         "fact_source", "source_kind"
       ],
@@ -348,11 +349,15 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "cost"],
+            "required": ["name", "cost", "free"],
             "properties": {
-              "name": { "type": "string", "minLength": 1 },
-              "cost": { "type": "integer", "minimum": 0 },
-              "free": { "type": "boolean" }
+              "name":      { "type": "string", "minLength": 1 },
+              "instance":  { "type": ["string", "null"] },
+              "id":        { "type": ["string", "null"] },
+              "cost":      { "type": "integer", "minimum": 0 },
+              "cost_unit": { "type": ["string", "null"] },
+              "jump":      { "type": ["string", "null"] },
+              "free":      { "type": "boolean" }
             }
           }
         },
@@ -410,6 +415,7 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "rolled_perk_name":          { "type": ["string", "null"] },
+        "rolled_perk_instance":      { "type": ["string", "null"] },
         "rolled_perk_cost": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },

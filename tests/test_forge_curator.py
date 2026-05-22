@@ -755,9 +755,12 @@ def test_chapter_1_override_preserves_trigger_without_local_paid_perk() -> None:
     assert trigger["available_cp"] == 0
     assert trigger["banked_cp_after_roll"] == 0
     assert trigger["purchased_perk_cost_total"] == 0
-    assert trigger["purchased_perks"] == [
-        {"name": "Workshop", "cost": 0, "free": False}
-    ]
+    assert len(trigger["purchased_perks"]) == 1
+    workshop = trigger["purchased_perks"][0]
+    assert workshop["name"] == "Workshop"
+    assert workshop["cost"] == 0
+    assert workshop["free"] is False
+    assert workshop["instance"] in (None, "Workshop: Metalworking")
     assert [p["name"] for p in trigger["free_perks"]] == [
         "Access Key",
         "Entrance Hall",

@@ -24,7 +24,7 @@
       "required": [
         "epub_sequence", "chapter_num", "chapter_full_title",
         "perk_name", "classification", "jump",
-        "cost", "cost_text", "free", "perk_text", "constellation"
+        "cost", "cost_text", "cost_unit", "free", "perk_text", "constellation"
       ],
       "properties": {
         "epub_sequence":      { "type": "integer", "minimum": 1 },
@@ -35,6 +35,7 @@
         "jump":               { "type": ["string", "null"] },
         "cost":               { "type": "integer", "minimum": 0 },
         "cost_text":          { "type": "string", "minLength": 1 },
+        "cost_unit":          { "type": ["string", "null"] },
         "free":               { "type": "boolean" },
         "perk_text":          { "type": "string" },
         "constellation": {

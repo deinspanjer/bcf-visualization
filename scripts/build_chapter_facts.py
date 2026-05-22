@@ -651,6 +651,7 @@ def main() -> None:
                 "available_cp": roll["available_cp"],
                 "banked_cp_after_roll": roll["banked_cp_after_roll"],
                 "rolled_perk_name": roll["rolled_perk_name"],
+                "rolled_perk_instance": roll.get("rolled_perk_instance"),
                 "rolled_perk_cost": roll["rolled_perk_cost"],
                 "miss_cost_estimate": roll["miss_cost_estimate"],
                 "roll_sequence_in_chapter": roll["roll_sequence_in_chapter"],

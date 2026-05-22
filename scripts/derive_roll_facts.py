@@ -28,6 +28,11 @@ from multi_grab import (
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
 )
+from perk_name_resolver import (
+    build_alias_lookup,
+    build_directory_match_index,
+    load_perk_aliases,
+)
 from predict_rolls import _load_cp_words_per_chapter
 from regime_simulator import (
     REGIMES,
@@ -71,41 +76,25 @@ def int_or_none(value) -> int | None:
         return None
 
 
-def build_directory_lookup(directory: list[dict]) -> tuple[dict, dict]:
-    by_name_jump: dict[tuple[str, str], dict] = {}
-    by_name: dict[str, list[dict]] = {}
-    for perk in directory:
-        name_key = perk["name"].strip().lower()
-        by_name_jump[(name_key, perk["jump"].strip().lower())] = perk
-        by_name.setdefault(name_key, []).append(perk)
-    return by_name_jump, by_name
+def build_directory_lookup(directory: list[dict]):
+    """Build the shared multi-key match index over the perk directory.
+
+    Returned by callers as a single opaque ``DirectoryMatchIndex``;
+    use ``lookup_perk(idx, ...)`` to query it.
+    """
+    aliases = load_perk_aliases()
+    return build_directory_match_index(directory, aliases)
 
 
 def lookup_perk(
-    by_name_jump: dict[tuple[str, str], dict],
-    by_name: dict[str, list[dict]],
+    match_idx,
     name: str | None,
     jump: str | None = None,
     constellation: str | None = None,
 ) -> dict | None:
     if not name:
         return None
-    name_key = name.strip().lower()
-    if jump:
-        exact = by_name_jump.get((name_key, jump.strip().lower()))
-        if exact:
-            return exact
-    candidates = by_name.get(name_key, [])
-    if constellation:
-        filtered = [
-            p for p in candidates
-            if p.get("constellation") == constellation
-        ]
-        if len(filtered) == 1:
-            return filtered[0]
-    if len(candidates) == 1:
-        return candidates[0]
-    return None
+    return match_idx.lookup(name, jump=jump, constellation=constellation)
 
 
 def normalized_evidence_kind(ev: dict | None, fallback: str) -> str:
@@ -151,25 +140,40 @@ def miss_cost_estimate(
 
 
 def perk_meta(
-    by_name_jump: dict[tuple[str, str], dict],
-    by_name: dict[str, list[dict]],
+    match_idx,
     raw_perk: dict,
     parent_constellation: str | None,
 ) -> dict:
-    name = raw_perk.get("name") or raw_perk.get("perk_name")
+    """Resolve a raw curator perk dict to canonical directory meta.
+
+    Returns ``{id, name, instance, jump, constellation, cost}``.
+
+    - ``name`` is the canonical directory name (matches a wireframe
+      star id). When the curator-typed raw string differs from the
+      canonical, the raw string is preserved as ``instance`` for
+      display; otherwise ``instance`` is None.
+    - ``cost`` falls back to the raw curator cost only when no
+      directory match was found.
+    """
+    raw_name = raw_perk.get("name") or raw_perk.get("perk_name")
     jump = raw_perk.get("source") or raw_perk.get("jump")
     constellation = raw_perk.get("constellation") or parent_constellation
-    directory_meta = lookup_perk(by_name_jump, by_name, name, jump, constellation)
+    directory_meta = lookup_perk(match_idx, raw_name, jump, constellation)
+    canonical_name = (
+        directory_meta["name"] if directory_meta else (raw_name or "")
+    )
+    instance = raw_name if raw_name and raw_name != canonical_name else None
     return {
         "id": directory_meta["id"] if directory_meta else None,
-        "name": name,
+        "name": canonical_name,
+        "instance": instance,
         "jump": (
             directory_meta["jump"] if directory_meta
             else (jump or "unknown")
         ),
         "constellation": (
-            constellation
-            or (directory_meta.get("constellation") if directory_meta else None)
+            (directory_meta.get("constellation") if directory_meta else None)
+            or constellation
         ),
         "cost": (
             int_or_none(raw_perk.get("cost"))
@@ -179,17 +183,45 @@ def perk_meta(
     }
 
 
+def _purchased_perk_record(meta: dict, raw_perk: dict) -> dict:
+    """Build a canonical purchased_perks[*] row from a perk_meta result.
+
+    Shape: ``{name, instance, id, cost, cost_unit, jump, free}``.
+    ``name`` is the canonical directory name (matches a wireframe star);
+    ``instance`` is the raw curator string when it differs (else null);
+    ``id`` and ``jump`` come from the directory entry. ``cost_unit`` is
+    propagated from the curator's parsed perk row (None for plain CP/WP
+    costs; e.g. "Customization Points" for Zoids equipment where the
+    pipeline multiplied the raw value by 100 to derive effective CP).
+    """
+    raw_name = raw_perk.get("name") or raw_perk.get("perk_name") or ""
+    canonical = meta["name"] or raw_name
+    instance = raw_name if raw_name and raw_name != canonical else None
+    cost = (
+        int(meta["cost"])
+        if meta["cost"] is not None
+        else int(raw_perk.get("cost") or 0)
+    )
+    return {
+        "name": canonical,
+        "instance": instance,
+        "id": meta["id"],
+        "cost": cost,
+        "cost_unit": raw_perk.get("cost_unit"),
+        "jump": meta["jump"],
+        "free": False,
+    }
+
+
 def split_hit_perks(
-    by_name_jump: dict[tuple[str, str], dict],
-    by_name: dict[str, list[dict]],
+    match_idx,
     perks: list[dict],
     parent_constellation: str | None,
 ) -> tuple[dict | None, list[dict], list[dict]]:
     """Returns (principal_meta, purchased_perks_array, free_perks_array).
 
-    `purchased_perks_array` contains every paid perk (multi-grab) as
-    `{name, cost, free}` dicts (free always False here for paid). The
-    principal is the first paid perk (preserves source order).
+    ``purchased_perks_array`` is shaped per ``_purchased_perk_record``.
+    The principal is the first paid perk (preserves source order).
     """
     if not perks:
         return None, [], []
@@ -198,11 +230,11 @@ def split_hit_perks(
     if not paid_perks:
         # All perks are free: still return one principal for scalar fields.
         principal = perks[0]
-        principal_meta = perk_meta(by_name_jump, by_name, principal, parent_constellation)
+        principal_meta = perk_meta(match_idx, principal, parent_constellation)
         free_perks: list[dict] = []
         for perk in perks[1:]:
             free_meta = perk_meta(
-                by_name_jump, by_name, perk,
+                match_idx, perk,
                 parent_constellation or principal_meta["constellation"],
             )
             free_perks.append({
@@ -213,19 +245,15 @@ def split_hit_perks(
             })
         return principal_meta, [], free_perks
     principal = paid_perks[0]
-    principal_meta = perk_meta(by_name_jump, by_name, principal, parent_constellation)
+    principal_meta = perk_meta(match_idx, principal, parent_constellation)
     purchased_perks: list[dict] = []
     for p in paid_perks:
-        meta = perk_meta(by_name_jump, by_name, p, parent_constellation)
-        purchased_perks.append({
-            "name": meta["name"] or p.get("name") or p.get("perk_name"),
-            "cost": int(meta["cost"]) if meta["cost"] is not None else int(p.get("cost") or 0),
-            "free": False,
-        })
+        meta = perk_meta(match_idx, p, parent_constellation)
+        purchased_perks.append(_purchased_perk_record(meta, p))
     free_perks: list[dict] = []
     for perk in free_perks_raw:
         free_meta = perk_meta(
-            by_name_jump, by_name, perk,
+            match_idx, perk,
             parent_constellation or principal_meta["constellation"],
         )
         free_perks.append({
@@ -967,6 +995,11 @@ def _restructure_curator_rows(
             # raw / constellation_revealed; earlier ones get None roll_number
             # so downstream evidence lookup doesn't double-attach.
             is_last_for_host = (j == len(ov_indices) - 1)
+            override_entry = override_rolls_raw[ov_idx]
+            override_constellation = (
+                override_entry.get("constellation")
+                if isinstance(override_entry, dict) else None
+            )
             out_rows.append({
                 "_source_idx": source_idx,
                 "_override_origin": ov_idx,
@@ -975,8 +1008,9 @@ def _restructure_curator_rows(
                 "banked_before": before,
                 "banked_after": after,
                 "constellation": (
-                    ov_perks[0].get("constellation") if ov_perks
-                    else row.get("constellation")
+                    override_constellation
+                    or (ov_perks[0].get("constellation") if ov_perks else None)
+                    or row.get("constellation")
                 ),
                 "constellation_revealed": (
                     row.get("constellation_revealed", False)
@@ -1577,7 +1611,7 @@ def main() -> None:
                 })
         scheduler_results[cn] = result
 
-    by_name_jump, by_name = build_directory_lookup(directory)
+    match_idx = build_directory_lookup(directory)
     # Evidence is keyed by (chapter_num, slot_index) — NOT roll_number — to
     # tolerate drift between curator and predictor roll-number sequences. Each
     # predicted roll's evidence belongs to its mechanical chapter+slot; a
@@ -1702,8 +1736,7 @@ def main() -> None:
                 constellation = row.get("constellation")
                 if outcome == "hit":
                     paid_meta, purchased_perks, free_perks = split_hit_perks(
-                        by_name_jump,
-                        by_name,
+                        match_idx,
                         row.get("perks") or [],
                         constellation,
                     )
@@ -1842,6 +1875,9 @@ def main() -> None:
                     else None
                 )
                 principal_name = paid_meta["name"] if paid_meta else None
+                principal_instance = (
+                    paid_meta.get("instance") if paid_meta else None
+                )
                 source_info = (
                     source_occurrences_by_roll_number.get(int(canonical_roll_number))
                     if canonical_roll_number is not None else None
@@ -1904,6 +1940,7 @@ def main() -> None:
                     "purchased_perk_jump": purchased_perk_jump,
                     "free_perks": free_perks,
                     "rolled_perk_name": principal_name,
+                    "rolled_perk_instance": principal_instance,
                     "rolled_perk_cost": (
                         purchased_perk_cost_total if outcome == "hit" else miss_estimate
                     ),
@@ -1991,7 +2028,7 @@ def main() -> None:
             principal_raw = raw_paid_list[0] if raw_paid_list else None
             paid_meta = (
                 perk_meta(
-                    by_name_jump, by_name, principal_raw,
+                    match_idx, principal_raw,
                     principal_raw.get("constellation") if principal_raw else None,
                 )
                 if principal_raw
@@ -1999,12 +2036,8 @@ def main() -> None:
             )
             purchased_perks: list[dict] = []
             for p in raw_paid_list:
-                pm = perk_meta(by_name_jump, by_name, p, p.get("constellation"))
-                purchased_perks.append({
-                    "name": pm["name"] or p.get("perk_name") or p.get("name"),
-                    "cost": int(pm["cost"]) if pm["cost"] is not None else int(p.get("cost") or 0),
-                    "free": False,
-                })
+                pm = perk_meta(match_idx, p, p.get("constellation"))
+                purchased_perks.append(_purchased_perk_record(pm, p))
             purchased_perk_cost_total = (
                 sum(int(p["cost"]) for p in purchased_perks)
                 if purchased_perks else None
@@ -2015,8 +2048,7 @@ def main() -> None:
                     # raw_free dicts come from obtained_perks (perk_name) or
                     # roll_outcomes (name); perk_meta handles both.
                     free_meta = perk_meta(
-                        by_name_jump,
-                        by_name,
+                        match_idx,
                         raw_free,
                         paid_meta["constellation"],
                     )
@@ -2224,6 +2256,9 @@ def main() -> None:
                 "purchased_perk_jump": paid_meta["jump"] if paid_meta else None,
                 "free_perks": free_perks,
                 "rolled_perk_name": paid_meta["name"] if paid_meta else None,
+                "rolled_perk_instance": (
+                    paid_meta.get("instance") if paid_meta else None
+                ),
                 "rolled_perk_cost": (
                     purchased_perk_cost_total if paid_meta else miss_estimate
                 ),

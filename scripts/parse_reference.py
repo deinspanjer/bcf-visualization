@@ -27,6 +27,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from _common import write_validated_json
+from perk_name_resolver import _normalize, parse_cost_text
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Reference.xlsx"
@@ -47,8 +48,9 @@ class ObtainedPerk:
     perk_name: str
     classification: str | None  # e.g. "Facility", "System", "Fiat, System"; None if blank
     jump: str | None            # source jump (e.g. "Personal Reality"); None if blank
-    cost: int                   # numeric CP cost (0 for free variants and Customization-Points perks)
-    cost_text: str              # original cost text, e.g. "100", "Free", "Free with Alchemist"
+    cost: int                   # effective CP cost (non-CP units pre-multiplied x100)
+    cost_text: str              # original cost text, e.g. "100", "Free", "3 Customization Points"
+    cost_unit: str | None       # unit string for non-CP/WP costs, else None
     free: bool                  # any "Free..." variant counts
     perk_text: str
     constellation: str | None   # joined from catalog + Unabridged List; None if no match
@@ -60,25 +62,6 @@ _CONSTELLATIONS = {
     "Resources and Durability", "Magitech", "Alchemy",
     "Capstone", "Personal Reality", "Felyne Perks",
 }
-
-
-def _normalize(s: str) -> str:
-    """Cosmetic-tolerant normalization for fuzzy matching.
-
-    Lowercase, fold curly quotes to ASCII, replace any non-word char
-    (other than apostrophe) with space, collapse whitespace. Treats
-    "-", ":", "—" as separators rather than preserved characters so
-    that "Valuable Memories -the X" and "Valuable Memories: the X"
-    both reduce to "valuable memories the x".
-    """
-    if not s:
-        return ""
-    out = s.lower()
-    for a, b in [("’", "'"), ("‘", "'")]:
-        out = out.replace(a, b)
-    out = re.sub(r"[^\w\s']", " ", out)
-    out = re.sub(r"\s+", " ", out).strip()
-    return out
 
 
 # Known generic catalog entries that the obtained list expands into
@@ -251,16 +234,10 @@ def _norm(value) -> str:
     return str(value).replace("\r", "").strip() if value is not None else ""
 
 
-def _parse_cost(text: str) -> tuple[int, bool]:
-    s = text.strip()
-    low = s.lower()
-    if low.startswith("free"):
-        return 0, True
-    # Numeric CP, possibly with a unit suffix like "2 Customization Points"
-    m = re.match(r"^(\d+)", s)
-    if m:
-        return int(m.group(1)), False
-    return 0, False
+def _parse_cost(text: str) -> tuple[int, bool, str | None]:
+    """Thin alias of ``perk_name_resolver.parse_cost_text`` (the single
+    source of truth for the ×100 rule across the pipeline)."""
+    return parse_cost_text(text)
 
 
 def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]:
@@ -274,7 +251,7 @@ def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]
         prefix = _CHAPTER_PREFIX_RE.match(title_raw)
         chapter_num = prefix.group(1) if prefix else "0"
         cost_text = _norm(ws.cell(r, 6).value)
-        cost, free = _parse_cost(cost_text)
+        cost, free, cost_unit = _parse_cost(cost_text)
         classification = _norm(ws.cell(r, 4).value) or None
         jump = _norm(ws.cell(r, 5).value) or None
         name = _norm(ws.cell(r, 3).value)
@@ -286,6 +263,7 @@ def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]
             cost = 0
             cost_text = "0"
             free = False
+            cost_unit = None
         perks.append(
             ObtainedPerk(
                 epub_sequence=int(seq),
@@ -296,6 +274,7 @@ def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]
                 jump=jump,
                 cost=cost,
                 cost_text=cost_text or "Free",
+                cost_unit=cost_unit,
                 free=free,
                 perk_text=_norm(ws.cell(r, 7).value),
                 constellation=_classify(constellation_idx, name, jump, overrides),
