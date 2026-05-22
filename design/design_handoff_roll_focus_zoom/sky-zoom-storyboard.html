@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Sky View — Roll Focus Storyboard</title>
+  <link rel="stylesheet" href="storyboard.css">
+</head>
+<body>
+  <header class="page-head">
+    <div class="bar">
+      <div class="bar-l">
+        <span class="kicker">design · phase 4 sky view</span>
+        <h1>Roll focus — zoom storyboard</h1>
+      </div>
+      <div class="bar-r">
+        <span class="meta">Replaces the <code>renderJumpFocus</code> popup with a cinematic camera move into the constellation.</span>
+        <span class="meta dim">5 keyframes per board · ~1.4s end-to-end · pan + scale, spotlight, optional reach beam</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="explainer">
+    <ol class="legend">
+      <li><span class="lg-num">1</span><b>Drift</b><span class="lg-d">scrubber moving past chapter, no roll firing yet. Sky in steady state with cluster silhouette + jump-vertex stars at rest.</span></li>
+      <li><span class="lg-num">2</span><b>Lock</b><span class="lg-d">scrubber lands on a roll. HUD <code>SKY LOCK</code> highlights, camera begins easing toward the target jump anchor.</span></li>
+      <li><span class="lg-num">3</span><b>Approach</b><span class="lg-d">camera pans + scales so the focal point slides toward center; rest of sky moves off-screen. Mid-zoom — jump's interior perks fade in.</span></li>
+      <li><span class="lg-num">4</span><b>Reveal</b><span class="lg-d">tight on the jump cluster. Spotlight / forge reach picks out the specific perk being rolled. Other perks dim.</span></li>
+      <li><span class="lg-num">5</span><b>Hit / hold</b><span class="lg-d">focal perk flares to full diffraction-star (matches scrubber marker). Caption appears with name · jump · CP. Holds for the configured beat (Normal / Pause / Bullet-time).</span></li>
+    </ol>
+  </section>
+
+  <section id="approaches" class="section">
+    <header class="section-head">
+      <h2>A · Three zoom approaches</h2>
+      <p>Same scenario in all three: a hit on a multi-perk jump cluster (<i>Knowledge / Star Trek: TNG</i>, 12-perk jump, rolled perk = <i>Skills: Engineering</i>, 100 CP). Compare the camera vocabulary apples-to-apples.</p>
+    </header>
+    <div class="boards" id="approaches-boards"></div>
+  </section>
+
+  <section id="outcomes" class="section">
+    <header class="section-head">
+      <h2>B · Roll-outcome storyboards</h2>
+      <p>Using approach A2 (pan + scale + spotlight) as the leading direction. One storyboard per outcome shape.</p>
+    </header>
+    <div class="boards" id="outcomes-boards"></div>
+  </section>
+
+  <footer class="page-foot">
+    <span class="dim">All silhouettes &amp; jump perk positions sourced from <code>data/derived/constellation_wireframes.json</code>. Diffraction-star ray recipe matches <code>web/app.js · starSvg()</code>.</span>
+  </footer>
+
+  <script src="storyboard-data.js"></script>
+  <script src="storyboard-render.js"></script>
+</body>
+</html>

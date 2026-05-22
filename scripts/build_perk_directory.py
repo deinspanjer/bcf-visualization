@@ -32,11 +32,22 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from _common import write_validated_json
+from perk_name_resolver import (
+    JUMP_ALIASES,
+    _name_prefix_variants,
+    _normalize,
+    _normalized_word_prefixes,
+    build_alias_lookup,
+    load_perk_aliases,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Reference.xlsx"
 PERKS_CATALOG_JSON = ROOT / "data" / "derived" / "perks_catalog.json"
 OBTAINED_JSON = ROOT / "data" / "derived" / "obtained_perks.json"
+UNABRIDGED_OVERLAY_JSON = (
+    ROOT / "data" / "manual" / "unabridged_overlay.json"
+)
 OUT = ROOT / "data" / "derived" / "perk_directory.json"
 
 
@@ -52,116 +63,8 @@ _KEEP_STATUSES = {
 }
 
 
-# obtained-form jump -> directory-form jump. The Unabridged List uses
-# canonical jump names; obtained_perks.json (chapter-by-chapter parse)
-# uses whatever the curator wrote at acquisition time. These differ
-# cosmetically for many jumps - listed here so matching folds them.
-JUMP_ALIASES: dict[str, str] = {
-    "Star Trek - TNG+DS9": "Star Trek: TNG",
-    "Fullmetal Alchemist": "Full Metal Alchemist",
-    "Mad Max Gauntlet": "Mad Max",
-    "Binbougami Ga!": "Binbougami ga",
-    "GUNNM/Battle Angel Alita": "GUNNM",
-    "Highschool of the Dead": "High School of the Dead",
-    "Totally Spies/Martin Mystery": "Totally Spies",
-    "A Certain Scientific Railgun": "Raildex Science",
-    "Sonic The Hedgehog": "Sonic",
-    "Star Wars – Clone Wars": "Star Wars: The Clone Wars",
-    "Thundercats 2011": "Thundercats",
-    "Alpha Centauri": "Alpha Cenaturi",
-    "Secret of Evermore": "Secrets of Evermore",
-    "Overlord": "Overlord: Light Novel",
-    "Halo UNSC": "Halo",
-    "Bubblegum Crisis 2032": "Bubblegum Crisis",
-    "Metal Gear": "Metal Gear Solid",
-    "Fate": "Fate/",
-    "Light of Terra DLC 3 - A Grand Day Out":
-        "Warhammer 40,000: Light of Terra DLC 3 - A Grand Day Out",
-    "Light of Terra DLC 4 - Lords of the Iron Line":
-        "Warhammer 40,000: Light of Terra DLC 4 - Lords of the Iron Line",
-    "Light of Terra 4 - Lords of the Iron Line - Warhammer 40,000":
-        "Warhammer 40,000: Light of Terra DLC 4 - Lords of the Iron Line",
-    "Light of Terra DLC 5 A Sky Filled With Steel - Warhammer 40,000":
-        "Warhammer 40,000: Light of Terra DLC 5 - A Sky Filled With Steel",
-    "LoT DLC 1 – The Heathen Trail – Warhammer 40,000":
-        "Warhammer 40,000: Light of Terra DLC 1 - The Heathen Trail",
-}
-
-
-# Per-pair overrides for cases that aren't simple cosmetic drift:
-# typos in the Unabridged List, or obtained names that differ enough
-# from the canonical name that prefix/suffix splitting can't bridge.
-# Maps (obtained_jump, obtained_name) -> (directory_jump, directory_name).
-PERK_ALIASES: dict[tuple[str, str], tuple[str, str]] = {
-    ("Personal Reality", "POWER OVERWHELMING"):
-        ("Personal Reality", "POWER OVERHELMING"),  # typo in Unabridged
-    ("Personal Reality", "Seeds and Seedlings"):
-        ("Personal Reality", "Seed and Seedlings"),  # typo in Unabridged
-}
-
-
-# Same logic as scripts/parse_reference.py::_normalize. Lowercase, fold
-# curly quotes to ASCII, replace any non-word char (other than the
-# apostrophe) with a space, collapse whitespace. Treats "-", ":", "—"
-# as separators rather than preserved characters.
-def _normalize(s: str | None) -> str:
-    if not s:
-        return ""
-    out = s.lower()
-    for a, b in [("’", "'"), ("‘", "'")]:
-        out = out.replace(a, b)
-    out = re.sub(r"[^\w\s']", " ", out)
-    out = re.sub(r"\s+", " ", out).strip()
-    return out
-
-
 def _id_for(constellation: str, jump: str, name: str) -> str:
     return f"{constellation}__{jump}__{_normalize(name)}"
-
-
-_PREFIX_SEPARATORS = (":", " - ", " – ", " — ")
-
-
-def _name_prefix_variants(name: str) -> list[str]:
-    """Yield prefix AND suffix splits of `name` recursively. Multi-
-    instance names like "Workshop: Metalworking" fold back to the
-    generic "Workshop". Suffix-split also handles cases where the
-    canonical name is the trailing token: "Innate Talent: Alchemist"
-    folds to "Alchemist" (the directory entry under Overlord), and
-    "Parahuman - Tinker - Miniaturization and Efficiency" folds to
-    "Miniaturization and Efficiency".
-    """
-    out: list[str] = []
-    seen = {name}
-    queue: list[str] = [name]
-    while queue:
-        curr = queue.pop()
-        for sep in _PREFIX_SEPARATORS:
-            if sep in curr:
-                pre, suf = curr.split(sep, 1)
-                pre, suf = pre.strip(), suf.strip()
-                for piece in (pre, suf):
-                    if piece and piece not in seen:
-                        seen.add(piece)
-                        out.append(piece)
-                        queue.append(piece)
-                break  # one separator per pass; recursion handles the rest
-    return out
-
-
-def _normalized_word_prefixes(name: str) -> list[str]:
-    """Word-prefix variants of the normalized name (≥2 words, ≥1 word
-    dropped). Folds sub-instances like "Minor Blessing Aphrodite -
-    Beauty" back to "Minor Blessing" (the repeatable parent entry).
-    Operates on the normalized form so adjacent punctuation that the
-    separator regex misses ("The Pond-Expansion" -> "the pond
-    expansion") still folds correctly.
-    """
-    nn = _normalize(name)
-    words = nn.split()
-    if len(words) < 3:
-        return []
-    return [" ".join(words[:i]) for i in range(len(words) - 1, 1, -1)]
 
 
 def _norm_chapter(ch: str) -> tuple[int, int]:
@@ -183,6 +86,7 @@ class DirectoryPerk:
     status: str
     cost: int | None
     cost_text: str | None
+    cost_unit: str | None
     free: bool
     repeatable: bool
     description: str
@@ -242,7 +146,11 @@ def _catalog_lookup(idx: dict, name: str, jump: str) -> dict | None:
 # ---------- obtained index --------------------------------------------------
 
 
-def _build_obtained_index(obtained: dict) -> dict[str, dict]:
+def _build_obtained_index(
+    obtained: dict,
+    aliases: dict[str, list[str]],
+    alias_lookup: dict[str, str],
+) -> dict[str, dict]:
     """Index obtained_perks acquisitions for join.
 
     Repeatable perks may appear multiple times; collect *all* matches
@@ -261,8 +169,11 @@ def _build_obtained_index(obtained: dict) -> dict[str, dict]:
       - any JUMP_ALIASES form: a "Star Trek - TNG+DS9" entry also
         registers under "Star Trek: TNG" so the directory's TNG entry
         finds it
-      - any PERK_ALIASES override: typos like "POWER OVERHELMING"
-        register under both forms
+      - canonical alias from data/manual/perk_aliases.json: typos
+        like "POWER OVERHELMING" / "Seeds and Seedlings" register
+        under their canonical names; sub-instance aliases like
+        "Workshop: Electronics" / "Thaumaturgical Focus: Alchemy"
+        register under the parent canonical too
 
     Same-jump scoping prevents cross-jump pollution (Samurai Jack's
     "Workshop" never resolves to Personal Reality Workshops).
@@ -289,20 +200,29 @@ def _build_obtained_index(obtained: dict) -> dict[str, dict]:
         name = p.get("perk_name", "")
         jump = p.get("jump") or ""
 
-        # Per-pair override: register only under the canonical form
-        # (otherwise the typo'd name pollutes the index).
-        canon = PERK_ALIASES.get((jump, name))
-        if canon is not None:
-            _register(p, canon[1], canon[0])
-            continue
+        # All name forms to register this obtained perk under:
+        # - the curator-typed name itself
+        # - if it's an alias, the canonical
+        # - if it's a canonical, all its aliases (covers the inverse
+        #   case where the Unabridged xlsx has the alias spelling
+        #   and the curator log has the canonical)
+        name_forms: list[str] = [name]
+        canonical = alias_lookup.get(name)
+        if canonical and canonical != name:
+            name_forms.append(canonical)
+        for alias_form in aliases.get(name, []):
+            if alias_form != name:
+                name_forms.append(alias_form)
 
-        _register(p, name, jump)
+        for form in name_forms:
+            _register(p, form, jump)
 
         # Jump alias: also register under the canonical jump so the
         # directory entry (which uses the canonical jump) can find it.
         aliased_jump = JUMP_ALIASES.get(jump)
         if aliased_jump and aliased_jump != jump:
-            _register(p, name, aliased_jump)
+            for form in name_forms:
+                _register(p, form, aliased_jump)
 
     return {"exact": by_exact, "norm": by_norm, "name_only": by_name_only}
 
@@ -368,10 +288,60 @@ def _normalize_constellation(raw: str) -> str:
     return c
 
 
+def _load_unabridged_overlay(
+    path: Path = UNABRIDGED_OVERLAY_JSON,
+) -> tuple[list[dict], list[str]]:
+    """Return ``(jump_patches, repeatable_perks)`` from the overlay file."""
+    if not path.exists():
+        return [], []
+    data = json.loads(path.read_text())
+    patches = list(data.get("jump_patches") or [])
+    repeatable = list(data.get("repeatable_perks") or [])
+    return patches, repeatable
+
+
+def _apply_unabridged_overlay(
+    parsed_rows: list[dict],
+    overlay_patches: list[dict],
+) -> None:
+    """Mutate ``parsed_rows`` in place per the overlay patches.
+
+    Each row is ``{constellation, jump, status, names: list[str]}``. A
+    patch keyed by ``(constellation, jump)`` removes/adds names from
+    every matching row.
+    """
+    for patch in overlay_patches:
+        target_const = patch.get("constellation")
+        target_jump = patch.get("jump")
+        remove_names = patch.get("remove_names") or []
+        add_names = patch.get("add_names") or []
+        matching = [
+            r for r in parsed_rows
+            if r["constellation"] == target_const and r["jump"] == target_jump
+        ]
+        if not matching:
+            raise ValueError(
+                f"unabridged_overlay.json: no parsed Unabridged List row "
+                f"matches (constellation={target_const!r}, "
+                f"jump={target_jump!r}); curator must verify the patch key."
+            )
+        for row in matching:
+            for nm in remove_names:
+                row["names"] = [n for n in row["names"] if n != nm]
+            # Add only if not already present anywhere in matching set,
+            # to avoid duplicates when the patch targets multiple rows.
+            existing = {n for r in matching for n in r["names"]}
+            for nm in add_names:
+                if nm not in existing:
+                    matching[0]["names"].append(nm)
+                    existing.add(nm)
+
+
 def build_directory(
     wb,
     catalog_idx: dict,
     obtained_idx: dict,
+    overlay_patches: list[dict] | None = None,
 ) -> tuple[list[DirectoryPerk], dict[str, int], int, set[tuple[str, str]]]:
     """Walk the Unabridged List sheet and build the directory.
 
@@ -389,6 +359,9 @@ def build_directory(
     # supplemental-pass too so we never emit duplicate ids.
     seen_ids: set[str] = set()
 
+    # Pass 1: parse rows into a list of dicts so the overlay can patch
+    # them before we build the directory entries.
+    parsed_rows: list[dict] = []
     for r in range(2, ws.max_row + 1):
         const_raw = _norm_cell(ws.cell(r, 1).value)
         names_raw = _norm_cell(ws.cell(r, 2).value)
@@ -419,7 +392,22 @@ def build_directory(
                 f"Row {r}: missing jump for {constellation}/{names_raw!r}"
             )
 
-        for name in names:
+        parsed_rows.append({
+            "constellation": constellation,
+            "jump": jump,
+            "status": status,
+            "names": names,
+        })
+
+    # Pass 1.5: apply curator overlay patches (data/manual/unabridged_overlay.json).
+    _apply_unabridged_overlay(parsed_rows, overlay_patches or [])
+
+    # Pass 2: build directory entries from the (possibly patched) rows.
+    for row_state in parsed_rows:
+        constellation = row_state["constellation"]
+        jump = row_state["jump"]
+        status = row_state["status"]
+        for name in row_state["names"]:
             pid = _id_for(constellation, jump, name)
             if pid in seen_ids:
                 continue
@@ -430,6 +418,7 @@ def build_directory(
 
             cost: int | None = None
             cost_text: str | None = None
+            cost_unit: str | None = None
             free = False
             repeatable = False
             description = ""
@@ -437,6 +426,7 @@ def build_directory(
             if cat is not None:
                 cost = cat.get("cost")
                 cost_text = cat.get("cost_text")
+                cost_unit = cat.get("cost_unit")
                 free = bool(
                     cat.get("cost") == 0
                     and (cat.get("cost_text") or "").lower().startswith("free")
@@ -448,6 +438,7 @@ def build_directory(
                 first = obtained_matches[0]
                 cost = first.get("cost")
                 cost_text = first.get("cost_text")
+                cost_unit = first.get("cost_unit")
                 free = bool(first.get("free"))
                 description = first.get("perk_text", "") or ""
 
@@ -500,6 +491,7 @@ def build_directory(
                     status=status,
                     cost=cost,
                     cost_text=cost_text,
+                    cost_unit=cost_unit,
                     free=free,
                     repeatable=repeatable,
                     description=description,
@@ -566,11 +558,13 @@ def _supplemental_perks(
         cat = _catalog_lookup(catalog_idx, name, jump)
         cost = earliest.get("cost")
         cost_text = earliest.get("cost_text")
+        cost_unit = earliest.get("cost_unit")
         repeatable = False
         description = earliest.get("perk_text", "") or ""
         if cat is not None:
             cost = cat.get("cost", cost)
             cost_text = cat.get("cost_text", cost_text)
+            cost_unit = cat.get("cost_unit", cost_unit)
             repeatable = bool(cat.get("repeatable"))
             if cat.get("description"):
                 description = cat["description"]
@@ -603,6 +597,7 @@ def _supplemental_perks(
             status="Obtained",
             cost=cost,
             cost_text=cost_text,
+            cost_unit=cost_unit,
             free=False,
             repeatable=repeatable,
             description=description,
@@ -625,11 +620,16 @@ def main() -> None:
     catalog = json.loads(PERKS_CATALOG_JSON.read_text())
     obtained = json.loads(OBTAINED_JSON.read_text())
 
+    aliases = load_perk_aliases()
+    alias_lookup = build_alias_lookup(aliases)
+    overlay_patches, overlay_repeatable = _load_unabridged_overlay()
+
     catalog_idx = _build_catalog_index(catalog)
-    obtained_idx = _build_obtained_index(obtained)
+    obtained_idx = _build_obtained_index(obtained, aliases, alias_lookup)
 
     perks, status_dist, excluded_expanded, matched_keys = build_directory(
-        wb, catalog_idx, obtained_idx
+        wb, catalog_idx, obtained_idx,
+        overlay_patches=overlay_patches,
     )
 
     seen_ids = {p.id for p in perks}
@@ -642,7 +642,61 @@ def main() -> None:
         status_dist["Obtained"] = status_dist.get("Obtained", 0) + 1
 
     perks.sort(key=lambda p: (p.constellation, p.jump, p.name))
+
+    # Apply curator's explicit repeatable_perks overlay: any directory
+    # row whose name appears in the overlay's repeatable_perks list is
+    # flagged repeatable. This replaces the old heuristic that flipped
+    # the bit on every name that happened to be a perk_aliases canonical
+    # (which false-positived on Class A typo canonicals like
+    # "Feel It Out"). The flag is now data-driven only.
+    repeatable_overlay_set = set(overlay_repeatable)
+    for p in perks:
+        if p.name in repeatable_overlay_set:
+            p.repeatable = True
+
     acquired = sum(1 for p in perks if p.matched_to_obtained)
+
+    # Overlay assertions (run at end so they assert against the final
+    # directory state, including supplementals): every add_name must
+    # end up as a source="unabridged" directory row, every remove_name
+    # must NOT appear under the patched (const, jump), and every
+    # repeatable_perks entry must match at least one directory row.
+    overlay_by_key: dict[tuple[str, str], dict] = {}
+    for patch in overlay_patches:
+        overlay_by_key[(patch["constellation"], patch["jump"])] = patch
+    for (const_key, jump_key), patch in overlay_by_key.items():
+        for added in patch.get("add_names") or []:
+            ok = any(
+                p.name == added
+                and p.constellation == const_key
+                and p.jump == jump_key
+                and p.source == "unabridged"
+                for p in perks
+            )
+            if not ok:
+                raise AssertionError(
+                    f"unabridged_overlay: add_name {added!r} for "
+                    f"({const_key}, {jump_key}) is not a source='unabridged' "
+                    f"directory row after build"
+                )
+        for removed in patch.get("remove_names") or []:
+            still = any(
+                p.name == removed
+                and p.constellation == const_key
+                and p.jump == jump_key
+                for p in perks
+            )
+            if still:
+                raise AssertionError(
+                    f"unabridged_overlay: remove_name {removed!r} for "
+                    f"({const_key}, {jump_key}) still appears in directory"
+                )
+    for name in overlay_repeatable:
+        if not any(p.name == name for p in perks):
+            raise AssertionError(
+                f"unabridged_overlay: repeatable_perks entry {name!r} "
+                f"matches no directory row"
+            )
 
     write_validated_json(
         OUT,
@@ -665,7 +719,8 @@ def main() -> None:
                 "tolerant fallbacks. Acquisitions fold into the directory via "
                 "exact, normalized, separator-prefix/suffix-split, and "
                 "normalized-word-prefix matching, plus JUMP_ALIASES for "
-                "cosmetic jump-name drift and PERK_ALIASES for spelling typos. "
+                "cosmetic jump-name drift and data/manual/perk_aliases.json "
+                "for canonical-name folding (typos, sub-instance variants). "
                 "Free ride-along acquisitions (perks bundled with a paid parent) "
                 "do NOT create supplemental entries - they're listed in the "
                 "parent's acquired_instances."

@@ -643,6 +643,30 @@ def _fmt_int(value: int | None) -> str:
     return "n/a" if value is None else f"{int(value):,}"
 
 
+def _perk_display_label(perk: dict | None) -> str:
+    """Render ``{name, instance, ...}`` for the curator's eye.
+
+    ``name`` is the canonical directory name; ``instance`` is the
+    curator-typed flavor string preserved from the raw log. We show
+    both when they differ so the curator still sees what they wrote.
+    """
+    if not perk:
+        return ""
+    name = perk.get("name") or perk.get("perk_name") or ""
+    instance = perk.get("instance")
+    if not name:
+        return str(instance or "")
+    return f"{name} ({instance})" if instance else name
+
+
+def _rolled_perk_display(roll: dict) -> str:
+    name = roll.get("rolled_perk_name")
+    instance = roll.get("rolled_perk_instance")
+    if not name:
+        return ""
+    return f"{name} ({instance})" if instance else name
+
+
 def _fmt_signed_int(value: int) -> str:
     sign = "+" if value >= 0 else "-"
     return f"{sign}{abs(int(value)):,}"
@@ -1249,7 +1273,7 @@ class SourceRollPicker(ModalScreen):
             for idx, roll in enumerate(self._rolls, start=1):
                 roll_number = roll.get("roll_number")
                 outcome = roll.get("outcome") or roll.get("source_kind") or "unknown"
-                perk = roll.get("rolled_perk_name")
+                perk = _rolled_perk_display(roll)
                 constellation = roll.get("constellation")
                 detail = ""
                 if perk and constellation:
@@ -1328,7 +1352,7 @@ class SourceAssignmentTargetPicker(ModalScreen):
             label = f"{target}: deferred ({global_part})  {outcome}"
         else:
             label = f"{target}: {global_part}  {outcome}"
-        perk = roll.get("rolled_perk_name")
+        perk = _rolled_perk_display(roll)
         constellation = roll.get("constellation")
         if perk and constellation:
             label = f"{label}  {constellation} - {perk}"
@@ -1440,7 +1464,7 @@ class SourceLinkPicker(ModalScreen):
             label = f"{prefix}{target}  deferred  global {roll_number or '?'}  {outcome}"
         else:
             label = f"{prefix}{target}  global {roll_number or '?'}  {outcome}"
-        perk = roll.get("rolled_perk_name")
+        perk = _rolled_perk_display(roll)
         constellation = roll.get("constellation")
         if perk and constellation:
             label = f"{label}  {constellation} - {perk}"
@@ -1455,7 +1479,7 @@ class SourceLinkPicker(ModalScreen):
         prefix = "RIGHT > " if selected else "        "
         roll_number = roll.get("roll_number")
         outcome = roll.get("outcome") or roll.get("source_kind") or "unknown"
-        perk = roll.get("rolled_perk_name")
+        perk = _rolled_perk_display(roll)
         constellation = roll.get("constellation")
         detail = ""
         if perk and constellation:
@@ -3543,7 +3567,7 @@ class ForgeCuratorApp(App):
             if perks:
                 detail_lines = []
                 for p in perks:
-                    name = p.get("name") or p.get("perk_name") or "unknown"
+                    name = _perk_display_label(p) or "unknown"
                     cost = "free" if p.get("free") else str(int(p.get("cost") or 0))
                     detail_lines.append(f"    {constel} - {name} ({cost})")
             else:

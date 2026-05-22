@@ -21,6 +21,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from _common import write_validated_json
+from perk_name_resolver import parse_cost_text
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge_Rolls_List.xlsx"
@@ -35,7 +36,9 @@ OUT_PERKS = ROOT / "data" / "derived" / "perks_catalog.json"
 class Perk:
     name: str
     source: str           # jump source, e.g. "Highschool of the Dead"
-    cost: int             # CP cost; 0 for Free
+    cost: int             # effective CP cost (non-CP units pre-multiplied x100); 0 for Free
+    cost_text: str        # original cost text from the roll line, e.g. "200-100", "Free", "3 Customization Points"
+    cost_unit: str | None # unit string when not CP/WP/blank, else None
     free: bool
 
 
@@ -83,12 +86,14 @@ _CURATED_COVERAGE_NOTE = (
     "roll 98 constellation Tollkits→Toolkits (raw preserved)"
 )
 # perk piece in result. The source is optional (some Personal Reality
-# perks don't list one). Cost forms: "X-Y" or any "Free..." variant
-# ("Free", "Free?", "Free Soldier", "Free with Revival").
+# perks don't list one). Cost forms:
+#   - "X-Y" (banked_before-banked_after style; Y is the actual CP cost)
+#   - "N Customization Points" (non-CP unit; the ×100 rule applies)
+#   - any "Free..." variant ("Free", "Free?", "Free Soldier", ...).
 _PERK_RE = re.compile(
     r"^(?P<name>.+?)\s*"
     r"(?:\((?P<source>[^()]*(?:\([^()]*\)[^()]*)*)\)\s*)?"
-    r"\((?P<cost>\d+-\d+|Free[^)]*)\)\s*$"
+    r"\((?P<cost>\d+-\d+|\d+\s+[A-Za-z][A-Za-z\s]*|Free[^)]*)\)\s*$"
 )
 
 
@@ -111,22 +116,34 @@ def _parse_perk_chain(result: str) -> list[Perk]:
         m = _PERK_RE.match(piece)
         if not m:
             # Best-effort: store the whole piece as the name with empty source.
-            perks.append(Perk(name=piece, source="", cost=0, free=False))
+            perks.append(Perk(
+                name=piece, source="", cost=0,
+                cost_text="", cost_unit=None, free=False,
+            ))
             continue
-        cost_str = m.group("cost")
+        cost_str = m.group("cost").strip()
         if cost_str.lower().startswith("free"):
             cost = 0
+            cost_unit = None
             free = True
-        else:
-            # "X-Y": Y is the actual cost
+        elif "-" in cost_str:
+            # "X-Y" form: Y is the actual CP cost (pure CP).
             cost = int(cost_str.split("-", 1)[1])
+            cost_unit = None
             free = False
+        else:
+            # Non-CP unit form (e.g. "3 Customization Points"). Share
+            # the same ×100 intercept logic as the catalog and obtained-
+            # perks parsers via perk_name_resolver.parse_cost_text.
+            cost, free, cost_unit = parse_cost_text(cost_str)
         source = m.group("source") or ""
         perks.append(
             Perk(
                 name=m.group("name").strip(),
                 source=source.strip(),
                 cost=cost,
+                cost_text=cost_str,
+                cost_unit=cost_unit,
                 free=free,
             )
         )
@@ -236,10 +253,19 @@ class CatalogPerk:
     constellation: str
     name: str
     source: str
-    cost: int
-    cost_text: str          # "100 CP", "Free", "100 WP" (Personal Reality is in WP)
+    cost: int               # effective CP cost (non-CP units pre-multiplied x100)
+    cost_text: str          # raw "100 CP", "Free", "3 Customization Points"
+    cost_unit: str | None   # unit string when not CP / blank / pure number, else None
     repeatable: bool
     description: str
+
+
+def _parse_cost_text(cost_text: str) -> tuple[int, str | None]:
+    """Parse a catalog cost-text. Thin wrapper around the shared
+    ``perk_name_resolver.parse_cost_text`` that drops the ``is_free``
+    return value (the catalog separates Free entries by other means)."""
+    cp, _free, unit = parse_cost_text(cost_text)
+    return cp, unit
 
 
 # A cell in the Complete List of Perks looks like:
@@ -278,10 +304,7 @@ def parse_perks_catalog(wb) -> list[CatalogPerk]:
                 # Last column "Notes" has legend rows like "This means that this Perk has been Purchased"
                 continue
             cost_text = m.group("cost").strip()
-            if cost_text.lower().startswith("free"):
-                cost = 0
-            else:
-                cost = int(cost_text.split()[0])
+            cost, cost_unit = _parse_cost_text(cost_text)
             source = m.group("source") or ""
             perks.append(
                 CatalogPerk(
@@ -290,6 +313,7 @@ def parse_perks_catalog(wb) -> list[CatalogPerk]:
                     source=source.strip(),
                     cost=cost,
                     cost_text=cost_text,
+                    cost_unit=cost_unit,
                     repeatable=m.group("flag") == "Repeatable",
                     description=m.group("desc").strip(),
                 )

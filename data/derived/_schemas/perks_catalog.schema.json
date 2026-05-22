@@ -20,7 +20,7 @@
       "additionalProperties": false,
       "required": [
         "constellation", "name", "source", "cost",
-        "cost_text", "repeatable", "description"
+        "cost_text", "cost_unit", "repeatable", "description"
       ],
       "properties": {
         "constellation": {
@@ -35,6 +35,7 @@
         "source":      { "type": "string" },
         "cost":        { "type": "integer", "minimum": 0 },
         "cost_text":   { "type": "string", "minLength": 1 },
+        "cost_unit":   { "type": ["string", "null"] },
         "repeatable":  { "type": "boolean" },
         "description": { "type": "string" }
       }

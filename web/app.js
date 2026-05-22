@@ -4,14 +4,45 @@ import {
   validateDataPackageManifest,
 } from "./data-contract.js";
 import {
+  beamOpacity,
+  beamReach,
+  buildClusterAnchors,
   buildRollLogRows,
   buildConstellationKnowledgeIndex,
   buildSkyCarouselLayout,
+  clusterLocalToWorld,
   constellationOutlineVisibleForRoll,
+  easeInOutCubic,
   fieldLogModel,
+  focalClusterOpacity,
+  focalScaleFactor,
+  focalWorldFromScene,
+  focusAnimDurationFor,
+  focusCameraViewRect,
+  focusScene,
+  haloAuraProgress,
+  HALO_BINARY_OFFSET,
+  HUES,
+  JUMP_RADIUS_WORLD,
+  motionBlurStdDeviation,
+  multiGrabFlashOpacity,
+  multiGrabMergeProgress,
+  nonFocalClusterOpacity,
+  nonFocalInteriorOpacity,
   onRollPlaybackState,
   paidRollPerks,
+  perkDisplayLabel,
+  phase,
   rollTotalCost,
+  ROLL_FIRING_WINDOW_WORDS,
+  silhouetteOpacity,
+  splitProgress,
+  spotlightProgress,
+  starWorldFromScene,
+  vertexPinOpacity,
+  WORLD_STAGE_HEIGHT,
+  WORLD_STAGE_WIDTH,
+  lerp,
 } from "./viz-model.js";
 
 const DATA_BASE = "../data/derived";
@@ -32,7 +63,8 @@ const STORAGE_VERSION = "2";
 const DEFAULT_WORD_POS = 450_000;
 const DEFAULT_SPEED = 5_000;
 const DEFAULT_ZOOM = 2.75;
-const DEFAULT_ON_ROLL_BEHAVIOR = "pause";
+const DEFAULT_ON_ROLL_BEHAVIOR = "cinematic";
+const ON_ROLL_BEHAVIORS = ["cinematic", "pause", "quick"];
 const ROLL_LOCATIONS = ["predicted", "curated"];
 const DEFAULT_ROLL_LOCATION = "predicted";
 
@@ -44,23 +76,6 @@ const STORY_LINKS = [
 const STORY_TITLE_HREF = STORY_LINKS[0].href;
 const PROJECT_REPO = "https://github.com/deinspanjer/bcf-visualization";
 const BASE_PX_PER_KWORD = 8.4;
-
-const HUES = {
-  "Toolkits": 196,
-  "Knowledge": 268,
-  "Vehicles": 30,
-  "Time": 218,
-  "Crafting": 152,
-  "Clothing": 320,
-  "Magic": 286,
-  "Quality": 48,
-  "Size": 100,
-  "Resources and Durability": 8,
-  "Magitech": 240,
-  "Alchemy": 170,
-  "Capstone": 52,
-  "Personal Reality": 130,
-};
 
 const POV_HUE_OVERRIDES = { Joe: 196, Taylor: 270, Aisha: 330, Lisa: 318, Rachel: 14, Alec: 60, Amy: 130, Vicky: 70, Dragon: 142, Colin: 230, Survey: 184 };
 const MONTH_ABBR = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -78,16 +93,97 @@ const app = {
   playing: false,
   speed: readStoredNumber(LS_SPEED, DEFAULT_SPEED),
   zoom: clamp(readStoredNumber(LS_ZOOM, DEFAULT_ZOOM), 0.5, 6),
-  onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ["normal", "pause", "bullet-time"], DEFAULT_ON_ROLL_BEHAVIOR),
+  onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ON_ROLL_BEHAVIORS, DEFAULT_ON_ROLL_BEHAVIOR),
   rollLocation: readStoredChoice(LS_ROLL_LOCATION, ROLL_LOCATIONS, DEFAULT_ROLL_LOCATION),
   fieldLogHidden: readStoredBoolean(LS_FIELD_LOG_HIDDEN, false),
   portraitDismissed: readStoredBoolean(LS_PORTRAIT_DISMISSED, false),
   rollFilter: "all",
   rollSort: "roll",
-  pauseBypassRollUid: null,
   raf: null,
   lastFrame: 0,
+  // Cinematic roll-focus animation state (Phase 1). Captured when the
+  // playthrough renderer first observes a roll inside the firing window;
+  // cleared when the scrubber leaves that window. `currentFocusAnimT()`
+  // reads this every render to drive the camera viewBox interpolation.
+  focusAnim: null,
+  focusAnimRaf: null,
 };
+
+// Reduced-motion preference is queried once at module load. Per the design
+// README, if the user has prefers-reduced-motion: reduce, the focus animation
+// resolves to its end state immediately (no camera pan, no transitions).
+const PREFERS_REDUCED_MOTION = (typeof window !== "undefined"
+  && typeof window.matchMedia === "function"
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+function currentFocusAnimT() {
+  if (PREFERS_REDUCED_MOTION) return 1;
+  const anim = app.focusAnim;
+  if (!anim) return 1;
+  const elapsed = performance.now() - anim.startMs;
+  const raw = elapsed / Math.max(1, anim.durationMs);
+  return raw < 0 ? 0 : raw > 1 ? 1 : raw;
+}
+
+function focusAnimTick() {
+  app.focusAnimRaf = null;
+  if (!app.focusAnim) return;
+  const t = currentFocusAnimT();
+  if (t >= 1) {
+    // Hold the final frame. The user scrubbing away will clear focusAnim via
+    // the per-render trigger logic; no need to keep RAF'ing.
+    if (!app.playing) render();
+    return;
+  }
+  // Avoid double-rendering while tickPlayback is already driving frames.
+  if (!app.playing) render();
+  app.focusAnimRaf = requestAnimationFrame(focusAnimTick);
+}
+
+// True while the cinematic camera is locking the scrubber in place. The lock
+// runs from animation start through t >= 1 in `pause` mode (held until the
+// user presses play) and through t < 1 in `cinematic` mode (auto-resumes
+// when the camera move finishes).
+function focusAnimIsLocking() {
+  const anim = app.focusAnim;
+  if (!anim) return false;
+  if (anim.behavior === "pause") return true;
+  return currentFocusAnimT() < 1;
+}
+
+function startFocusAnim(roll, behavior) {
+  if (app.focusAnimRaf != null) {
+    cancelAnimationFrame(app.focusAnimRaf);
+    app.focusAnimRaf = null;
+  }
+  const lockedWordPos = Math.round(Number(roll.word_position) || 0);
+  app.focusAnim = {
+    rollUid: String(roll.uid),
+    startMs: performance.now(),
+    durationMs: focusAnimDurationFor(behavior),
+    outcome: roll.outcome === "hit" ? "hit" : "miss",
+    lockedWordPos,
+    behavior,
+  };
+  // Snap the scrubber to the roll's word position so the visible cursor jumps
+  // to the firing point — this is the "cut" that signals the cinematic has
+  // begun. We write directly (not through setWordPos) to avoid the
+  // scrub-cancel logic clearing the focusAnim we just created.
+  if (app.data) {
+    app.wordPos = lockedWordPos;
+    store(LS_BOOKMARK, app.wordPos);
+  }
+  if (PREFERS_REDUCED_MOTION) return;
+  app.focusAnimRaf = requestAnimationFrame(focusAnimTick);
+}
+
+function clearFocusAnim() {
+  if (app.focusAnimRaf != null) {
+    cancelAnimationFrame(app.focusAnimRaf);
+    app.focusAnimRaf = null;
+  }
+  app.focusAnim = null;
+}
 
 function el(tag, props, ...children) {
   const node = document.createElement(tag);
@@ -270,10 +366,12 @@ async function loadRuntime() {
     constellations,
     conByName,
     jumpWireframeByKey,
+    clusterAnchors: buildClusterAnchors(bundle.constellation_wireframes),
     predictedRolls,
     predictedRollsMeta: bundle.predicted_rolls_meta,
   };
   app.wordPos = clamp(app.wordPos, 0, story.total_words);
+  mountBackgroundStarfield();
 }
 
 function buildStory(chapterFacts) {
@@ -349,6 +447,7 @@ function buildStory(chapterFacts) {
         mechanical_chapter_num: rawRoll.mechanical_chapter_num,
         display_chapter_num: rawRoll.display_chapter_num,
         outcome: rawRoll.outcome || "unknown",
+        source_kind: rawRoll.source_kind || null,
         constellation: rawRoll.constellation,
         jump: rawRoll.purchased_perk_jump || rawRoll.jump || rawRoll.free_perks?.[0]?.jump || null,
         word_position_predicted: wpPredicted,
@@ -537,15 +636,6 @@ function lastRollAtWord(wordPos) {
   return last;
 }
 
-function lastConstellationRollAtWord(wordPos) {
-  let last = null;
-  for (const roll of app.data.story.rolls) {
-    if (roll.word_position > wordPos) break;
-    if (roll.constellation) last = roll;
-  }
-  return last;
-}
-
 function recentRolls(wordPos, count = 10) {
   const rows = [];
   for (let i = app.data.story.rolls.length - 1; i >= 0 && rows.length < count; i -= 1) {
@@ -584,41 +674,18 @@ function formatRollLabel(roll) {
   return roll.roll_number != null ? `roll #${roll.roll_number} · ${chRef}` : chRef;
 }
 
-function mstEdges(stars) {
-  if (stars.length < 2) return [];
-  const edges = [];
-  for (let i = 0; i < stars.length; i += 1) {
-    for (let j = i + 1; j < stars.length; j += 1) {
-      const dx = stars[i].x - stars[j].x;
-      const dy = stars[i].y - stars[j].y;
-      edges.push({ a: i, b: j, d: dx * dx + dy * dy });
-    }
-  }
-  edges.sort((a, b) => a.d - b.d);
-  const parent = stars.map((_, index) => index);
-  const find = x => {
-    while (parent[x] !== x) {
-      parent[x] = parent[parent[x]];
-      x = parent[x];
-    }
-    return x;
-  };
-  const tree = [];
-  for (const edge of edges) {
-    const a = find(edge.a);
-    const b = find(edge.b);
-    if (a === b) continue;
-    parent[a] = b;
-    tree.push(edge);
-    if (tree.length === stars.length - 1) break;
-  }
-  return tree;
-}
-
 function setWordPos(value) {
   if (!app.data) return;
-  app.pauseBypassRollUid = null;
-  app.wordPos = Math.round(clamp(value, 0, app.data.story.total_words));
+  const next = Math.round(clamp(value, 0, app.data.story.total_words));
+  // User-initiated scrubs cancel a running focus animation when they move
+  // the playhead away from the locked position. tickPlayback drives wordPos
+  // directly (not through setWordPos), so we never accidentally cancel from
+  // auto-resume.
+  if (app.focusAnim) {
+    const drift = Math.abs(next - (app.focusAnim.lockedWordPos ?? next));
+    if (drift > 5) clearFocusAnim();
+  }
+  app.wordPos = next;
   store(LS_BOOKMARK, app.wordPos);
   render();
 }
@@ -654,12 +721,22 @@ function setFieldLogHidden(hidden) {
 function startPlayback() {
   if (!app.data || app.playing) return;
   if (app.wordPos >= app.data.story.total_words) setWordPos(0);
-  const currentRoll = lastRollAtWord(app.wordPos);
-  const rollState = onRollPlaybackState(currentRoll, app.wordPos, app.onRollBehavior);
-  app.pauseBypassRollUid = rollState.behavior === "pause" && rollState.onRoll
-    ? currentRoll?.uid || null
-    : null;
+  // If the user hits play while a `pause`-mode cinematic is holding on its
+  // final frame, clear that focusAnim so playback can resume past the roll.
+  // Without this the lock would re-grab on the very next render. The roll's
+  // firing window is still open, so we don't re-trigger the cinematic for
+  // the same roll — see startFocusAnim trigger logic.
+  if (app.focusAnim && app.onRollBehavior === "pause" && currentFocusAnimT() >= 1) {
+    app.focusAnim = { ...app.focusAnim, behavior: "cinematic" };
+  }
   app.playing = true;
+  // While playing, tickPlayback drives render(). If a focus-anim RAF is in
+  // flight from a prior paused state, cancel it now so we don't double-render
+  // every frame for the rest of the animation.
+  if (app.focusAnimRaf != null) {
+    cancelAnimationFrame(app.focusAnimRaf);
+    app.focusAnimRaf = null;
+  }
   app.lastFrame = performance.now();
   tickPlayback(app.lastFrame);
   render();
@@ -673,6 +750,21 @@ function stopPlayback() {
 }
 
 function togglePlayback() {
+  // Special case: user is in `pause` mode with a held cinematic (t >= 1, lock
+  // still engaged). They're already `app.playing = true` — pressing space here
+  // means "advance past this roll", not "pause playback". Reclassify the held
+  // anim to `cinematic` so the next tickPlayback releases the lock and word
+  // advance resumes from the locked position. Single keypress to escape.
+  if (
+    app.focusAnim
+    && app.focusAnim.behavior === "pause"
+    && currentFocusAnimT() >= 1
+  ) {
+    app.focusAnim = { ...app.focusAnim, behavior: "cinematic" };
+    if (!app.playing) startPlayback();
+    else render();  // keep playing; next tick sees the lock released
+    return;
+  }
   if (app.playing) stopPlayback();
   else startPlayback();
 }
@@ -681,21 +773,20 @@ function tickPlayback(now) {
   if (!app.playing || !app.data) return;
   const dt = Math.max(0, (now - app.lastFrame) / 1000);
   app.lastFrame = now;
-  const currentRoll = lastRollAtWord(app.wordPos);
-  const rollState = onRollPlaybackState(currentRoll, app.wordPos, app.onRollBehavior);
-  if (app.pauseBypassRollUid && (!rollState.onRoll || currentRoll?.uid !== app.pauseBypassRollUid)) {
-    app.pauseBypassRollUid = null;
-  }
-  if (
-    rollState.behavior === "pause" &&
-    rollState.onRoll &&
-    currentRoll?.uid !== app.pauseBypassRollUid
-  ) {
-    stopPlayback();
+  // Cinematic + pause modes lock wordPos while the camera animation is
+  // running. The lock window depends on behavior:
+  //   - cinematic: lock while t < 1, then auto-resume word advance.
+  //   - pause: lock for the full focusAnim lifetime (until the user scrubs
+  //     out of the firing window or hits play again — but tickPlayback
+  //     itself never resumes; the user pressing pause+play recomputes).
+  // In both locked cases we still render() to keep the cinematic camera
+  // advancing, but we skip the wordPos write so the scrubber stays parked.
+  if (focusAnimIsLocking()) {
+    render();
+    app.raf = requestAnimationFrame(tickPlayback);
     return;
   }
-  const speedMultiplier = currentRoll?.uid === app.pauseBypassRollUid ? 1 : rollState.speedMultiplier;
-  const next = app.wordPos + app.speed * speedMultiplier * dt;
+  const next = app.wordPos + app.speed * dt;
   if (next >= app.data.story.total_words) {
     app.wordPos = app.data.story.total_words;
     store(LS_BOOKMARK, app.wordPos);
@@ -1113,7 +1204,14 @@ function renderScrubberControls() {
       type: "button",
       "aria-label": app.playing ? "Pause" : "Play",
       title: app.playing ? "Pause (space)" : "Play (space)",
-      onClick: togglePlayback,
+      // No onClick here — the play/pause button is the hottest control during
+      // cinematic playback (60fps render rebuilds the DOM every frame, which
+      // breaks the click-fires-on-same-node browser invariant for
+      // mousedown/mouseup pairs). Click is delegated from document.body via
+      // data-action, which works regardless of which generation of the
+      // button received each half of the click. Native buttons still fire
+      // click on Enter/Space, so keyboard activation continues to work.
+      "data-action": "toggle-playback",
       text: app.playing ? "❚❚" : "▶",
     }),
     el("label", { class: "control-label" },
@@ -1140,11 +1238,14 @@ function renderScrubberControls() {
     el("span", { class: "control-divider", "aria-hidden": "true" }),
     el("span", { class: "control-label", text: "on roll" }),
     el("div", { class: "app-mode-switch roll-mode-switch", role: "group", "aria-label": "Behavior when the Forge fires a roll" },
-      ["normal", "pause", "bullet-time"].map(value => el("button", {
+      ON_ROLL_BEHAVIORS.map(value => el("button", {
         class: app.onRollBehavior === value ? "is-active" : "",
         type: "button",
         "aria-pressed": app.onRollBehavior === value,
-        onClick: () => { app.onRollBehavior = value; store(LS_ON_ROLL_BEHAVIOR, value); render(); },
+        // Delegated through data-action so a click landing during a
+        // cinematic render (rebuilds at 60fps) still fires.
+        "data-action": "set-on-roll-behavior",
+        "data-on-roll-behavior": value,
         text: value,
       })),
     ),
@@ -1159,7 +1260,16 @@ function renderScrubberControls() {
         text: value,
       })),
     ),
-    el("button", { class: "btn ghost", id: "reset-bookmark", type: "button", onClick: () => { app.playing = false; setWordPos(0); }, text: "reset" }),
+    el("button", {
+      class: "btn ghost",
+      id: "reset-bookmark",
+      type: "button",
+      // Delegated — reset is a frequent escape hatch during cinematic
+      // playback, so it needs the same delegated-click reliability as
+      // play/pause.
+      "data-action": "reset-bookmark",
+      text: "reset",
+    }),
   );
 }
 
@@ -1179,33 +1289,47 @@ function renderStatStrip() {
 function renderPlaythrough() {
   const chapter = chapterAtWord(app.wordPos);
   const lastRoll = lastRollAtWord(app.wordPos);
-  const firing = lastRoll && Math.abs(app.wordPos - lastRoll.word_position) <= 1500;
-  const lockedRoll = lastConstellationRollAtWord(app.wordPos);
-  const activeRoll = firing && lastRoll?.constellation ? lastRoll : lockedRoll;
-  const activeName = activeRoll?.constellation || "Toolkits";
+  const firing = lastRoll && Math.abs(app.wordPos - lastRoll.word_position) <= ROLL_FIRING_WINDOW_WORDS;
+
+  // Cinematic trigger: capture / clear the roll-focus animation clock based
+  // on whether the scrubber is inside the firing window. The clock is
+  // decoupled from playback — wordPos locks to roll.word_position during the
+  // animation (see tickPlayback's focusAnimIsLocking check) so the cinematic
+  // plays at wall-clock pace regardless of base speed.
+  //
+  // Two cases skip the cinematic:
+  //   1. `quick` mode — the user opted out; scrubber flies through.
+  //   2. `source_kind === "trigger"` rolls — these are starting bonuses (the
+  //      chapter-1 trigger event sits at word 0), not forge rolls. The
+  //      firing flag itself remains true so the field log readout still
+  //      shows the perk, but we don't run a cinematic for them.
+  const cinematicEligible = app.onRollBehavior !== "quick"
+    && lastRoll?.source_kind !== "trigger";
+  if (firing && lastRoll && cinematicEligible) {
+    const uid = String(lastRoll.uid);
+    if (!app.focusAnim || app.focusAnim.rollUid !== uid) {
+      startFocusAnim(lastRoll, app.onRollBehavior);
+    }
+  } else if (app.focusAnim) {
+    clearFocusAnim();
+  }
+
+  // The sky camera only renders when we've actually started a focus
+  // animation — trigger-event rolls and `quick` mode keep the carousel
+  // visible without a cinematic handoff.
+  const cinematicActive = !!app.focusAnim && firing && lastRoll;
+  const scene = cinematicActive ? focusScene(lastRoll, app.data) : null;
+  const focusT = currentFocusAnimT();
+
   return el("div", { class: `playthrough ${app.fieldLogHidden ? "field-log-hidden" : ""}` },
     el("div", { class: "viewport" },
-      starfield(140),
-      el("div", { class: "viewport-hud" },
-        hudToken("sky lock", activeName.toLowerCase(), "hud-lock"),
-        hudToken(firing ? "forge active" : "drifting", firing && lastRoll ? formatRollLabel(lastRoll) : "", `hud-state ${firing ? "active" : "drift"}`),
-        hudToken("chapter", `${chapter.chapter_num} / ${app.data.story.chapters.length}`, ""),
-      ),
-      renderCarousel(),
+      renderCarousel(scene ? focusT : null, firing && cinematicActive),
       renderViewportFrame(),
-      firing && lastRoll ? renderJumpFocus(lastRoll) : null,
+      scene ? renderSkyCamera(lastRoll, scene, focusT) : null,
     ),
     !app.fieldLogHidden ? renderNarrativeReadout(firing ? lastRoll : null, chapter) : null,
   );
 }
-
-function hudToken(key, value, extraClass) {
-  return el("span", { class: `hud-token ${extraClass}` },
-    el("span", { class: "hud-key", text: key }),
-    value ? el("span", { class: "hud-val", text: value }) : null,
-  );
-}
-
 
 function renderViewportFrame() {
   return el("div", { class: "viewport-frame" },
@@ -1216,13 +1340,20 @@ function renderViewportFrame() {
   );
 }
 
-function renderCarousel() {
+function renderCarousel(focusT = null, firingCinematic = false) {
   const rolls = app.data.story.rolls;
   const cardWidth = 348;
   const minCardSpacing = 440;
   const cardHalf = 160; // half of visual card width (320px), used to center the active card on the playhead
+  // Phase 2 cross-fade: when a focus animation is active, the carousel fades
+  // out 1 → 0 across the wide → reveal camera move (t = 0.10 → 0.45) so the
+  // sky camera SVG can take over the focal area cleanly.
+  const carouselOpacity = focusT == null ? 1 : Math.max(0, 1 - phase(focusT, 0.10, 0.45));
+  const stripStyle = (transform) => carouselOpacity < 1
+    ? { transform, opacity: String(carouselOpacity) }
+    : { transform };
   if (!rolls.length) {
-    return el("div", { class: "carousel-strip", style: { transform: `translateX(${-cardHalf}px)` } });
+    return el("div", { class: "carousel-strip", style: stripStyle(`translateX(${-cardHalf}px)`) });
   }
   // Position cards in word-space, then enforce a visual floor so dense early
   // roll bursts do not collapse named constellations into one another.
@@ -1261,11 +1392,17 @@ function renderCarousel() {
     const flank = !active && distPx < flankRadiusPx;
     const con = roll.constellation ? app.data.conByName[roll.constellation] : null;
     const outlineVisible = constellationOutlineVisibleForRoll(roll, knowledgeIndex);
-    slots.push(el("div", { class: "carousel-slot", style: { left: `${cardPx}px` } },
+    // Active-card pop-out: when the cinematic is firing, the active
+    // constellation card hides instantly so its outline doesn't double up
+    // with the sky-camera SVG during the t = 0.10–0.45 cross-fade. The strip
+    // opacity still smoothly fades the surrounding (non-active) cards.
+    const slotStyle = { left: `${cardPx}px` };
+    if (firingCinematic && active) slotStyle.opacity = "0";
+    slots.push(el("div", { class: "carousel-slot", style: slotStyle },
       con ? renderConstellationCard(con, active, flank, outlineVisible) : renderUnresolvedCard(active, flank),
     ));
   }
-  return el("div", { class: "carousel-strip", style: { transform: `translateX(${-(playheadPx + cardHalf)}px)` } }, slots);
+  return el("div", { class: "carousel-strip", style: stripStyle(`translateX(${-(playheadPx + cardHalf)}px)`) }, slots);
 }
 
 function renderConstellationCard(con, active, flank, outlineVisible) {
@@ -1313,35 +1450,648 @@ function renderUnresolvedCard(active, flank) {
   );
 }
 
-function renderJumpFocus(roll) {
-  const con = roll.constellation ? app.data.conByName[roll.constellation] : null;
-  const wf = roll.constellation && roll.jump ? app.data.jumpWireframeByKey.get(`${roll.constellation}::${roll.jump}`) : null;
-  const color = `oklch(0.82 0.14 ${con?.hue ?? 196})`;
-  const stars = wf?.stars || [];
-  const transform = star => ({ x: ((star.x + 1.4) / 2.8) * 320, y: ((star.y + 1.4) / 2.8) * 220 });
-  const acquired = new Set([...(roll.purchased_perks || []).map(p => p.name), ...(roll.free_perks || []).map(p => p.name)]);
-  const target = stars.find(star => acquired.has(star.perk_name)) || stars.find(star => star.status === "Obtained") || stars[0];
-  return el("div", { class: `jump-focus outcome-${roll.outcome === "hit" ? "hit" : roll.outcome === "miss" ? "miss" : "unknown"}` },
-    el("div", { class: "label", text: formatRollLabel(roll) }),
-    el("div", { class: "jump-name" }, roll.constellation || "unresolved constellation", roll.jump ? el("span", { style: { color: "var(--muted)", fontFamily: "var(--mono)", fontSize: "11px", marginLeft: "8px" }, text: `· ${roll.jump}` }) : null),
-    wf ? el("div", { class: "mini-sky" },
-      svgEl("svg", { viewBox: "0 0 320 220", width: "100%", height: "100%", style: "position:absolute;inset:0" },
-        mstEdges(stars).map(edge => {
-          const a = transform(stars[edge.a]);
-          const b = transform(stars[edge.b]);
-          return svgEl("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: color, "stroke-width": "0.5", opacity: "0.30" });
-        }),
-      ),
-      stars.map(star => {
-        const p = transform(star);
-        const isTarget = target && star.id === target.id;
-        return simpleStar({ color: isTarget ? "#fff" : color, cost: star.cost || 100, visualSize: isTarget ? 60 : 36, opacity: isTarget ? 1 : 0.55, left: p.x / 320, top: p.y / 220 });
-      }),
-    ) : null,
-    el("div", { class: "summary" },
-      el("span", { text: roll.outcome === "hit" ? `HIT · ${paidRollPerks(roll).length} paid · ${(roll.free_perks || []).length} free` : `MISS · est. ${roll.miss_cost_estimate ?? "?"} CP` }),
-      el("span", {}, el("strong", { text: String(rollTotalCost(roll) || roll.miss_cost_estimate || 0) }), " CP"),
+// Sky-camera renderer (Phases 1-3). Mounts inside `.viewport` and overlays
+// the carousel/sky stage while the cinematic focus animation is running.
+// Uses an SVG with a world-coord viewBox (1600×1000 stage) that interpolates
+// between wide / reveal / hit keyframes per `focusCameraViewBox`.
+//
+// Phase 3 adds:
+//   - Shared `<symbol>` diffraction-star defs (one per cost tier 100/200/
+//     400/600/800). Stars instance via `<use>` — much cheaper than
+//     rebuilding the ~12 ray <rect>s on every frame.
+//   - Motion blur (feGaussianBlur, 0 → 8 → 0 across t=0.22-0.62) wrapped
+//     around the silhouette + vertex pins + cluster markers ONLY, NOT the
+//     interior perks (they need to render crisp as they emerge through the
+//     smear).
+//   - Focal-vertex split: the focal cluster-marker fades out (opacity
+//     0.85 → 0, size 54 → 38) across t=0.40-0.58 while the focal jump's
+//     interior perks fade in. Non-focal interior perks dim from 0.72 to
+//     dimFloor (0.28 / 0.30 for miss) across t=0.66-0.90.
+//   - Silhouette, vertex pins, and non-focal cluster markers fade 0.62/
+//     0.85/0.65 → 0 across t=0.50-0.60 (hidden under the blur peak).
+//
+// Phases 4-5 add: beam, halo, spotlight, multi-grab merge, focal scale-up,
+// particles.
+function renderSkyCamera(roll, scene, t) {
+  const view = focusCameraViewRect(t, scene);
+  const viewBox = `${view.cx - view.w / 2} ${view.cy - view.h / 2} ${view.w} ${view.h}`;
+  // Camera SVG cross-fade in: snaps from 0 → 1 across t = 0.05 → 0.15 so it's
+  // visible before the carousel finishes fading (carousel fade is t = 0.10
+  // → 0.45). Avoids a flash of nothing during the handoff.
+  const cameraOpacity = Math.min(1, Math.max(0, phase(t, 0.05, 0.15)));
+
+  // Prefer the scene's resolvedConstellation so stand-in misses (where
+  // `roll.constellation == null`) render against the swapped-in wireframe.
+  const conName = scene.resolvedConstellation || roll.constellation || null;
+  const con = conName ? app.data.conByName[conName] : null;
+  const color = `oklch(0.82 0.14 ${scene.hue})`;
+  const isStandIn = scene.isUnknownConstellationStandIn === true;
+
+  // ---------- progress curves ----------
+  const blur = motionBlurStdDeviation(t);
+  const split = splitProgress(t);
+  const silhOp = silhouetteOpacity(t);
+  const pinOp = vertexPinOpacity(t);
+  const nonFocalClusterOp = nonFocalClusterOpacity(t);
+  const focalClusterOp = focalClusterOpacity(t);
+
+  // ---------- focal-marker resolution ----------
+  // Decide which cluster marker (if any) is the focal vertex. With
+  // `vertex_source = "jumps"` the marker_positions are 1:1 with jumps; with
+  // `vertex_source = "perks"` they are 1:1 with the flattened stars. In
+  // either case, the scene's anchorWorld points at (or near) the focal
+  // vertex's world coord — we match by proximity so we don't have to plumb
+  // index/id from focusScene.
+  let focalMarkerIdx = -1;
+  if (scene.anchorWorld && con?.marker_positions?.length) {
+    let bestDist = Infinity;
+    con.marker_positions.forEach((pos, idx) => {
+      const [wx, wy] = clusterLocalToWorld(pos[0], pos[1]);
+      const dx = wx - scene.anchorWorld[0];
+      const dy = wy - scene.anchorWorld[1];
+      const d = dx * dx + dy * dy;
+      if (d < bestDist) { bestDist = d; focalMarkerIdx = idx; }
+    });
+  }
+
+  // ---------- silhouette polylines ----------
+  // Stand-in misses (curator recorded a miss but doesn't know the
+  // constellation) get a dashed silhouette so the unfamiliarity reads at
+  // a glance — no name label is shown anywhere, but the line treatment
+  // cues "this is a placeholder shape."
+  const silhouetteAttrs = {
+    fill: "none",
+    stroke: color,
+    "stroke-width": "1.6",
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+    "vector-effect": "non-scaling-stroke",
+  };
+  if (isStandIn) silhouetteAttrs["stroke-dasharray"] = "4 3";
+  const silhouettePolylines = (con?.silhouette || []).map(polyline => {
+    const points = polyline.map(point => {
+      const [wx, wy] = clusterLocalToWorld(point[0], point[1]);
+      return `${wx.toFixed(1)},${wy.toFixed(1)}`;
+    }).join(" ");
+    return svgEl("polyline", { ...silhouetteAttrs, points });
+  });
+
+  // ---------- vertex pins (tiny circles beneath each cluster marker) ----------
+  const vertexPins = (con?.marker_positions || []).map(pos => {
+    const [wx, wy] = clusterLocalToWorld(pos[0], pos[1]);
+    return svgEl("circle", { cx: wx.toFixed(1), cy: wy.toFixed(1), r: "3", fill: color });
+  });
+
+  // ---------- cluster markers (focal vs non-focal) ----------
+  const nonFocalMarkers = [];
+  const focalMarkerNodes = [];
+  (con?.marker_positions || []).forEach((pos, idx) => {
+    const [wx, wy] = clusterLocalToWorld(pos[0], pos[1]);
+    if (idx === focalMarkerIdx) {
+      // Focal cluster marker shrinks 54 → 38 across the split.
+      const size = lerp(54, 38, split);
+      if (focalClusterOp > 0.01) {
+        focalMarkerNodes.push(placeCameraStar(wx, wy, 100, color, size, 1));
+      }
+    } else {
+      // Non-focal markers shrink 34 → 18 under the blur fade.
+      const size = lerp(34, 18, phase(t, 0.50, 0.60));
+      if (nonFocalClusterOp > 0.01) {
+        nonFocalMarkers.push(placeCameraStar(wx, wy, 100, color, size, 1));
+      }
+    }
+  });
+
+  // ---------- interior perks (split reveal) + halo + motion arrows + flash (Phase 5) ----------
+  const interiorPerkNodes = [];
+  const motionArrowNodes = [];
+  const flashNodes = [];
+  let haloNode = null;
+  if (split > 0) {
+    const isMiss = scene.branch === "miss";
+    const isMultiGrab = scene.branch === "multi-grab";
+    const focalScale = focalScaleFactor(t, scene.branch);
+
+    // Resolve the multi-grab merge geometry up-front. The halo center sits at
+    // the centroid of the ORIGINAL wireframe positions (it does not chase the
+    // moving focals); the merge-target positions for the focal slide are tiny
+    // offsets from that center so the rays overlap into one fused unit.
+    let mergeCenter = null;
+    let originalFocalWorlds = null;
+    let mergeT = 0;
+    let binaryTargets = null;
+    if (isMultiGrab && scene.focalStars?.length) {
+      originalFocalWorlds = scene.focalStars.map(star => starWorldFromScene(scene, star));
+      const n = originalFocalWorlds.length;
+      const sum = originalFocalWorlds.reduce(
+        (acc, p) => [acc[0] + p[0], acc[1] + p[1]],
+        [0, 0],
+      );
+      mergeCenter = [sum[0] / n, sum[1] / n];
+      mergeT = multiGrabMergeProgress(t);
+      if (n === 2) {
+        // Canonical binary positions — mirrors scrubber's two-perk diffraction.
+        binaryTargets = [
+          [mergeCenter[0] - HALO_BINARY_OFFSET.x, mergeCenter[1] + HALO_BINARY_OFFSET.y],
+          [mergeCenter[0] + HALO_BINARY_OFFSET.x, mergeCenter[1] - HALO_BINARY_OFFSET.y],
+        ];
+      } else {
+        // n > 2 fallback: distribute evenly around the merge center on a small
+        // circle so each focal still arrives at a distinct binary slot.
+        const r = HALO_BINARY_OFFSET.x;
+        binaryTargets = originalFocalWorlds.map((_, i) => {
+          const a = (i / n) * Math.PI * 2;
+          return [mergeCenter[0] + Math.cos(a) * r, mergeCenter[1] + Math.sin(a) * r];
+        });
+      }
+    }
+
+    if (scene.focalStars?.length) {
+      const focalIds = new Set(scene.focalStars.map(s => s.id));
+      scene.focalStars.forEach((star, i) => {
+        const original = originalFocalWorlds ? originalFocalWorlds[i] : starWorldFromScene(scene, star);
+        let wx = original[0];
+        let wy = original[1];
+        if (isMultiGrab && binaryTargets && mergeT > 0) {
+          const [tx, ty] = binaryTargets[i];
+          wx = lerp(wx, tx, mergeT);
+          wy = lerp(wy, ty, mergeT);
+        }
+        const size = sizeFor(Number(star.cost || 100)) * focalScale;
+        // Focal perks render at full opacity scaled by split (so they fade
+        // in along with the cluster marker fading out).
+        interiorPerkNodes.push(
+          placeCameraStar(wx, wy, star.cost || 100, "#fff", size, split),
+        );
+
+        // Motion arrows for multi-grab focals as they slide toward the merge
+        // center (animation.js:361-369). Only render while the slide is
+        // visibly in progress AND the focal hasn't already closed the gap.
+        if (isMultiGrab && mergeCenter && mergeT > 0.05 && mergeT < 0.9) {
+          const dx = mergeCenter[0] - wx;
+          const dy = mergeCenter[1] - wy;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 6) {
+            const nx = dx / dist;
+            const ny = dy / dist;
+            const trailOp = 0.7 * (1 - mergeT);
+            motionArrowNodes.push(svgEl("line", {
+              x1: (wx + nx * 12).toFixed(2),
+              y1: (wy + ny * 12).toFixed(2),
+              x2: (wx + nx * 22).toFixed(2),
+              y2: (wy + ny * 22).toFixed(2),
+              stroke: "white",
+              "stroke-width": "1",
+              "stroke-linecap": "round",
+              opacity: trailOp.toFixed(3),
+            }));
+          }
+        }
+      });
+      for (const star of scene.ambientStars || []) {
+        if (focalIds.has(star.id)) continue;
+        const [wx, wy] = starWorldFromScene(scene, star);
+        const size = sizeFor(Number(star.cost || 100));
+        interiorPerkNodes.push(
+          placeCameraStar(wx, wy, star.cost || 100, color, size, nonFocalInteriorOpacity(t, false)),
+        );
+      }
+    } else if (isMiss && scene.missCandidate) {
+      const [wx, wy] = starWorldFromScene(scene, scene.missCandidate);
+      const size = sizeFor(Number(scene.missCandidate.cost || 100)) * focalScale;
+      interiorPerkNodes.push(
+        placeCameraStar(wx, wy, scene.missCandidate.cost || 100, color, size, nonFocalInteriorOpacity(t, true)),
+      );
+    }
+
+    // ---- shared shrinking halo (hit-only) ----
+    // Single-focal: starts at the jump perk-radius and tightens onto the focal.
+    // Multi-grab: starts at half the original focal-pair distance + 16, shrinks
+    // to 14 as the focals fuse. Miss explicitly skips the halo.
+    if (!isMiss && scene.focalStars?.length) {
+      const auraP = haloAuraProgress(t);
+      if (auraP > 0.04) {
+        let auraCx = null;
+        let auraCy = null;
+        let initialR = 0;
+        let finalR = 0;
+        let shrinkT = 0;
+        if (isMultiGrab && mergeCenter && originalFocalWorlds) {
+          auraCx = mergeCenter[0];
+          auraCy = mergeCenter[1];
+          // halfDist uses ORIGINAL wireframe positions (not the moving focals)
+          // so the halo's starting size reflects the spread before the slide.
+          let halfDist;
+          if (originalFocalWorlds.length === 2) {
+            const [p0, p1] = originalFocalWorlds;
+            halfDist = Math.hypot(p0[0] - p1[0], p0[1] - p1[1]) / 2;
+          } else {
+            // n>2: use the max distance from the centroid as the spread proxy.
+            halfDist = originalFocalWorlds.reduce((acc, p) => {
+              return Math.max(acc, Math.hypot(p[0] - mergeCenter[0], p[1] - mergeCenter[1]));
+            }, 0);
+          }
+          initialR = halfDist + 16;
+          finalR = 14;
+          shrinkT = mergeT;
+        } else {
+          // Single-focal hit. Halo encompasses the jump siblings initially,
+          // tightening onto the focal as it scales up.
+          const focal = focalWorldFromScene(scene);
+          auraCx = focal[0];
+          auraCy = focal[1];
+          const focalCost = Number(scene.focalStars[0].cost || 100);
+          initialR = JUMP_RADIUS_WORLD * 0.85;
+          finalR = sizeFor(focalCost) * focalScale * 0.40;
+          shrinkT = easeInOutCubic(auraP);
+        }
+        if (auraCx != null) {
+          const radius = lerp(initialR, finalR, shrinkT);
+          const auraOp = lerp(0.18, 0.58, auraP);
+          haloNode = svgEl("circle", {
+            cx: auraCx.toFixed(2),
+            cy: auraCy.toFixed(2),
+            r: radius.toFixed(2),
+            fill: "none",
+            stroke: color,
+            "stroke-width": "1.4",
+            "vector-effect": "non-scaling-stroke",
+            opacity: auraOp.toFixed(3),
+          });
+        }
+      }
+    }
+
+    // ---- multi-grab flash burst (animation.js:237-238, 412-415) ----
+    // Two pulsing concentric circles. Radii expand with flash intensity so the
+    // burst reads as a punchy expand-then-fade rather than a fixed flicker.
+    // `flashRaw` is the 0..1 envelope; `multiGrabFlashOpacity` returns the
+    // pre-scaled-by-0.32 opacity factor — divide back to recover the envelope.
+    if (isMultiGrab && mergeCenter) {
+      const flash = multiGrabFlashOpacity(t);
+      if (flash > 0.005) {
+        const flashRaw = flash / 0.32;
+        const outerR = 28 + flashRaw * 14;
+        const innerR = 14 + flashRaw * 8;
+        flashNodes.push(svgEl("circle", {
+          cx: mergeCenter[0].toFixed(2),
+          cy: mergeCenter[1].toFixed(2),
+          r: outerR.toFixed(2),
+          fill: "white",
+          opacity: (flash * 0.5).toFixed(3),
+        }));
+        flashNodes.push(svgEl("circle", {
+          cx: mergeCenter[0].toFixed(2),
+          cy: mergeCenter[1].toFixed(2),
+          r: innerR.toFixed(2),
+          fill: "white",
+          opacity: flash.toFixed(3),
+        }));
+      }
+    }
+  }
+
+  // ---------- beam (Phase 4) ----------
+  // Forge reach beam — rises from below the viewport up to the focal perk.
+  // Returns { defs: [...], group } or null when invisible.
+  const beam = renderBeam(scene, t, view);
+
+  // ---------- spotlight overlay (Phase 5) ----------
+  // Two oversized rects centered on the focal: an accent-colored glow + a
+  // radial dark vignette with a transparent hole. Drawn last so it sits above
+  // everything, including the beam (the beam still reads through the modest
+  // glow + the spotlight hole).
+  const spotlight = renderSpotlight(scene, t, view);
+
+  // ---------- assemble SVG ----------
+  const defs = svgEl("defs", {},
+    getCameraSymbolDefs(),
+    blur > 0.4
+      ? svgEl("filter", { id: "cam-motion-blur", x: "-20%", y: "-20%", width: "140%", height: "140%" },
+        svgEl("feGaussianBlur", { stdDeviation: blur.toFixed(2) }),
+      )
+      : null,
+    ...(beam?.defs ?? []),
+    ...(spotlight?.defs ?? []),
+  );
+
+  // Blur group wraps silhouette + vertex pins + ALL cluster markers (both
+  // focal and non-focal). Interior perks stay outside the blur so they read
+  // crisp as they emerge.
+  const blurGroupProps = blur > 0.4 ? { filter: "url(#cam-motion-blur)" } : {};
+  // Stand-in silhouettes ride at ~0.45/0.62 ≈ 0.726 of the normal opacity so
+  // the dashes don't read as a brighter outline; the silhOp curve still drives
+  // the fade-in/out timing.
+  const silhScale = isStandIn ? 0.726 : 1;
+  const blurGroup = svgEl("g", blurGroupProps,
+    svgEl("g", { opacity: (silhOp * silhScale).toFixed(3) }, ...silhouettePolylines),
+    svgEl("g", { opacity: pinOp.toFixed(3) }, ...vertexPins),
+    svgEl("g", { opacity: nonFocalClusterOp.toFixed(3) }, ...nonFocalMarkers),
+    svgEl("g", { opacity: focalClusterOp.toFixed(3) }, ...focalMarkerNodes),
+  );
+
+  // Interior group order (back → front per the design README): focal+ambient
+  // perk markers, then multi-grab motion arrows, then the multi-grab flash
+  // burst, then the shared halo ring (on top so it reads as the "drawing-in"
+  // boundary, but at the modest 0.18-0.58 opacity the beam still rises through).
+  const interiorGroup = svgEl("g", { class: "interior-perks" },
+    ...interiorPerkNodes,
+    ...motionArrowNodes,
+    ...flashNodes,
+    haloNode,
+  );
+
+  // Z-order back→front: defs → blur group → interior perks → beam → spotlight.
+  return el("div", {
+    class: "sky-camera",
+    style: { opacity: cameraOpacity.toFixed(3) },
+  },
+    svgEl("svg", {
+      viewBox,
+      preserveAspectRatio: "xMidYMid meet",
+    },
+      defs,
+      blurGroup,
+      interiorGroup,
+      beam?.group ?? null,
+      spotlight?.group ?? null,
     ),
+  );
+}
+
+// Phase 5 — spotlight vignette overlay. Two camera-spanning rects: an
+// accent-colored radial glow + a dark vignette with a transparent inner hole.
+// Geometry mirrors `animation.js:524-551`. Returns `{ defs, group }` or null
+// when invisible (p < 0.03).
+function renderSpotlight(scene, t, view) {
+  const p = spotlightProgress(t);
+  if (p < 0.03) return null;
+
+  const focal = focalWorldFromScene(scene);
+  const hue = scene?.hue ?? 196;
+  const accent = `oklch(0.82 0.14 ${hue})`;
+
+  const radius = lerp(220, 64, p);
+  const darkOp = lerp(0, 0.74, p);
+  const glowOp = lerp(0, 0.12, p);
+
+  // Oversize the rects by 200 world units on each side relative to the camera
+  // viewBox so the gradient covers any subpixel slop near the edges.
+  const x = view.cx - view.w / 2 - 200;
+  const y = view.cy - view.h / 2 - 200;
+  const w = view.w + 400;
+  const h = view.h + 400;
+
+  const defs = [
+    svgEl("radialGradient", {
+      id: "spot-glow-grad",
+      cx: focal[0].toFixed(2),
+      cy: focal[1].toFixed(2),
+      r: (radius * 1.15).toFixed(2),
+      gradientUnits: "userSpaceOnUse",
+    },
+      svgEl("stop", { offset: "0", "stop-color": accent, "stop-opacity": glowOp.toFixed(3) }),
+      svgEl("stop", { offset: "1", "stop-color": accent, "stop-opacity": "0" }),
+    ),
+    svgEl("radialGradient", {
+      id: "spot-dark-grad",
+      cx: focal[0].toFixed(2),
+      cy: focal[1].toFixed(2),
+      r: radius.toFixed(2),
+      gradientUnits: "userSpaceOnUse",
+    },
+      svgEl("stop", { offset: "0", "stop-color": "black", "stop-opacity": "0" }),
+      svgEl("stop", { offset: "0.55", "stop-color": "black", "stop-opacity": "0" }),
+      svgEl("stop", { offset: "1", "stop-color": "black", "stop-opacity": darkOp.toFixed(3) }),
+    ),
+  ];
+
+  const group = svgEl("g", { class: "cam-spotlight" },
+    svgEl("rect", {
+      x: x.toFixed(2), y: y.toFixed(2),
+      width: w.toFixed(2), height: h.toFixed(2),
+      fill: "url(#spot-glow-grad)",
+    }),
+    svgEl("rect", {
+      x: x.toFixed(2), y: y.toFixed(2),
+      width: w.toFixed(2), height: h.toFixed(2),
+      fill: "url(#spot-dark-grad)",
+    }),
+  );
+
+  return { defs, group };
+}
+
+// Phase 4 — forge reach beam. 4 layers: outer cone (color-tinted gauss-blurred
+// gradient), inner core (whiter, tighter), rising particle motes, apex bloom.
+// Geometry and curves mirror `animation.js:432-522` and the design README §
+// "The Beam". Returns `{ defs, group }` for the camera SVG to splice in, or
+// `null` when the beam isn't visible yet.
+function renderBeam(scene, t, view) {
+  const op = beamOpacity(t);
+  const outcome = scene?.branch === "miss" ? "miss" : "hit";
+  const reach = beamReach(t, outcome);
+  if (op < 0.005 || reach < 0.001) return null;
+
+  const focal = focalWorldFromScene(scene);
+  const hue = scene?.hue ?? 196;
+  const color = `oklch(0.82 0.14 ${hue})`;
+  const coreColor = `oklch(0.95 0.06 ${hue})`;
+
+  // Beam coordinates: base 30 world units below the camera bottom (off-frame
+  // origin), apex lerps from base up to focal.y as reach goes 0 → 1.
+  const bottomY = view.cy + view.h / 2 + 30;
+  const apexY = lerp(bottomY, focal[1], reach);
+  const beamLen = Math.max(1, bottomY - apexY);
+
+  // Apex always tapers to a true point (width 0) regardless of reach. The
+  // prototype's `lerp(4, 0, reach)` only landed at zero at full reach (hit);
+  // on a miss the beam stalls at reach=0.78, leaving a ~0.88-wide flat top
+  // where the gradient is brightest — a visible hard edge stamping out the
+  // "beam stops before the mote" visual. With apex=0 the polygon's tip is a
+  // single point that the gaussian blur dissolves into the void at any
+  // reach state, matching the design intent ("Apex tapers to a true point …
+  // so the gaussian blur dissolves the tip into the void on misses").
+  const apexW = 0;
+  const baseW = 72;
+  const coreApexW = 0;
+  const coreBaseW = 22;
+
+  const outerPts = [
+    [focal[0] - apexW, apexY],
+    [focal[0] + apexW, apexY],
+    [focal[0] + baseW, bottomY],
+    [focal[0] - baseW, bottomY],
+  ].map(p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
+  const corePts = [
+    [focal[0] - coreApexW, apexY],
+    [focal[0] + coreApexW, apexY],
+    [focal[0] + coreBaseW, bottomY],
+    [focal[0] - coreBaseW, bottomY],
+  ].map(p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
+
+  // Particle motes — fixed seeded x-jitter, phase cycles with t so they
+  // continuously stream upward. sin-curve alpha so they emerge from the base
+  // and dissolve near the apex.
+  const cycleSpeed = 2.6;
+  const particleCount = 14;
+  const particles = [];
+  for (let i = 0; i < particleCount; i += 1) {
+    const seed = (i * 73 + 11) % 100;
+    const phaseOffset = ((seed / 100) + i / particleCount) % 1;
+    // Safe-positive modulo guards against any negative seed/offset combos.
+    const ph = ((((t * cycleSpeed) + phaseOffset) % 1) + 1) % 1;
+    const py = bottomY - ph * beamLen;
+    const widthHere = lerp(baseW, apexW, ph) * 0.7;
+    const xJ = ((seed * 1.618) % 1) - 0.5;
+    const px = focal[0] + xJ * widthHere;
+    const alpha = Math.sin(ph * Math.PI) * 0.55 * op;
+    if (alpha < 0.04) continue;
+    const psize = 0.7 + (seed % 7) / 7 * 1.0;
+    particles.push(svgEl("circle", {
+      cx: px.toFixed(2),
+      cy: py.toFixed(2),
+      r: psize.toFixed(2),
+      fill: "#fff",
+      opacity: alpha.toFixed(3),
+    }));
+  }
+
+  // Apex bloom — soft pool of light at the apex. Miss stays dim/tight (no
+  // successful lock); hit blooms wider as reach completes.
+  const isMiss = outcome === "miss";
+  const bloomR = isMiss ? lerp(4, 9, reach) : lerp(8, 26, reach);
+  const bloomOp = (isMiss ? 0.25 : 0.7) * reach * op;
+  const bloomVisualR = bloomR * 1.6;
+
+  const defs = [
+    svgEl("filter", { id: "beam-outer-blur", x: "-30%", y: "-10%", width: "160%", height: "120%" },
+      svgEl("feGaussianBlur", { stdDeviation: "6" }),
+    ),
+    svgEl("filter", { id: "beam-inner-blur", x: "-20%", y: "-10%", width: "140%", height: "120%" },
+      svgEl("feGaussianBlur", { stdDeviation: "2.4" }),
+    ),
+    svgEl("linearGradient", {
+      id: "beam-outer-grad",
+      x1: "0", y1: apexY.toFixed(2), x2: "0", y2: bottomY.toFixed(2),
+      gradientUnits: "userSpaceOnUse",
+    },
+      svgEl("stop", { offset: "0", "stop-color": color, "stop-opacity": (0.52 * op).toFixed(3) }),
+      svgEl("stop", { offset: "0.45", "stop-color": color, "stop-opacity": (0.20 * op).toFixed(3) }),
+      svgEl("stop", { offset: "1", "stop-color": color, "stop-opacity": "0" }),
+    ),
+    svgEl("linearGradient", {
+      id: "beam-inner-grad",
+      x1: "0", y1: apexY.toFixed(2), x2: "0", y2: bottomY.toFixed(2),
+      gradientUnits: "userSpaceOnUse",
+    },
+      svgEl("stop", { offset: "0", "stop-color": coreColor, "stop-opacity": (0.78 * op).toFixed(3) }),
+      svgEl("stop", { offset: "0.55", "stop-color": coreColor, "stop-opacity": (0.30 * op).toFixed(3) }),
+      svgEl("stop", { offset: "1", "stop-color": coreColor, "stop-opacity": "0" }),
+    ),
+    svgEl("radialGradient", {
+      id: "beam-bloom-grad",
+      cx: focal[0].toFixed(2),
+      cy: apexY.toFixed(2),
+      r: bloomVisualR.toFixed(2),
+      gradientUnits: "userSpaceOnUse",
+    },
+      svgEl("stop", { offset: "0", "stop-color": "#fff", "stop-opacity": (bloomOp * 0.85).toFixed(3) }),
+      svgEl("stop", { offset: "0.45", "stop-color": color, "stop-opacity": (bloomOp * 0.45).toFixed(3) }),
+      svgEl("stop", { offset: "1", "stop-color": color, "stop-opacity": "0" }),
+    ),
+  ];
+
+  const group = svgEl("g", { class: "cam-beam" },
+    svgEl("polygon", { points: outerPts, fill: "url(#beam-outer-grad)", filter: "url(#beam-outer-blur)" }),
+    svgEl("polygon", { points: corePts, fill: "url(#beam-inner-grad)", filter: "url(#beam-inner-blur)" }),
+    ...particles,
+    svgEl("circle", {
+      cx: focal[0].toFixed(2),
+      cy: apexY.toFixed(2),
+      r: bloomVisualR.toFixed(2),
+      fill: "url(#beam-bloom-grad)",
+    }),
+  );
+
+  return { defs, group };
+}
+
+// Build the shared `<symbol>` defs block, one per cost tier (100/200/400/
+// 600/800). Mirrors `design/.../animation.js:54-78`. Each symbol is the
+// recipe-driven diffraction star at canonical -50..50 viewBox; instance via
+// `<use href="#dm-N" x="-50" y="-50" width="100" height="100" />` on a
+// wrapper group that handles translate/scale/color.
+//
+// One shared gradient `#cam-ray-grad` is declared at the head of the defs
+// (animation.js does the same — every symbol references it by id).
+//
+// The returned element is cached in `_cameraSymbolDefsTemplate` and cloned per
+// render — without caching this would rebuild ~150 SVG nodes every frame
+// (~9000 createElementNS calls/sec during animation). The contents are
+// static (no t-dependent attributes), so cloning is safe.
+let _cameraSymbolDefsTemplate = null;
+function getCameraSymbolDefs() {
+  if (!_cameraSymbolDefsTemplate) _cameraSymbolDefsTemplate = buildCameraSymbolDefs();
+  return _cameraSymbolDefsTemplate.cloneNode(true);
+}
+function buildCameraSymbolDefs() {
+  const grad = svgEl("linearGradient", { id: "cam-ray-grad", x1: "0", y1: "0", x2: "1", y2: "0" },
+    svgEl("stop", { offset: "0", "stop-color": "transparent" }),
+    svgEl("stop", { offset: "0.48", "stop-color": "#fff", "stop-opacity": "0.58" }),
+    svgEl("stop", { offset: "0.50", "stop-color": "#fff", "stop-opacity": "0.92" }),
+    svgEl("stop", { offset: "0.52", "stop-color": "#fff", "stop-opacity": "0.58" }),
+    svgEl("stop", { offset: "1", "stop-color": "transparent" }),
+  );
+
+  const symbols = [100, 200, 400, 600, 800].map(cost => {
+    const recipe = recipeFor(cost);
+    const rays = (count, len, w, offset = 0) => Array.from({ length: count }, (_, i) => {
+      const angle = (360 / count) * i + offset + ((i % 2) ? recipe.jitter : -recipe.jitter);
+      return svgEl("rect", {
+        x: String(-len),
+        y: String(-w / 2),
+        width: String(len * 2),
+        height: String(w),
+        rx: String(w / 2),
+        fill: "url(#cam-ray-grad)",
+        transform: `rotate(${angle.toFixed(2)})`,
+      });
+    });
+    return svgEl("symbol", { id: `dm-${cost}`, viewBox: "-50 -50 100 100", overflow: "visible" },
+      svgEl("g", { style: "filter:drop-shadow(0 0 0.6px #fff) drop-shadow(0 0 3px currentColor)" },
+        svgEl("g", { opacity: "0.68", style: "mix-blend-mode:screen" },
+          ...rays(recipe.major, recipe.length, recipe.width),
+        ),
+        svgEl("g", { opacity: "0.32", style: "mix-blend-mode:screen" },
+          ...rays(recipe.minor, recipe.minorLength, recipe.minorWidth, 360 / (recipe.major * 2)),
+        ),
+        svgEl("circle", { r: "2.2", fill: "currentColor", opacity: "0.20" }),
+        svgEl("circle", { r: "1.4", fill: "#fff" }),
+      ),
+    );
+  });
+
+  return svgEl("g", {}, grad, ...symbols);
+}
+
+// Instance a shared diffraction-star symbol at world coord (x, y) with the
+// given color/size/opacity. The `<use>` MUST carry x/y/width/height — without
+// them the symbol stretches to fit the outer SVG viewport and the wrapper's
+// transform misaligns the star (see animation.js:82-86).
+function placeCameraStar(x, y, cost, color, visualSize, opacity) {
+  const scale = visualSize / 100;
+  const id = cost >= 800 ? "dm-800"
+    : cost >= 600 ? "dm-600"
+    : cost >= 400 ? "dm-400"
+    : cost >= 200 ? "dm-200"
+    : "dm-100";
+  return svgEl("g", {
+    transform: `translate(${x.toFixed(2)},${y.toFixed(2)}) scale(${scale.toFixed(3)})`,
+    style: `color:${color}`,
+    opacity: opacity.toFixed(3),
+  },
+    svgEl("use", { href: `#${id}`, x: "-50", y: "-50", width: "100", height: "100" }),
   );
 }
 
@@ -1426,7 +2176,7 @@ function renderRecentAcquisitions() {
 function perkListItem(perk, roll, free) {
   return el("li", {},
     el("span", { class: "perk-marker" }, diffractionMarker(roll, { scale: 0.55, color: constellationColor(roll.constellation) })),
-    el("span", {}, el("span", { class: "perk-name", text: perk.name }), el("span", { class: "perk-source", text: `${roll.constellation || "-"} · ${perk.jump || roll.jump || "-"} · ch ${roll.chapter_num}` })),
+    el("span", {}, el("span", { class: "perk-name", text: perkDisplayLabel(perk) }), el("span", { class: "perk-source", text: `${roll.constellation || "-"} · ${perk.jump || roll.jump || "-"} · ch ${roll.chapter_num}` })),
     el("span", { class: `perk-cost ${free ? "free" : ""}`, text: free ? "FREE" : `${perk.cost || 0} CP` }),
   );
 }
@@ -1560,12 +2310,60 @@ function recipeFor(cost) {
   return { major: 4, minor: 4, length: 27, width: 0.7, minorLength: 12, minorWidth: 0.22, jitter: 1 };
 }
 
-function starfield(count) {
+// Rendered diameter (in world units, at camera scale 1.0) of a perk mote keyed
+// on its cost. Used by the cinematic roll-focus phases — distinct from the
+// paid-count sizing in the scrubber's `diffractionMarker`, which intentionally
+// scales by paid count rather than cost.
+function sizeFor(cost) {
+  if (cost >= 800) return 96;
+  if (cost >= 400) return 78;
+  if (cost >= 200) return 64;
+  return 54;
+}
+
+// Build the screen-fixed background starfield SVG. Drawn once at app bootstrap
+// (see mountBackgroundStarfield); never rebuilt during playback so the dots
+// stay stable across frames and "infinitely distant" — they must not be
+// camera-relative.
+function buildBackgroundStarfield() {
+  const STAR_COUNT = 220;
+  const VIEW_W = 1600;
+  const VIEW_H = 1000;
   let seed = 71;
   const random = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-  return el("div", { class: "starfield", "aria-hidden": "true" },
-    Array.from({ length: count }, () => el("span", { class: `bg-star ${random() > 0.6 ? "dim" : ""}`, style: { left: `${random() * 100}%`, top: `${random() * 100}%` } })),
-  );
+
+  const svg = svgEl("svg", {
+    class: "background-starfield",
+    viewBox: `0 0 ${VIEW_W} ${VIEW_H}`,
+    preserveAspectRatio: "xMidYMid slice",
+    "aria-hidden": "true",
+    focusable: "false",
+  });
+  for (let i = 0; i < STAR_COUNT; i += 1) {
+    const cx = random() * VIEW_W;
+    const cy = random() * VIEW_H;
+    const r = 0.5 + random() * 1.0;     // radius in [0.5, 1.5]
+    const opacity = 0.18 + random() * 0.42; // opacity in [0.18, 0.60]
+    const dim = random() > 0.6;
+    svg.appendChild(svgEl("circle", {
+      cx: cx.toFixed(2),
+      cy: cy.toFixed(2),
+      r: r.toFixed(2),
+      fill: dim ? "rgba(154, 215, 223, 1)" : "rgba(232, 253, 255, 1)",
+      opacity: opacity.toFixed(3),
+    }));
+  }
+  return svg;
+}
+
+let backgroundStarfieldMounted = false;
+function mountBackgroundStarfield() {
+  if (backgroundStarfieldMounted) return;
+  // Sits as a screen-fixed sibling behind .viewport. Hosting on document.body
+  // keeps it untouched by render()'s root-clearing pass.
+  const layer = buildBackgroundStarfield();
+  document.body.appendChild(layer);
+  backgroundStarfieldMounted = true;
 }
 
 function documentIcon() {
@@ -1590,6 +2388,40 @@ function centerScrubber() {
   const target = clamp(x - scroller.clientWidth / 2, 0, Math.max(0, stack.scrollWidth - scroller.clientWidth));
   scroller.scrollLeft = target;
 }
+
+// Module-level click delegation. Render() rebuilds the entire DOM tree on
+// every frame (including the 60fps cinematic-anim ticks), so per-button
+// onClick handlers attached during a render can be silently destroyed
+// between the user's mousedown and mouseup — the browser then refuses to
+// fire `click`. Routing the click through a stable document.body listener
+// fixes that for any control flagged with data-action. Keyboard activation
+// (Enter/Space on a focused button) still fires `click` natively, so it
+// works through the same path without needing keyboard handling here.
+document.body.addEventListener("click", event => {
+  const target = event.target.closest("[data-action]");
+  if (!target) return;
+  const action = target.dataset.action;
+  if (action === "toggle-playback") {
+    togglePlayback();
+    event.preventDefault();
+  } else if (action === "reset-bookmark") {
+    app.playing = false;
+    if (app.focusAnim) clearFocusAnim();
+    setWordPos(0);
+    event.preventDefault();
+  } else if (action === "set-on-roll-behavior") {
+    const value = target.dataset.onRollBehavior;
+    if (ON_ROLL_BEHAVIORS.includes(value)) {
+      app.onRollBehavior = value;
+      store(LS_ON_ROLL_BEHAVIOR, value);
+      // Switching to `quick` mid-firing should clear any running cinematic
+      // so the scrubber resumes flowing immediately.
+      if (value === "quick" && app.focusAnim) clearFocusAnim();
+      render();
+    }
+    event.preventDefault();
+  }
+});
 
 window.addEventListener("keydown", event => {
   if (!app.data) return;

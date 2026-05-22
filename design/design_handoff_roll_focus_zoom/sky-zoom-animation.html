@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Sky View — animated zoom prototype</title>
+  <link rel="stylesheet" href="animation.css">
+</head>
+<body>
+  <header class="page-head">
+    <div class="head-l">
+      <span class="kicker">design · phase 4 sky view · animation prototype</span>
+      <h1>Roll focus — animated</h1>
+    </div>
+    <div class="head-r">
+      <p class="meta">Approach A3 vocabulary — pan &amp; scale + motion-blur split + bottom-up forge beam + spotlight. Three scenarios loop. Drag the scrubber or slow playback to study the transitions.</p>
+    </div>
+  </header>
+
+  <section class="player">
+    <div class="stage-wrap">
+      <div class="stage-frame">
+        <svg class="stage-bg-svg" id="stage-bg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+        <svg class="stage-svg" id="stage" preserveAspectRatio="xMidYMid slice"></svg>
+        <div class="stage-corners" aria-hidden="true">
+          <span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="player-controls">
+      <button id="playpause" class="ctl-btn" type="button" aria-label="Play / pause">
+        <svg viewBox="0 0 16 16" class="icon-play"><path d="M3 2 L13 8 L3 14 Z" fill="currentColor"/></svg>
+        <svg viewBox="0 0 16 16" class="icon-pause"><rect x="3" y="2.5" width="3.2" height="11" fill="currentColor"/><rect x="9.8" y="2.5" width="3.2" height="11" fill="currentColor"/></svg>
+      </button>
+      <button id="restart" class="ctl-btn" type="button" aria-label="Restart from beginning">
+        <svg viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 1 1.5 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 4 L3 8 L7 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      </button>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Timeline scrubber">
+      <span id="time" class="time-readout">0.0s / 0.0s</span>
+      <div class="speed-group" role="group" aria-label="Playback speed">
+        <button class="ctl-pill" data-speed="0.25" type="button">¼×</button>
+        <button class="ctl-pill" data-speed="0.5" type="button">½×</button>
+        <button class="ctl-pill active" data-speed="1" type="button">1×</button>
+        <button class="ctl-pill" data-speed="2" type="button">2×</button>
+      </div>
+    </div>
+
+    <nav class="scenario-picker" aria-label="Scenario picker">
+      <button data-scenario="0" class="active" type="button">
+        <span class="sp-num">scene 1</span>
+        <span class="sp-name">Hit · multi-perk jump</span>
+        <span class="sp-detail">Alchemy / Full Metal Alchemist · Simplified Formulae · 100 CP</span>
+        <span class="sp-arc">motion blur → split → beam → flare</span>
+      </button>
+      <button data-scenario="1" type="button">
+        <span class="sp-num">scene 2</span>
+        <span class="sp-name">Multi-grab · suck-into-beam</span>
+        <span class="sp-detail">Size / Transformers · Science! Mechanics + Engineering · 200 CP</span>
+        <span class="sp-arc">split → perks pulled to beam apex → binary mark</span>
+      </button>
+      <button data-scenario="2" type="button">
+        <span class="sp-num">scene 3</span>
+        <span class="sp-name">Miss · beam falls short</span>
+        <span class="sp-detail">Vehicles · inferred 600 CP candidate · &gt; available CP</span>
+        <span class="sp-arc">beam rises but apex never reaches the mote</span>
+      </button>
+    </nav>
+  </section>
+
+  <footer class="page-foot">
+    <span class="dim">Continuous-time render of the same layers as <code>sky-zoom-storyboard.html</code>. Reuses scene data from <code>storyboard-data.js</code>. SVG built via <code>&lt;symbol&gt;</code>+<code>&lt;use&gt;</code> so 60fps innerHTML rebuilds stay cheap.</span>
+  </footer>
+
+  <script src="storyboard-data.js"></script>
+  <script src="animation.js"></script>
+</body>
+</html>

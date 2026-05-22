@@ -61,12 +61,14 @@
     "perk": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "source", "cost", "free"],
+      "required": ["name", "source", "cost", "cost_text", "cost_unit", "free"],
       "properties": {
-        "name":   { "type": "string", "minLength": 1 },
-        "source": { "type": "string" },
-        "cost":   { "type": "integer", "minimum": 0 },
-        "free":   { "type": "boolean" }
+        "name":      { "type": "string", "minLength": 1 },
+        "source":    { "type": "string" },
+        "cost":      { "type": "integer", "minimum": 0 },
+        "cost_text": { "type": "string" },
+        "cost_unit": { "type": ["string", "null"] },
+        "free":      { "type": "boolean" }
       }
     }
   }

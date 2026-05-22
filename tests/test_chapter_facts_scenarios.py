@@ -67,6 +67,7 @@ def _roll_fact(
         "available_cp": 100,
         "banked_cp_after_roll": 0,
         "rolled_perk_name": None,
+        "rolled_perk_instance": None,
         "rolled_perk_cost": None,
         "miss_cost_estimate": 100 if outcome == "miss" else None,
         "rolls_in_chapter": 1,
