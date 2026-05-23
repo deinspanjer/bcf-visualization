@@ -175,6 +175,33 @@ def test_stats_registers_roll_targets_for_curated_and_open_slots(
     ]
 
 
+def test_stats_panel_summarizes_long_curation_errors(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app._last_curation_error = "\n".join(
+        [
+            "8 chapter(s) have curator overrides anchored to a stale predicted-roll shape:",
+            "  ch 65: stored=sha256:old current=sha256:new",
+            "  ch 67: stored=sha256:old current=sha256:new",
+            "",
+            "The predicted-roll slot sequence in these chapters has changed.",
+        ]
+    )
+
+    text, _stats = _render_stats_text(app)
+
+    curation_lines = [
+        line for line in text.splitlines()
+        if "Curation" in line or "Details" in line
+    ]
+    assert len(curation_lines) == 2
+    assert "ch 65" not in text
+    assert "ch 67" not in text
+
+
 def test_stats_registers_deferred_predicted_slot_before_current_slots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -403,6 +430,45 @@ def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
     )
 
     assert "# 3 (19)" in line
+
+
+def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    app.data._outstanding_doc = {
+        "chapters": [
+            {
+                "chapter_num": "1",
+                "before_chapter": {
+                    "by_constellation": {
+                        "Magic": [
+                            {"name": "Cheap Fixture", "cost": 200},
+                            {"name": "Exact Fixture", "cost": 400},
+                            {"name": "Higher Fixture", "cost": 600},
+                        ]
+                    }
+                },
+            }
+        ]
+    }
+
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "roll_number": 7,
+            "outcome": "miss",
+            "constellation": "Magic",
+            "available_cp": 300,
+            "miss_cost_estimate": 400,
+            "mechanical_chapter_num": "1",
+        },
+        " ",
+    )
+
+    assert "missed >= 400 CP (2 possible)" in line
 
 
 def test_roll_stat_line_labels_locationless_predicted_deferral_as_future(

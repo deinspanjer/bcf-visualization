@@ -20,6 +20,7 @@ from multi_grab import (  # noqa: E402
     merge_paid_units,
 )
 from _common import _load_schema  # noqa: E402
+from chapter_alignment import model_issues_by_chapter  # noqa: E402
 from data_paths import DERIVED  # noqa: E402
 
 
@@ -185,6 +186,7 @@ def test_roll_validation_status_matches_blocking_model_issues() -> None:
         "paid_rolls_exceed_predicted_slots",
         "known_attempts_exceed_predicted_slots",
         "cost_schedule_infeasible",
+        "curated_hit_missing_perks",
     }
 
     for check in validation["chapter_checks"]:
@@ -207,6 +209,7 @@ def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None
         for check in validation["chapter_checks"]
     }
     chapters = json.loads(CHAPTER_FACTS_JSON.read_text())["chapters"]
+    alignment_issues = model_issues_by_chapter()
 
     first_discrepancy: str | None = None
     prior_discrepancy = False
@@ -214,13 +217,16 @@ def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None
         chapter_num = str(chapter["chapter_num"])
         model = chapter["model_validation"]
         check = checks[chapter_num]
+        has_alignment_issue = bool(alignment_issues.get(chapter_num))
+        expected_current = bool(check["has_discrepancy"] or has_alignment_issue)
+        expected_status = "discrepancy" if expected_current else check["status"]
 
-        assert model["status"] == check["status"]
-        assert model["current_discrepancy"] is check["has_discrepancy"]
+        assert model["status"] == expected_status
+        assert model["current_discrepancy"] is expected_current
         assert model["prior_discrepancy"] is prior_discrepancy
         assert model["first_discrepancy_chapter_num"] == first_discrepancy
 
-        if check["has_discrepancy"]:
+        if expected_current:
             if first_discrepancy is None:
                 first_discrepancy = chapter_num
             prior_discrepancy = True

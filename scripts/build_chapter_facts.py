@@ -40,7 +40,7 @@ import zipfile
 from collections import Counter
 
 from _common import write_validated_json
-from chapter_alignment import fail_if_misaligned
+from chapter_alignment import model_issues_by_chapter
 from data_paths import DERIVED, MANUAL, RAW, ROOT
 from data_release import refresh_current_runtime_manifest
 from eligibility_spans import (
@@ -311,11 +311,6 @@ def main() -> None:
     if not EPUB.exists():
         raise SystemExit(f"missing {EPUB.relative_to(ROOT)}")
 
-    # Re-alignment guard. Errors out before doing any join work if a
-    # chapter's curator overrides are anchored to a stale predicted-
-    # roll shape. See scripts/chapter_alignment.py for diagnostics.
-    fail_if_misaligned()
-
     chapters = json.loads(CHAPTERS.read_text())["chapters"]
     chapters.sort(key=lambda c: tuple(c["sort_key"]))
 
@@ -370,6 +365,7 @@ def main() -> None:
         str(row["chapter_num"]): row
         for row in roll_validation_doc.get("chapter_checks", [])
     }
+    alignment_issues_by_chapter = model_issues_by_chapter()
     pub_rows = json.loads(PUBLICATION_DATES.read_text())["chapters"]
     pub_by_chap = {r["chapter_num"]: r for r in pub_rows}
 
@@ -669,7 +665,7 @@ def main() -> None:
                 unknowns += 1
         chapter_roll_constellations.update(_roll_constellation_counts(rolls_out))
 
-        model_check = model_checks_by_chapter.get(cn, {
+        model_check = dict(model_checks_by_chapter.get(cn, {
             "status": "unknown",
             "has_discrepancy": False,
             "raw_has_discrepancy": False,
@@ -683,7 +679,13 @@ def main() -> None:
             "synthetic_slot_count": 0,
             "resolved_issue_codes": [],
             "issues": [],
-        })
+        }))
+        alignment_issues = alignment_issues_by_chapter.get(cn, [])
+        if alignment_issues:
+            model_check["issues"] = list(model_check.get("issues") or []) + alignment_issues
+            model_check["status"] = "discrepancy"
+            model_check["has_discrepancy"] = True
+            model_check["raw_has_discrepancy"] = True
 
         # ---------- chapter row ----------
         pub = pub_by_chap[cn]

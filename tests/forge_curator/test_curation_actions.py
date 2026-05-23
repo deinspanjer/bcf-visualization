@@ -148,6 +148,26 @@ def test_save_quote_exits_visual_mode_after_success(
     assert prose.visual_line_mode is False
 
 
+def test_first_save_quote_stamps_new_chapter_override_fingerprint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    start = cs.prose.word_offsets[24][0]
+    end = cs.prose.word_offsets[27][1]
+    monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: _selected_prose((start, end)))
+    app._post_curation_refresh = lambda _message: None
+
+    app._action_save_quote("2")
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    entry = overrides["chapter_roll_overrides"]["2"]
+    assert entry["_fingerprint"] == "sha256:fixturechapter2"
+
+
 def test_multi_quote_persistence_creates_index_aligned_roll_rows(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -198,6 +218,50 @@ def test_multi_quote_can_leave_deferred_roll_at_mechanical_visualization(
     assert roll["evidence_quotes"] == [
         {"text": "later quote", "mention_chapter_num": "2", "mention_word_position": 24}
     ]
+
+
+def test_persistence_shift_roll_evidence_preserves_quote_sets_atomically(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    persistence = fixture.loaded_app("2").persistence
+    first_quote = {
+        "text": "first quote",
+        "mention_chapter_num": "2",
+        "mention_word_position": 20,
+    }
+    second_quotes = [
+        {
+            "text": "second quote",
+            "mention_chapter_num": "2",
+            "mention_word_position": 40,
+        },
+        {
+            "text": "second context",
+            "mention_chapter_num": "2",
+            "mention_word_position": 41,
+        },
+    ]
+    persistence.append_roll_evidence_at_index("2", 1, **first_quote)
+    for quote in second_quotes:
+        persistence.append_roll_evidence_at_index("2", 2, **quote)
+
+    result = persistence.shift_roll_evidence_for_deferred_source_assignment(
+        target_chapter_num="1",
+        target_index=1,
+        source_chapter_num="2",
+        source_index=1,
+    )
+
+    rolls = persistence.chapter_roll_overrides["chapter_roll_overrides"]
+    assert result == "shifted"
+    assert rolls["1"]["rolls"][0]["evidence_quotes"] == [first_quote]
+    assert rolls["2"]["rolls"][0]["evidence_quotes"] == second_quotes
+    assert rolls["2"]["rolls"][1]["evidence_quotes"] == []
+    journal_entries = list((fixture.manual / ".session_journals").glob("*.jsonl"))
+    assert journal_entries
+    assert "shift_roll_evidence_for_deferred_source_assignment" in journal_entries[-1].read_text()
 
 
 def test_save_quote_multi_updates_deferred_predicted_target_and_refreshes(
@@ -586,6 +650,55 @@ def test_source_assignment_action_links_open_target_to_source_roll(
     assert refreshes == ["ch 2 roll #2 source = Roll 2"]
 
 
+def test_source_assignment_action_can_use_obtained_perk_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    (fixture.derived / "obtained_perks.json").write_text(json.dumps({
+        "perks": [
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "I Am Iron Man",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 400,
+                "free": False,
+                "constellation": "Knowledge",
+            }
+        ]
+    }))
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    app = fixture.loaded_app("2")
+    refreshes: list[str] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+
+    def push_screen(screen) -> None:
+        target = next(
+            roll for roll in screen._targets
+            if roll.get("display_kind") == "predicted_slot"
+            and roll.get("target_roll_index") == 2
+        )
+        source = next(
+            roll for roll in screen._sources
+            if roll.get("source_kind") == "obtained_perk"
+            and roll.get("rolled_perk_name") == "I Am Iron Man"
+        )
+        screen._on_confirm(target, source)
+
+    app.push_screen = push_screen
+
+    app._action_assign_source_roll("2")
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    saved = overrides["chapter_roll_overrides"]["2"]["rolls"][1]
+    assert saved["source_roll_number"] is None
+    assert saved["outcome"] == "hit"
+    assert saved["perks"] == ["I Am Iron Man"]
+    assert saved["constellation"] == "Knowledge"
+    assert refreshes == ["ch 2 roll #2 source = I Am Iron Man"]
+
+
 def test_source_assignment_action_can_target_deferred_predicted_slot(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -625,6 +738,279 @@ def test_source_assignment_action_can_target_deferred_predicted_slot(
         }
     ]
     assert refreshes == ["ch 1 roll #1 source = Roll 2"]
+
+
+def test_source_assignment_action_shifts_chapter_quote_evidence_to_deferred_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    extra_rolls = [
+        {
+            **dict(app.data.roll_facts["rolls"][1]),
+            "roll_number": 3,
+            "roll_sequence_in_chapter": 2,
+            "source_row_index": 3,
+            "source_roll_index": 2,
+            "source_word_position": 40,
+            "evidence_quotes": [
+                {
+                    "text": "second source quote",
+                    "mention_chapter_num": "2",
+                    "mention_word_position": 40,
+                }
+            ],
+        },
+        {
+            **dict(app.data.roll_facts["rolls"][1]),
+            "roll_number": 4,
+            "roll_sequence_in_chapter": 3,
+            "source_row_index": 4,
+            "source_roll_index": 3,
+            "source_word_position": 60,
+            "evidence_quotes": [
+                {
+                    "text": "third source quote",
+                    "mention_chapter_num": "2",
+                    "mention_word_position": 60,
+                },
+                {
+                    "text": "third source context",
+                    "mention_chapter_num": "2",
+                    "mention_word_position": 61,
+                },
+            ],
+        },
+    ]
+    app.data.roll_facts["rolls"].extend(extra_rolls)
+    cs.derived.roll_facts.extend(extra_rolls)
+    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="forge motes connection",
+        mention_chapter_num="2",
+        mention_word_position=20,
+    )
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        2,
+        text="second source quote",
+        mention_chapter_num="2",
+        mention_word_position=40,
+    )
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        3,
+        text="third source quote",
+        mention_chapter_num="2",
+        mention_word_position=60,
+    )
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        3,
+        text="third source context",
+        mention_chapter_num="2",
+        mention_word_position=61,
+    )
+    refreshes: list[str] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+
+    def push_screen(screen) -> None:
+        target = next(
+            roll for roll in screen._targets
+            if roll.get("display_kind") == "deferred_in"
+            and roll.get("target_chapter_num") == "1"
+            and roll.get("target_roll_index") == 1
+        )
+        source = next(
+            roll for roll in screen._sources
+            if roll.get("chapter_num") == "2"
+            and roll.get("source_roll_index") == 1
+        )
+        screen._on_confirm(target, source)
+
+    app.push_screen = push_screen
+
+    app._action_assign_source_roll("2")
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    ch1_roll = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    ch2_rolls = overrides["chapter_roll_overrides"]["2"]["rolls"]
+    assert ch1_roll["source_roll_number"] == 2
+    assert ch1_roll["evidence_quotes"] == [
+        {
+            "text": "forge motes connection",
+            "mention_chapter_num": "2",
+            "mention_word_position": 20,
+        }
+    ]
+    assert ch2_rolls[0]["evidence_quotes"] == [
+        {
+            "text": "second source quote",
+            "mention_chapter_num": "2",
+            "mention_word_position": 40,
+        }
+    ]
+    assert ch2_rolls[1]["evidence_quotes"] == [
+        {
+            "text": "third source quote",
+            "mention_chapter_num": "2",
+            "mention_word_position": 60,
+        },
+        {
+            "text": "third source context",
+            "mention_chapter_num": "2",
+            "mention_word_position": 61,
+        },
+    ]
+    assert ch2_rolls[2]["evidence_quotes"] == []
+    assert refreshes == ["ch 1 roll #1 source = Roll 2"]
+
+
+def test_source_assignment_action_uses_source_mechanical_target_for_open_deferred_slot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    app.data.predicted["predicted"].append({
+        "chapter_num": "1",
+        "slot_index": 2,
+        "cp_offset": 40,
+        "epub_offset": 40,
+        "roll_number": 3,
+    })
+    source_roll = dict(app.data.roll_facts["rolls"][1])
+    source_roll.update(
+        {
+            "chapter_num": "2",
+            "roll_number": 2,
+            "predicted_chapter_num": "1",
+            "mechanical_chapter_num": "1",
+            "mechanical_word_position": 20,
+            "mechanical_cumulative_word_offset": 20,
+            "source_chapter_num": "2",
+            "source_roll_index": 1,
+            "source_word_position": 20,
+            "visible_chapter_nums": ["1", "2"],
+        }
+    )
+    cs.derived.roll_facts = [source_roll]
+    app.data.roll_facts["rolls"] = [source_roll]
+    app.persistence.mark_roll_deferred_to_later_chapter("1", 2)
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="forge motes connection",
+        mention_chapter_num="2",
+        mention_word_position=20,
+    )
+    app._post_curation_refresh = lambda _message: None
+
+    def push_screen(screen) -> None:
+        open_deferred = next(
+            roll for roll in screen._targets
+            if roll.get("display_kind") == "deferred_in"
+            and roll.get("target_chapter_num") == "1"
+            and roll.get("target_roll_index") == 2
+        )
+        source = next(roll for roll in screen._sources if roll.get("roll_number") == 2)
+        screen._on_confirm(open_deferred, source)
+
+    app.push_screen = push_screen
+    before = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+
+    app._action_assign_source_roll("2")
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    ch1_rolls = overrides["chapter_roll_overrides"]["1"]["rolls"]
+    assert ch1_rolls[0]["source_roll_number"] == 2
+    assert ch1_rolls[0]["evidence_quotes"] == [
+        {
+            "text": "forge motes connection",
+            "mention_chapter_num": "2",
+            "mention_word_position": 20,
+        }
+    ]
+    assert ch1_rolls[1]["source_roll_number"] is None
+    assert ch1_rolls[1]["evidence_quotes"] == []
+
+    undone = app.persistence.undo_last()
+
+    assert undone == ("assign_source_roll_with_evidence_at_index", "1")
+    assert json.loads((fixture.manual / "chapter_roll_overrides.json").read_text()) == before
+
+
+def test_source_assignment_action_skips_quote_shift_when_deferred_target_has_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
+    app.persistence.append_roll_evidence_at_index(
+        "1",
+        1,
+        text="existing deferred quote",
+        mention_chapter_num="2",
+        mention_word_position=10,
+    )
+    app.persistence.append_roll_evidence_at_index(
+        "2",
+        1,
+        text="forge motes connection",
+        mention_chapter_num="2",
+        mention_word_position=20,
+    )
+    refreshes: list[str] = []
+    flashes: list[str] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+    app._flash = lambda message, **_kwargs: flashes.append(message)
+
+    def push_screen(screen) -> None:
+        target = next(
+            roll for roll in screen._targets
+            if roll.get("display_kind") == "deferred_in"
+            and roll.get("target_chapter_num") == "1"
+            and roll.get("target_roll_index") == 1
+        )
+        source = next(
+            roll for roll in screen._sources
+            if roll.get("chapter_num") == "2"
+            and roll.get("source_roll_index") == 1
+        )
+        screen._on_confirm(target, source)
+
+    app.push_screen = push_screen
+
+    app._action_assign_source_roll("2")
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    ch1_roll = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    ch2_roll = overrides["chapter_roll_overrides"]["2"]["rolls"][0]
+    assert ch1_roll["source_roll_number"] == 2
+    assert ch1_roll["evidence_quotes"] == [
+        {
+            "text": "existing deferred quote",
+            "mention_chapter_num": "2",
+            "mention_word_position": 10,
+        }
+    ]
+    assert ch2_roll["evidence_quotes"] == [
+        {
+            "text": "forge motes connection",
+            "mention_chapter_num": "2",
+            "mention_word_position": 20,
+        }
+    ]
+    assert refreshes == ["ch 1 roll #1 source = Roll 2"]
+    assert flashes == ["assign source: deferred target already has quote evidence"]
 
 
 def test_source_assignment_resolves_later_chapter_deferral_to_current_chapter(

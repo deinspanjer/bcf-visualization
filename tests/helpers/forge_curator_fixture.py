@@ -265,6 +265,15 @@ def forge_curator_fixture(tmp_path: Path, monkeypatch) -> ForgeCuratorFixture:
         },
     )
     _write_json(
+        derived / "chapter_alignment_fingerprints.json",
+        {
+            "chapter_alignment_fingerprints": {
+                "1": "sha256:fixturechapter1",
+                "2": "sha256:fixturechapter2",
+            }
+        },
+    )
+    _write_json(
         derived / "roll_validation.json",
         {"chapter_checks": [{"chapter_num": "1"}, {"chapter_num": "2"}]},
     )

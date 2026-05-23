@@ -73,8 +73,25 @@ slot. Roll actions such as hit/miss, quote evidence, constellation, and
 perk selection target that original mechanical roll while still letting
 you work from the chapter where the evidence appears.
 
+When `<space>S` assigns a current-chapter source roll to a
+deferred roll from an earlier chapter, the curator automatically shifts
+saved narrative quote evidence back by one roll: the source row's quote
+moves to the deferred roll, each following current-chapter quote set
+moves to the previous roll, and the last affected row is left empty. If
+the deferred roll already has saved quote evidence, the curator leaves
+the quote evidence unchanged and flashes a warning so you can inspect it
+manually.
+
 The Evidence list marks the saved quote under the prose cursor with
 `▸`, matching the selected-roll marker used in the Rolls list.
+
+Use `<space>D` to open the chapter curation deletion picker. The picker
+lists persisted curation records for the current chapter, plus related
+cross-chapter source links when a source roll was deferred into another
+chapter. Select only stale records, then confirm; the curator clears the
+selected manual curation fields, journals the change, regenerates
+derived data, and reloads the chapter. It does not delete derived JSON
+directly.
 
 ## Persistence
 

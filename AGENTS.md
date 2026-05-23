@@ -11,6 +11,13 @@
   `data/derived/*.json`: prefer `.venv/bin/python scripts/data_release.py
   download-dev` for a fresh checkout, or use the Codex local environment's
   worktree-copy fast path when it succeeds.
+- Regenerate generated data through the dependency-aware pipeline wrapper.
+  For normal data regeneration after curation or derivation changes, run
+  `.venv/bin/python scripts/pipeline.py --target data`; add `--force` when a
+  full rebuild is needed. Manual one-off scripts such as `parse_rolls.py`,
+  `derive_roll_outcomes.py`, `derive_roll_facts.py`, and
+  `build_chapter_facts.py` are acceptable only for focused investigation, and
+  should not be treated as the final regeneration path.
 - Use pytest for Python test execution and new Python tests.
 - Before reporting code, test, or generated-data changes as complete, run
   `.venv/bin/python scripts/verify.py`. If that command cannot be run, report

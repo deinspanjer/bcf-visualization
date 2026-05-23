@@ -68,6 +68,86 @@ def test_check_reports_a_mismatch(tmp_path, monkeypatch):
     assert mismatches[0].current == "sha256:new0000000000000"
 
 
+def test_alignment_model_issues_are_chapter_scoped(tmp_path, monkeypatch):
+    import chapter_alignment
+    overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
+    _write(overrides, {
+        "chapter_roll_overrides": {
+            "65": {"_fingerprint": "sha256:old0000000000000", "rolls": []},
+        }
+    })
+    _write(fingerprints, {
+        "chapter_alignment_fingerprints": {
+            "65": "sha256:new0000000000000",
+        }
+    })
+
+    issues = chapter_alignment.model_issues_by_chapter()
+
+    assert set(issues) == {"65"}
+    assert issues["65"][0]["code"] == "chapter_alignment_stale"
+    assert issues["65"][0]["severity"] == "error"
+    assert "stored=sha256:old0000000000000" in issues["65"][0]["message"]
+
+
+def test_check_allows_eligibility_drift_that_preserves_local_slot_shape(
+    tmp_path,
+    monkeypatch,
+):
+    import chapter_alignment
+    from predict_rolls import chapter_alignment_fingerprint
+
+    overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
+    before = [
+        {
+            "chapter_num": "65",
+            "roll_number": 462,
+            "cp_offset": 924000,
+            "epub_offset": 1233894,
+            "cp_rule_regime": 1,
+            "roll_trigger_cp_threshold": 100,
+        },
+        {
+            "chapter_num": "65",
+            "roll_number": 463,
+            "cp_offset": 926000,
+            "epub_offset": 1235894,
+            "cp_rule_regime": 1,
+            "roll_trigger_cp_threshold": 100,
+        },
+    ]
+    after = [
+        {
+            **before[0],
+            "roll_number": 461,
+            "cp_offset": 922000,
+            "epub_offset": 1231894,
+        },
+        {
+            **before[1],
+            "roll_number": 462,
+            "cp_offset": 924000,
+            "epub_offset": 1233894,
+        },
+    ]
+    _write(overrides, {
+        "chapter_roll_overrides": {
+            "65": {
+                "_fingerprint": chapter_alignment_fingerprint(before),
+                "rolls": [{"evidence_quotes": [{"text": "saved quote"}]}],
+            },
+        }
+    })
+    _write(fingerprints, {
+        "chapter_alignment_fingerprints": {
+            "65": chapter_alignment_fingerprint(after),
+        }
+    })
+
+    assert chapter_alignment.check() == []
+    chapter_alignment.fail_if_misaligned()
+
+
 def test_fail_if_misaligned_raises_with_chapter_in_message(tmp_path, monkeypatch):
     import chapter_alignment
     overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
@@ -85,6 +165,8 @@ def test_fail_if_misaligned_raises_with_chapter_in_message(tmp_path, monkeypatch
         chapter_alignment.fail_if_misaligned()
     assert "65" in str(exc.value)
     assert "stale" in str(exc.value)
+    assert "<space>a" not in str(exc.value)
+    assert "curator TUI" not in str(exc.value)
 
 
 def test_fail_if_misaligned_errors_on_unstamped_override(tmp_path, monkeypatch):
@@ -106,13 +188,14 @@ def test_fail_if_misaligned_errors_on_unstamped_override(tmp_path, monkeypatch):
     assert "bootstrap_chapter_alignment_anchors" in str(exc.value)
 
 
-def test_live_data_passes_after_bootstrap():
-    """The live committed data must always satisfy the guard.
-
-    If this fails after a real edit, run
-    scripts/bootstrap_chapter_alignment_anchors.py to re-stamp."""
+def test_live_alignment_state_is_available_as_model_issues():
+    """Live stale alignment state must be representable as chapter issues."""
     import chapter_alignment
     # Force reload of module-level paths in case a prior test monkeypatched.
     import importlib
     importlib.reload(chapter_alignment)
-    chapter_alignment.fail_if_misaligned()
+    mismatches = chapter_alignment.check()
+    issues = chapter_alignment.model_issues_by_chapter()
+    assert set(issues) == {m.chapter_num for m in mismatches}
+    for chapter_issues in issues.values():
+        assert chapter_issues[0]["code"] == "chapter_alignment_stale"

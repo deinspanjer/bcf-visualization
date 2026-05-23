@@ -47,27 +47,19 @@ dependencies live in `[project].dependencies`; development/test
 dependencies live in `[project.optional-dependencies].dev`. Do not add
 or use `requirements*.txt` files for this repo.
 
-Typical full regeneration order:
+The dependency-aware pipeline wrapper is the canonical regeneration path
+for generated data. After curation or derivation changes, run:
 
 ```sh
-.venv/bin/python scripts/parse_chapters.py
-.venv/bin/python scripts/parse_rolls.py
-.venv/bin/python scripts/parse_reference.py
-.venv/bin/python scripts/extract_chapter_sections.py
-.venv/bin/python scripts/seed_chapter_publication_dates.py
-.venv/bin/python scripts/build_section_classifications.py
-.venv/bin/python scripts/build_perk_directory.py
-.venv/bin/python scripts/predict_rolls.py
-.venv/bin/python scripts/find_roll_locations.py
-.venv/bin/python scripts/find_text_backed_rolls.py
-.venv/bin/python scripts/validate_roll_locations.py
-.venv/bin/python scripts/derive_roll_outcomes.py
-.venv/bin/python scripts/derive_roll_facts.py
-.venv/bin/python scripts/build_chapter_facts.py
 .venv/bin/python scripts/pipeline.py --target data
-.venv/bin/python scripts/spot_check.py
-.venv/bin/python scripts/make_charts.py
 ```
+
+Use `--force` when a full rebuild is needed. Manual one-off scripts such
+as `parse_rolls.py`, `derive_roll_outcomes.py`, `derive_roll_facts.py`,
+and `build_chapter_facts.py` are acceptable for focused investigation or
+debugging checkpoints, but do not treat them as the final regeneration
+path. Before reporting code, test, or generated-data changes as complete,
+still run `.venv/bin/python scripts/verify.py`.
 
 `parse_chapters.py` parses the EPUB navigation document for the chapter
 list (number, ordinal, title, href, exact word count). `data/raw/`

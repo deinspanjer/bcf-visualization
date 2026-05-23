@@ -74,6 +74,29 @@ def check() -> list[Mismatch]:
     return mismatches
 
 
+def model_issues_by_chapter() -> dict[str, list[dict]]:
+    """Return alignment mismatches as chapter-scoped model issues.
+
+    Build products should surface stale chapter-local override alignment
+    on the affected chapters rather than aborting unrelated curation work
+    in the current chapter.
+    """
+    issues: dict[str, list[dict]] = {}
+    for mismatch in check():
+        issues[mismatch.chapter_num] = [{
+            "code": "chapter_alignment_stale",
+            "severity": "error",
+            "message": (
+                "Chapter roll overrides are anchored to a stale predicted-roll "
+                f"slot sequence (stored={mismatch.stored} current={mismatch.current}). "
+                "Review this chapter's override slots before trusting its curated rolls."
+            ),
+            "stored_fingerprint": mismatch.stored,
+            "current_fingerprint": mismatch.current,
+        }]
+    return issues
+
+
 def chapters_overridden_but_unstamped() -> list[str]:
     """Chapters with an override entry but no stamped fingerprint."""
     if not OVERRIDES_PATH.exists():
@@ -111,11 +134,11 @@ def fail_if_misaligned() -> None:
         f"{len(mismatches)} chapter(s) have curator overrides anchored to a "
         "stale predicted-roll shape:\n"
         + "\n".join(lines)
-        + "\n\nThe predicted-roll positions in these chapters have shifted "
+        + "\n\nThe predicted-roll slot sequence in these chapters has changed "
         "since the overrides were authored (likely cause: edits to "
         "section_classifications.json / regime_transitions.json / "
-        "obtained_perks.json). Re-align via the curator TUI (`<space>a`) "
-        "or, if you've manually reconciled, re-stamp with "
+        "obtained_perks.json). If you've manually reconciled the chapter-local "
+        "override slots, re-stamp with "
         "`python scripts/bootstrap_chapter_alignment_anchors.py`."
     )
 

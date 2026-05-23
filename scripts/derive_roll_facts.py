@@ -650,6 +650,7 @@ BLOCKING_VALIDATION_CODES = {
     "paid_rolls_exceed_predicted_slots",
     "known_attempts_exceed_predicted_slots",
     "cost_schedule_infeasible",
+    "curated_hit_missing_perks",
 }
 
 
@@ -666,6 +667,23 @@ def _validation_status(issues: list[dict]) -> tuple[str, bool, bool]:
         has_discrepancy,
         raw_has_discrepancy,
     )
+
+
+def _manual_override_issues(chapter_num: str, override: dict | None) -> list[dict]:
+    issues: list[dict] = []
+    if not override:
+        return issues
+    for idx, entry in enumerate(override.get("rolls") or [], start=1):
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("outcome") != "hit" or entry.get("perks"):
+            continue
+        issues.append({
+            "code": "curated_hit_missing_perks",
+            "severity": "error",
+            "message": f"Curated hit roll #{idx} does not name any perk.",
+        })
+    return issues
 
 
 def _explicit_extra_slot_position(
@@ -1069,6 +1087,11 @@ def _override_needs_direct_rows(
             and any(entry.get("outcome") == "hit" for entry in structural_entries)
         ):
             return True
+        if any(
+            entry.get("outcome") == "hit" and not entry.get("perks")
+            for entry in structural_entries
+        ):
+            return True
         hosted_names = {
             _norm_name(p.get("name"))
             for _idx, row in curator_rows
@@ -1317,6 +1340,11 @@ def _direct_override_rows(
         display_policy = entry.get("display_position_policy")
         if display_policy is None:
             display_policy = "mechanical"
+        explicit_source_roll_number = entry.get("source_roll_number")
+        explicit_roll_number = (
+            int(explicit_source_roll_number)
+            if explicit_source_roll_number is not None else None
+        )
         payload = {
             "_source_idx": source_idx,
             "_override_origin": override_idx,
@@ -1336,11 +1364,17 @@ def _direct_override_rows(
                 or template.get("constellation")
             ),
             "constellation_revealed": bool(entry.get("constellation")),
-            "roll_number": template.get("roll_number"),
+            "roll_number": (
+                explicit_roll_number
+                if explicit_roll_number is not None else template.get("roll_number")
+            ),
             "raw": template.get("raw"),
         }
-        if entry.get("source_roll_number") is not None:
-            payload["_source_roll_number"] = int(entry["source_roll_number"])
+        if explicit_roll_number is not None:
+            payload["_source_roll_number"] = explicit_roll_number
+            if not template or str(template.get("chapter_num")) == str(chapter_num):
+                payload["_source_chapter_num"] = chapter_num
+                payload["_source_roll_index"] = override_idx + 1
         if entry.get("source_deferred_to_chapter") is not None:
             payload["_source_deferred_to_chapter"] = str(
                 entry["source_deferred_to_chapter"]
@@ -1878,21 +1912,31 @@ def main() -> None:
                 principal_instance = (
                     paid_meta.get("instance") if paid_meta else None
                 )
-                source_info = (
-                    source_occurrences_by_roll_number.get(int(canonical_roll_number))
-                    if canonical_roll_number is not None else None
-                )
-                source_chapter_num = str(
-                    (source_info or {}).get("source_chapter_num")
-                    or owner_chapter_num
-                )
-                source_roll_index = (source_info or {}).get("source_roll_index")
-                if source_roll_index is None:
-                    source_roll_index = local_roll_index
-                source_word_position = (source_info or {}).get("source_word_position")
-                source_cumulative_word_offset = (
-                    (source_info or {}).get("source_cumulative_word_offset")
-                )
+                if row.get("_source_chapter_num") is not None:
+                    source_chapter_num = str(row["_source_chapter_num"])
+                    source_roll_index = row.get("_source_roll_index")
+                    if source_roll_index is None:
+                        source_roll_index = local_roll_index
+                    source_word_position = row.get("_source_word_position")
+                    source_cumulative_word_offset = row.get(
+                        "_source_cumulative_word_offset"
+                    )
+                else:
+                    source_info = (
+                        source_occurrences_by_roll_number.get(int(canonical_roll_number))
+                        if canonical_roll_number is not None else None
+                    )
+                    source_chapter_num = str(
+                        (source_info or {}).get("source_chapter_num")
+                        or owner_chapter_num
+                    )
+                    source_roll_index = (source_info or {}).get("source_roll_index")
+                    if source_roll_index is None:
+                        source_roll_index = local_roll_index
+                    source_word_position = (source_info or {}).get("source_word_position")
+                    source_cumulative_word_offset = (
+                        (source_info or {}).get("source_cumulative_word_offset")
+                    )
                 visible_chapters = _visible_chapter_nums(
                     owner_chapter_num,
                     chapter_num,
@@ -2366,6 +2410,7 @@ def main() -> None:
         required_paid_count = len(inp.get("hits") or [])
         known_attempt_count = known_attempt_count_by_chapter.get(cn, 0)
         issues: list[dict] = []
+        issues.extend(_manual_override_issues(cn, multi_overrides.get(cn)))
 
         if required_paid_count > predicted_count:
             issues.append({

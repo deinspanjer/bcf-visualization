@@ -15,6 +15,7 @@ if str(SCRIPTS) not in sys.path:
 from multi_grab import load_overrides, merge_paid_units  # noqa: E402
 from derive_roll_facts import (  # noqa: E402
     _direct_override_rows,
+    _manual_override_issues,
     _override_needs_direct_rows,
     _restructure_curator_rows,
 )
@@ -295,6 +296,49 @@ def test_direct_deferred_rows_can_use_cross_chapter_source_template() -> None:
     ]
 
 
+def test_explicit_source_roll_number_is_identity_without_template() -> None:
+    rows = _direct_override_rows(
+        "35.1",
+        [],
+        {"rolls": [{"outcome": "miss", "source_roll_number": 200}]},
+        {},
+    )
+
+    assert rows[0]["roll_number"] == 200
+    assert rows[0]["_source_roll_number"] == 200
+    assert rows[0]["_source_chapter_num"] == "35.1"
+    assert rows[0]["_source_roll_index"] == 1
+
+
+def test_explicit_source_roll_number_wins_over_fallback_template() -> None:
+    rows = _direct_override_rows(
+        "35.1",
+        [
+            (
+                1,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 100,
+                    "banked_after": 100,
+                    "roll_number": 207,
+                    "chapter_num": "35.1",
+                    "constellation": "Crafting",
+                    "raw": "Roll 207",
+                },
+            )
+        ],
+        {"rolls": [{"outcome": "miss", "source_roll_number": 200}]},
+        {},
+    )
+
+    assert rows[0]["roll_number"] == 200
+    assert rows[0]["_source_roll_number"] == 200
+    assert rows[0]["_source_chapter_num"] == "35.1"
+    assert rows[0]["_source_roll_index"] == 1
+    assert rows[0]["constellation"] == "Crafting"
+
+
 def test_source_roll_assignment_uses_direct_rows_even_in_same_chapter() -> None:
     override = {
         "rolls": [
@@ -480,6 +524,47 @@ def test_mixed_explicit_miss_and_hit_override_uses_direct_rows() -> None:
     }
 
     assert _override_needs_direct_rows("9", override, curator_rows)
+
+
+def test_explicit_empty_hit_override_uses_direct_rows() -> None:
+    curator_rows = [
+        (
+            31,
+            {
+                "kind": "miss",
+                "perks": [],
+                "banked_before": 100,
+                "banked_after": 100,
+                "roll_number": 30,
+                "raw": "Roll 30",
+            },
+        ),
+    ]
+    override = {
+        "rolls": [
+            {"outcome": "hit", "perks": []},
+        ],
+    }
+
+    assert _override_needs_direct_rows("9", override, curator_rows)
+
+
+def test_explicit_empty_hit_override_reports_model_issue() -> None:
+    override = {
+        "rolls": [
+            {"outcome": "hit", "perks": []},
+        ],
+    }
+
+    issues = _manual_override_issues("9", override)
+
+    assert issues == [
+        {
+            "code": "curated_hit_missing_perks",
+            "severity": "error",
+            "message": "Curated hit roll #1 does not name any perk.",
+        }
+    ]
 
 
 def test_skipped_override_consumes_predicted_slot_without_roll_fact() -> None:

@@ -46,7 +46,7 @@ def test_fingerprint_deterministic_for_same_inputs():
     assert chapter_alignment_fingerprint(rolls) == chapter_alignment_fingerprint(rolls)
 
 
-def test_fingerprint_changes_when_cp_offset_shifts():
+def test_fingerprint_ignores_cp_offset_shifts():
     a = [
         {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
          "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
@@ -57,10 +57,10 @@ def test_fingerprint_changes_when_cp_offset_shifts():
          "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
          "chapter_num": "1"},
     ]
-    assert chapter_alignment_fingerprint(a) != chapter_alignment_fingerprint(b)
+    assert chapter_alignment_fingerprint(a) == chapter_alignment_fingerprint(b)
 
 
-def test_fingerprint_changes_when_epub_offset_shifts():
+def test_fingerprint_ignores_epub_offset_shifts():
     a = [
         {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
          "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
@@ -71,7 +71,27 @@ def test_fingerprint_changes_when_epub_offset_shifts():
          "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
          "chapter_num": "1"},
     ]
-    assert chapter_alignment_fingerprint(a) != chapter_alignment_fingerprint(b)
+    assert chapter_alignment_fingerprint(a) == chapter_alignment_fingerprint(b)
+
+
+def test_fingerprint_ignores_global_roll_number_shifts():
+    a = [
+        {"roll_number": 461, "cp_offset": 922000, "epub_offset": 1231894,
+         "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
+         "chapter_num": "65"},
+        {"roll_number": 462, "cp_offset": 924000, "epub_offset": 1233894,
+         "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
+         "chapter_num": "65"},
+    ]
+    b = [
+        {"roll_number": 460, "cp_offset": 922000, "epub_offset": 1231894,
+         "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
+         "chapter_num": "65"},
+        {"roll_number": 461, "cp_offset": 924000, "epub_offset": 1233894,
+         "cp_rule_regime": 1, "roll_trigger_cp_threshold": 100,
+         "chapter_num": "65"},
+    ]
+    assert chapter_alignment_fingerprint(a) == chapter_alignment_fingerprint(b)
 
 
 def test_fingerprint_changes_when_regime_shifts():
@@ -127,8 +147,8 @@ def test_compute_alignment_fingerprints_groups_by_chapter():
     ]
     fps = compute_alignment_fingerprints(rolls)
     assert set(fps.keys()) == {"1", "2"}
-    # Different chapters → different per-chapter sequences → different hashes.
-    assert fps["1"] != fps["2"]
+    assert fps["1"].startswith("sha256:")
+    assert fps["2"].startswith("sha256:")
 
 
 def test_disk_fingerprints_match_recomputation():

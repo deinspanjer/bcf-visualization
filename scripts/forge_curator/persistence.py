@@ -58,6 +58,11 @@ class CurationPersistence:
         journal_dir_path: Path | None = None,
     ) -> None:
         self.chapter_roll_overrides_path = chapter_roll_overrides_path or CHAPTER_ROLL_OVERRIDES
+        self.chapter_alignment_fingerprints_path = (
+            self.chapter_roll_overrides_path.parent.parent
+            / "derived"
+            / "chapter_alignment_fingerprints.json"
+        )
         self.section_classifications_path = (
             section_classifications_path or SECTION_CLASSIFICATIONS
         )
@@ -155,7 +160,21 @@ class CurationPersistence:
             cro[chapter_num] = {"rolls": []}
         elif "rolls" not in cro[chapter_num]:
             cro[chapter_num]["rolls"] = []
+        self._stamp_chapter_alignment_fingerprint(chapter_num, cro[chapter_num])
         return cro[chapter_num]
+
+    def _stamp_chapter_alignment_fingerprint(
+        self,
+        chapter_num: str,
+        entry: dict,
+    ) -> None:
+        if entry.get("_fingerprint"):
+            return
+        if not self.chapter_alignment_fingerprints_path.exists():
+            return
+        doc = json.loads(self.chapter_alignment_fingerprints_path.read_text())
+        fingerprints = doc.get("chapter_alignment_fingerprints") or {}
+        entry["_fingerprint"] = fingerprints.get(str(chapter_num), "sha256:none")
 
     def _ensure_section_classification_entry(
         self,
@@ -340,6 +359,36 @@ class CurationPersistence:
         )
         return roll
 
+    def assign_obtained_perk_at_index(
+        self,
+        chapter_num: str,
+        index: int,
+        *,
+        perk_name: str,
+        constellation: str | None = None,
+    ) -> dict:
+        before = deepcopy(self.chapter_roll_overrides)
+        roll = self.get_or_create_roll_at_index(chapter_num, index)
+        roll["outcome"] = "hit"
+        roll["perks"] = [str(perk_name)]
+        roll["constellation"] = str(constellation) if constellation else None
+        roll["skipped"] = False
+        roll["source_roll_number"] = None
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "assign_obtained_perk_at_index",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "index": int(index),
+                "perk_name": str(perk_name),
+                "constellation": constellation,
+            },
+        )
+        return roll
+
     def ensure_roll_count(self, chapter_num: str, count: int) -> None:
         before = deepcopy(self.chapter_roll_overrides)
         for index in range(1, int(count) + 1):
@@ -383,6 +432,328 @@ class CurationPersistence:
             extra={"index": index},
         )
         return roll
+
+    def _existing_roll_at_index(self, chapter_num: str, index: int) -> dict | None:
+        entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(chapter_num), {})
+        )
+        rolls = entry.get("rolls") or []
+        if not (1 <= int(index) <= len(rolls)):
+            return None
+        roll = rolls[int(index) - 1]
+        return roll if isinstance(roll, dict) else None
+
+    def delete_chapter_curation_items(self, items: list[dict]) -> int:
+        """Clear selected persisted curation fields without deleting roll slots."""
+        before = {
+            "chapter_roll_overrides": deepcopy(self.chapter_roll_overrides),
+            "section_classifications": deepcopy(self.section_classifications),
+        }
+        deleted = 0
+        for item in items:
+            kind = str(item.get("kind") or "")
+            chapter_num = str(item.get("chapter_num") or "")
+            roll_index = item.get("roll_index")
+            if kind == "model_validation_resolution":
+                entry = (
+                    self.chapter_roll_overrides
+                    .get("chapter_roll_overrides", {})
+                    .get(chapter_num, {})
+                )
+                if entry.pop("model_validation_resolution", None) is not None:
+                    deleted += 1
+                continue
+            if kind == "section_eligibility":
+                section_key = str(item.get("section_key") or "")
+                entry = (
+                    self.section_classifications
+                    .get("classifications", {})
+                    .get(section_key)
+                )
+                if (
+                    isinstance(entry, dict)
+                    and str(entry.get("chapter_num")) == chapter_num
+                    and str(entry.get("reason") or "").startswith("curator toggle:")
+                ):
+                    entry["counts_for_cp"] = True
+                    entry.pop("reason", None)
+                    deleted += 1
+                continue
+            if kind == "eligibility_span":
+                section_key = str(item.get("section_key") or "")
+                span_index = int(item.get("span_index", -1))
+                entry = (
+                    self.section_classifications
+                    .get("classifications", {})
+                    .get(section_key)
+                )
+                if isinstance(entry, dict) and str(entry.get("chapter_num")) == chapter_num:
+                    spans = list(entry.get("span_overrides") or [])
+                    if 0 <= span_index < len(spans):
+                        spans.pop(span_index)
+                        if spans:
+                            entry["span_overrides"] = spans
+                        else:
+                            entry.pop("span_overrides", None)
+                        deleted += 1
+                continue
+            if roll_index is None:
+                continue
+            roll = self._existing_roll_at_index(chapter_num, int(roll_index))
+            if roll is None:
+                continue
+            if kind == "source_deferral":
+                if roll.get("source_deferred_to_chapter") is not None:
+                    roll["source_deferred_to_chapter"] = None
+                    deleted += 1
+            elif kind == "source_assignment":
+                if roll.get("source_roll_number") is not None:
+                    roll["source_roll_number"] = None
+                    deleted += 1
+            elif kind == "evidence_quote":
+                quote_index = int(item.get("quote_index", -1))
+                quotes = roll.get("evidence_quotes") or []
+                if 0 <= quote_index < len(quotes):
+                    quotes.pop(quote_index)
+                    roll["evidence_quotes"] = quotes
+                    deleted += 1
+            elif kind == "outcome":
+                if roll.get("outcome") is not None:
+                    roll["outcome"] = None
+                    deleted += 1
+            elif kind == "constellation":
+                if roll.get("constellation") is not None:
+                    roll["constellation"] = None
+                    deleted += 1
+            elif kind == "perks":
+                if roll.get("perks"):
+                    roll["perks"] = []
+                    deleted += 1
+            elif kind == "skipped":
+                if roll.get("skipped"):
+                    roll["skipped"] = False
+                    deleted += 1
+            elif kind == "roll_deferral":
+                changed = False
+                for field, value in (
+                    ("mention_chapter_num", None),
+                    ("mention_word_position", None),
+                    ("display_position_policy", None),
+                    ("deferred_to_later_chapter", False),
+                ):
+                    if roll.get(field) != value:
+                        roll[field] = value
+                        changed = True
+                if changed:
+                    deleted += 1
+        if not deleted:
+            return 0
+        chapter_before = before["chapter_roll_overrides"]
+        section_before = before["section_classifications"]
+        if self.chapter_roll_overrides != chapter_before:
+            self._write_chapter_roll_overrides(chapter_before)
+        if self.section_classifications != section_before:
+            self._write_section_classifications(section_before)
+        self._append_journal(
+            "delete_chapter_curation_items",
+            MANUAL,
+            ",".join(sorted({str(item.get("chapter_num") or "") for item in items})),
+            before,
+            {
+                "chapter_roll_overrides": deepcopy(self.chapter_roll_overrides),
+                "section_classifications": deepcopy(self.section_classifications),
+            },
+            extra={"items": deepcopy(items), "deleted": deleted},
+        )
+        return deleted
+
+    @staticmethod
+    def _clear_quote_display_anchor_if_empty(roll: dict, old_quotes: list[dict]) -> None:
+        if roll.get("evidence_quotes"):
+            return
+        if roll.get("display_position_policy") != "mention":
+            return
+        for quote in old_quotes:
+            if (
+                str(roll.get("mention_chapter_num"))
+                == str(quote.get("mention_chapter_num"))
+                and roll.get("mention_word_position")
+                == quote.get("mention_word_position")
+            ):
+                roll["mention_chapter_num"] = None
+                roll["mention_word_position"] = None
+                roll["display_position_policy"] = None
+                return
+
+    def shift_roll_evidence_for_deferred_source_assignment(
+        self,
+        *,
+        target_chapter_num: str,
+        target_index: int,
+        source_chapter_num: str,
+        source_index: int,
+    ) -> str:
+        """Move a chapter-local quote chain after a deferred source assignment."""
+        target_roll = self.get_or_create_roll_at_index(
+            str(target_chapter_num), int(target_index)
+        )
+        if target_roll.get("evidence_quotes"):
+            return "target_has_evidence"
+
+        source_entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(source_chapter_num))
+        )
+        source_rolls = (source_entry or {}).get("rolls") or []
+        if not (1 <= int(source_index) <= len(source_rolls)):
+            return "no_source_evidence"
+        source_roll = source_rolls[int(source_index) - 1]
+        if not isinstance(source_roll, dict) or not source_roll.get("evidence_quotes"):
+            return "no_source_evidence"
+
+        before = deepcopy(self.chapter_roll_overrides)
+        target_roll["evidence_quotes"] = deepcopy(source_roll.get("evidence_quotes") or [])
+        for offset in range(int(source_index) - 1, len(source_rolls)):
+            roll = source_rolls[offset]
+            if not isinstance(roll, dict):
+                continue
+            old_quotes = list(roll.get("evidence_quotes") or [])
+            next_quotes: list[dict] = []
+            if offset + 1 < len(source_rolls):
+                next_roll = source_rolls[offset + 1]
+                if isinstance(next_roll, dict):
+                    next_quotes = deepcopy(next_roll.get("evidence_quotes") or [])
+            roll["evidence_quotes"] = next_quotes
+            self._clear_quote_display_anchor_if_empty(roll, old_quotes)
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "shift_roll_evidence_for_deferred_source_assignment",
+            self.chapter_roll_overrides_path,
+            f"{source_chapter_num}->{target_chapter_num}",
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "target_chapter_num": str(target_chapter_num),
+                "target_index": int(target_index),
+                "source_chapter_num": str(source_chapter_num),
+                "source_index": int(source_index),
+            },
+        )
+        return "shifted"
+
+    def assign_source_roll_with_evidence_at_index(
+        self,
+        *,
+        target_chapter_num: str,
+        target_index: int,
+        source_roll_number: int,
+        copied_quotes: list[dict] | None = None,
+        mention_chapter_num: str | None = None,
+        display_position_policy: str | None = None,
+        shift_source_chapter_num: str | None = None,
+        shift_source_index: int | None = None,
+    ) -> str:
+        """Assign source provenance and any quote movement in one journal entry."""
+        before = deepcopy(self.chapter_roll_overrides)
+        source_roll_number = int(source_roll_number)
+        for other_chapter, entry in (
+            self.chapter_roll_overrides.get("chapter_roll_overrides", {}).items()
+        ):
+            for other_index, roll in enumerate(entry.get("rolls") or [], start=1):
+                if (
+                    str(other_chapter) == str(target_chapter_num)
+                    and int(other_index) == int(target_index)
+                ):
+                    continue
+                if not isinstance(roll, dict):
+                    continue
+                if roll.get("source_roll_number") == source_roll_number:
+                    roll["source_roll_number"] = None
+
+        target_roll = self.get_or_create_roll_at_index(target_chapter_num, target_index)
+        target_roll["source_roll_number"] = source_roll_number
+        target_roll["deferred_to_later_chapter"] = False
+        if mention_chapter_num is not None:
+            target_roll["mention_chapter_num"] = str(mention_chapter_num)
+        if display_position_policy is not None:
+            target_roll["display_position_policy"] = display_position_policy
+
+        result = "assigned"
+        if shift_source_chapter_num is not None and shift_source_index is not None:
+            if target_roll.get("evidence_quotes"):
+                result = "target_has_evidence"
+            else:
+                source_entry = (
+                    self.chapter_roll_overrides
+                    .get("chapter_roll_overrides", {})
+                    .get(str(shift_source_chapter_num))
+                )
+                source_rolls = (source_entry or {}).get("rolls") or []
+                if 1 <= int(shift_source_index) <= len(source_rolls):
+                    source_roll = source_rolls[int(shift_source_index) - 1]
+                    if isinstance(source_roll, dict) and source_roll.get("evidence_quotes"):
+                        target_roll["evidence_quotes"] = deepcopy(
+                            source_roll.get("evidence_quotes") or []
+                        )
+                        for offset in range(int(shift_source_index) - 1, len(source_rolls)):
+                            roll = source_rolls[offset]
+                            if not isinstance(roll, dict):
+                                continue
+                            old_quotes = list(roll.get("evidence_quotes") or [])
+                            next_quotes: list[dict] = []
+                            if offset + 1 < len(source_rolls):
+                                next_roll = source_rolls[offset + 1]
+                                if isinstance(next_roll, dict):
+                                    next_quotes = deepcopy(
+                                        next_roll.get("evidence_quotes") or []
+                                    )
+                            roll["evidence_quotes"] = next_quotes
+                            self._clear_quote_display_anchor_if_empty(roll, old_quotes)
+                        result = "shifted"
+                    else:
+                        result = "no_source_evidence"
+                else:
+                    result = "no_source_evidence"
+
+        if result in {"assigned", "no_source_evidence"}:
+            quotes = target_roll.setdefault("evidence_quotes", [])
+            for quote in copied_quotes or []:
+                if not isinstance(quote, dict) or not quote.get("text"):
+                    continue
+                record = self._quote_record(
+                    str(quote["text"]),
+                    (
+                        str(quote["mention_chapter_num"])
+                        if quote.get("mention_chapter_num") is not None
+                        else None
+                    ),
+                    quote.get("mention_word_position"),
+                )
+                if record not in quotes:
+                    quotes.append(record)
+
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "assign_source_roll_with_evidence_at_index",
+            self.chapter_roll_overrides_path,
+            str(target_chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={
+                "target_index": int(target_index),
+                "source_roll_number": source_roll_number,
+                "result": result,
+                "shift_source_chapter_num": (
+                    str(shift_source_chapter_num)
+                    if shift_source_chapter_num is not None else None
+                ),
+                "shift_source_index": shift_source_index,
+            },
+        )
+        return result
 
     def mark_roll_skipped(self, chapter_num: str, index: int) -> dict:
         """Mark a predicted slot as deliberately skipped.

@@ -308,6 +308,12 @@ class TerminalCompatibility:
     reasons: list[str]
 
 
+@dataclass(frozen=True)
+class CurationDeleteCandidate:
+    label: str
+    item: dict
+
+
 def check_terminal_compatibility(
     *,
     stream=None,
@@ -768,7 +774,7 @@ class ActionsPanel(Static):
             "  ⎵c  Set constellation\n"
             "  ⎵p  Set perks\n\n"
             "[bold]Annotation cleanup[/bold]\n"
-            "  ⎵D  Remove annotation at word\n\n"
+            "  ⎵D  Delete curation data for chapter\n\n"
             "[bold]Navigation[/bold]\n"
             "  ]] [[  next/prev chapter edge\n"
             "  ][ []  next/prev section\n"
@@ -923,7 +929,7 @@ class HelpScreen(ModalScreen):
             "  <space>S         assign source roll to selected slot\n"
             "  <space>_         source-only roll anchor at cursor\n"
             "  <space>d         toggle roll evidence deferral to later chapter\n"
-            "  <space>D         remove annotation at current word\n"
+            "  <space>D         delete curation data for chapter\n"
             "  <space>h / m     last roll = hit / miss\n"
             "  <space>c / p     constellation / perks pickers\n"
             "  (no insert/delete: roll positions come from simulator)\n"
@@ -1283,7 +1289,10 @@ class SourceRollPicker(ModalScreen):
                 raw = str(roll.get("raw") or "").strip()
                 if raw:
                     raw = f"  {raw}"
-                label = f"Roll {roll_number}: {outcome}{detail}{raw}"
+                if roll.get("source_kind") == "obtained_perk":
+                    label = f"Obtained: {outcome}{detail}{raw}"
+                else:
+                    label = f"Roll {roll_number}: {outcome}{detail}{raw}"
                 if len(label) > 76:
                     label = label[:73] + "..."
                 yield Button(
@@ -1488,7 +1497,10 @@ class SourceLinkPicker(ModalScreen):
             detail = f"  {constellation}"
         deferred_from = roll.get("source_deferred_from_chapter")
         deferred = f"deferred from ch {deferred_from}  " if deferred_from else ""
-        label = f"{prefix}{deferred}Roll {roll_number}: {outcome}{detail}"
+        if roll.get("source_kind") == "obtained_perk":
+            label = f"{prefix}{deferred}Obtained: {outcome}{detail}"
+        else:
+            label = f"{prefix}{deferred}Roll {roll_number}: {outcome}{detail}"
         return label[:73] + "..." if len(label) > 76 else label
 
     def _existing_links_text(self) -> str:
@@ -1653,6 +1665,136 @@ class SourceLinkPicker(ModalScreen):
             self._targets[self._target_index - 1],
             self._sources[self._source_index - 1],
         )
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
+class ChapterCurationDeletePicker(ModalScreen):
+    """Multi-select picker for deleting persisted curation records."""
+
+    DEFAULT_CSS = """
+    ChapterCurationDeletePicker {
+        align: center middle;
+    }
+    ChapterCurationDeletePicker > Container {
+        width: 110;
+        height: auto;
+        max-height: 88%;
+        border: thick $warning;
+        background: $surface;
+        padding: 1 2;
+    }
+    ChapterCurationDeletePicker Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    ChapterCurationDeletePicker Static.help {
+        height: auto;
+        color: $warning;
+        margin-bottom: 1;
+    }
+    ChapterCurationDeletePicker OptionList {
+        height: 20;
+        border: none;
+    }
+    ChapterCurationDeletePicker Button {
+        width: 100%;
+    }
+    """
+
+    BINDINGS = [
+        Binding("space", "toggle_focused_item", "toggle", show=False, priority=True),
+        Binding("enter", "confirm_selection", "confirm", show=False, priority=True),
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(
+        self,
+        candidates: list[CurationDeleteCandidate],
+        on_confirm,
+        **kw,
+    ):
+        super().__init__(**kw)
+        self._candidates = candidates
+        self._on_confirm = on_confirm
+        self._selected: set[int] = set()
+
+    def _label(self, index: int, candidate: CurationDeleteCandidate) -> str:
+        marker = "(x)" if index in self._selected else "( )"
+        label = f"{marker} {candidate.label}"
+        return label[:104] + "..." if len(label) > 107 else label
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Delete persisted curation data for this chapter", classes="title")
+            yield Static(
+                "Select only stale curation records. This does not delete derived JSON.",
+                classes="help",
+            )
+            options = OptionList(
+                *[
+                    Option(self._label(idx, candidate), id=f"delete_{idx}")
+                    for idx, candidate in enumerate(self._candidates, start=1)
+                ],
+                id="chapter_curation_delete_items",
+                compact=True,
+            )
+            options.highlighted = 0 if self._candidates else None
+            yield options
+            yield Button("Delete selected", id="confirm", variant="error")
+
+    def on_mount(self) -> None:
+        self.query_one("#chapter_curation_delete_items", OptionList).focus()
+
+    def _refresh_labels(self) -> None:
+        try:
+            options = self.query_one("#chapter_curation_delete_items", OptionList)
+            for idx, candidate in enumerate(self._candidates, start=1):
+                options.replace_option_prompt_at_index(
+                    idx - 1,
+                    self._label(idx, candidate),
+                )
+        except Exception:
+            pass
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm":
+            self.action_confirm_selection()
+
+    @on(OptionList.OptionSelected)
+    def _on_option_selected(self, event: OptionList.OptionSelected) -> None:
+        idx = int(event.option_index) + 1
+        if idx in self._selected:
+            self._selected.remove(idx)
+        else:
+            self._selected.add(idx)
+        self._refresh_labels()
+
+    def action_toggle_focused_item(self) -> None:
+        options = self.query_one("#chapter_curation_delete_items", OptionList)
+        highlighted = options.highlighted
+        if highlighted is None:
+            return
+        idx = int(highlighted) + 1
+        if idx in self._selected:
+            self._selected.remove(idx)
+        else:
+            self._selected.add(idx)
+        self._refresh_labels()
+
+    def action_confirm_selection(self) -> None:
+        items = [
+            self._candidates[idx - 1].item
+            for idx in sorted(self._selected)
+            if 1 <= idx <= len(self._candidates)
+        ]
+        self.app.pop_screen()
+        self._on_confirm(items)
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -2949,6 +3091,9 @@ class ForgeCuratorApp(App):
                 if override else [],
                 "use_stable_target_identity": True,
                 "skipped": self._roll_override_skipped(cn, idx),
+                "deferred_to_later_chapter": bool(
+                    (override or {}).get("deferred_to_later_chapter")
+                ),
             })
         return rows
 
@@ -3264,6 +3409,20 @@ class ForgeCuratorApp(App):
         chapter_num = roll.get("mechanical_chapter_num")
         if chapter_num is None:
             return None
+        mechanical_cumulative = roll.get("mechanical_cumulative_word_offset")
+        if (
+            mechanical_cumulative is not None
+            and roll.get("predicted_chapter_num") is not None
+            and str(roll.get("predicted_chapter_num")) == str(chapter_num)
+        ):
+            predicted = [
+                r for r in self.data.predicted.get("predicted", [])
+                if str(r.get("chapter_num")) == str(chapter_num)
+            ]
+            predicted.sort(key=lambda r: r.get("cp_offset") or 0)
+            for idx, predicted_roll in enumerate(predicted, start=1):
+                if int(predicted_roll.get("cp_offset") or -1) == int(mechanical_cumulative):
+                    return int(predicted_roll.get("slot_index") or idx)
         rows = [
             r for r in self.data.roll_facts.get("rolls", [])
             if r.get("source_kind") != "trigger"
@@ -3511,10 +3670,21 @@ class ForgeCuratorApp(App):
 
     def _curation_status_line(self) -> str:
         if self._last_curation_error:
-            return f"  Curation: [red]{self._last_curation_error}[/]\n\n"
+            return self._format_curation_error_status(self._last_curation_error)
         if self._last_curation_message:
             return f"  Curation: [dim]{self._last_curation_message}[/]\n\n"
         return ""
+
+    @staticmethod
+    def _format_curation_error_status(error: str) -> str:
+        lines = [line.strip() for line in str(error).splitlines() if line.strip()]
+        summary = lines[0] if lines else "unknown error"
+        if len(summary) > 140:
+            summary = summary[:137].rstrip() + "..."
+        return (
+            f"  Curation failed: [red]{summary}[/]\n"
+            "  Details: press F12 for snapshot; run verify/check command in terminal.\n\n"
+        )
 
     def _format_roll_stat_line(self, roll: dict, marker: str) -> str:
         global_num = roll.get("roll_number")
@@ -3529,6 +3699,9 @@ class ForgeCuratorApp(App):
             locationless_future_deferral = False
             if roll.get("skipped"):
                 status = "skipped"
+            elif roll.get("deferred_to_later_chapter"):
+                status = "deferred to future chapter"
+                locationless_future_deferral = True
             elif (
                 mention_chapter is not None
                 and target_chapter is not None
@@ -3741,7 +3914,7 @@ class ForgeCuratorApp(App):
         )
         candidates = [
             p for p in before.get(str(constellation), [])
-            if p.get("cost") is not None and int(p["cost"]) == int(min_cost)
+            if p.get("cost") is not None and int(p["cost"]) >= int(min_cost)
         ]
         if not candidates:
             return ""
@@ -4075,7 +4248,7 @@ class ForgeCuratorApp(App):
         elif ch == "d":
             self._action_defer_roll_to_next_chapter(cn)
         elif ch == "D":
-            self._action_remove_annotations_at_current_word(cn)
+            self._action_delete_chapter_curation_data(cn)
         elif ch == "i":
             self._action_insert_roll(cn)
         else:
@@ -4155,10 +4328,10 @@ class ForgeCuratorApp(App):
             self._scroll_cursor_into_view()
             return
         self._last_curation_error = None
-        self._last_curation_message = message
         self.data.reload_from_disk()
         new_cs = self._load_chapter(cn)
         new_cs.cursor_char = saved_cursor
+        self._last_curation_message = self._curation_refresh_message(message, cn)
         self.refresh_all_panels()
         try:
             prose_view = self.query_one("#prose", PassageView)
@@ -4170,6 +4343,42 @@ class ForgeCuratorApp(App):
         except Exception:
             pass
         self._scroll_cursor_into_view()
+
+    def _curation_refresh_message(self, message: str, chapter_num: str) -> str:
+        chapters = self.data.chapter_facts.get("chapters") or []
+        try:
+            current_key = self.data.chapter_sort_key(chapter_num)
+        except Exception:
+            current_key = None
+        stale_later = []
+        stale_current = False
+        for chapter in chapters:
+            model = chapter.get("model_validation") or {}
+            has_stale_alignment = any(
+                issue.get("code") == "chapter_alignment_stale"
+                for issue in model.get("issues") or []
+            )
+            if not has_stale_alignment:
+                continue
+            cn = str(chapter.get("chapter_num"))
+            if cn == str(chapter_num):
+                stale_current = True
+                continue
+            if current_key is not None:
+                try:
+                    if self.data.chapter_sort_key(cn) <= current_key:
+                        continue
+                except Exception:
+                    pass
+            stale_later.append(cn)
+        if stale_later:
+            count = len(stale_later)
+            noun = "chapter" if count == 1 else "chapters"
+            verb = "needs" if count == 1 else "need"
+            return f"{message}; alignment warning: {count} later {noun} {verb} review"
+        if stale_current:
+            return f"{message}; alignment warning: current chapter needs review"
+        return message
 
     def _action_toggle_section_eligibility(self, chapter_num: str) -> None:
         cs = self.state.chapter
@@ -4679,20 +4888,68 @@ class ForgeCuratorApp(App):
             and roll.get("roll_number") is not None
         ]
         rows.extend(self._deferred_source_roll_rows(chapter_num))
+        rows.extend(self._obtained_perk_source_rows(chapter_num, rows))
         rows.sort(key=lambda roll: (
             0 if roll.get("source_deferred_from_chapter") is not None else 1,
+            1 if roll.get("source_kind") == "obtained_perk" else 0,
             int(roll.get("roll_number") or 0),
             int(roll.get("source_row_index") or 0),
+            str(roll.get("rolled_perk_name") or ""),
         ))
         unique: list[dict] = []
         seen: set[int] = set()
         for roll in rows:
+            if roll.get("source_kind") == "obtained_perk":
+                unique.append(roll)
+                continue
             roll_number = int(roll["roll_number"])
             if roll_number in seen:
                 continue
             seen.add(roll_number)
             unique.append(roll)
         return unique
+
+    def _obtained_perk_source_rows(
+        self, chapter_num: str, source_rows: list[dict],
+    ) -> list[dict]:
+        cn = str(chapter_num)
+        source_hit_names = {
+            str(roll.get("rolled_perk_name") or "").strip().lower()
+            for roll in source_rows
+            if roll.get("outcome") == "hit"
+            and str(roll.get("rolled_perk_name") or "").strip()
+        }
+        rows: list[dict] = []
+        for perk in self.data.obtained_perks.get("perks", []):
+            if str(perk.get("chapter_num")) != cn:
+                continue
+            if perk.get("free"):
+                continue
+            name = str(perk.get("perk_name") or perk.get("name") or "").strip()
+            if not name or name.lower() in source_hit_names:
+                continue
+            cost = int(perk.get("cost") or 0)
+            constellation = perk.get("constellation")
+            rows.append({
+                "source": "obtained_perks",
+                "source_kind": "obtained_perk",
+                "outcome": "hit",
+                "roll_number": None,
+                "chapter_num": cn,
+                "rolled_perk_name": name,
+                "rolled_perk_cost": cost,
+                "constellation": constellation,
+                "purchased_perks": [
+                    {"name": name, "cost": cost, "free": False}
+                ],
+                "purchased_perk_cost_total": cost,
+                "purchased_perk_jump": perk.get("jump"),
+                "raw": (
+                    f"Obtained perk: {constellation or 'unknown'} - {name} "
+                    f"({perk.get('jump') or 'unknown'})"
+                ),
+            })
+        return rows
 
     def _deferred_source_roll_rows(self, chapter_num: str) -> list[dict]:
         rows: list[dict] = []
@@ -4814,6 +5071,7 @@ class ForgeCuratorApp(App):
                     or bool(str(roll.get("raw") or "").strip())
                 )
             )
+            or roll.get("source_kind") == "obtained_perk"
         )
 
     @staticmethod
@@ -4841,6 +5099,27 @@ class ForgeCuratorApp(App):
             return right, left
         return None
 
+    def _canonical_source_assignment_target(
+        self, target: dict, source_roll: dict, targets: list[dict],
+    ) -> dict:
+        if (
+            target.get("display_kind") != "deferred_in"
+            or not target.get("deferred_to_later_chapter")
+            or source_roll.get("roll_number") is None
+        ):
+            return target
+        source_roll_number = int(source_roll["roll_number"])
+        for candidate in targets:
+            if candidate is target:
+                continue
+            if candidate.get("display_kind") != "deferred_in":
+                continue
+            if candidate.get("deferred_to_later_chapter"):
+                continue
+            if int(candidate.get("roll_number") or 0) == source_roll_number:
+                return candidate
+        return target
+
     def _action_assign_source_roll(self, chapter_num: str) -> None:
         cs = self.state.chapter
         if cs is None:
@@ -4860,38 +5139,55 @@ class ForgeCuratorApp(App):
                 self._flash("assign source: choose one target slot and one source roll")
                 return
             target, source_roll = pair
+            target = self._canonical_source_assignment_target(
+                target, source_roll, targets,
+            )
             target_chapter = str(target.get("target_chapter_num") or chapter_num)
             idx = int(target["target_roll_index"])
+            if source_roll.get("source_kind") == "obtained_perk":
+                perk_name = str(source_roll.get("rolled_perk_name") or "")
+                self.persistence.assign_obtained_perk_at_index(
+                    target_chapter,
+                    idx,
+                    perk_name=perk_name,
+                    constellation=source_roll.get("constellation"),
+                )
+                self._post_curation_refresh(
+                    f"ch {target_chapter} roll #{idx} source = {perk_name}"
+                )
+                return
             source_roll_number = int(source_roll["roll_number"])
-            self.persistence.ensure_roll_count(
-                target_chapter,
-                max(idx, len(targets)),
+            should_shift_quotes = (
+                target.get("display_kind") == "deferred_in"
+                and str(target_chapter) != str(chapter_num)
+                and str(source_roll.get("chapter_num") or "") == str(chapter_num)
+                and source_roll.get("source_roll_index") is not None
             )
-            self.persistence.assign_source_roll_at_index(
-                target_chapter, idx, source_roll_number,
+            result = self.persistence.assign_source_roll_with_evidence_at_index(
+                target_chapter_num=target_chapter,
+                target_index=idx,
+                source_roll_number=source_roll_number,
+                copied_quotes=list(source_roll.get("evidence_quotes") or []),
+                mention_chapter_num=(
+                    chapter_num
+                    if target.get("deferred_to_later_chapter") or should_shift_quotes
+                    else None
+                ),
+                display_position_policy=(
+                    "mechanical"
+                    if target.get("deferred_to_later_chapter") or should_shift_quotes
+                    else None
+                ),
+                shift_source_chapter_num=(
+                    chapter_num if should_shift_quotes else None
+                ),
+                shift_source_index=(
+                    int(source_roll["source_roll_index"])
+                    if should_shift_quotes else None
+                ),
             )
-            if target.get("deferred_to_later_chapter"):
-                self.persistence.update_roll_at_index(
-                    target_chapter,
-                    idx,
-                    mention_chapter_num=chapter_num,
-                    display_position_policy="mechanical",
-                )
-            for quote in source_roll.get("evidence_quotes") or []:
-                if not isinstance(quote, dict) or not quote.get("text"):
-                    continue
-                self.persistence.append_roll_evidence_at_index(
-                    target_chapter,
-                    idx,
-                    text=str(quote["text"]),
-                    mention_chapter_num=(
-                        str(quote["mention_chapter_num"])
-                        if quote.get("mention_chapter_num") is not None
-                        else None
-                    ),
-                    mention_word_position=quote.get("mention_word_position"),
-                    display_position_policy=None,
-                )
+            if result == "target_has_evidence":
+                self._flash("assign source: deferred target already has quote evidence")
             self._post_curation_refresh(
                 f"ch {target_chapter} roll #{idx} source = Roll {source_roll_number}"
             )
@@ -5011,6 +5307,222 @@ class ForgeCuratorApp(App):
         if target_index is not None:
             return f"ch {target_chapter} #{int(target_index)}"
         return f"ch {target_chapter} #?"
+
+    def _source_roll_number_for_chapter_source_index(
+        self, chapter_num: str, source_index: int,
+    ) -> int | None:
+        for roll in self.data.roll_facts.get("rolls", []):
+            if (
+                str(roll.get("source_chapter_num")) == str(chapter_num)
+                and int(roll.get("source_roll_index") or 0) == int(source_index)
+                and roll.get("roll_number") is not None
+            ):
+                return int(roll["roll_number"])
+        for roll in self.data.roll_facts.get("rolls", []):
+            if (
+                str(roll.get("chapter_num")) == str(chapter_num)
+                and int(roll.get("roll_sequence_in_chapter") or 0) == int(source_index)
+                and roll.get("roll_number") is not None
+            ):
+                return int(roll["roll_number"])
+        return None
+
+    def _chapter_curation_delete_candidates(
+        self, chapter_num: str,
+    ) -> list[CurationDeleteCandidate]:
+        overrides = (
+            self.persistence.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+        )
+        candidates: list[CurationDeleteCandidate] = []
+        seen: set[tuple] = set()
+        related_source_rolls: set[int] = set()
+
+        def add(label: str, item: dict) -> None:
+            key = tuple(sorted(item.items()))
+            if key in seen:
+                return
+            seen.add(key)
+            candidates.append(CurationDeleteCandidate(label=label, item=item))
+
+        def add_roll_candidates(chapter: str, idx: int, roll: dict, *, related: bool) -> None:
+            prefix = f"ch {chapter} roll #{idx}"
+            rel = "related " if related else ""
+            if roll.get("source_deferred_to_chapter") is not None:
+                add(
+                    f"{rel}{prefix}: source deferred to ch {roll.get('source_deferred_to_chapter')}",
+                    {
+                        "kind": "source_deferral",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+                source_roll = self._source_roll_number_for_chapter_source_index(
+                    str(chapter), idx,
+                )
+                if source_roll is not None:
+                    related_source_rolls.add(source_roll)
+            if roll.get("source_roll_number") is not None:
+                add(
+                    f"{rel}{prefix}: source = Roll {roll.get('source_roll_number')}",
+                    {
+                        "kind": "source_assignment",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+            if roll.get("outcome") is not None:
+                add(
+                    f"{rel}{prefix}: outcome = {roll.get('outcome')}",
+                    {
+                        "kind": "outcome",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+            if roll.get("constellation") is not None:
+                add(
+                    f"{rel}{prefix}: constellation = {roll.get('constellation')}",
+                    {
+                        "kind": "constellation",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+            if roll.get("perks"):
+                add(
+                    f"{rel}{prefix}: perks override ({len(roll.get('perks') or [])})",
+                    {
+                        "kind": "perks",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+            if roll.get("skipped"):
+                add(
+                    f"{rel}{prefix}: skipped",
+                    {
+                        "kind": "skipped",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+            roll_deferral = (
+                roll.get("deferred_to_later_chapter")
+                or roll.get("mention_chapter_num") is not None
+                or roll.get("mention_word_position") is not None
+                or roll.get("display_position_policy") is not None
+            )
+            if roll_deferral:
+                add(
+                    f"{rel}{prefix}: roll deferral/display position override",
+                    {
+                        "kind": "roll_deferral",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                    },
+                )
+            for quote_index, quote in enumerate(roll.get("evidence_quotes") or []):
+                text = str(quote.get("text") or "").strip()
+                snippet = text[:54] + ("..." if len(text) > 54 else "")
+                add(
+                    f"{rel}{prefix}: quote {quote_index + 1} {snippet!r}",
+                    {
+                        "kind": "evidence_quote",
+                        "chapter_num": str(chapter),
+                        "roll_index": int(idx),
+                        "quote_index": int(quote_index),
+                    },
+                )
+
+        current_entry = overrides.get(str(chapter_num), {})
+        for idx, roll in enumerate(current_entry.get("rolls") or [], start=1):
+            if isinstance(roll, dict):
+                add_roll_candidates(str(chapter_num), idx, roll, related=False)
+        if current_entry.get("model_validation_resolution") is not None:
+            add(
+                f"ch {chapter_num}: model validation resolution",
+                {
+                    "kind": "model_validation_resolution",
+                    "chapter_num": str(chapter_num),
+                },
+            )
+        classifications = (
+            self.persistence.section_classifications
+            .get("classifications", {})
+        )
+        for section_key, entry in sorted(classifications.items()):
+            if str(entry.get("chapter_num")) != str(chapter_num):
+                continue
+            section_index = int(entry.get("section_index") or 0)
+            reason = str(entry.get("reason") or "")
+            if reason.startswith("curator toggle:"):
+                status = "eligible" if bool(entry.get("counts_for_cp", True)) else "ineligible"
+                add(
+                    f"ch {chapter_num} sec {section_index}: section eligibility = {status}",
+                    {
+                        "kind": "section_eligibility",
+                        "chapter_num": str(chapter_num),
+                        "section_key": str(section_key),
+                    },
+                )
+            for span_index, span in enumerate(entry.get("span_overrides") or []):
+                if str(span.get("reason_code") or "") == "section_header":
+                    continue
+                status = "eligible" if bool(span.get("counts_for_cp")) else "ineligible"
+                start = int(span.get("word_offset_start") or 0)
+                end = int(span.get("word_offset_end") or 0)
+                reason_code = str(span.get("reason_code") or "span")
+                add(
+                    (
+                        f"ch {chapter_num} sec {section_index}: eligibility span "
+                        f"{start}-{end} {status} ({reason_code})"
+                    ),
+                    {
+                        "kind": "eligibility_span",
+                        "chapter_num": str(chapter_num),
+                        "section_key": str(section_key),
+                        "span_index": int(span_index),
+                    },
+                )
+
+        for related_chapter, entry in overrides.items():
+            if str(related_chapter) == str(chapter_num):
+                continue
+            for idx, roll in enumerate(entry.get("rolls") or [], start=1):
+                if not isinstance(roll, dict):
+                    continue
+                if (
+                    roll.get("source_roll_number") is not None
+                    and int(roll["source_roll_number"]) in related_source_rolls
+                ):
+                    add_roll_candidates(str(related_chapter), idx, roll, related=True)
+        return candidates
+
+    def _action_delete_chapter_curation_data(self, chapter_num: str) -> None:
+        candidates = self._chapter_curation_delete_candidates(chapter_num)
+        if not candidates:
+            self._flash("delete curation: no persisted curation data for chapter")
+            return
+
+        def on_confirm(items: list[dict]) -> None:
+            if not items:
+                self._flash("delete curation: nothing selected")
+                return
+            deleted = self.persistence.delete_chapter_curation_items(items)
+            if not deleted:
+                self._flash("delete curation: selected records already clear")
+                return
+            needs_full_refresh = any(
+                item.get("kind") in {"section_eligibility", "eligibility_span"}
+                for item in items
+            )
+            self._post_curation_refresh(
+                f"deleted {deleted} curation records",
+                full=needs_full_refresh,
+            )
+
+        self.push_screen(ChapterCurationDeletePicker(candidates, on_confirm=on_confirm))
 
     def _action_pick_roll_visualization_position(self, chapter_num: str) -> None:
         cs = self.state.chapter

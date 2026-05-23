@@ -244,6 +244,19 @@ def _patch_pipeline_paths(monkeypatch, project: Path, epub: Path) -> None:
         "refresh_current_runtime_manifest",
         lambda *, source_dir, **_: None,
     )
+    monkeypatch.setattr(
+        build_chapter_facts,
+        "model_issues_by_chapter",
+        lambda: {
+            "2": [
+                {
+                    "code": "chapter_alignment_stale",
+                    "severity": "error",
+                    "message": "Chapter roll overrides are stale.",
+                }
+            ]
+        },
+    )
 
 
 def test_chapter_facts_projects_roll_facts_onto_story_axis(
@@ -432,6 +445,19 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
         "refresh_current_runtime_manifest",
         lambda *, source_dir, **_: None,
     )
+    monkeypatch.setattr(
+        build_chapter_facts,
+        "model_issues_by_chapter",
+        lambda: {
+            "2": [
+                {
+                    "code": "chapter_alignment_stale",
+                    "severity": "error",
+                    "message": "Chapter roll overrides are stale.",
+                }
+            ]
+        },
+    )
 
     build_chapter_facts.main()
 
@@ -453,8 +479,12 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
         }
     ]
     assert by_chapter["1"]["model_validation"]["current_discrepancy"] is True
+    assert by_chapter["2"]["model_validation"]["current_discrepancy"] is True
     assert by_chapter["2"]["model_validation"]["prior_discrepancy"] is True
     assert by_chapter["2"]["model_validation"]["first_discrepancy_chapter_num"] == "1"
+    assert by_chapter["2"]["model_validation"]["issues"][-1]["code"] == (
+        "chapter_alignment_stale"
+    )
 
     # Date fields pass through verbatim from chapter_publication_dates.json,
     # and edited_lag_days is computed as last_edited_at - published_at.

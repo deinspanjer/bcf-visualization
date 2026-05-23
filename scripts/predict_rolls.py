@@ -144,18 +144,15 @@ def _simulate(chapters_in_order, paid_by_chapter, exact_words, transitions=None)
 def chapter_alignment_fingerprint(predicted_rolls: list[dict]) -> str:
     """Hash the canonical-form predicted-roll sequence for one chapter.
 
-    Captures every upstream cause of a position shift — eligibility map
-    edits, regime transitions, prior-chapter shadow events, in-chapter
-    perk purchases — because all of them end up moving (cp_offset,
-    epub_offset, regime, threshold). Curator records that name a roll
-    by chapter+index store this hash; a mismatch on rebuild means the
-    named roll has moved and the curator must re-align.
+    Curator records name a roll by chapter+index. The guard therefore
+    tracks changes that can make the local slot sequence mean something
+    different, while ignoring pure CP/EPUB coordinate slides caused by
+    upstream eligibility edits. Those coordinate shifts are expected to
+    flow through derived facts without requiring manual override
+    re-alignment.
     """
     canonical = [
         (
-            int(r["roll_number"]),
-            int(r["cp_offset"]),
-            int(r["epub_offset"]),
             int(r["cp_rule_regime"]),
             int(r["roll_trigger_cp_threshold"]),
         )
