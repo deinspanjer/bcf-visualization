@@ -567,6 +567,16 @@ def test_explicit_empty_hit_override_reports_model_issue() -> None:
     ]
 
 
+def test_source_linked_hit_without_redeclared_perks_does_not_report_model_issue() -> None:
+    override = {
+        "rolls": [
+            {"outcome": "hit", "perks": [], "source_roll_number": 37},
+        ],
+    }
+
+    assert _manual_override_issues("9", override) == []
+
+
 def test_skipped_override_consumes_predicted_slot_without_roll_fact() -> None:
     curator_rows = [
         (

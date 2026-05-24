@@ -31,7 +31,7 @@ def test_gutter_marks_use_fixture_semantic_sources(
 
     assert by_glyph["R"] == {20, 40}
     assert by_glyph["M"] == {20}
-    assert by_glyph["Q"] == {1}
+    assert by_glyph["Q"] == {17}
     assert by_glyph["N"] == {0}
     assert by_glyph["*"] == {5}
     assert {2, 4}.issubset(by_glyph["."])
@@ -100,6 +100,30 @@ def test_deferred_quote_highlights_in_mention_chapter_text(
 
     assert start >= 0
     assert (start, start + len(quote)) in app._roll_evidence_char_spans(app.state.chapter)
+
+
+def test_quote_highlight_uses_saved_mention_position_for_duplicate_text(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    quote = "chapter2 forge"
+    cs.derived.roll_facts[0]["evidence_quotes"] = [
+        {
+            "text": quote,
+            "mention_chapter_num": "2",
+            "mention_word_position": 8,
+        }
+    ]
+
+    first_start = cs.prose.text.find(quote)
+    expected = (cs.prose.word_offsets[8][0], cs.prose.word_offsets[9][1])
+
+    assert first_start == cs.prose.word_offsets[0][0]
+    assert expected in app._roll_evidence_char_spans(cs)
 
 
 def test_distance_stats_use_predicted_curated_and_evidence_position_sources(

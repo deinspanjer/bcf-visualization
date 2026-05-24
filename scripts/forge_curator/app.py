@@ -2405,27 +2405,49 @@ class ForgeCuratorApp(App):
         seen: set[tuple[int, int]] = set()
         for roll in self._roll_evidence_picker_rolls(cs):
             for quote in self._roll_evidence_quotes(roll):
-                text = str(quote.get("text") or "")
-                if not text:
+                span = self._quote_text_char_span(cs, quote)
+                if span is None:
                     continue
-                start = cs.prose.text.find(text)
-                if start >= 0:
-                    span = (start, start + len(text))
-                else:
-                    quote_chapter = quote.get("mention_chapter_num")
-                    if (
-                        quote_chapter is not None
-                        and str(quote_chapter) != cs.meta.chapter_num
-                    ):
-                        continue
+                if span[0] == span[1]:
                     raw = self._evidence_fallback_word_index(cs, roll)
-                    if raw is None or not (0 <= raw < len(wo)):
+                    if raw is None or not (0 <= raw < len(cs.prose.word_offsets)):
                         continue
-                    span = wo[raw]
+                    span = cs.prose.word_offsets[raw]
                 if span not in seen:
                     seen.add(span)
                     spans.append(span)
         return spans
+
+    def _quote_text_char_span(self, cs, quote: dict) -> tuple[int, int] | None:
+        text = str(quote.get("text") or "")
+        if not text:
+            return None
+        quote_chapter = quote.get("mention_chapter_num")
+        if quote_chapter is not None and str(quote_chapter) != cs.meta.chapter_num:
+            return None
+
+        anchor_char = None
+        mention_word = quote.get("mention_word_position")
+        if mention_word is not None and cs.prose.word_offsets:
+            try:
+                raw = self._raw_word_for_cp_offset(int(mention_word))
+            except (TypeError, ValueError):
+                raw = None
+            if raw is not None and 0 <= raw < len(cs.prose.word_offsets):
+                anchor_char = cs.prose.word_offsets[raw][0]
+
+        starts: list[int] = []
+        start = cs.prose.text.find(text)
+        while start >= 0:
+            starts.append(start)
+            start = cs.prose.text.find(text, start + 1)
+        if not starts:
+            return (0, 0)
+        if anchor_char is not None:
+            start = min(starts, key=lambda candidate: abs(candidate - anchor_char))
+        else:
+            start = starts[0]
+        return (start, start + len(text))
 
     def _roll_evidence_word_indices(self, cs) -> list[int]:
         indices: list[int] = []
@@ -4589,10 +4611,10 @@ class ForgeCuratorApp(App):
                 continue
             for quote in self._roll_evidence_quotes(roll):
                 quote_text = str(quote.get("text") or "")
-                start = cs.prose.text.find(quote_text)
-                if start >= 0:
-                    span = (start, start + len(quote_text))
-                else:
+                span = self._quote_text_char_span(cs, quote)
+                if span is None:
+                    continue
+                if span[0] == span[1]:
                     raw = self._evidence_fallback_word_index(cs, roll)
                     if raw is None or not (0 <= raw < len(cs.prose.word_offsets)):
                         continue

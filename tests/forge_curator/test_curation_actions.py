@@ -39,6 +39,13 @@ def _cursor_prose() -> SimpleNamespace:
     )
 
 
+def _saved_quote_span(app, cs, quote: dict) -> tuple[int, int]:
+    span = app._quote_text_char_span(cs, quote)
+    assert span is not None
+    assert span[0] < span[1]
+    return span
+
+
 def test_evidence_block_marks_quote_under_cursor(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -47,8 +54,9 @@ def test_evidence_block_marks_quote_under_cursor(
     app = fixture.loaded_app("1")
     cs = app.state.chapter
     assert cs is not None
-    quote_start = cs.prose.text.find("forge motes connection")
-    assert quote_start >= 0
+    quote_start, _quote_end = _saved_quote_span(
+        app, cs, cs.derived.roll_facts[0]["evidence_quotes"][0]
+    )
     cs.cursor_char = quote_start + len("forge ")
     monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: _cursor_prose())
 
@@ -316,6 +324,11 @@ def test_delete_annotation_removes_quote_from_open_predicted_slot(
     assert quote_start >= 0
     quote = cs.prose.text[quote_start:quote_start + len("cursor chapter2 forge")]
     quote_word = 39
+    quote_record = {
+        "text": quote,
+        "mention_chapter_num": "2",
+        "mention_word_position": quote_word,
+    }
     app.persistence.append_roll_evidence_at_index(
         "2",
         2,
@@ -323,7 +336,7 @@ def test_delete_annotation_removes_quote_from_open_predicted_slot(
         mention_chapter_num="2",
         mention_word_position=quote_word,
     )
-    prose = _selected_prose((quote_start, quote_start + len(quote)))
+    prose = _selected_prose(_saved_quote_span(app, cs, quote_record))
     monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
     refreshes: list[tuple[str, bool]] = []
     app._post_curation_refresh = (
@@ -377,9 +390,11 @@ def test_reassign_quote_moves_saved_metadata_without_reselecting_text(
     )
     cs.derived.roll_facts = [source_projected, *cs.derived.roll_facts]
     app.data.roll_facts["rolls"] = [source_projected, *app.data.roll_facts["rolls"]]
-    quote_start = cs.prose.text.find("forge motes connection")
-    assert quote_start >= 0
-    prose = _selected_prose((quote_start, quote_start + len("forge motes connection")))
+    prose = _selected_prose(_saved_quote_span(app, cs, {
+        "text": "forge motes connection",
+        "mention_chapter_num": "2",
+        "mention_word_position": 20,
+    }))
     monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
     refreshes: list[str] = []
     screens: list[object] = []
@@ -421,16 +436,19 @@ def test_reassign_quote_requires_source_choice_when_quotes_overlap(
     app = fixture.loaded_app("2")
     cs = app.state.chapter
     assert cs is not None
-    quote_start = cs.prose.text.find("forge motes connection")
-    assert quote_start >= 0
+    quote_record = {
+        "text": "forge motes connection",
+        "mention_chapter_num": "2",
+        "mention_word_position": 20,
+    }
     app.persistence.append_roll_evidence_at_index(
         "2",
         2,
-        text="forge motes connection",
-        mention_chapter_num="2",
-        mention_word_position=20,
+        text=quote_record["text"],
+        mention_chapter_num=quote_record["mention_chapter_num"],
+        mention_word_position=quote_record["mention_word_position"],
     )
-    prose = _selected_prose((quote_start, quote_start + len("forge motes connection")))
+    prose = _selected_prose(_saved_quote_span(app, cs, quote_record))
     monkeypatch.setattr(app, "query_one", lambda *args, **kwargs: prose)
     refreshes: list[str] = []
     screens: list[object] = []

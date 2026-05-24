@@ -676,7 +676,11 @@ def _manual_override_issues(chapter_num: str, override: dict | None) -> list[dic
     for idx, entry in enumerate(override.get("rolls") or [], start=1):
         if not isinstance(entry, dict):
             continue
-        if entry.get("outcome") != "hit" or entry.get("perks"):
+        if (
+            entry.get("outcome") != "hit"
+            or entry.get("perks")
+            or entry.get("source_roll_number") is not None
+        ):
             continue
         issues.append({
             "code": "curated_hit_missing_perks",
