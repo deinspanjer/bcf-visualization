@@ -101,6 +101,17 @@ const app = {
   rollSort: "roll",
   raf: null,
   lastFrame: 0,
+  dom: {},
+  carousel: {
+    knowledgeIndex: null,
+    visibleSlots: new Map(),
+  },
+  frameKeys: {
+    narrative: null,
+    skyCamera: null,
+  },
+  bookmarkPersistTimer: null,
+  bookmarkLastPersistMs: 0,
   // Cinematic roll-focus animation state (Phase 1). Captured when the
   // playthrough renderer first observes a roll inside the firing window;
   // cleared when the scrubber leaves that window. `currentFocusAnimT()`
@@ -132,11 +143,11 @@ function focusAnimTick() {
   if (t >= 1) {
     // Hold the final frame. The user scrubbing away will clear focusAnim via
     // the per-render trigger logic; no need to keep RAF'ing.
-    if (!app.playing) render();
+    if (!app.playing) updatePlaybackFrame();
     return;
   }
   // Avoid double-rendering while tickPlayback is already driving frames.
-  if (!app.playing) render();
+  if (!app.playing) updatePlaybackFrame();
   app.focusAnimRaf = requestAnimationFrame(focusAnimTick);
 }
 
@@ -171,7 +182,7 @@ function startFocusAnim(roll, behavior) {
   // scrub-cancel logic clearing the focusAnim we just created.
   if (app.data) {
     app.wordPos = lockedWordPos;
-    store(LS_BOOKMARK, app.wordPos);
+    persistBookmarkSoon();
   }
   if (PREFERS_REDUCED_MOTION) return;
   app.focusAnimRaf = requestAnimationFrame(focusAnimTick);
@@ -265,6 +276,36 @@ function readStoredBoolean(key, fallback) {
 
 function store(key, value) {
   try { localStorage.setItem(key, String(value)); } catch {}
+}
+
+function recordStructuralRender() {
+  const stats = window.__bcfRenderStats;
+  if (stats && typeof stats.structuralRenders === "number") {
+    stats.structuralRenders += 1;
+  }
+}
+
+function persistBookmarkNow() {
+  if (app.bookmarkPersistTimer != null) {
+    clearTimeout(app.bookmarkPersistTimer);
+    app.bookmarkPersistTimer = null;
+  }
+  store(LS_BOOKMARK, app.wordPos);
+  app.bookmarkLastPersistMs = performance.now();
+}
+
+function persistBookmarkSoon() {
+  if (!app.data) return;
+  const now = performance.now();
+  if (now - app.bookmarkLastPersistMs >= 500) {
+    persistBookmarkNow();
+    return;
+  }
+  if (app.bookmarkPersistTimer != null) return;
+  app.bookmarkPersistTimer = setTimeout(() => {
+    app.bookmarkPersistTimer = null;
+    persistBookmarkNow();
+  }, Math.max(0, 500 - (now - app.bookmarkLastPersistMs)));
 }
 
 function migratePreviewStorage() {
@@ -370,6 +411,7 @@ async function loadRuntime() {
     predictedRolls,
     predictedRollsMeta: bundle.predicted_rolls_meta,
   };
+  rebuildRollLocationCaches();
   app.wordPos = clamp(app.wordPos, 0, story.total_words);
   mountBackgroundStarfield();
 }
@@ -668,6 +710,11 @@ function constellationColor(name) {
   return `oklch(0.78 0.13 ${HUES[name] ?? 196})`;
 }
 
+function rebuildRollLocationCaches() {
+  app.carousel.knowledgeIndex = app.data ? buildConstellationKnowledgeIndex(app.data.story.rolls) : null;
+  app.carousel.visibleSlots = new Map();
+}
+
 function formatRollLabel(roll) {
   if (!roll) return "";
   const chRef = roll.roll_sequence_in_chapter != null ? `ch ${roll.chapter_num} #${roll.roll_sequence_in_chapter}` : `ch ${roll.chapter_num}`;
@@ -686,8 +733,9 @@ function setWordPos(value) {
     if (drift > 5) clearFocusAnim();
   }
   app.wordPos = next;
-  store(LS_BOOKMARK, app.wordPos);
-  render();
+  persistBookmarkNow();
+  if (app.mode === "detail") render();
+  else updatePlaybackFrame();
 }
 
 function setMode(mode) {
@@ -708,6 +756,7 @@ function setRollLocation(value) {
     app.data.story.rolls.sort(
       (a, b) => (a.word_position ?? 0) - (b.word_position ?? 0),
     );
+    rebuildRollLocationCaches();
   }
   render();
 }
@@ -722,13 +771,11 @@ function startPlayback() {
   if (!app.data || app.playing) return;
   if (app.wordPos >= app.data.story.total_words) setWordPos(0);
   // If the user hits play while a `pause`-mode cinematic is holding on its
-  // final frame, clear that focusAnim so playback can resume past the roll.
+  // current roll, clear that lock so playback can resume past the roll.
   // Without this the lock would re-grab on the very next render. The roll's
   // firing window is still open, so we don't re-trigger the cinematic for
   // the same roll — see startFocusAnim trigger logic.
-  if (app.focusAnim && app.onRollBehavior === "pause" && currentFocusAnimT() >= 1) {
-    app.focusAnim = { ...app.focusAnim, behavior: "cinematic" };
-  }
+  releasePausedFocusLock();
   app.playing = true;
   // While playing, tickPlayback drives render(). If a focus-anim RAF is in
   // flight from a prior paused state, cancel it now so we don't double-render
@@ -739,14 +786,15 @@ function startPlayback() {
   }
   app.lastFrame = performance.now();
   tickPlayback(app.lastFrame);
-  render();
+  updatePlaybackFrame();
 }
 
 function stopPlayback() {
   app.playing = false;
   if (app.raf) cancelAnimationFrame(app.raf);
   app.raf = null;
-  render();
+  persistBookmarkNow();
+  updatePlaybackFrame();
 }
 
 function togglePlayback() {
@@ -758,15 +806,24 @@ function togglePlayback() {
   if (
     app.focusAnim
     && app.focusAnim.behavior === "pause"
-    && currentFocusAnimT() >= 1
   ) {
-    app.focusAnim = { ...app.focusAnim, behavior: "cinematic" };
+    releasePausedFocusLock();
     if (!app.playing) startPlayback();
-    else render();  // keep playing; next tick sees the lock released
+    else updatePlaybackFrame();  // keep playing; next tick sees the lock released
     return;
   }
   if (app.playing) stopPlayback();
   else startPlayback();
+}
+
+function releasePausedFocusLock() {
+  if (!app.focusAnim || app.focusAnim.behavior !== "pause") return false;
+  app.focusAnim = {
+    ...app.focusAnim,
+    behavior: "cinematic",
+    startMs: performance.now() - app.focusAnim.durationMs,
+  };
+  return true;
 }
 
 function tickPlayback(now) {
@@ -779,30 +836,34 @@ function tickPlayback(now) {
   //   - pause: lock for the full focusAnim lifetime (until the user scrubs
   //     out of the firing window or hits play again — but tickPlayback
   //     itself never resumes; the user pressing pause+play recomputes).
-  // In both locked cases we still render() to keep the cinematic camera
+  // In both locked cases we still update the frame to keep the cinematic camera
   // advancing, but we skip the wordPos write so the scrubber stays parked.
   if (focusAnimIsLocking()) {
-    render();
+    updatePlaybackFrame();
     app.raf = requestAnimationFrame(tickPlayback);
     return;
   }
   const next = app.wordPos + app.speed * dt;
   if (next >= app.data.story.total_words) {
     app.wordPos = app.data.story.total_words;
-    store(LS_BOOKMARK, app.wordPos);
+    persistBookmarkNow();
     app.playing = false;
-    render();
+    updatePlaybackFrame();
     return;
   }
   app.wordPos = Math.round(next);
-  store(LS_BOOKMARK, app.wordPos);
-  render();
+  persistBookmarkSoon();
+  updatePlaybackFrame();
   app.raf = requestAnimationFrame(tickPlayback);
 }
 
 function render() {
   const root = document.getElementById("root");
   clear(root);
+  recordStructuralRender();
+  app.dom = {};
+  app.frameKeys = { narrative: null, skyCamera: null };
+  app.carousel.visibleSlots = new Map();
   if (app.error) {
     root.append(renderLoadError(app.error));
     return;
@@ -812,7 +873,8 @@ function render() {
     return;
   }
   root.append(renderAppShell());
-  centerScrubber();
+  cachePlaybackDomRefs();
+  updatePlaybackFrame();
 }
 
 function renderLoading() {
@@ -999,7 +1061,7 @@ function renderScrubber(compact) {
       "aria-valuemin": 0,
       "aria-valuemax": story.total_words,
       "aria-valuenow": app.wordPos,
-      style: { left: `${(app.wordPos / total) * 100}%` },
+      style: { left: "0", transform: `translateX(${(app.wordPos / total) * stackPx}px)` },
     }),
   );
   return el("div", { class: "panel panel-cut scrubber", style: { minHeight: compact ? "168px" : "232px" } },
@@ -1286,7 +1348,7 @@ function renderStatStrip() {
   );
 }
 
-function renderPlaythrough() {
+function playthroughFrameState({ syncFocus = true } = {}) {
   const chapter = chapterAtWord(app.wordPos);
   const lastRoll = lastRollAtWord(app.wordPos);
   const firing = lastRoll && Math.abs(app.wordPos - lastRoll.word_position) <= ROLL_FIRING_WINDOW_WORDS;
@@ -1305,12 +1367,12 @@ function renderPlaythrough() {
   //      shows the perk, but we don't run a cinematic for them.
   const cinematicEligible = app.onRollBehavior !== "quick"
     && lastRoll?.source_kind !== "trigger";
-  if (firing && lastRoll && cinematicEligible) {
+  if (syncFocus && firing && lastRoll && cinematicEligible) {
     const uid = String(lastRoll.uid);
     if (!app.focusAnim || app.focusAnim.rollUid !== uid) {
       startFocusAnim(lastRoll, app.onRollBehavior);
     }
-  } else if (app.focusAnim) {
+  } else if (syncFocus && app.focusAnim) {
     clearFocusAnim();
   }
 
@@ -1320,14 +1382,22 @@ function renderPlaythrough() {
   const cinematicActive = !!app.focusAnim && firing && lastRoll;
   const scene = cinematicActive ? focusScene(lastRoll, app.data) : null;
   const focusT = currentFocusAnimT();
+  return { chapter, lastRoll, firing, cinematicActive, scene, focusT };
+}
 
+function renderPlaythrough() {
+  const frame = playthroughFrameState();
   return el("div", { class: `playthrough ${app.fieldLogHidden ? "field-log-hidden" : ""}` },
     el("div", { class: "viewport" },
-      renderCarousel(scene ? focusT : null, firing && cinematicActive),
+      renderCarousel(frame.scene ? frame.focusT : null, frame.firing && frame.cinematicActive),
       renderViewportFrame(),
-      scene ? renderSkyCamera(lastRoll, scene, focusT) : null,
+      el("div", { class: "sky-camera-layer" },
+        frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
+      ),
     ),
-    !app.fieldLogHidden ? renderNarrativeReadout(firing ? lastRoll : null, chapter) : null,
+    el("div", { class: "narrative-mount" },
+      !app.fieldLogHidden ? renderNarrativeReadout(frame.firing ? frame.lastRoll : null, frame.chapter) : null,
+    ),
   );
 }
 
@@ -1341,6 +1411,13 @@ function renderViewportFrame() {
 }
 
 function renderCarousel(focusT = null, firingCinematic = false) {
+  const model = carouselFrameModel(focusT, firingCinematic);
+  return el("div", { class: "carousel-strip", style: model.stripStyle },
+    model.slots.map(slot => createCarouselSlot(slot)),
+  );
+}
+
+function carouselFrameModel(focusT = null, firingCinematic = false) {
   const rolls = app.data.story.rolls;
   const cardWidth = 348;
   const minCardSpacing = 440;
@@ -1353,7 +1430,7 @@ function renderCarousel(focusT = null, firingCinematic = false) {
     ? { transform, opacity: String(carouselOpacity) }
     : { transform };
   if (!rolls.length) {
-    return el("div", { class: "carousel-strip", style: stripStyle(`translateX(${-cardHalf}px)`) });
+    return { stripStyle: stripStyle(`translateX(${-cardHalf}px)`), slots: [] };
   }
   // Position cards in word-space, then enforce a visual floor so dense early
   // roll bursts do not collapse named constellations into one another.
@@ -1368,7 +1445,7 @@ function renderCarousel(focusT = null, firingCinematic = false) {
   const renderRadiusPx = minCardSpacing * 6;
   const activeRadiusPx = cardWidth * 0.4;
   const flankRadiusPx = minCardSpacing * 1.15;
-  const knowledgeIndex = buildConstellationKnowledgeIndex(rolls);
+  const knowledgeIndex = app.carousel.knowledgeIndex || buildConstellationKnowledgeIndex(rolls);
 
   // Pick a single "nearest" roll to mark active so overlapping cards in a
   // dense burst don't all flare at once.
@@ -1396,13 +1473,30 @@ function renderCarousel(focusT = null, firingCinematic = false) {
     // constellation card hides instantly so its outline doesn't double up
     // with the sky-camera SVG during the t = 0.10–0.45 cross-fade. The strip
     // opacity still smoothly fades the surrounding (non-active) cards.
-    const slotStyle = { left: `${cardPx}px` };
-    if (firingCinematic && active) slotStyle.opacity = "0";
-    slots.push(el("div", { class: "carousel-slot", style: slotStyle },
-      con ? renderConstellationCard(con, active, flank, outlineVisible) : renderUnresolvedCard(active, flank),
-    ));
+    slots.push({ uid: String(roll.uid), roll, con, active, flank, outlineVisible, leftPx: cardPx, hidden: firingCinematic && active });
   }
-  return el("div", { class: "carousel-strip", style: stripStyle(`translateX(${-(playheadPx + cardHalf)}px)`) }, slots);
+  return { stripStyle: stripStyle(`translateX(${-(playheadPx + cardHalf)}px)`), slots };
+}
+
+function createCarouselSlot(slot) {
+  const node = el("div", {
+    class: "carousel-slot",
+    "data-roll-uid": slot.uid,
+  }, slot.con
+    ? renderConstellationCard(slot.con, slot.active, slot.flank, slot.outlineVisible)
+    : renderUnresolvedCard(slot.active, slot.flank));
+  applyCarouselSlotState(node, slot);
+  return node;
+}
+
+function applyCarouselSlotState(node, slot) {
+  node.style.left = `${slot.leftPx}px`;
+  node.style.opacity = slot.hidden ? "0" : "";
+  const card = node.querySelector(".const-card");
+  if (!card) return;
+  card.classList.toggle("is-active", slot.active);
+  card.classList.toggle("is-flank", slot.flank);
+  card.classList.toggle("is-firing", slot.hidden);
 }
 
 function renderConstellationCard(con, active, flank, outlineVisible) {
@@ -2380,23 +2474,153 @@ function closeIcon() {
   );
 }
 
+function cachePlaybackDomRefs() {
+  app.dom = {
+    scrubberScroller: document.querySelector(".scrubber-scroller"),
+    scrubberStack: document.querySelector(".scrubber-stack"),
+    playhead: document.querySelector("#scrubber-playhead"),
+    readoutChapter: document.querySelector(".scrubber-readout .readout-chapter"),
+    readoutTitle: document.querySelector(".scrubber-readout .readout-title"),
+    readoutMeta: document.querySelector(".scrubber-readout .readout-meta"),
+    statStrip: document.querySelector(".stat-strip"),
+    playPause: document.querySelector("#play-pause"),
+    playthrough: document.querySelector(".playthrough"),
+    viewport: document.querySelector(".playthrough .viewport"),
+    carouselStrip: document.querySelector(".carousel-strip"),
+    skyCameraLayer: document.querySelector(".sky-camera-layer"),
+    narrativeMount: document.querySelector(".narrative-mount"),
+    detail: document.querySelector(".detail"),
+  };
+  app.carousel.visibleSlots = new Map(
+    [...document.querySelectorAll(".carousel-slot[data-roll-uid]")]
+      .map(slot => [slot.dataset.rollUid, slot]),
+  );
+}
+
+function updatePlaybackFrame() {
+  if (!app.data) return;
+  if (!app.dom?.playhead) {
+    render();
+    return;
+  }
+  updateScrubberFrame();
+  updateStatStripFrame();
+  updatePlaybackControlsFrame();
+  if (app.mode === "playthrough") updatePlaythroughFrame();
+  else if (app.mode === "detail") updateDetailFrame();
+  centerScrubber();
+}
+
+function updateScrubberFrame() {
+  const { playhead, scrubberStack, readoutChapter, readoutTitle, readoutMeta } = app.dom;
+  if (!playhead || !scrubberStack) return;
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const stackWidth = scrubberStack.getBoundingClientRect().width;
+  const x = (app.wordPos / total) * stackWidth;
+  playhead.style.left = "0";
+  playhead.style.transform = `translateX(${x}px)`;
+  playhead.setAttribute("aria-valuenow", String(app.wordPos));
+
+  const currentChapter = chapterAtWord(app.wordPos);
+  if (readoutChapter) readoutChapter.textContent = `ch ${currentChapter.chapter_num} · ${currentChapter.pov}`;
+  if (readoutTitle) readoutTitle.textContent = currentChapter.title;
+  if (readoutMeta) {
+    const metaText = `${currentChapter.publish_date || "undated"} · word ${formatWords(app.wordPos)} / ${formatWords(story.total_words)}`
+      + (currentChapter.banked_cp_at_end != null ? ` · ${currentChapter.banked_cp_at_end} CP banked` : "");
+    if (readoutMeta.firstChild?.nodeType === Node.TEXT_NODE) readoutMeta.firstChild.nodeValue = metaText;
+    else readoutMeta.textContent = metaText;
+  }
+}
+
+function updateStatStripFrame() {
+  const statStrip = app.dom.statStrip;
+  if (!statStrip) return;
+  const next = renderStatStrip();
+  statStrip.replaceChildren(...[...next.childNodes]);
+}
+
+function updatePlaybackControlsFrame() {
+  const playPause = app.dom.playPause;
+  if (!playPause) return;
+  const label = app.playing ? "Pause" : "Play";
+  playPause.setAttribute("aria-label", label);
+  playPause.title = `${label} (space)`;
+  playPause.textContent = app.playing ? "❚❚" : "▶";
+}
+
+function updatePlaythroughFrame() {
+  const frame = playthroughFrameState();
+  if (app.dom.playthrough) {
+    app.dom.playthrough.classList.toggle("field-log-hidden", app.fieldLogHidden);
+  }
+  updateCarouselFrame(frame.scene ? frame.focusT : null, frame.firing && frame.cinematicActive);
+  const skyCameraKey = frame.scene ? `scene:${frame.lastRoll?.uid || ""}` : "none";
+  if (app.dom.skyCameraLayer && (frame.scene || app.frameKeys.skyCamera !== skyCameraKey)) {
+    app.dom.skyCameraLayer.replaceChildren(
+      ...(frame.scene ? [renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT)] : []),
+    );
+    app.frameKeys.skyCamera = skyCameraKey;
+  }
+  const narrativeRollUid = frame.firing ? (frame.lastRoll?.uid || "none") : "none";
+  const recentRollUid = frame.lastRoll?.uid || "none";
+  const narrativeKey = app.fieldLogHidden
+    ? "hidden"
+    : `${frame.chapter.chapter_num}|${narrativeRollUid}|${recentRollUid}`;
+  if (app.dom.narrativeMount && app.frameKeys.narrative !== narrativeKey) {
+    app.dom.narrativeMount.replaceChildren(
+      ...(!app.fieldLogHidden ? [renderNarrativeReadout(frame.firing ? frame.lastRoll : null, frame.chapter)] : []),
+    );
+    app.frameKeys.narrative = narrativeKey;
+  }
+}
+
+function updateDetailFrame() {
+  const detail = app.dom.detail;
+  if (!detail) return;
+  const next = renderDetail();
+  detail.replaceChildren(...[...next.childNodes]);
+}
+
+function updateCarouselFrame(focusT = null, firingCinematic = false) {
+  const strip = app.dom.carouselStrip;
+  if (!strip) return;
+  const model = carouselFrameModel(focusT, firingCinematic);
+  strip.style.transform = model.stripStyle.transform || "";
+  strip.style.opacity = model.stripStyle.opacity || "";
+  const nextUids = new Set(model.slots.map(slot => slot.uid));
+  for (const [uid, node] of app.carousel.visibleSlots) {
+    if (!nextUids.has(uid)) {
+      node.remove();
+      app.carousel.visibleSlots.delete(uid);
+    }
+  }
+  for (const slotModel of model.slots) {
+    let slot = app.carousel.visibleSlots.get(slotModel.uid);
+    if (!slot) {
+      slot = createCarouselSlot(slotModel);
+      app.carousel.visibleSlots.set(slotModel.uid, slot);
+    } else {
+      applyCarouselSlotState(slot, slotModel);
+    }
+    strip.appendChild(slot);
+  }
+}
+
 function centerScrubber() {
-  const scroller = document.querySelector(".scrubber-scroller");
-  const stack = document.querySelector(".scrubber-stack");
+  const scroller = app.dom.scrubberScroller;
+  const stack = app.dom.scrubberStack;
   if (!scroller || !stack || !app.data) return;
   const x = (app.wordPos / Math.max(1, app.data.story.total_words)) * stack.getBoundingClientRect().width;
   const target = clamp(x - scroller.clientWidth / 2, 0, Math.max(0, stack.scrollWidth - scroller.clientWidth));
+  if (Math.abs(scroller.scrollLeft - target) < 1) return;
   scroller.scrollLeft = target;
 }
 
-// Module-level click delegation. Render() rebuilds the entire DOM tree on
-// every frame (including the 60fps cinematic-anim ticks), so per-button
-// onClick handlers attached during a render can be silently destroyed
-// between the user's mousedown and mouseup — the browser then refuses to
-// fire `click`. Routing the click through a stable document.body listener
-// fixes that for any control flagged with data-action. Keyboard activation
-// (Enter/Space on a focused button) still fires `click` natively, so it
-// works through the same path without needing keyboard handling here.
+// Module-level click delegation keeps hot playback controls independent of
+// whether a structural render or incremental frame update touched their DOM.
+// Keyboard activation (Enter/Space on a focused button) still fires `click`
+// natively, so it works through the same path without extra key handling here.
 document.body.addEventListener("click", event => {
   const target = event.target.closest("[data-action]");
   if (!target) return;
@@ -2443,6 +2667,14 @@ window.addEventListener("keydown", event => {
   else if (event.key === "PageUp") setWordPos(app.wordPos - 100000);
   else if (event.key === "Home") setWordPos(0);
   else if (event.key === "End") setWordPos(app.data.story.total_words);
+});
+
+window.addEventListener("pagehide", () => {
+  if (app.data) persistBookmarkNow();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && app.data) persistBookmarkNow();
 });
 
 render();

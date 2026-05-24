@@ -24,8 +24,11 @@ def _page_with_console_capture(
     *,
     viewport=None,
     storage: dict[str, str] | None = None,
+    init_script: str | None = None,
 ):
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900})
+    if init_script:
+        page.add_init_script(init_script)
     if storage:
         page.add_init_script(
             "const entries = "
@@ -369,6 +372,208 @@ def test_web_app_pause_on_roll_can_resume_without_manual_scrubbing(tmp_path):
             page.wait_for_timeout(350)
             value = int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow"))
             assert value > 1500
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_playback_updates_without_structural_render_and_keeps_markers_interactive(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+        facts = json.loads(facts_path.read_text())
+        first_roll_word = facts["chapters"][1]["rolls"][0]["epub_word_offset_predicted"]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "3000",
+                    "bcf:playback:speed:v2": "1000",
+                    "bcf:on-roll-behavior": "quick",
+                },
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+
+            page.locator("#play-pause").click()
+            page.wait_for_timeout(350)
+
+            value = int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow"))
+            assert value > 3000
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+
+            page.locator("#play-pause").click()
+            page.locator(".roll-marker").first.click()
+            clicked_value = int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow"))
+            assert first_roll_word <= clicked_value <= first_roll_word + 250
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_detail_playback_keeps_detail_panels_in_sync(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "0",
+                    "bcf:mode": "detail",
+                    "bcf:playback:speed:v2": "50000",
+                    "bcf:on-roll-behavior": "quick",
+                },
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+            page.locator("#play-pause").click()
+            page.wait_for_timeout(250)
+
+            value = int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow"))
+            assert value > 7000
+            assert page.locator(".chapter-meta strong").inner_text().startswith("ch 3 ")
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_pause_lock_can_resume_after_switching_to_cinematic(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+        facts = json.loads(facts_path.read_text())
+        first_roll_word = facts["chapters"][1]["rolls"][0]["epub_word_offset_predicted"]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": str(first_roll_word),
+                    "bcf:playback:speed:v2": "5000",
+                    "bcf:on-roll-behavior": "pause",
+                },
+            )
+
+            page.locator(".roll-mode-switch button", has_text="cinematic").click()
+            page.locator("#play-pause").click()
+            page.wait_for_timeout(350)
+
+            value = int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow"))
+            assert value > first_roll_word
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_cinematic_focus_frames_do_not_structurally_render(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+        facts = json.loads(facts_path.read_text())
+        first_roll_word = facts["chapters"][1]["rolls"][0]["epub_word_offset_predicted"]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": str(first_roll_word),
+                    "bcf:playback:speed:v2": "5000",
+                    "bcf:on-roll-behavior": "cinematic",
+                },
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+            page.locator("#play-pause").click()
+            page.wait_for_timeout(350)
+
+            assert int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow")) == first_roll_word
+            assert page.locator(".sky-camera").count() == 1
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_bookmark_persistence_is_throttled_and_flushes_on_lifecycle(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    bookmark_write_probe = """
+        (() => {
+            const originalSetItem = Storage.prototype.setItem;
+            Storage.prototype.setItem = function(key, value) {
+                if (key === "bcf:bookmark:word_position") {
+                    window.__bookmarkWrites = window.__bookmarkWrites || [];
+                    window.__bookmarkWrites.push(String(value));
+                }
+                return originalSetItem.apply(this, arguments);
+            };
+        })();
+    """
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "3000",
+                    "bcf:playback:speed:v2": "1000",
+                    "bcf:on-roll-behavior": "quick",
+                },
+                init_script=bookmark_write_probe,
+            )
+
+            page.evaluate("window.__bookmarkWrites = []")
+            page.locator("#play-pause").click()
+            page.wait_for_timeout(650)
+            frame_value = page.locator("#scrubber-playhead").get_attribute("aria-valuenow")
+            writes_during_playback = page.evaluate("window.__bookmarkWrites.slice()")
+            assert len(writes_during_playback) <= 2
+
+            page.evaluate("window.__bookmarkWrites = []")
+            lifecycle_flush = page.evaluate(
+                """() => {
+                    window.dispatchEvent(new PageTransitionEvent("pagehide"));
+                    return {
+                        writes: window.__bookmarkWrites.slice(),
+                        stored: localStorage.getItem("bcf:bookmark:word_position"),
+                    };
+                }"""
+            )
+            assert len(lifecycle_flush["writes"]) == 1
+            assert lifecycle_flush["stored"] == lifecycle_flush["writes"][0]
+            assert int(lifecycle_flush["stored"]) >= int(frame_value)
+
+            page.locator("#play-pause").click()
+            page.evaluate("window.__bookmarkWrites = []")
+            page.keyboard.press("ArrowRight")
+            explicit_value = page.locator("#scrubber-playhead").get_attribute("aria-valuenow")
+            assert page.evaluate("window.__bookmarkWrites.slice()") == [explicit_value]
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == explicit_value
             assert console_messages == []
 
             browser.close()
