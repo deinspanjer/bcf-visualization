@@ -450,6 +450,84 @@ def test_web_app_detail_playback_keeps_detail_panels_in_sync(tmp_path):
             browser.close()
 
 
+def test_web_app_detail_playback_preserves_stable_panels_until_visible_state_changes(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "3500",
+                    "bcf:mode": "detail",
+                    "bcf:playback:speed:v2": "1000",
+                    "bcf:on-roll-behavior": "quick",
+                },
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+
+            page.locator("#detail-roll-log-panel [data-roll-filter='hit']").click()
+            page.locator("#detail-roll-log-panel [data-roll-sort='cost']").click()
+            page.evaluate(
+                """() => {
+                    window.__bcfRenderStats.structuralRenders = 0;
+                    document.querySelector('#selected-chapter-panel').dataset.probe = 'stable';
+                    document.querySelector('#detail-roll-log-panel table').dataset.probe = 'stable';
+                }"""
+            )
+
+            page.locator("#play-pause").click()
+            page.wait_for_timeout(250)
+
+            assert page.locator("#selected-chapter-panel").get_attribute("data-probe") == "stable"
+            assert page.locator("#detail-roll-log-panel table").get_attribute("data-probe") == "stable"
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_detail_playback_refreshes_when_chapter_or_filtered_roll_state_changes(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "6200",
+                    "bcf:mode": "detail",
+                    "bcf:playback:speed:v2": "4000",
+                    "bcf:on-roll-behavior": "quick",
+                },
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+
+            page.locator("#detail-roll-log-panel [data-roll-filter='miss']").click()
+            page.locator("#detail-roll-log-panel [data-roll-sort='cost']").click()
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+
+            expect = playwright_api.expect
+            expect(page.locator("#detail-roll-log-body tr")).to_have_count(0)
+            expect(page.locator(".chapter-meta strong")).to_contain_text("ch 2")
+
+            page.locator("#play-pause").click()
+            expect(page.locator("#detail-roll-log-body tr")).to_have_count(1)
+            expect(page.locator("#detail-roll-log-body")).to_contain_text("MISS")
+            expect(page.locator(".chapter-meta strong")).to_contain_text("ch 3")
+            assert int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow")) >= 7000
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
 def test_web_app_pause_lock_can_resume_after_switching_to_cinematic(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
@@ -511,6 +589,121 @@ def test_web_app_cinematic_focus_frames_do_not_structurally_render(tmp_path):
             assert int(page.locator("#scrubber-playhead").get_attribute("aria-valuenow")) == first_roll_word
             assert page.locator(".sky-camera").count() == 1
             assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_diffraction_markers_share_gradient_defs_across_scrubber_and_detail(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={
+                    "bcf:preview-port-storage-version": "2",
+                    "bcf:bookmark:word_position": "10000",
+                },
+            )
+
+            expect = playwright_api.expect
+            expect(page.locator(".scrubber .roll-marker .star-wrap svg").first).to_be_visible()
+            page.locator("#mode-detail").click()
+            expect(page.locator("#detail-roll-log-panel .star-wrap svg").first).to_be_visible()
+
+            marker_defs = page.evaluate(
+                """() => ({
+                    shared: document.querySelectorAll('#diffraction-ray-grad').length,
+                    perMarker: document.querySelectorAll('.star-wrap svg defs linearGradient[id^="ray-"]').length,
+                    markerGradientRefs: [...document.querySelectorAll('.star-wrap svg rect')]
+                        .filter(rect => rect.getAttribute('fill') === 'url(#diffraction-ray-grad)').length,
+                })"""
+            )
+            assert marker_defs["shared"] == 1
+            assert marker_defs["perMarker"] == 0
+            assert marker_defs["markerGradientRefs"] > 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_web_app_cinematic_beam_renders_without_svg_blur_filters(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+        facts = json.loads(facts_path.read_text())
+        cinematic_words = [
+            facts["chapters"][1]["rolls"][0]["epub_word_offset_predicted"],
+            facts["chapters"][2]["rolls"][0]["epub_word_offset_predicted"],
+        ]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            for word_pos in cinematic_words:
+                page, console_messages = _page_with_console_capture(
+                    browser,
+                    site,
+                    storage={
+                        "bcf:preview-port-storage-version": "2",
+                        "bcf:bookmark:word_position": str(word_pos),
+                        "bcf:playback:speed:v2": "5000",
+                        "bcf:on-roll-behavior": "cinematic",
+                    },
+                )
+
+                expect = playwright_api.expect
+                page.locator("#play-pause").click()
+                expect(page.locator(".cam-beam")).to_have_count(1)
+                beam_blur_usage = page.evaluate(
+                    """() => ({
+                        filters: document.querySelectorAll('#beam-outer-blur, #beam-inner-blur').length,
+                        attrs: [...document.querySelectorAll('.cam-beam [filter]')]
+                            .map(node => node.getAttribute('filter')),
+                    })"""
+                )
+                assert beam_blur_usage == {"filters": 0, "attrs": []}
+                assert console_messages == []
+                page.close()
+
+            browser.close()
+
+
+def test_web_app_constellation_cards_avoid_blur_filter_compositing(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(browser, site)
+
+            filter_stack = page.evaluate(
+                """() => {
+                    const card = document.querySelector('.const-card');
+                    const halo = card.querySelector('.halo');
+                    card.style.transition = 'none';
+                    card.classList.remove('is-active', 'is-flank');
+                    const inactive = getComputedStyle(card).filter;
+                    card.classList.add('is-active');
+                    const active = getComputedStyle(card).filter;
+                    card.classList.remove('is-active');
+                    card.classList.add('is-flank');
+                    const flank = getComputedStyle(card).filter;
+                    return {
+                        inactive,
+                        active,
+                        flank,
+                        halo: getComputedStyle(halo).filter,
+                    };
+                }"""
+            )
+            assert "blur" not in filter_stack["inactive"]
+            assert "blur" not in filter_stack["active"]
+            assert "blur" not in filter_stack["flank"]
+            assert filter_stack["halo"] == "none"
             assert console_messages == []
 
             browser.close()

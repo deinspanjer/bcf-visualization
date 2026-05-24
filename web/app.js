@@ -109,6 +109,7 @@ const app = {
   frameKeys: {
     narrative: null,
     skyCamera: null,
+    detail: {},
   },
   bookmarkPersistTimer: null,
   bookmarkLastPersistMs: 0,
@@ -413,6 +414,7 @@ async function loadRuntime() {
   };
   rebuildRollLocationCaches();
   app.wordPos = clamp(app.wordPos, 0, story.total_words);
+  mountSharedDiffractionDefs();
   mountBackgroundStarfield();
 }
 
@@ -734,8 +736,7 @@ function setWordPos(value) {
   }
   app.wordPos = next;
   persistBookmarkNow();
-  if (app.mode === "detail") render();
-  else updatePlaybackFrame();
+  updatePlaybackFrame();
 }
 
 function setMode(mode) {
@@ -862,7 +863,7 @@ function render() {
   clear(root);
   recordStructuralRender();
   app.dom = {};
-  app.frameKeys = { narrative: null, skyCamera: null };
+  app.frameKeys = { narrative: null, skyCamera: null, detail: {} };
   app.carousel.visibleSlots = new Map();
   if (app.error) {
     root.append(renderLoadError(app.error));
@@ -2023,6 +2024,13 @@ function renderBeam(scene, t, view) {
     [focal[0] + coreBaseW, bottomY],
     [focal[0] - coreBaseW, bottomY],
   ].map(p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
+  const glowBaseW = baseW * 1.55;
+  const glowPts = [
+    [focal[0], apexY],
+    [focal[0], apexY],
+    [focal[0] + glowBaseW, bottomY],
+    [focal[0] - glowBaseW, bottomY],
+  ].map(p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
 
   // Particle motes — fixed seeded x-jitter, phase cycles with t so they
   // continuously stream upward. sin-curve alpha so they emerge from the base
@@ -2059,11 +2067,14 @@ function renderBeam(scene, t, view) {
   const bloomVisualR = bloomR * 1.6;
 
   const defs = [
-    svgEl("filter", { id: "beam-outer-blur", x: "-30%", y: "-10%", width: "160%", height: "120%" },
-      svgEl("feGaussianBlur", { stdDeviation: "6" }),
-    ),
-    svgEl("filter", { id: "beam-inner-blur", x: "-20%", y: "-10%", width: "140%", height: "120%" },
-      svgEl("feGaussianBlur", { stdDeviation: "2.4" }),
+    svgEl("linearGradient", {
+      id: "beam-glow-grad",
+      x1: "0", y1: apexY.toFixed(2), x2: "0", y2: bottomY.toFixed(2),
+      gradientUnits: "userSpaceOnUse",
+    },
+      svgEl("stop", { offset: "0", "stop-color": color, "stop-opacity": (0.18 * op).toFixed(3) }),
+      svgEl("stop", { offset: "0.55", "stop-color": color, "stop-opacity": (0.10 * op).toFixed(3) }),
+      svgEl("stop", { offset: "1", "stop-color": color, "stop-opacity": "0" }),
     ),
     svgEl("linearGradient", {
       id: "beam-outer-grad",
@@ -2097,8 +2108,9 @@ function renderBeam(scene, t, view) {
   ];
 
   const group = svgEl("g", { class: "cam-beam" },
-    svgEl("polygon", { points: outerPts, fill: "url(#beam-outer-grad)", filter: "url(#beam-outer-blur)" }),
-    svgEl("polygon", { points: corePts, fill: "url(#beam-inner-grad)", filter: "url(#beam-inner-blur)" }),
+    svgEl("polygon", { points: glowPts, fill: "url(#beam-glow-grad)" }),
+    svgEl("polygon", { points: outerPts, fill: "url(#beam-outer-grad)" }),
+    svgEl("polygon", { points: corePts, fill: "url(#beam-inner-grad)" }),
     ...particles,
     svgEl("circle", {
       cx: focal[0].toFixed(2),
@@ -2240,7 +2252,7 @@ function renderSelectedChapter() {
     for (const perk of paidRollPerks(roll)) items.push({ perk, roll, free: false });
     for (const perk of roll.free_perks || []) items.push({ perk, roll, free: true });
   }
-  return el("div", { class: "panel panel-cut detail-panel" },
+  return el("div", { id: "selected-chapter-panel", class: "panel panel-cut detail-panel" },
     el("div", { class: "panel-title" }, el("span", { class: "pip" }), " Selected chapter"),
     el("div", { class: "body" },
       el("div", { class: "chapter-meta" },
@@ -2253,18 +2265,23 @@ function renderSelectedChapter() {
 }
 
 function renderRecentAcquisitions() {
-  const items = [];
-  for (const roll of recentRolls(app.wordPos, 20).filter(r => r.outcome === "hit")) {
-    for (const perk of paidRollPerks(roll)) items.push({ perk, roll, free: false });
-    for (const perk of roll.free_perks || []) items.push({ perk, roll, free: true });
-    if (items.length >= 14) break;
-  }
-  return el("div", { class: "panel panel-cut detail-panel" },
+  const items = recentAcquisitionItems(app.wordPos);
+  return el("div", { id: "recent-acquisitions-panel", class: "panel panel-cut detail-panel" },
     el("div", { class: "panel-title" }, el("span", { class: "pip" }), " Most recent acquisitions"),
     el("div", { class: "body" },
       items.length ? el("ul", { class: "perk-list" }, items.slice(0, 14).map(item => perkListItem(item.perk, item.roll, item.free))) : el("p", { class: "empty-copy", text: "No motes acquired yet." }),
     ),
   );
+}
+
+function recentAcquisitionItems(wordPos) {
+  const items = [];
+  for (const roll of recentRolls(wordPos, 20).filter(r => r.outcome === "hit")) {
+    for (const perk of paidRollPerks(roll)) items.push({ perk, roll, free: false });
+    for (const perk of roll.free_perks || []) items.push({ perk, roll, free: true });
+    if (items.length >= 14) break;
+  }
+  return items;
 }
 
 function perkListItem(perk, roll, free) {
@@ -2279,7 +2296,7 @@ function renderConstellationBars() {
   const chapter = chapterAtWord(app.wordPos);
   const progressByName = new Map((chapter.constellation_progress || []).map(row => [row.name, row]));
   const constellationNames = app.data.constellations.map(c => c.name);
-  return el("div", { class: "panel panel-cut detail-panel" },
+  return el("div", { id: "constellation-bars-panel", class: "panel panel-cut detail-panel" },
     el("div", { class: "panel-title" }, el("span", { class: "pip" }), " Constellation progress"),
     el("div", { class: "body" },
       el("div", { class: "constellation-bars" },
@@ -2334,7 +2351,6 @@ function renderRollRow(row) {
   );
 }
 
-let starId = 0;
 function diffractionMarker(roll, { scale = 1, color = "#71cef9" } = {}) {
   if (!roll) return null;
   if (roll.outcome === "miss") {
@@ -2371,25 +2387,18 @@ function simpleStar({ color = "#71cef9", cost = 100, visualSize = 24, opacity = 
 }
 
 function starSvg(color, cost, pixelSize) {
-  const id = `ray-${starId++}`;
   const recipe = recipeFor(cost);
   const rays = (count, length, width, offset = 0) => Array.from({ length: count }, (_, index) => {
     const angle = (360 / count) * index + offset + (index % 2 ? recipe.jitter : -recipe.jitter);
-    return svgEl("rect", { x: -length, y: -width / 2, width: length * 2, height: width, rx: width / 2, fill: `url(#${id})`, transform: `rotate(${angle.toFixed(2)})` });
+    return svgEl("rect", { x: -length, y: -width / 2, width: length * 2, height: width, rx: width / 2, fill: "url(#diffraction-ray-grad)", transform: `rotate(${angle.toFixed(2)})` });
   });
   return svgEl("svg", {
+    class: "diffraction-star",
     viewBox: "-50 -50 100 100",
     "aria-hidden": "true",
     focusable: "false",
-    style: `position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${pixelSize}px;height:${pixelSize}px;overflow:visible;opacity:.76;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px ${color});pointer-events:none`,
+    style: `position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${pixelSize}px;height:${pixelSize}px;color:${color};overflow:visible;opacity:.76;pointer-events:none`,
   },
-    svgEl("defs", {}, svgEl("linearGradient", { id, x1: "0", y1: "0", x2: "1", y2: "0" },
-      svgEl("stop", { offset: "0", "stop-color": "transparent" }),
-      svgEl("stop", { offset: "0.48", "stop-color": "#fff", "stop-opacity": "0.58" }),
-      svgEl("stop", { offset: "0.50", "stop-color": "#fff", "stop-opacity": "0.92" }),
-      svgEl("stop", { offset: "0.52", "stop-color": "#fff", "stop-opacity": "0.58" }),
-      svgEl("stop", { offset: "1", "stop-color": "transparent" }),
-    )),
     svgEl("g", { opacity: "0.68", style: "mix-blend-mode:screen" }, rays(recipe.major, recipe.length, recipe.width)),
     svgEl("g", { opacity: "0.32", style: "mix-blend-mode:screen" }, rays(recipe.minor, recipe.minorLength, recipe.minorWidth, 360 / (recipe.major * 2))),
     svgEl("circle", { r: "2.2", fill: color, opacity: "0.16" }),
@@ -2460,6 +2469,31 @@ function mountBackgroundStarfield() {
   backgroundStarfieldMounted = true;
 }
 
+let sharedDiffractionDefsMounted = false;
+function mountSharedDiffractionDefs() {
+  if (sharedDiffractionDefsMounted || document.getElementById("diffraction-ray-grad")) return;
+  const defs = svgEl("svg", {
+    id: "diffraction-marker-defs",
+    width: "0",
+    height: "0",
+    "aria-hidden": "true",
+    focusable: "false",
+    style: "position:absolute;width:0;height:0;overflow:hidden",
+  },
+    svgEl("defs", {},
+      svgEl("linearGradient", { id: "diffraction-ray-grad", x1: "0", y1: "0", x2: "1", y2: "0" },
+        svgEl("stop", { offset: "0", "stop-color": "transparent" }),
+        svgEl("stop", { offset: "0.48", "stop-color": "#fff", "stop-opacity": "0.58" }),
+        svgEl("stop", { offset: "0.50", "stop-color": "#fff", "stop-opacity": "0.92" }),
+        svgEl("stop", { offset: "0.52", "stop-color": "#fff", "stop-opacity": "0.58" }),
+        svgEl("stop", { offset: "1", "stop-color": "transparent" }),
+      ),
+    ),
+  );
+  document.body.appendChild(defs);
+  sharedDiffractionDefsMounted = true;
+}
+
 function documentIcon() {
   return svgEl("svg", { viewBox: "0 0 16 16", "aria-hidden": "true" },
     svgEl("path", { d: "M3.5 1.5 H10 L12.5 4 V14.5 H3.5 Z", fill: "none", stroke: "currentColor", "stroke-width": "1.2", "stroke-linejoin": "round" }),
@@ -2490,6 +2524,10 @@ function cachePlaybackDomRefs() {
     skyCameraLayer: document.querySelector(".sky-camera-layer"),
     narrativeMount: document.querySelector(".narrative-mount"),
     detail: document.querySelector(".detail"),
+    selectedChapterPanel: document.querySelector("#selected-chapter-panel"),
+    recentAcquisitionsPanel: document.querySelector("#recent-acquisitions-panel"),
+    constellationBarsPanel: document.querySelector("#constellation-bars-panel"),
+    rollLogPanel: document.querySelector("#detail-roll-log-panel"),
   };
   app.carousel.visibleSlots = new Map(
     [...document.querySelectorAll(".carousel-slot[data-roll-uid]")]
@@ -2578,8 +2616,61 @@ function updatePlaythroughFrame() {
 function updateDetailFrame() {
   const detail = app.dom.detail;
   if (!detail) return;
-  const next = renderDetail();
-  detail.replaceChildren(...[...next.childNodes]);
+  const keys = detailFrameKeys();
+  updateDetailPanel("selectedChapterPanel", "#selected-chapter-panel", keys.selectedChapter, renderSelectedChapter);
+  updateDetailPanel("recentAcquisitionsPanel", "#recent-acquisitions-panel", keys.recentAcquisitions, renderRecentAcquisitions);
+  updateDetailPanel("constellationBarsPanel", "#constellation-bars-panel", keys.constellationBars, renderConstellationBars);
+  updateDetailPanel("rollLogPanel", "#detail-roll-log-panel", keys.rollLog, renderRollLog);
+}
+
+function updateDetailPanel(domKey, selector, key, renderPanel) {
+  app.frameKeys.detail = app.frameKeys.detail || {};
+  if (app.frameKeys.detail[domKey] === key && app.dom[domKey]?.isConnected) return;
+  const current = app.dom[domKey] || document.querySelector(selector);
+  const next = renderPanel();
+  if (current) current.replaceWith(next);
+  else app.dom.detail?.appendChild(next);
+  app.dom[domKey] = next;
+  app.frameKeys.detail[domKey] = key;
+}
+
+function detailFrameKeys() {
+  const chapter = chapterAtWord(app.wordPos);
+  const chapterKey = chapter?.chapter_num || "";
+  const progressKey = (chapter.constellation_progress || [])
+    .map(row => `${row.name}:${row.discovered ?? row.count ?? 0}/${row.total ?? 0}:${row.discovered_pct ?? 0}`)
+    .join("|");
+  const recentKey = recentAcquisitionItems(app.wordPos)
+    .slice(0, 14)
+    .map(item => `${rollIdentity(item.roll)}:${perkDisplayLabel(item.perk)}:${item.free ? "free" : "paid"}`)
+    .join("|");
+  const rows = buildRollLogRows(app.data.story.rolls, app.wordPos, {
+    filter: app.rollFilter,
+    sort: app.rollSort,
+  }).slice(0, 250);
+  const rollLogKey = [
+    app.rollFilter,
+    app.rollSort,
+    app.rollLocation,
+    rows.map(row => [
+      rollIdentity(row.roll),
+      row.clickWord,
+      row.outcome,
+      row.paidCost,
+      row.availableCp ?? "",
+      row.names.join("~"),
+    ].join(":")).join("|"),
+  ].join("||");
+  return {
+    selectedChapter: chapterKey,
+    recentAcquisitions: recentKey,
+    constellationBars: `${chapterKey}|${progressKey}`,
+    rollLog: rollLogKey,
+  };
+}
+
+function rollIdentity(roll) {
+  return String(roll?.uid ?? roll?.global_roll_number ?? roll?.roll_number ?? roll?.word_position ?? "");
 }
 
 function updateCarouselFrame(focusT = null, firingCinematic = false) {
