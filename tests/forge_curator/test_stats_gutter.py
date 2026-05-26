@@ -102,6 +102,27 @@ def test_deferred_quote_highlights_in_mention_chapter_text(
     assert (start, start + len(quote)) in app._roll_evidence_char_spans(app.state.chapter)
 
 
+def test_global_roll_quote_highlights_in_mention_chapter_without_visible_roll(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    quote = "chapter2 forge motes"
+    app.data.roll_facts["rolls"][0]["evidence_quotes"] = [
+        {
+            "text": quote,
+            "mention_chapter_num": "2",
+            "mention_word_position": 0,
+        }
+    ]
+    text = app.state.chapter.prose.text
+    start = text.find(quote)
+
+    assert start >= 0
+    assert (start, start + len(quote)) in app._roll_evidence_char_spans(app.state.chapter)
+
+
 def test_quote_highlight_uses_saved_mention_position_for_duplicate_text(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

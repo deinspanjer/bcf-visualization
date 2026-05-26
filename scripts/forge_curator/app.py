@@ -41,6 +41,7 @@ from textual.widgets.option_list import Option
 
 from scripts.forge_curator.data_loader import ForgeCuratorData
 from scripts.forge_curator.data_loader import MANUAL, ROOT
+from scripts.forge_curator.miss_quote_matcher import find_miss_quote_candidates
 from scripts.forge_curator.passage_view import PassageView as BasePassageView
 from scripts.forge_curator.persistence import CurationPersistence
 from scripts.forge_curator.state import ForgeCuratorState
@@ -760,6 +761,7 @@ class ActionsPanel(Static):
             "  ⎵q       quote = selection\n"
             "  ⎵Q       quote = selection, multiple rolls\n\n"
             "[bold]Quote metadata[/bold]\n"
+            "  ⎵n       Detect miss quote matches\n"
             "  ⎵M       Move saved quote to another roll\n\n"
             "[bold]Roll metadata[/bold]\n"
             "  ⎵_  Source-only roll anchor at cursor\n"
@@ -921,6 +923,7 @@ class HelpScreen(ModalScreen):
             "  <space>E         selected passage eligibility\n"
             "  <space>q         roll quote = current selection\n"
             "  <space>Q         roll quote = current selection, multi-roll\n"
+            "  <space>n         detect miss quote matches\n"
             "  <space>M         move saved quote to another roll\n"
             "  <space>v         roll display position\n"
             "  <space>r         resolve current model discrepancy\n"
@@ -1800,6 +1803,80 @@ class ChapterCurationDeletePicker(ModalScreen):
         self.app.pop_screen()
 
 
+class GlobalRollNumberPrompt(ModalScreen):
+    """Prompt for attaching selected narrative evidence by global roll number."""
+
+    DEFAULT_CSS = """
+    GlobalRollNumberPrompt {
+        align: center middle;
+    }
+    GlobalRollNumberPrompt > Container {
+        width: 48;
+        height: auto;
+        border: thick $accent;
+        background: $surface;
+        padding: 0 1;
+    }
+    GlobalRollNumberPrompt Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    GlobalRollNumberPrompt Input {
+        width: 100%;
+        margin-bottom: 1;
+    }
+    GlobalRollNumberPrompt Button {
+        width: 1fr;
+        margin: 0;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(self, on_submit, **kw):
+        super().__init__(**kw)
+        self._on_submit = on_submit
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Attach quote to global roll", classes="title")
+            yield Input(placeholder="Global roll #", id="global_roll_number")
+            with Horizontal():
+                yield Button("Attach", id="attach", variant="primary")
+                yield Button("Cancel", id="cancel")
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "cancel":
+            self.action_dismiss_picker()
+            return
+        if event.button.id == "attach":
+            value = self.query_one("#global_roll_number", Input).value
+            self._submit(value)
+
+    @on(Input.Submitted)
+    def _on_submitted(self, event: Input.Submitted) -> None:
+        self._submit(event.input.value)
+
+    def _submit(self, value: str) -> None:
+        value = value.strip()
+        if not value:
+            return
+        try:
+            self.app.pop_screen()
+        except Exception:
+            pass
+        self._on_submit(value)
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
 class RollEvidencePicker(ModalScreen):
     """Multi-select roll picker for assigning one quote to several rolls."""
 
@@ -1834,6 +1911,13 @@ class RollEvidencePicker(ModalScreen):
         height: auto;
         padding: 0;
     }
+    RollEvidencePicker .roll-actions {
+        width: 100%;
+        height: auto;
+    }
+    RollEvidencePicker .roll-actions Button {
+        width: 1fr;
+    }
     RollEvidencePicker .selected {
         background: $accent 50%;
     }
@@ -1846,10 +1930,11 @@ class RollEvidencePicker(ModalScreen):
         Binding("q", "dismiss_picker", "cancel"),
     ]
 
-    def __init__(self, rolls: list[dict], on_confirm, **kw):
+    def __init__(self, rolls: list[dict], on_confirm, on_global_roll=None, **kw):
         super().__init__(**kw)
         self._rolls = rolls
         self._on_confirm = on_confirm
+        self._on_global_roll = on_global_roll
         self._selected: set[int] = set()
         self._display_position_policy: str | None = None
 
@@ -1885,7 +1970,10 @@ class RollEvidencePicker(ModalScreen):
                             id=f"roll_{idx}",
                             name=str(idx),
                         )
-            yield Button(self._display_position_label(), id="display_policy")
+            with Horizontal(id="roll_evidence_actions", classes="roll-actions"):
+                yield Button(self._display_position_label(), id="display_policy")
+                if self._on_global_roll is not None:
+                    yield Button("Enter global roll #", id="global_roll")
             yield Button("Confirm", id="confirm", variant="primary")
 
     @on(Button.Pressed)
@@ -1895,6 +1983,9 @@ class RollEvidencePicker(ModalScreen):
             return
         if event.button.id == "display_policy":
             self._toggle_display_position_policy(event.button)
+            return
+        if event.button.id == "global_roll":
+            self._request_global_roll()
             return
         self._toggle_button(event.button)
 
@@ -1918,7 +2009,19 @@ class RollEvidencePicker(ModalScreen):
         if self.focused.id == "display_policy":
             self._toggle_display_position_policy(self.focused)
             return
+        if self.focused.id == "global_roll" and self._on_global_roll is not None:
+            self._request_global_roll()
+            return
         self._toggle_button(self.focused)
+
+    def _request_global_roll(self) -> None:
+        if self._on_global_roll is None:
+            return
+        try:
+            self.app.pop_screen()
+        except Exception:
+            pass
+        self._on_global_roll(self._display_position_policy)
 
     def _display_position_label(self) -> str:
         if self._display_position_policy == "mention":
@@ -1938,6 +2041,198 @@ class RollEvidencePicker(ModalScreen):
         except Exception:
             pass
         self._on_confirm(sorted(self._selected), self._display_position_policy)
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
+class BatchMissQuotePicker(ModalScreen):
+    """Multi-select review modal for detected miss quote matches."""
+
+    DEFAULT_CSS = """
+    BatchMissQuotePicker {
+        align: center middle;
+    }
+    BatchMissQuotePicker > Container {
+        width: 100%;
+        height: 95%;
+        border: thick $accent;
+        background: $surface;
+        padding: 0 1;
+    }
+    BatchMissQuotePicker Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 0;
+    }
+    BatchMissQuotePicker Button {
+        width: 100%;
+        margin: 0;
+    }
+    BatchMissQuotePicker VerticalScroll {
+        width: 100%;
+        height: 1fr;
+    }
+    BatchMissQuotePicker .selected {
+        background: $accent 50%;
+    }
+    """
+
+    BINDINGS = [
+        Binding("space", "toggle_focused_match", "toggle", show=False, priority=True),
+        Binding("w", "widen_focused_match", "widen", show=False, priority=True),
+        Binding("n", "narrow_focused_match", "narrow", show=False, priority=True),
+        Binding("enter", "confirm_selection", "confirm", show=False, priority=True),
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(self, matches: list[dict] | None = None, on_confirm=None, **kw):
+        super().__init__(**kw)
+        self._matches: list[dict] = []
+        self._on_confirm = on_confirm or (lambda _ids: None)
+        self._selected: set[int] = set()
+        self._status = "Scanning for miss quote matches..."
+        if matches is not None:
+            self.set_matches(matches)
+
+    def _match_button_label(self, match: dict) -> str:
+        match_id = int(match["id"])
+        marker = "(x)" if match_id in self._selected else "( )"
+        quote = str(match.get("quote_text") or "").replace("\n", " ")
+        reasons = ", ".join(str(tag) for tag in match.get("reason_tags") or [])
+        variant_label = self._variant_label(match)
+        return (
+            f"{marker} {match.get('target_label')} | "
+            f"{match.get('source_context')} | {match.get('mention_label')} "
+            f"({match.get('distance_label')}) | {variant_label} | {reasons}\n"
+            f"    {quote}"
+        )
+
+    @staticmethod
+    def _variant_label(match: dict) -> str:
+        variants = match.get("quote_variants") or []
+        if not variants:
+            return "quote"
+        index = int(match.get("variant_index") or 0)
+        label = variants[index].get("label") or f"{index + 1}/{len(variants)}"
+        return f"{label} {index + 1}/{len(variants)}"
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Detected miss quote matches", classes="title")
+            with VerticalScroll(id="miss_quote_matches"):
+                for match in self._matches:
+                    yield self._button_for_match(match)
+            yield Static(self._status, id="miss_quote_status")
+            yield Button("Accept checked", id="confirm", variant="primary")
+
+    def set_matches(self, matches: list[dict]) -> None:
+        self._matches = list(matches)
+        self._selected = {
+            int(match["id"]) for match in self._matches
+            if match.get("default_selected")
+        }
+        self._status = (
+            f"{len(self._matches)} match candidate"
+            f"{'s' if len(self._matches) != 1 else ''} found"
+            if self._matches else "No likely unquoted miss evidence found"
+        )
+        if self.is_mounted:
+            self.call_later(self._refresh_match_widgets)
+
+    def _button_for_match(self, match: dict) -> Button:
+        match_id = int(match["id"])
+        return Button(
+            self._match_button_label(match),
+            id=f"miss_quote_{match_id}",
+            name=str(match_id),
+            classes="selected" if match_id in self._selected else "",
+        )
+
+    def _refresh_match_widgets(self) -> None:
+        try:
+            self.query_one("#miss_quote_status", Static).update(self._status)
+            rows = self.query_one("#miss_quote_matches", VerticalScroll)
+        except Exception:
+            return
+        rows.remove_children()
+        for match in self._matches:
+            rows.mount(self._button_for_match(match))
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm":
+            self.action_confirm_selection()
+            return
+        self._toggle_button(event.button)
+
+    def _toggle_button(self, button: Button) -> None:
+        name = button.name
+        if not name:
+            return
+        match_id = int(name)
+        if match_id in self._selected:
+            self._selected.discard(match_id)
+            button.remove_class("selected")
+        else:
+            self._selected.add(match_id)
+            button.add_class("selected")
+        match = self._match_by_id(match_id)
+        if match is not None:
+            button.label = self._match_button_label(match)
+
+    def _match_by_id(self, match_id: int) -> dict | None:
+        for match in self._matches:
+            if int(match["id"]) == int(match_id):
+                return match
+        return None
+
+    def action_toggle_focused_match(self) -> None:
+        if isinstance(self.focused, Button) and self.focused.id != "confirm":
+            self._toggle_button(self.focused)
+
+    def action_widen_focused_match(self) -> None:
+        self._step_focused_match_variant(1)
+
+    def action_narrow_focused_match(self) -> None:
+        self._step_focused_match_variant(-1)
+
+    def _step_focused_match_variant(self, step: int) -> None:
+        if not isinstance(self.focused, Button) or not self.focused.name:
+            return
+        match = self._match_by_id(int(self.focused.name))
+        if match is None:
+            return
+        variants = match.get("quote_variants") or []
+        if len(variants) < 2:
+            return
+        current = int(match.get("variant_index") or 0)
+        next_index = max(0, min(len(variants) - 1, current + int(step)))
+        if next_index == current:
+            return
+        self._apply_match_variant(match, next_index)
+        self.focused.label = self._match_button_label(match)
+
+    @staticmethod
+    def _apply_match_variant(match: dict, variant_index: int) -> None:
+        variants = match.get("quote_variants") or []
+        if not (0 <= int(variant_index) < len(variants)):
+            return
+        variant = variants[int(variant_index)]
+        match["variant_index"] = int(variant_index)
+        match["quote_text"] = variant["text"]
+        match["mention_label"] = variant["mention_label"]
+        match["distance_label"] = variant["distance_label"]
+        match["record"] = {**match.get("record", {}), **variant["record"]}
+
+    def action_confirm_selection(self) -> None:
+        try:
+            self.app.pop_screen()
+        except Exception:
+            pass
+        self._on_confirm(sorted(self._selected))
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -2403,7 +2698,7 @@ class ForgeCuratorApp(App):
             return []
         spans: list[tuple[int, int]] = []
         seen: set[tuple[int, int]] = set()
-        for roll in self._roll_evidence_picker_rolls(cs):
+        for roll in self._roll_evidence_highlight_rolls(cs):
             for quote in self._roll_evidence_quotes(roll):
                 span = self._quote_text_char_span(cs, quote)
                 if span is None:
@@ -2417,6 +2712,28 @@ class ForgeCuratorApp(App):
                     seen.add(span)
                     spans.append(span)
         return spans
+
+    def _roll_evidence_highlight_rolls(self, cs) -> list[dict]:
+        rows = list(self._roll_evidence_picker_rolls(cs))
+        seen_ids = {
+            int(roll["roll_number"])
+            for roll in rows
+            if roll.get("roll_number") is not None
+        }
+        for roll in self.data.roll_facts.get("rolls", []):
+            roll_number = roll.get("roll_number")
+            if roll_number is not None and int(roll_number) in seen_ids:
+                continue
+            if not any(
+                str(quote.get("mention_chapter_num")) == cs.meta.chapter_num
+                for quote in self._roll_evidence_quotes(roll)
+                if quote.get("mention_chapter_num") is not None
+            ):
+                continue
+            rows.append(roll)
+            if roll_number is not None:
+                seen_ids.add(int(roll_number))
+        return rows
 
     def _quote_text_char_span(self, cs, quote: dict) -> tuple[int, int] | None:
         text = str(quote.get("text") or "")
@@ -4253,6 +4570,8 @@ class ForgeCuratorApp(App):
             self._action_save_quote(cn)
         elif ch == "Q":
             self._action_save_quote_multi(cn)
+        elif ch == "n":
+            self._action_batch_match_miss_quotes(cn)
         elif ch == "M":
             self._action_reassign_roll_quote(cn)
         elif ch == "v":
@@ -5220,6 +5539,159 @@ class ForgeCuratorApp(App):
             on_confirm=assign_source_to_target,
         ))
 
+    def _action_batch_match_miss_quotes(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        picker = BatchMissQuotePicker()
+
+        def on_confirm(match_ids: list[int]) -> None:
+            matches = picker._matches
+            selected = [
+                match for match in matches
+                if int(match["id"]) in {int(match_id) for match_id in match_ids}
+            ]
+            if not selected:
+                self._flash("match miss quotes: no matches selected")
+                return
+            self.persistence.append_roll_evidence_records([
+                match["record"] for match in selected
+            ])
+            count = len(selected)
+            self._post_curation_refresh(
+                f"matched {count} miss quote{'s' if count != 1 else ''}"
+            )
+
+        picker._on_confirm = on_confirm
+        self.push_screen(picker)
+
+        def scan_and_populate() -> None:
+            picker.set_matches(self._batch_miss_quote_matches(cs))
+
+        self.call_after_refresh(scan_and_populate)
+
+    def _batch_miss_quote_matches(self, cs) -> list[dict]:
+        matches: list[dict] = []
+        claimed_quotes: set[tuple[int, int]] = set()
+        next_id = 1
+        for roll in self._roll_evidence_picker_rolls(cs):
+            target_index = roll.get("target_roll_index")
+            if target_index is None:
+                continue
+            if str(roll.get("outcome") or "") != "miss":
+                continue
+            if self._roll_evidence_quotes(roll):
+                continue
+            constellation = roll.get("constellation")
+            if not constellation:
+                continue
+            target_chapter = str(roll.get("target_chapter_num") or cs.meta.chapter_num)
+            candidates = self._miss_quote_candidates_for_roll(cs, roll)
+            if not candidates:
+                continue
+            top_score = candidates[0].score
+            second_score = candidates[1].score if len(candidates) > 1 else None
+            for index, candidate in enumerate(candidates, start=1):
+                quote_key = (candidate.char_start, candidate.char_end)
+                already_claimed = quote_key in claimed_quotes
+                if not already_claimed:
+                    claimed_quotes.add(quote_key)
+                mention_word = self._cp_earning_word_offset(candidate.word_index)
+                distance = mention_word - int(self._roll_action_word_position(cs, roll) or 0)
+                quote_variants = self._miss_quote_match_variants(
+                    cs,
+                    roll,
+                    candidate,
+                    target_chapter=target_chapter,
+                    target_index=int(target_index),
+                )
+                default_selected = (
+                    index == 1
+                    and not already_claimed
+                    and (
+                        second_score is None
+                        or int(top_score) >= int(second_score) + 10
+                    )
+                )
+                matches.append({
+                    "id": next_id,
+                    "target_label": self._roll_target_message_label(roll),
+                    "source_context": self._source_context_label(roll),
+                    "quote_text": candidate.text,
+                    "mention_label": f"ch {cs.meta.chapter_num}:{mention_word}",
+                    "distance_label": f"{distance:+} words",
+                    "reason_tags": list(candidate.reason_tags),
+                    "default_selected": default_selected,
+                    "variant_index": 0,
+                    "quote_variants": quote_variants,
+                    "record": {
+                        "chapter_num": target_chapter,
+                        "index": int(target_index),
+                        "text": candidate.text,
+                        "mention_chapter_num": cs.meta.chapter_num,
+                        "mention_word_position": mention_word,
+                    },
+                })
+                next_id += 1
+        return matches
+
+    def _miss_quote_candidates_for_roll(self, cs, roll: dict):
+        cp_anchor = int(self._roll_action_word_position(cs, roll) or 0)
+        raw_anchor = self._raw_word_for_cp_offset(cp_anchor)
+        return find_miss_quote_candidates(
+            cs.prose.text,
+            cs.prose.word_offsets,
+            constellation=str(roll.get("constellation") or ""),
+            anchor_word_index=raw_anchor,
+        )
+
+    def _miss_quote_match_variants(
+        self,
+        cs,
+        roll: dict,
+        candidate,
+        *,
+        target_chapter: str,
+        target_index: int,
+    ) -> list[dict]:
+        variants = []
+        for variant in candidate.variants:
+            mention_word = self._cp_earning_word_offset(variant.word_index)
+            distance = mention_word - int(self._roll_action_word_position(cs, roll) or 0)
+            variants.append({
+                "label": variant.label,
+                "text": variant.text,
+                "mention_label": f"ch {cs.meta.chapter_num}:{mention_word}",
+                "distance_label": f"{distance:+} words",
+                "record": {
+                    "chapter_num": target_chapter,
+                    "index": int(target_index),
+                    "text": variant.text,
+                    "mention_chapter_num": cs.meta.chapter_num,
+                    "mention_word_position": mention_word,
+                },
+            })
+        return variants
+
+    @staticmethod
+    def _source_context_label(roll: dict) -> str:
+        source_kind = roll.get("source_kind") or roll.get("slot_source") or "source"
+        source_chapter = roll.get("source_chapter_num") or roll.get("chapter_num")
+        source_index = roll.get("source_roll_index") or roll.get("source_row_index")
+        roll_number = roll.get("roll_number")
+        parts = [str(source_kind)]
+        if roll_number is not None:
+            parts.append(f"global #{int(roll_number)}")
+        if roll.get("constellation"):
+            parts.append(f"constellation {roll.get('constellation')}")
+        if source_chapter is not None and source_index is not None:
+            parts.append(f"source ch {source_chapter} #{int(source_index)}")
+        elif source_chapter is not None:
+            parts.append(f"source ch {source_chapter}")
+        if roll.get("display_kind") in {"deferred_in", "source_deferred"}:
+            parts.append("deferred")
+        return ", ".join(parts)
+
     def _action_save_quote(self, chapter_num: str) -> None:
         quote = self._selected_quote("save quote")
         if quote is None:
@@ -5314,7 +5786,86 @@ class ForgeCuratorApp(App):
                 f"quote saved to rolls {', '.join(target_labels)}"
             )
 
-        self.push_screen(RollEvidencePicker(rolls=rolls, on_confirm=on_confirm))
+        def on_global_roll(display_position_policy: str | None) -> None:
+            def on_submit(value: str) -> None:
+                self._save_quote_to_global_roll_number(
+                    chapter_num,
+                    quote=quote,
+                    mention_word=mention_word,
+                    global_roll_number_text=value,
+                    display_position_policy=display_position_policy,
+                )
+
+            self.push_screen(GlobalRollNumberPrompt(on_submit=on_submit))
+
+        self.push_screen(RollEvidencePicker(
+            rolls=rolls,
+            on_confirm=on_confirm,
+            on_global_roll=on_global_roll,
+        ))
+
+    def _save_quote_to_global_roll_number(
+        self,
+        chapter_num: str,
+        *,
+        quote: str,
+        mention_word: int | None,
+        global_roll_number_text: str,
+        display_position_policy: str | None,
+    ) -> None:
+        try:
+            global_roll_number = int(global_roll_number_text.strip())
+        except ValueError:
+            self._flash(f"save quote: invalid global roll #{global_roll_number_text}")
+            return
+        target = self._roll_evidence_target_for_global_roll_number(global_roll_number)
+        if target is None:
+            self._flash(f"save quote: global roll #{global_roll_number} not found")
+            return
+        target_chapter = str(target["target_chapter_num"])
+        target_index = int(target["target_roll_index"])
+        self.persistence.append_roll_evidence_at_index(
+            target_chapter,
+            target_index,
+            text=quote,
+            mention_chapter_num=chapter_num,
+            mention_word_position=mention_word,
+            display_position_policy=display_position_policy,
+        )
+        self._post_curation_refresh(
+            f"quote saved to global #{global_roll_number} "
+            f"({self._roll_target_message_label(target)})"
+        )
+
+    def _roll_evidence_target_for_global_roll_number(
+        self, global_roll_number: int,
+    ) -> dict | None:
+        for roll in self.data.roll_facts.get("rolls", []):
+            try:
+                if int(roll.get("roll_number")) != int(global_roll_number):
+                    continue
+            except (TypeError, ValueError):
+                continue
+            target_chapter = (
+                roll.get("target_chapter_num")
+                or roll.get("mechanical_chapter_num")
+                or roll.get("source_chapter_num")
+                or roll.get("chapter_num")
+            )
+            target_index = (
+                roll.get("target_roll_index")
+                or roll.get("source_roll_index")
+                or roll.get("roll_sequence_in_chapter")
+                or roll.get("index")
+            )
+            if target_chapter is None or target_index is None:
+                return None
+            return {
+                **roll,
+                "target_chapter_num": str(target_chapter),
+                "target_roll_index": int(target_index),
+            }
+        return None
 
     @staticmethod
     def _roll_target_message_label(roll: dict) -> str:

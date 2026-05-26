@@ -14,8 +14,8 @@ plain ``Static`` previously used to display the passage. It supports:
     e / E  (end of word / WORD)
     0 / $  (line start / end)
     g g (top), G (bottom)
-    f<c>/F<c>  find char forward/back on current visual line
-    t<c>/T<c>  until char forward/back on current visual line
+    f<c>/F<c>  find char forward/back until the next paragraph break
+    t<c>/T<c>  until char forward/back until the next paragraph break
     ; / ,      repeat last find-char motion / repeat in opposite direction
     <count><motion>  repeat motion (e.g. ``3w`` = three words forward)
     v / Space (toggle visual mode), Escape (clear visual mode + selection)
@@ -47,6 +47,9 @@ _WORD = re.compile(r"\w+")
 _WORD_CHAR = re.compile(r"\w")
 # A WORD (vim-uppercase) is a run of non-whitespace characters.
 _BIGWORD = re.compile(r"\S+")
+# Paragraphs are separated by a blank line. Spaces or tabs on the blank
+# separator line still count as a paragraph break.
+_PARAGRAPH_BREAK = re.compile(r"\n[ \t]*\n")
 
 # Layer styles applied to existing-span text (background colors so the
 # character offsets remain stable — no bracket characters are inserted).
@@ -825,10 +828,11 @@ class PassageView(Widget, can_focus=True):
     def _step_find_char(self, ch: str, *, forward: bool, until: bool) -> Optional[int]:
         """Compute the offset for ``f``/``F``/``t``/``T`` motions.
 
-        Search is *line-scoped*: it never crosses a visual-line boundary. Only
-        a single occurrence is consumed per call — counts loop the caller.
-        Returns ``None`` if the character is not found on the current line in
-        the requested direction (no movement should occur).
+        Search is paragraph-scoped: it crosses visual wraps and single hard
+        newlines, but never crosses a blank-line paragraph break. Only a single
+        occurrence is consumed per call — counts loop the caller. Returns
+        ``None`` if the character is not found in the requested direction (no
+        movement should occur).
         """
         if not ch or not self._lines:
             return None
@@ -846,18 +850,17 @@ class PassageView(Widget, can_focus=True):
     ) -> Optional[int]:
         """Compute a find-char target from the current cursor position."""
         text = self.text
-        li = self._line_index(self.cursor)
-        line_start, line_end = self._lines[li]
+        paragraph_start, paragraph_end = self._paragraph_bounds(self.cursor)
         if forward:
-            # Search strictly after the cursor on this line.
+            # Search strictly after the cursor within the current paragraph.
             search_from = self.cursor + (2 if repeated_until and until else 1)
-            for i in range(search_from, line_end):
+            for i in range(search_from, paragraph_end):
                 if text[i] == ch:
                     return i - 1 if until else i
             return None
-        # Backward search — strictly before the cursor on this line.
+        # Backward search — strictly before the cursor within the current paragraph.
         search_from = self.cursor - (2 if repeated_until and until else 1)
-        for i in range(search_from, line_start - 1, -1):
+        for i in range(search_from, paragraph_start - 1, -1):
             if text[i] == ch:
                 return i + 1 if until else i
         return None
@@ -1174,22 +1177,27 @@ class PassageView(Widget, can_focus=True):
     def _paragraph_bounds(self, cursor: int) -> tuple[int, int]:
         """Return ``(start, end_exclusive)`` for the paragraph containing cursor.
 
-        Paragraphs are runs separated by one or more blank lines (``\\n\\n``).
+        Paragraphs are runs separated by a blank line. Spaces or tabs on the
+        separator line still count as a paragraph break.
         """
         text = self.text
         n = len(text)
-        # Find paragraph start: scan back until previous \n\n.
-        s = cursor
-        while s > 0:
-            if s >= 2 and text[s - 2] == "\n" and text[s - 1] == "\n":
+        cursor = max(0, min(cursor, n))
+        s = 0
+        e = n
+        for match in _PARAGRAPH_BREAK.finditer(text):
+            if match.end() <= cursor:
+                s = match.end()
+                continue
+            if match.start() >= cursor:
+                e = match.start()
                 break
-            s -= 1
-        # Find paragraph end: scan forward until next \n\n.
-        e = max(s, cursor)
-        while e < n:
-            if e + 1 < n and text[e] == "\n" and text[e + 1] == "\n":
-                break
-            e += 1
+            # Cursor is inside the paragraph separator itself. Treat the
+            # separator as its own bounded region so find motions and paragraph
+            # text objects do not jump across it in either direction.
+            s = match.start()
+            e = match.end()
+            break
         return s, e
 
     def _select_text_object(self, *, scope: str, kind: str, count: int = 1) -> None:

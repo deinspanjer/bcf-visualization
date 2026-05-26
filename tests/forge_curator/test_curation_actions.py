@@ -7,11 +7,13 @@ from types import SimpleNamespace
 import pytest
 
 from scripts.forge_curator.app import (
+    BatchMissQuotePicker,
     QuoteMoveSourcePicker,
     QuoteMoveTargetPicker,
     RollEvidencePicker,
     SourceLinkPicker,
 )
+from scripts.forge_curator.data_loader import _compute_word_offsets
 from tests.helpers.forge_curator_fixture import forge_curator_fixture
 
 
@@ -154,6 +156,114 @@ def test_save_quote_exits_visual_mode_after_success(
     assert prose.anchor is None
     assert prose.visual_mode is False
     assert prose.visual_line_mode is False
+
+
+def test_batch_miss_quote_action_previews_detected_match_and_persists_checked_quote(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    cs = app.state.chapter
+    assert cs is not None
+    cs.prose.text = (
+        "intro words before the roll anchor. "
+        "The Magic constellation missed a connection. "
+        "ordinary prose after the evidence."
+    )
+    cs.prose.word_offsets = _compute_word_offsets(cs.prose.text)
+    cs.derived.roll_facts[0]["evidence_quotes"] = []
+    app.data.roll_facts["rolls"][0]["evidence_quotes"] = []
+    refreshes: list[str] = []
+    pushed: list[BatchMissQuotePicker] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+    monkeypatch.setattr(app, "push_screen", lambda screen: pushed.append(screen))
+    monkeypatch.setattr(app, "call_after_refresh", lambda callback: callback())
+
+    app._action_batch_match_miss_quotes("1")
+
+    assert len(pushed) == 1
+    picker = pushed[0]
+    assert picker._matches[0]["quote_text"] == "The Magic constellation missed a connection."
+    assert "constellation Magic" in picker._matches[0]["source_context"]
+    assert picker._matches[0]["quote_variants"][0]["label"] == "focused"
+    picker._on_confirm([picker._matches[0]["id"]])
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    roll = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "The Magic constellation missed a connection.",
+            "mention_chapter_num": "1",
+            "mention_word_position": 6,
+        }
+    ]
+    assert refreshes == ["matched 1 miss quote"]
+
+
+def test_batch_miss_quote_action_pushes_modal_before_scanning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    events: list[str] = []
+
+    def scan(_cs):
+        events.append("scan")
+        return []
+
+    def push(_screen):
+        events.append("push")
+
+    def after_refresh(callback):
+        events.append("scheduled")
+        callback()
+
+    monkeypatch.setattr(app, "_batch_miss_quote_matches", scan)
+    monkeypatch.setattr(app, "push_screen", push)
+    monkeypatch.setattr(app, "call_after_refresh", after_refresh)
+
+    app._action_batch_match_miss_quotes("1")
+
+    assert events == ["push", "scheduled", "scan"]
+
+
+def test_batch_miss_quote_persistence_is_one_undoable_action(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+
+    app.persistence.append_roll_evidence_records([
+        {
+            "chapter_num": "1",
+            "index": 1,
+            "text": "The Magic constellation missed a connection.",
+            "mention_chapter_num": "1",
+            "mention_word_position": 6,
+        },
+        {
+            "chapter_num": "1",
+            "index": 2,
+            "text": "The Time constellation passed by.",
+            "mention_chapter_num": "1",
+            "mention_word_position": 12,
+        },
+    ])
+
+    journal_entries = list((fixture.manual / ".session_journals").glob("*.jsonl"))
+    assert len(journal_entries) == 1
+    assert journal_entries[0].read_text().count(
+        '"action_type": "append_roll_evidence_records"'
+    ) == 1
+
+    undone = app.persistence.undo_last()
+
+    assert undone == ("append_roll_evidence_records", "1")
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    assert overrides["chapter_roll_overrides"] == {}
 
 
 def test_first_save_quote_stamps_new_chapter_override_fingerprint(
@@ -310,6 +420,43 @@ def test_save_quote_multi_updates_deferred_predicted_target_and_refreshes(
     deferred = app._deferred_predicted_slot_rolls(app.state.chapter)
     assert deferred[0]["evidence_quotes"] == roll["evidence_quotes"]
     assert app._roll_evidence_marker(deferred[0]) == "Q"
+
+
+def test_save_quote_multi_can_attach_to_global_roll_without_deferral(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app.persistence.mark_roll_deferred_to_later_chapter("1", 1)
+    monkeypatch.setattr(app, "_selected_quote", lambda _action_name: "later chapter quote")
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 24)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    refreshes: list[str] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+    screens: list[object] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_save_quote_multi("2")
+    assert [type(screen) for screen in screens] == [RollEvidencePicker]
+
+    screens[0]._on_global_roll("mention")
+    prompt = screens[1]
+    prompt._submit("1")
+
+    roll = app.persistence.chapter_roll_overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    assert roll["deferred_to_later_chapter"] is False
+    assert roll["mention_chapter_num"] == "2"
+    assert roll["mention_word_position"] == 24
+    assert roll["display_position_policy"] == "mention"
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "later chapter quote",
+            "mention_chapter_num": "2",
+            "mention_word_position": 24,
+        }
+    ]
+    assert refreshes == ["quote saved to global #1 (ch 1 #1)"]
 
 
 def test_delete_annotation_removes_quote_from_open_predicted_slot(

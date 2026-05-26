@@ -104,6 +104,65 @@ def test_quote_only_override_preserves_existing_roll_shape() -> None:
     ]
 
 
+def test_constellation_only_override_patches_matching_roll_slot() -> None:
+    curator_rows = [
+        (1, {"kind": "miss", "perks": [], "constellation": "Time", "roll_number": 3}),
+        (
+            2,
+            {
+                "kind": "roll",
+                "perks": [
+                    {
+                        "name": "Bling of War",
+                        "source": "Macross",
+                        "cost": 100,
+                        "free": False,
+                        "constellation": "Quality",
+                    },
+                ],
+                "banked_before": 200,
+                "banked_after": 100,
+                "constellation": "Quality",
+                "roll_number": 4,
+            },
+        ),
+        (3, {"kind": "miss", "perks": [], "constellation": None, "roll_number": 5}),
+    ]
+    override = {
+        "rolls": [
+            {},
+            {},
+            {
+                "constellation": "Capstone",
+                "evidence_quotes": [
+                    {
+                        "text": "The Forge missed a connection to that new constellation.",
+                        "mention_chapter_num": "2",
+                        "mention_word_position": 300,
+                    },
+                ],
+            },
+        ],
+    }
+
+    rows = _restructure_curator_rows("2", curator_rows, override)
+
+    assert rows[1]["kind"] == "roll"
+    assert rows[1]["constellation"] == "Quality"
+    assert "_evidence_quotes" not in rows[1]
+    assert rows[2]["kind"] == "miss"
+    assert rows[2]["roll_number"] == 5
+    assert rows[2]["constellation"] == "Capstone"
+    assert rows[2]["constellation_revealed"]
+    assert rows[2]["_evidence_quotes"] == [
+        {
+            "text": "The Forge missed a connection to that new constellation.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 300,
+        },
+    ]
+
+
 def test_quote_only_override_is_not_structural() -> None:
     assert not _has_structural_roll_override({
         "rolls": [
@@ -189,3 +248,70 @@ def test_quote_only_override_does_not_replace_multi_grab_units() -> None:
         "Bling of War",
         "Alchemist",
     ]
+
+
+def test_source_miss_metadata_does_not_replace_paid_units(capsys: pytest.CaptureFixture[str]) -> None:
+    obtained = [
+        {
+            "chapter_num": "2",
+            "perk_name": "Bling of War",
+            "cost": 100,
+            "free": False,
+            "epub_sequence": 1,
+            "jump": "Macross",
+        },
+        {
+            "chapter_num": "2",
+            "perk_name": "Storage Chest",
+            "cost": 0,
+            "free": True,
+            "epub_sequence": 1,
+            "jump": "Macross",
+        },
+        {
+            "chapter_num": "2",
+            "perk_name": "Alchemist",
+            "cost": 200,
+            "free": False,
+            "epub_sequence": 2,
+            "jump": "Secrets of Evermore",
+        },
+    ]
+    overrides = {
+        "chapter_roll_overrides": {
+            "2": {
+                "rolls": [
+                    {
+                        "evidence_quotes": [
+                            {
+                                "text": "The first connection landed.",
+                                "mention_chapter_num": "2",
+                                "mention_word_position": 10,
+                            },
+                        ],
+                    },
+                    {
+                        "outcome": "miss",
+                        "source_roll_number": 3,
+                        "evidence_quotes": [
+                            {
+                                "text": "The later source roll missed.",
+                                "mention_chapter_num": "3",
+                                "mention_word_position": 20,
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    }
+
+    units, stats = merge_paid_units(obtained, overrides)
+
+    assert "override drops paid perk" not in capsys.readouterr().out
+    assert stats["curated_chapters"] == 0
+    assert [p["perk_name"] for unit in units for p in unit["paid"]] == [
+        "Bling of War",
+        "Alchemist",
+    ]
+    assert [p["perk_name"] for p in units[0]["free_perks"]] == ["Storage Chest"]

@@ -645,16 +645,59 @@ def test_f_not_found_does_not_move() -> None:
     assert pv.cursor == 4
 
 
-def test_f_is_line_scoped() -> None:
-    # Hard newline splits visual lines. f should not cross.
-    pv = _make("foo bar\nbaz qux", width=80)
+def test_f_crosses_soft_wrap_until_paragraph_break() -> None:
+    pv = _make("alpha beta.", width=6)
+
+    _send(pv, "f", ".")
+
+    assert pv.cursor == len("alpha beta")  # period wrapped to the next visual line
+
+
+def test_t_crosses_soft_wrap_until_paragraph_break() -> None:
+    pv = _make("alpha beta.", width=6)
+
+    _send(pv, "t", ".")
+
+    assert pv.cursor == len("alpha bet")  # one before the wrapped period
+
+
+def test_F_crosses_soft_wrap_until_paragraph_break() -> None:
+    pv = _make("alpha beta", width=6)
+    pv.cursor = len(pv.text)
+
+    _send(pv, "F", "h")
+
+    assert pv.cursor == 3
+
+
+def test_find_char_crosses_single_hard_newline_in_same_paragraph() -> None:
+    pv = _make("foo bar\nbaz qux.", width=80)
+
+    _send(pv, "f", ".")
+
+    assert pv.cursor == len("foo bar\nbaz qux")
+
+
+def test_find_char_stops_at_blank_line_paragraph_break() -> None:
+    pv = _make("foo bar\n\nbaz qux.", width=80)
     pv.cursor = 0
-    _send(pv, "f", "q")  # 'q' is on the second line, not first
+
+    _send(pv, "f", ".")
+
     assert pv.cursor == 0
-    # Move to the second line and try again.
-    pv.cursor = 8  # "b" of "baz"
-    _send(pv, "f", "q")
-    assert pv.cursor == 12
+
+
+def test_find_repeat_crosses_soft_wrap_but_stops_at_paragraph_break() -> None:
+    pv = _make("a.b c.d\n\nx.y", width=4)
+
+    _send(pv, "f", ".")
+    assert pv.cursor == 1
+
+    _send(pv, ";")
+    assert pv.cursor == 5
+
+    _send(pv, ";")
+    assert pv.cursor == 5
 
 
 def test_gg_chord_via_on_key() -> None:

@@ -4,10 +4,13 @@ import json
 from pathlib import Path
 
 import pytest
+from textual.containers import Container
 from textual.widgets import Button, OptionList, Static
 
 from scripts.forge_curator.app import (
+    BatchMissQuotePicker,
     ConstellationPicker,
+    GlobalRollNumberPrompt,
     PerkPicker,
     QuoteMoveSourcePicker,
     QuoteMoveTargetPicker,
@@ -119,6 +122,220 @@ def test_roll_evidence_picker_label_uses_stable_target_index() -> None:
     )
 
     assert picker._roll_button_label(1, picker._rolls[0]).startswith("( ) #3")
+
+
+def test_roll_evidence_picker_global_roll_button_uses_current_display_policy() -> None:
+    selected: list[str | None] = []
+    picker = RollEvidencePicker(
+        rolls=_rolls(),
+        on_confirm=lambda _indices, _display_policy: None,
+        on_global_roll=selected.append,
+    )
+    picker._display_position_policy = "mention"
+
+    picker._on_pressed(Button.Pressed(Button("Enter global roll #", id="global_roll")))
+
+    assert selected == ["mention"]
+
+
+def test_global_roll_number_prompt_submits_stripped_roll_number() -> None:
+    submitted: list[str] = []
+    prompt = GlobalRollNumberPrompt(on_submit=submitted.append)
+
+    prompt._submit(" 309 ")
+
+    assert submitted == ["309"]
+
+
+def test_batch_miss_quote_picker_defaults_to_confident_rows_only() -> None:
+    selected: list[list[int]] = []
+    picker = BatchMissQuotePicker(
+        matches=[
+            {
+                "id": 1,
+                "target_label": "ch 1 #1",
+                "source_context": "source Roll 1",
+                "quote_text": "The Magic constellation missed a connection.",
+                "mention_label": "ch 1:24",
+                "distance_label": "+4 words",
+                "reason_tags": ["constellation", "miss_language"],
+                "default_selected": True,
+            },
+            {
+                "id": 2,
+                "target_label": "ch 1 #2",
+                "source_context": "source Roll 2",
+                "quote_text": "The Time constellation moved nearby.",
+                "mention_label": "ch 1:40",
+                "distance_label": "+20 words",
+                "reason_tags": ["ambiguous"],
+                "default_selected": False,
+            },
+        ],
+        on_confirm=selected.append,
+    )
+
+    assert picker._selected == {1}
+
+    picker.action_confirm_selection()
+
+    assert selected == [[1]]
+
+
+def test_batch_miss_quote_picker_label_preserves_full_quote_text() -> None:
+    long_quote = (
+        "The Magic constellation missed a connection while Joe was trying "
+        "to keep the conversation on track and the scene continued with "
+        "enough context to judge the match."
+    )
+    picker = BatchMissQuotePicker(
+        matches=[
+            {
+                "id": 1,
+                "target_label": "ch 1 #1",
+                "source_context": "roll, global #1, constellation Magic",
+                "quote_text": long_quote,
+                "mention_label": "ch 1:24",
+                "distance_label": "+4 words",
+                "reason_tags": ["constellation", "miss_language"],
+                "default_selected": True,
+            },
+        ],
+        on_confirm=lambda _ids: None,
+    )
+
+    label = picker._match_button_label(picker._matches[0])
+
+    assert long_quote in label
+    assert "..." not in label
+
+
+def test_batch_miss_quote_picker_can_widen_and_narrow_focused_match() -> None:
+    picker = BatchMissQuotePicker(
+        matches=[
+            {
+                "id": 1,
+                "target_label": "ch 1 #1",
+                "source_context": "roll, global #1, constellation Clothing",
+                "quote_text": "the Clothing constellation missed a connection",
+                "mention_label": "ch 1:24",
+                "distance_label": "+4 words",
+                "reason_tags": ["constellation", "miss_language"],
+                "default_selected": True,
+                "variant_index": 0,
+                "quote_variants": [
+                    {
+                        "label": "focused",
+                        "text": "the Clothing constellation missed a connection",
+                        "mention_label": "ch 1:24",
+                        "distance_label": "+4 words",
+                        "record": {
+                            "text": "the Clothing constellation missed a connection",
+                            "mention_word_position": 24,
+                        },
+                    },
+                    {
+                        "label": "sentence",
+                        "text": "The second duplicate quipped as the Clothing constellation missed a connection.",
+                        "mention_label": "ch 1:20",
+                        "distance_label": "+0 words",
+                        "record": {
+                            "text": "The second duplicate quipped as the Clothing constellation missed a connection.",
+                            "mention_word_position": 20,
+                        },
+                    },
+                ],
+                "record": {
+                    "text": "the Clothing constellation missed a connection",
+                    "mention_word_position": 24,
+                },
+            },
+        ],
+        on_confirm=lambda _ids: None,
+    )
+    picker.focused = Button("match", name="1")
+
+    picker.action_widen_focused_match()
+
+    match = picker._matches[0]
+    assert match["quote_text"] == (
+        "The second duplicate quipped as the Clothing constellation missed a connection."
+    )
+    assert match["record"]["mention_word_position"] == 20
+
+    picker.action_narrow_focused_match()
+
+    assert match["quote_text"] == "the Clothing constellation missed a connection"
+    assert match["record"]["mention_word_position"] == 24
+
+
+def test_batch_miss_quote_picker_starts_with_scanning_status() -> None:
+    picker = BatchMissQuotePicker(on_confirm=lambda _ids: None)
+
+    assert picker._status == "Scanning for miss quote matches..."
+
+    picker.set_matches([])
+
+    assert picker._status == "No likely unquoted miss evidence found"
+
+
+@pytest.mark.asyncio
+async def test_batch_miss_quote_picker_populates_matches_after_mount(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.app("1")
+    picker = BatchMissQuotePicker(on_confirm=lambda _ids: None)
+
+    async with app.run_test(size=(120, 30)) as pilot:
+        app.push_screen(picker)
+        await pilot.pause()
+
+        assert "Scanning for miss quote matches..." in _static_text(
+            picker.query_one("#miss_quote_status", Static)
+        )
+
+        picker.set_matches([
+            {
+                "id": 1,
+                "target_label": "ch 1 #1",
+                "source_context": "roll, global #1, constellation Magic",
+                "quote_text": "The Magic constellation missed a connection.",
+                "mention_label": "ch 1:24",
+                "distance_label": "+4 words",
+                "reason_tags": ["constellation", "miss_language"],
+                "default_selected": True,
+            },
+        ])
+        await pilot.pause()
+
+        assert "1 match candidate found" in _static_text(
+            picker.query_one("#miss_quote_status", Static)
+        )
+        assert picker.query_one("#miss_quote_1", Button).name == "1"
+
+
+@pytest.mark.asyncio
+async def test_batch_miss_quote_picker_status_line_stays_below_match_list(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.app("1")
+    picker = BatchMissQuotePicker(on_confirm=lambda _ids: None)
+
+    async with app.run_test(size=(120, 30)) as pilot:
+        app.push_screen(picker)
+        await pilot.pause()
+
+        child_ids = [
+            child.id for child in picker.query_one(Container).children
+            if child.id is not None
+        ]
+
+        assert child_ids.index("miss_quote_matches") < child_ids.index("miss_quote_status")
+        assert child_ids.index("miss_quote_status") < child_ids.index("confirm")
 
 
 def test_quote_move_target_picker_selects_one_roll() -> None:
@@ -259,6 +476,29 @@ async def test_roll_evidence_picker_splits_rolls_into_two_columns(
         assert len(right.query("Button")) == 6
         assert picker.query_one("#roll_1", Button).name == "1"
         assert picker.query_one("#roll_13", Button).name == "13"
+
+
+@pytest.mark.asyncio
+async def test_roll_evidence_picker_places_global_roll_next_to_display_policy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.app("1")
+    picker = RollEvidencePicker(
+        rolls=_rolls(),
+        on_confirm=lambda _indices, _display_policy: None,
+        on_global_roll=lambda _display_policy: None,
+    )
+
+    async with app.run_test(size=(120, 30)) as pilot:
+        app.push_screen(picker)
+        await pilot.pause()
+
+        action_row = picker.query_one("#roll_evidence_actions")
+
+        assert picker.query_one("#display_policy", Button).parent is action_row
+        assert picker.query_one("#global_roll", Button).parent is action_row
 
 
 def test_perk_picker_keyboard_bindings_toggle_and_confirm() -> None:

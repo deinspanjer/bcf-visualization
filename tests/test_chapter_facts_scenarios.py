@@ -5,6 +5,8 @@ import sys
 import zipfile
 from pathlib import Path
 
+from openpyxl import Workbook
+
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / "scripts"
@@ -991,3 +993,178 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
             "reason": "skipped_to_align_narrative",
         }
     ]
+
+
+def test_survey_designations_flow_into_visualization_roll_perks(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import build_chapter_facts, derive_roll_facts
+    from scripts.build_visualization_facts import build as build_visualization_facts
+
+    project = tmp_path / "project"
+    raw = project / "data" / "raw"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = raw / "fixture.epub"
+    xlsx = raw / "Brocktons_Celestial_Forge_Reference.xlsx"
+
+    raw.mkdir(parents=True)
+    with zipfile.ZipFile(epub, "w") as zf:
+        zf.writestr("EPUB/nav.xhtml", '<nav><a href="chap_1.xhtml">1 Fixture</a></nav>')
+        zf.writestr("EPUB/chap_1.xhtml", "<p>Fixture chapter body.</p>")
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "AI Perk Names"
+    ws.append([
+        "Order Obtained", "Constellation", "Sub-Order", "Cost", "Sub-perk",
+        "Name", None, None, None, "Constellation", "AI Designation",
+    ])
+    ws.append([250, "E", 18, "Null", "Beta", "‘Moon Jump’", None, None, None, "Crafting Skills", "E"])
+    ws.append([261, "G", 15, "Hex", "Alpha", "‘Fixture Infusion’", None, None, None, "Magic Constellation", "G"])
+    wb.save(xlsx)
+
+    _write_json(derived / "chapters.json", {"chapters": [
+        _fixture_chapter("1", "1 Fixture", sort_key=[1, 0]),
+    ]})
+    _write_json(derived / "chapter_sections.json", {"chapters": [
+        _fixture_section("1", "1 Fixture"),
+    ]})
+    _write_json(manual / "section_classifications.json",
+                {"classifications": {"1@0": {"counts_for_cp": True}}})
+    _write_json(derived / "predicted_rolls.json", {
+        "_count": 1,
+        "_total_cp_words": 1000,
+        "_total_epub_words": 1000,
+        "_regime_summary": {"1": "fixture", "2": "fixture", "3": "fixture"},
+        "predicted": [
+            {
+                "chapter_num": "1",
+                "slot_index": 1,
+                "cp_offset": 200,
+                "epub_offset": 200,
+                "roll_number": 1,
+                "roll_trigger_cp_threshold": 100,
+                "cp_rule_regime": 1,
+            }
+        ],
+    })
+    _write_json(derived / "roll_text_evidence.json", {
+        "rolls": [
+            {
+                "roll_number": 1,
+                "chapter_num": "1",
+                "slot_index": 1,
+                "cp_offset": 200,
+                "epub_offset": 200,
+            }
+        ]
+    })
+    _write_json(derived / "rolls.json", {
+        "rolls": [
+            {
+                "roll_number": 1,
+                "chapter_num": "1",
+                "kind": "roll",
+                "banked_before": 600,
+                "banked_after": 0,
+                "constellation": "Magic",
+                "constellation_revealed": True,
+                "perks": [
+                    {
+                        "name": "Fixture Infusion",
+                        "source": "Fixture Jump",
+                        "cost": 600,
+                        "free": False,
+                    },
+                    {
+                        "name": "Moon Jump",
+                        "source": "Fixture Jump",
+                        "cost": 0,
+                        "free": True,
+                    },
+                ],
+                "raw": "Roll 1 hit",
+            }
+        ]
+    })
+    _write_json(derived / "roll_outcomes.json", {"rolls": []})
+    _write_json(derived / "obtained_perks.json", {"perks": [
+        _fixture_perk(
+            sequence=1,
+            chapter_num="1",
+            name="Fixture Infusion",
+            jump="Fixture Jump",
+            constellation="Magic",
+            cost=600,
+        )
+    ]})
+    _write_json(derived / "perk_directory.json", {"perks": [
+        _fixture_directory_perk(
+            name="Fixture Infusion",
+            jump="Fixture Jump",
+            constellation="Magic",
+            cost=600,
+        ),
+        {
+            **_fixture_directory_perk(
+                name="Moon Jump",
+                jump="Fixture Jump",
+                constellation="Crafting",
+                cost=0,
+            ),
+            "free": True,
+            "cost_text": "Free",
+        },
+    ]})
+    _write_json(derived / "outstanding_perks_by_chapter.json", {"chapters": []})
+    _write_json(manual / "chapter_roll_overrides.json", {"chapter_roll_overrides": {}})
+    _write_json(manual / "roll_overrides.json", {"roll_overrides": []})
+    _write_json(manual / "chapter_publication_dates.json", {
+        "_source": "test fixture",
+        "_count": 1,
+        "chapters": [{
+            "chapter_num": "1",
+            "published_at": "2024-01-01",
+            "published_source": "ao3",
+            "last_edited_at": None,
+            "last_edited_source": None,
+        }],
+    })
+    _write_json(derived / "timeline.json", {
+        "_sources_used": [],
+        "_count": 0,
+        "_first_in_world_date": None,
+        "_last_in_world_date": None,
+        "entries": [],
+    })
+    _write_json(derived / "constellation_wireframes.json", {
+        "cluster_constellations": [],
+        "jump_constellations": [],
+    })
+    _write_json(derived / "data_package.json", {
+        "package_id": "fixture-pkg",
+        "version_label": "fixture label",
+        "package_date": "20260101",
+        "build_number": 1,
+        "source_commit": "deadbeef",
+        "story_chapter_ordinal": 1,
+        "story_chapter_num": "1",
+        "story_chapter_title": "1 Fixture",
+    })
+
+    _patch_pipeline_paths(monkeypatch, project, epub)
+    monkeypatch.setattr(derive_roll_facts, "SURVEY_DESIGNATIONS", xlsx, raising=False)
+
+    derive_roll_facts.main()
+    build_chapter_facts.main()
+    bundle = build_visualization_facts(derived)
+
+    roll = bundle["chapters"][0]["rolls"][0]
+    assert roll["purchased_perks"][0]["survey_designation"]["code"] == (
+        "261-G-15-Hex-Alpha"
+    )
+    assert roll["free_perks"][0]["survey_designation"]["code"] == (
+        "250-E-18-Null-Beta"
+    )

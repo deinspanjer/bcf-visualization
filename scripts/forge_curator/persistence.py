@@ -867,6 +867,84 @@ class CurationPersistence:
         )
         return updated
 
+    def append_roll_evidence_records(self, records: list[dict]) -> list[dict]:
+        """Append distinct quote evidence records in one journaled mutation."""
+        clean_records: list[dict] = []
+        for record in records:
+            try:
+                chapter_num = str(record["chapter_num"])
+                index = int(record["index"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if index <= 0:
+                continue
+            clean_records.append({
+                "chapter_num": chapter_num,
+                "index": index,
+                "text": str(record.get("text") or ""),
+                "mention_chapter_num": (
+                    str(record["mention_chapter_num"])
+                    if record.get("mention_chapter_num") is not None else None
+                ),
+                "mention_word_position": record.get("mention_word_position"),
+                "display_position_policy": record.get("display_position_policy"),
+            })
+        clean_records = [
+            record for record in clean_records
+            if record["text"].strip()
+        ]
+        if not clean_records:
+            return []
+        before = deepcopy(self.chapter_roll_overrides)
+        updated: list[dict] = []
+        extras: list[dict] = []
+        for item in clean_records:
+            quote = self._quote_record(
+                item["text"],
+                item["mention_chapter_num"],
+                item["mention_word_position"],
+            )
+            roll = self.get_or_create_roll_at_index(
+                item["chapter_num"], item["index"]
+            )
+            quotes = roll.setdefault("evidence_quotes", [])
+            was_empty = len(quotes) == 0
+            if quote not in quotes:
+                quotes.append(quote)
+            if roll.get("deferred_to_later_chapter"):
+                if item["mention_chapter_num"] is not None:
+                    roll["mention_chapter_num"] = item["mention_chapter_num"]
+                if item["mention_word_position"] is not None:
+                    roll["mention_word_position"] = int(item["mention_word_position"])
+                roll["display_position_policy"] = (
+                    item["display_position_policy"]
+                    or roll.get("display_position_policy")
+                    or "mechanical"
+                )
+                roll["deferred_to_later_chapter"] = False
+            if was_empty and item["display_position_policy"] is not None:
+                if item["mention_chapter_num"] is not None:
+                    roll["mention_chapter_num"] = item["mention_chapter_num"]
+                if item["mention_word_position"] is not None:
+                    roll["mention_word_position"] = int(item["mention_word_position"])
+                roll["display_position_policy"] = item["display_position_policy"]
+            updated.append(roll)
+            extras.append({
+                "chapter_num": item["chapter_num"],
+                "index": item["index"],
+                "quote": quote,
+            })
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "append_roll_evidence_records",
+            self.chapter_roll_overrides_path,
+            clean_records[0]["chapter_num"],
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"records": extras},
+        )
+        return updated
+
     def remove_roll_evidence_quote_at_index(
         self, chapter_num: str, index: int, quote: dict,
     ) -> bool:

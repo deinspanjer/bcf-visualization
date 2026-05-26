@@ -85,6 +85,15 @@ manually.
 The Evidence list marks the saved quote under the prose cursor with
 `▸`, matching the selected-roll marker used in the Rolls list.
 
+Use `<space>n` to scan the current chapter for likely narrative quote
+matches for unquoted miss rolls. The picker lists the likely roll,
+source evidence context, quote text, position, distance, and match
+reasons. Focus a row and use `w` / `n` to widen or narrow the proposed
+quote span when the matcher offers both a focused fragment and the full
+sentence. Check the rows you want to accept; confirming writes the
+selected quotes as one journaled curation action so undo reverts the
+batch together.
+
 Use `<space>D` to open the chapter curation deletion picker. The picker
 lists persisted curation records for the current chapter, plus related
 cross-chapter source links when a source roll was deferred into another

@@ -35,12 +35,14 @@ Override schema (current, per-roll metadata)::
       }
     }
 
-When a chapter has an entry, the override FULLY determines the chapter's
-paid roll list (grouping AND order). Each `rolls` object is one roll
-containing zero or more perks. Free perks not listed in any override
-roll for that chapter attach to the LAST roll (so total CP debit is
-preserved). Paid perks not listed in any override roll for that chapter
-raise an error — the override would silently drop them.
+When a chapter has an entry with explicit ``perks`` in at least one roll,
+the override FULLY determines the chapter's paid roll list (grouping AND
+order). Each listed-perk `rolls` object is one paid roll. Free perks not
+listed in any override roll for that chapter attach to the LAST roll (so
+total CP debit is preserved). Paid perks not listed in any paid override
+roll for that chapter raise an error — the override would silently drop
+them. Quote-only, miss-only, skipped, source-linked, and other metadata
+rows do not by themselves replace the default obtained-perk paid units.
 
 Without an override entry, the chapter falls back to: each paid
 obtained_perks row is its own roll, in obtained_perks/epub_sequence
@@ -195,8 +197,9 @@ def _structural_override(override: dict | None, chapter_num: str) -> dict | None
     if override is None:
         return None
     if any(
-        not _is_metadata_only_roll_entry(entry, chapter_num)
+        entry.get("perks")
         for entry in (override.get("rolls") or [])
+        if isinstance(entry, dict)
     ):
         return override
     return None

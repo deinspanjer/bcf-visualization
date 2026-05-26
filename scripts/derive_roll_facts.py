@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re
 
 from _common import write_validated_json
-from data_paths import DERIVED, MANUAL, ROOT
+from data_paths import DERIVED, MANUAL, RAW, ROOT
 from multi_grab import (
     load_overrides as load_multi_grab_overrides,
     merge_paid_units,
@@ -58,6 +59,7 @@ EVIDENCE = DERIVED / "roll_text_evidence.json"
 DIRECTORY = DERIVED / "perk_directory.json"
 OUTSTANDING = DERIVED / "outstanding_perks_by_chapter.json"
 ROLL_OVERRIDES = MANUAL / "roll_overrides.json"
+SURVEY_DESIGNATIONS = RAW / "Brocktons_Celestial_Forge_Reference.xlsx"
 OUT = DERIVED / "roll_facts.json"
 VALIDATION_OUT = DERIVED / "roll_validation.json"
 
@@ -95,6 +97,108 @@ def lookup_perk(
     if not name:
         return None
     return match_idx.lookup(name, jump=jump, constellation=constellation)
+
+
+def _clean_designation_name(value: object) -> str:
+    text = str(value or "").strip()
+    return text.strip("\"'‘’“”").strip()
+
+
+def _designation_key(name: str | None, constellation: str | None) -> tuple[str, str]:
+    return (
+        re.sub(r"\s+", " ", (name or "").strip()).casefold(),
+        re.sub(r"\s+", " ", (constellation or "").strip()).casefold(),
+    )
+
+
+def _canonical_constellation_label(value: object) -> str:
+    text = str(value or "").strip()
+    if text.endswith(" Constellation"):
+        text = text[: -len(" Constellation")]
+    if text == "Crafting Skills":
+        return "Crafting"
+    return text
+
+
+def _survey_designation_code(row: dict) -> str:
+    parts = [
+        str(row["order_obtained"]),
+        str(row["constellation_code"]),
+        str(row["constellation_order"]),
+        str(row["cost_code"]),
+    ]
+    if row.get("bundle_order"):
+        parts.append(str(row["bundle_order"]))
+    return "-".join(parts)
+
+
+def load_survey_designations(path=None) -> dict[tuple[str, str], dict]:
+    """Load Survey's AI designation codes keyed by canonical perk identity."""
+    path = path or SURVEY_DESIGNATIONS
+    if not path or not path.exists():
+        return {}
+
+    from openpyxl import load_workbook
+
+    wb = load_workbook(path, data_only=True, read_only=True)
+    if "AI Perk Names" not in wb.sheetnames:
+        return {}
+    ws = wb["AI Perk Names"]
+
+    constellation_names: dict[str, str] = {}
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        label = row[9] if len(row) > 9 else None
+        code = row[10] if len(row) > 10 else None
+        if label and code:
+            constellation_names[str(code).strip()] = _canonical_constellation_label(label)
+
+    out: dict[tuple[str, str], dict] = {}
+    source = "data/raw/Brocktons_Celestial_Forge_Reference.xlsx#AI Perk Names"
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if len(row) < 6:
+            continue
+        order, const_code, const_order, cost_code, bundle_order, name = row[:6]
+        if order is None or not const_code or const_order is None or not cost_code or not name:
+            continue
+        designation = {
+            "code": _survey_designation_code({
+                "order_obtained": int(order),
+                "constellation_code": str(const_code).strip(),
+                "constellation_order": int(const_order),
+                "cost_code": str(cost_code).strip(),
+                "bundle_order": (
+                    str(bundle_order).strip()
+                    if bundle_order not in (None, "") else None
+                ),
+            }),
+            "order_obtained": int(order),
+            "constellation_code": str(const_code).strip(),
+            "constellation_order": int(const_order),
+            "cost_code": str(cost_code).strip(),
+            "bundle_order": (
+                str(bundle_order).strip()
+                if bundle_order not in (None, "") else None
+            ),
+            "source": source,
+        }
+        clean_name = _clean_designation_name(name)
+        constellation = constellation_names.get(str(const_code).strip(), "")
+        out[_designation_key(clean_name, constellation)] = designation
+        out.setdefault(_designation_key(clean_name, None), designation)
+    return out
+
+
+def survey_designation_for(
+    designations: dict[tuple[str, str], dict],
+    name: str | None,
+    constellation: str | None,
+) -> dict | None:
+    if not name:
+        return None
+    return (
+        designations.get(_designation_key(name, constellation))
+        or designations.get(_designation_key(name, None))
+    )
 
 
 def normalized_evidence_kind(ev: dict | None, fallback: str) -> str:
@@ -183,7 +287,11 @@ def perk_meta(
     }
 
 
-def _purchased_perk_record(meta: dict, raw_perk: dict) -> dict:
+def _purchased_perk_record(
+    meta: dict,
+    raw_perk: dict,
+    survey_designations: dict[tuple[str, str], dict] | None = None,
+) -> dict:
     """Build a canonical purchased_perks[*] row from a perk_meta result.
 
     Shape: ``{name, instance, id, cost, cost_unit, jump, free}``.
@@ -202,7 +310,7 @@ def _purchased_perk_record(meta: dict, raw_perk: dict) -> dict:
         if meta["cost"] is not None
         else int(raw_perk.get("cost") or 0)
     )
-    return {
+    record = {
         "name": canonical,
         "instance": instance,
         "id": meta["id"],
@@ -211,12 +319,21 @@ def _purchased_perk_record(meta: dict, raw_perk: dict) -> dict:
         "jump": meta["jump"],
         "free": False,
     }
+    designation = survey_designation_for(
+        survey_designations or {},
+        canonical,
+        meta.get("constellation"),
+    )
+    if designation:
+        record["survey_designation"] = designation
+    return record
 
 
 def split_hit_perks(
     match_idx,
     perks: list[dict],
     parent_constellation: str | None,
+    survey_designations: dict[tuple[str, str], dict] | None = None,
 ) -> tuple[dict | None, list[dict], list[dict]]:
     """Returns (principal_meta, purchased_perks_array, free_perks_array).
 
@@ -243,13 +360,20 @@ def split_hit_perks(
                 "jump": free_meta["jump"],
                 "constellation": free_meta["constellation"],
             })
+            designation = survey_designation_for(
+                survey_designations or {},
+                free_meta["name"],
+                free_meta["constellation"],
+            )
+            if designation:
+                free_perks[-1]["survey_designation"] = designation
         return principal_meta, [], free_perks
     principal = paid_perks[0]
     principal_meta = perk_meta(match_idx, principal, parent_constellation)
     purchased_perks: list[dict] = []
     for p in paid_perks:
         meta = perk_meta(match_idx, p, parent_constellation)
-        purchased_perks.append(_purchased_perk_record(meta, p))
+        purchased_perks.append(_purchased_perk_record(meta, p, survey_designations))
     free_perks: list[dict] = []
     for perk in free_perks_raw:
         free_meta = perk_meta(
@@ -262,6 +386,13 @@ def split_hit_perks(
             "jump": free_meta["jump"],
             "constellation": free_meta["constellation"],
         })
+        designation = survey_designation_for(
+            survey_designations or {},
+            free_meta["name"],
+            free_meta["constellation"],
+        )
+        if designation:
+            free_perks[-1]["survey_designation"] = designation
     return principal_meta, purchased_perks, free_perks
 
 
@@ -535,7 +666,6 @@ def _is_metadata_only_roll_override(
     if entry.get("perks"):
         return False
     structural_fields = (
-        "constellation",
         "word_position",
     )
     if any(entry.get(field) not in (None, "", []) for field in structural_fields):
@@ -607,6 +737,9 @@ def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None
         payload["_display_position_policy"] = entry.get("display_position_policy")
     if entry.get("curator_note") is not None:
         payload["_curator_note"] = entry.get("curator_note")
+    if entry.get("constellation") is not None:
+        payload["constellation"] = entry.get("constellation")
+        payload["constellation_revealed"] = True
     if entry.get("source_deferred_to_chapter") is not None:
         payload["_source_deferred_to_chapter"] = str(
             entry.get("source_deferred_to_chapter")
@@ -1650,6 +1783,7 @@ def main() -> None:
         scheduler_results[cn] = result
 
     match_idx = build_directory_lookup(directory)
+    survey_designations = load_survey_designations()
     # Evidence is keyed by (chapter_num, slot_index) — NOT roll_number — to
     # tolerate drift between curator and predictor roll-number sequences. Each
     # predicted roll's evidence belongs to its mechanical chapter+slot; a
@@ -1777,6 +1911,7 @@ def main() -> None:
                         match_idx,
                         row.get("perks") or [],
                         constellation,
+                        survey_designations,
                     )
                     if paid_meta:
                         purchased_perk_id = paid_meta["id"]
@@ -2085,7 +2220,9 @@ def main() -> None:
             purchased_perks: list[dict] = []
             for p in raw_paid_list:
                 pm = perk_meta(match_idx, p, p.get("constellation"))
-                purchased_perks.append(_purchased_perk_record(pm, p))
+                purchased_perks.append(
+                    _purchased_perk_record(pm, p, survey_designations)
+                )
             purchased_perk_cost_total = (
                 sum(int(p["cost"]) for p in purchased_perks)
                 if purchased_perks else None
@@ -2106,6 +2243,13 @@ def main() -> None:
                         "jump": free_meta["jump"],
                         "constellation": free_meta["constellation"],
                     })
+                    designation = survey_designation_for(
+                        survey_designations,
+                        free_meta["name"],
+                        free_meta["constellation"],
+                    )
+                    if designation:
+                        free_perks[-1]["survey_designation"] = designation
             if assignment is not None:
                 available_cp = assignment.available_cp
                 banked_cp_after = assignment.banked_cp_after_roll
