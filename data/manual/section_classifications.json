@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
   "_count": 508,
-  "_mc_sections": 142,
-  "_non_mc_sections": 366,
+  "_mc_sections": 145,
+  "_non_mc_sections": 363,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Explicit curator section eligibility toggles and curated span_overrides from existing entries are preserved across regeneration.",
   "classifications": {
     "1@0": {
@@ -3224,8 +3224,8 @@
       "chapter_num": "58",
       "section_index": 1,
       "header": "Preamble Survey",
-      "counts_for_cp": false,
-      "reason": "preamble 'survey' (non-Joe)",
+      "counts_for_cp": true,
+      "reason": "curator toggle: eligible (was: preamble 'survey' (non-Joe))",
       "span_overrides": [
         {
           "word_offset_start": 72,
@@ -3343,8 +3343,8 @@
       "chapter_num": "58.1",
       "section_index": 2,
       "header": "58.1 Addendum Alec",
-      "counts_for_cp": false,
-      "reason": "chapter-title addendum 'alec'",
+      "counts_for_cp": true,
+      "reason": "curator toggle: eligible (was: chapter-title addendum 'alec')",
       "span_overrides": [
         {
           "word_offset_start": 6170,
@@ -3402,8 +3402,8 @@
       "chapter_num": "58.2",
       "section_index": 2,
       "header": "Interlude Lisa",
-      "counts_for_cp": false,
-      "reason": "interlude 'lisa' (non-Joe)",
+      "counts_for_cp": true,
+      "reason": "curator toggle: eligible (was: interlude 'lisa' (non-Joe))",
       "span_overrides": [
         {
           "word_offset_start": 83,
