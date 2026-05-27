@@ -234,12 +234,96 @@ class CurationPersistence:
                 "mention_word_position": None,
                 "display_position_policy": None,
                 "skipped": False,
-                "source_roll_number": None,
+                "source_ordinal": None,
                 "evidence_quotes": [],
-                "deferred_to_later_chapter": False,
                 "curator_note": None,
             })
         return rolls[index - 1]
+
+    @staticmethod
+    def _is_empty_roll_stub(roll: dict) -> bool:
+        return (
+            not roll.get("perks")
+            and roll.get("outcome") is None
+            and roll.get("constellation") is None
+            and roll.get("word_position") is None
+            and roll.get("mention_chapter_num") is None
+            and roll.get("mention_word_position") is None
+            and roll.get("display_position_policy") is None
+            and not roll.get("skipped")
+            and roll.get("source_ordinal") is None
+            and not roll.get("evidence_quotes")
+            and roll.get("curator_note") is None
+        )
+
+    def _find_roll_with_source_ordinal(
+        self, chapter_num: str, source_ordinal: int,
+    ) -> tuple[int, dict] | None:
+        entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(chapter_num))
+        )
+        for index, roll in enumerate((entry or {}).get("rolls") or [], start=1):
+            if isinstance(roll, dict) and roll.get("source_ordinal") == int(source_ordinal):
+                return index, roll
+        return None
+
+    def get_or_create_roll_for_source_ordinal(
+        self, chapter_num: str, index: int, source_ordinal: int | None,
+    ) -> dict:
+        if source_ordinal is None:
+            return self.get_or_create_roll_at_index(chapter_num, index)
+        found = self._find_roll_with_source_ordinal(chapter_num, int(source_ordinal))
+        if found is not None:
+            return found[1]
+        entry = self._ensure_chapter_entry(str(chapter_num))
+        rolls = entry["rolls"]
+        if int(index) > len(rolls):
+            roll = self.get_or_create_roll_at_index(chapter_num, index)
+            roll["source_ordinal"] = int(source_ordinal)
+            return roll
+        candidate = rolls[int(index) - 1]
+        if isinstance(candidate, dict) and self._is_empty_roll_stub(candidate):
+            candidate["source_ordinal"] = int(source_ordinal)
+            return candidate
+        roll = {
+            "perks": [],
+            "outcome": None,
+            "constellation": None,
+            "word_position": None,
+            "mention_chapter_num": None,
+            "mention_word_position": None,
+            "display_position_policy": None,
+            "skipped": False,
+            "source_ordinal": int(source_ordinal),
+            "evidence_quotes": [],
+            "curator_note": None,
+        }
+        rolls.append(roll)
+        return roll
+
+    def _find_roll_containing_quote(
+        self,
+        chapter_num: str,
+        quote: dict,
+        *,
+        source_ordinal: int | None = None,
+    ) -> tuple[int, dict] | None:
+        entry = (
+            self.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(chapter_num))
+        )
+        rolls = (entry or {}).get("rolls") or []
+        if source_ordinal is not None:
+            found = self._find_roll_with_source_ordinal(chapter_num, int(source_ordinal))
+            if found is not None and quote in (found[1].get("evidence_quotes") or []):
+                return found
+        for index, roll in enumerate(rolls, start=1):
+            if isinstance(roll, dict) and quote in (roll.get("evidence_quotes") or []):
+                return index, roll
+        return None
 
     @staticmethod
     def _quote_record(
@@ -273,7 +357,7 @@ class CurationPersistence:
         display_position_policy: str | None = None,
         curator_note: str | None = None,
         skipped: bool | None = None,
-        source_roll_number: int | None = None,
+        source_ordinal: int | None = None,
     ) -> dict:
         """Update an override roll at 1-based chapter-local ``index``.
 
@@ -306,9 +390,8 @@ class CurationPersistence:
                 roll["outcome"] = None
                 roll["perks"] = []
                 roll["constellation"] = None
-        if source_roll_number is not None:
-            roll["source_roll_number"] = int(source_roll_number)
-            roll["deferred_to_later_chapter"] = False
+        if source_ordinal is not None:
+            roll["source_ordinal"] = int(source_ordinal)
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "update_roll_at_index", self.chapter_roll_overrides_path, str(chapter_num),
@@ -321,15 +404,15 @@ class CurationPersistence:
                    "display_position_policy": display_position_policy,
                    "curator_note": curator_note,
                    "skipped": skipped,
-                   "source_roll_number": source_roll_number},
+                   "source_ordinal": source_ordinal},
         )
         return roll
 
-    def assign_source_roll_at_index(
-        self, chapter_num: str, index: int, source_roll_number: int,
+    def assign_source_ordinal_at_index(
+        self, chapter_num: str, index: int, source_ordinal: int,
     ) -> dict:
         before = deepcopy(self.chapter_roll_overrides)
-        source_roll_number = int(source_roll_number)
+        source_ordinal = int(source_ordinal)
         for other_chapter, entry in (
             self.chapter_roll_overrides.get("chapter_roll_overrides", {}).items()
         ):
@@ -341,20 +424,20 @@ class CurationPersistence:
                     continue
                 if not isinstance(roll, dict):
                     continue
-                if roll.get("source_roll_number") == source_roll_number:
-                    roll["source_roll_number"] = None
+                if roll.get("source_ordinal") == source_ordinal:
+                    roll["source_ordinal"] = None
         roll = self.get_or_create_roll_at_index(chapter_num, index)
-        roll["source_roll_number"] = source_roll_number
+        roll["source_ordinal"] = source_ordinal
         self._write_chapter_roll_overrides(before)
         self._append_journal(
-            "assign_source_roll_at_index",
+            "assign_source_ordinal_at_index",
             self.chapter_roll_overrides_path,
             str(chapter_num),
             before,
             deepcopy(self.chapter_roll_overrides),
             extra={
                 "index": int(index),
-                "source_roll_number": source_roll_number,
+                "source_ordinal": source_ordinal,
             },
         )
         return roll
@@ -373,7 +456,7 @@ class CurationPersistence:
         roll["perks"] = [str(perk_name)]
         roll["constellation"] = str(constellation) if constellation else None
         roll["skipped"] = False
-        roll["source_roll_number"] = None
+        roll["source_ordinal"] = None
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "assign_obtained_perk_at_index",
@@ -394,44 +477,6 @@ class CurationPersistence:
         for index in range(1, int(count) + 1):
             self.get_or_create_roll_at_index(chapter_num, index)
         self._write_chapter_roll_overrides(before)
-
-    def mark_source_roll_deferred_to_chapter(
-        self,
-        chapter_num: str,
-        index: int,
-        target_chapter_num: str,
-    ) -> dict:
-        before = deepcopy(self.chapter_roll_overrides)
-        roll = self.get_or_create_roll_at_index(chapter_num, index)
-        roll["source_deferred_to_chapter"] = str(target_chapter_num)
-        self._write_chapter_roll_overrides(before)
-        self._append_journal(
-            "mark_source_roll_deferred_to_chapter",
-            self.chapter_roll_overrides_path,
-            str(chapter_num),
-            before,
-            deepcopy(self.chapter_roll_overrides),
-            extra={
-                "index": index,
-                "target_chapter_num": str(target_chapter_num),
-            },
-        )
-        return roll
-
-    def clear_source_roll_deferral(self, chapter_num: str, index: int) -> dict:
-        before = deepcopy(self.chapter_roll_overrides)
-        roll = self.get_or_create_roll_at_index(chapter_num, index)
-        roll["source_deferred_to_chapter"] = None
-        self._write_chapter_roll_overrides(before)
-        self._append_journal(
-            "clear_source_roll_deferral",
-            self.chapter_roll_overrides_path,
-            str(chapter_num),
-            before,
-            deepcopy(self.chapter_roll_overrides),
-            extra={"index": index},
-        )
-        return roll
 
     def _existing_roll_at_index(self, chapter_num: str, index: int) -> dict | None:
         entry = (
@@ -504,13 +549,9 @@ class CurationPersistence:
             roll = self._existing_roll_at_index(chapter_num, int(roll_index))
             if roll is None:
                 continue
-            if kind == "source_deferral":
-                if roll.get("source_deferred_to_chapter") is not None:
-                    roll["source_deferred_to_chapter"] = None
-                    deleted += 1
-            elif kind == "source_assignment":
-                if roll.get("source_roll_number") is not None:
-                    roll["source_roll_number"] = None
+            if kind == "source_assignment":
+                if roll.get("source_ordinal") is not None:
+                    roll["source_ordinal"] = None
                     deleted += 1
             elif kind == "evidence_quote":
                 quote_index = int(item.get("quote_index", -1))
@@ -535,13 +576,12 @@ class CurationPersistence:
                 if roll.get("skipped"):
                     roll["skipped"] = False
                     deleted += 1
-            elif kind == "roll_deferral":
+            elif kind == "roll_display_position":
                 changed = False
                 for field, value in (
                     ("mention_chapter_num", None),
                     ("mention_word_position", None),
                     ("display_position_policy", None),
-                    ("deferred_to_later_chapter", False),
                 ):
                     if roll.get(field) != value:
                         roll[field] = value
@@ -587,7 +627,7 @@ class CurationPersistence:
                 roll["display_position_policy"] = None
                 return
 
-    def shift_roll_evidence_for_deferred_source_assignment(
+    def shift_roll_evidence_for_source_assignment(
         self,
         *,
         target_chapter_num: str,
@@ -595,7 +635,7 @@ class CurationPersistence:
         source_chapter_num: str,
         source_index: int,
     ) -> str:
-        """Move a chapter-local quote chain after a deferred source assignment."""
+        """Move a chapter-local quote chain after a cross-chapter source assignment."""
         target_roll = self.get_or_create_roll_at_index(
             str(target_chapter_num), int(target_index)
         )
@@ -630,7 +670,7 @@ class CurationPersistence:
             self._clear_quote_display_anchor_if_empty(roll, old_quotes)
         self._write_chapter_roll_overrides(before)
         self._append_journal(
-            "shift_roll_evidence_for_deferred_source_assignment",
+            "shift_roll_evidence_for_source_assignment",
             self.chapter_roll_overrides_path,
             f"{source_chapter_num}->{target_chapter_num}",
             before,
@@ -649,7 +689,7 @@ class CurationPersistence:
         *,
         target_chapter_num: str,
         target_index: int,
-        source_roll_number: int,
+        source_ordinal: int,
         copied_quotes: list[dict] | None = None,
         mention_chapter_num: str | None = None,
         display_position_policy: str | None = None,
@@ -658,7 +698,7 @@ class CurationPersistence:
     ) -> str:
         """Assign source provenance and any quote movement in one journal entry."""
         before = deepcopy(self.chapter_roll_overrides)
-        source_roll_number = int(source_roll_number)
+        source_ordinal = int(source_ordinal)
         for other_chapter, entry in (
             self.chapter_roll_overrides.get("chapter_roll_overrides", {}).items()
         ):
@@ -670,12 +710,11 @@ class CurationPersistence:
                     continue
                 if not isinstance(roll, dict):
                     continue
-                if roll.get("source_roll_number") == source_roll_number:
-                    roll["source_roll_number"] = None
+                if roll.get("source_ordinal") == source_ordinal:
+                    roll["source_ordinal"] = None
 
         target_roll = self.get_or_create_roll_at_index(target_chapter_num, target_index)
-        target_roll["source_roll_number"] = source_roll_number
-        target_roll["deferred_to_later_chapter"] = False
+        target_roll["source_ordinal"] = source_ordinal
         if mention_chapter_num is not None:
             target_roll["mention_chapter_num"] = str(mention_chapter_num)
         if display_position_policy is not None:
@@ -744,7 +783,7 @@ class CurationPersistence:
             deepcopy(self.chapter_roll_overrides),
             extra={
                 "target_index": int(target_index),
-                "source_roll_number": source_roll_number,
+                "source_ordinal": source_ordinal,
                 "result": result,
                 "shift_source_chapter_num": (
                     str(shift_source_chapter_num)
@@ -780,17 +819,6 @@ class CurationPersistence:
         was_empty = len(quotes) == 0
         if record not in quotes:
             quotes.append(record)
-        if roll.get("deferred_to_later_chapter"):
-            if mention_chapter_num is not None:
-                roll["mention_chapter_num"] = str(mention_chapter_num)
-            if mention_word_position is not None:
-                roll["mention_word_position"] = int(mention_word_position)
-            roll["display_position_policy"] = (
-                display_position_policy
-                or roll.get("display_position_policy")
-                or "mechanical"
-            )
-            roll["deferred_to_later_chapter"] = False
         if was_empty and display_position_policy is not None:
             if mention_chapter_num is not None:
                 roll["mention_chapter_num"] = str(mention_chapter_num)
@@ -835,17 +863,6 @@ class CurationPersistence:
             was_empty = len(quotes) == 0
             if record not in quotes:
                 quotes.append(record)
-            if roll.get("deferred_to_later_chapter"):
-                if mention_chapter_num is not None:
-                    roll["mention_chapter_num"] = str(mention_chapter_num)
-                if mention_word_position is not None:
-                    roll["mention_word_position"] = int(mention_word_position)
-                roll["display_position_policy"] = (
-                    display_position_policy
-                    or roll.get("display_position_policy")
-                    or "mechanical"
-                )
-                roll["deferred_to_later_chapter"] = False
             if was_empty and display_position_policy is not None:
                 if mention_chapter_num is not None:
                     roll["mention_chapter_num"] = str(mention_chapter_num)
@@ -888,6 +905,10 @@ class CurationPersistence:
                 ),
                 "mention_word_position": record.get("mention_word_position"),
                 "display_position_policy": record.get("display_position_policy"),
+                "source_ordinal": (
+                    int(record["source_ordinal"])
+                    if record.get("source_ordinal") is not None else None
+                ),
             })
         clean_records = [
             record for record in clean_records
@@ -904,24 +925,13 @@ class CurationPersistence:
                 item["mention_chapter_num"],
                 item["mention_word_position"],
             )
-            roll = self.get_or_create_roll_at_index(
-                item["chapter_num"], item["index"]
+            roll = self.get_or_create_roll_for_source_ordinal(
+                item["chapter_num"], item["index"], item["source_ordinal"]
             )
             quotes = roll.setdefault("evidence_quotes", [])
             was_empty = len(quotes) == 0
             if quote not in quotes:
                 quotes.append(quote)
-            if roll.get("deferred_to_later_chapter"):
-                if item["mention_chapter_num"] is not None:
-                    roll["mention_chapter_num"] = item["mention_chapter_num"]
-                if item["mention_word_position"] is not None:
-                    roll["mention_word_position"] = int(item["mention_word_position"])
-                roll["display_position_policy"] = (
-                    item["display_position_policy"]
-                    or roll.get("display_position_policy")
-                    or "mechanical"
-                )
-                roll["deferred_to_later_chapter"] = False
             if was_empty and item["display_position_policy"] is not None:
                 if item["mention_chapter_num"] is not None:
                     roll["mention_chapter_num"] = item["mention_chapter_num"]
@@ -932,6 +942,7 @@ class CurationPersistence:
             extras.append({
                 "chapter_num": item["chapter_num"],
                 "index": item["index"],
+                "source_ordinal": item["source_ordinal"],
                 "quote": quote,
             })
         self._write_chapter_roll_overrides(before)
@@ -987,8 +998,10 @@ class CurationPersistence:
         *,
         source_chapter_num: str,
         source_index: int,
+        source_source_ordinal: int | None = None,
         target_chapter_num: str,
         target_index: int,
+        target_source_ordinal: int | None = None,
         quote: dict,
     ) -> bool:
         """Move one saved quote record between roll override rows.
@@ -996,21 +1009,18 @@ class CurationPersistence:
         This preserves the quote record exactly and writes one journaled
         mutation so quote reassignments cannot be half-applied.
         """
-        source_entry = (
-            self.chapter_roll_overrides
-            .get("chapter_roll_overrides", {})
-            .get(str(source_chapter_num))
+        source_entry = self._find_roll_containing_quote(
+            str(source_chapter_num),
+            quote,
+            source_ordinal=source_source_ordinal,
         )
-        source_rolls = (source_entry or {}).get("rolls") or []
-        if not (1 <= int(source_index) <= len(source_rolls)):
+        if source_entry is None:
             return False
-        source_roll = source_rolls[int(source_index) - 1]
+        source_index, source_roll = source_entry
         source_quotes = source_roll.get("evidence_quotes") or []
-        if quote not in source_quotes:
-            return False
         before = deepcopy(self.chapter_roll_overrides)
-        target_roll = self.get_or_create_roll_at_index(
-            str(target_chapter_num), int(target_index)
+        target_roll = self.get_or_create_roll_for_source_ordinal(
+            str(target_chapter_num), int(target_index), target_source_ordinal
         )
         target_quotes = target_roll.setdefault("evidence_quotes", [])
         if quote not in target_quotes:
@@ -1036,8 +1046,10 @@ class CurationPersistence:
             deepcopy(self.chapter_roll_overrides),
             extra={
                 "source_index": int(source_index),
+                "source_source_ordinal": source_source_ordinal,
                 "target_chapter_num": str(target_chapter_num),
                 "target_index": int(target_index),
+                "target_source_ordinal": target_source_ordinal,
                 "quote": quote,
             },
         )
@@ -1068,94 +1080,6 @@ class CurationPersistence:
             extra={"index": int(index)},
         )
         return True
-
-    def mark_roll_deferred_to_chapter(
-        self,
-        chapter_num: str,
-        index: int,
-        mention_chapter_num: str,
-        *,
-        mention_word_position: int | None = None,
-        display_position_policy: str = "mechanical",
-    ) -> dict:
-        """Mark an index-aligned roll as narrated/listed in another chapter.
-
-        This is evidence-location metadata only. It deliberately leaves
-        outcome/perks/constellation untouched so hit/miss curation remains a
-        separate action.
-        """
-        before = deepcopy(self.chapter_roll_overrides)
-        roll = self.get_or_create_roll_at_index(chapter_num, index)
-        roll["mention_chapter_num"] = str(mention_chapter_num)
-        roll["mention_word_position"] = mention_word_position
-        roll["display_position_policy"] = display_position_policy
-        self._write_chapter_roll_overrides(before)
-        self._append_journal(
-            "mark_roll_deferred_to_chapter",
-            self.chapter_roll_overrides_path,
-            str(chapter_num),
-            before,
-            deepcopy(self.chapter_roll_overrides),
-            extra={
-                "index": index,
-                "mention_chapter_num": str(mention_chapter_num),
-                "mention_word_position": mention_word_position,
-                "display_position_policy": display_position_policy,
-            },
-        )
-        return roll
-
-    def mark_roll_deferred_to_later_chapter(
-        self,
-        chapter_num: str,
-        index: int,
-        *,
-        display_position_policy: str = "mechanical",
-    ) -> dict:
-        """Mark an unresolved predicted slot as deferred to a later chapter.
-
-        Unlike concrete roll deferral, this leaves the mention chapter unset so
-        Forge Curator can surface the unresolved slot in every later chapter
-        until a source row or quote ties it to a specific chapter.
-        """
-        before = deepcopy(self.chapter_roll_overrides)
-        roll = self.get_or_create_roll_at_index(chapter_num, index)
-        roll["mention_chapter_num"] = None
-        roll["mention_word_position"] = None
-        roll["display_position_policy"] = display_position_policy
-        roll["deferred_to_later_chapter"] = True
-        self._write_chapter_roll_overrides(before)
-        self._append_journal(
-            "mark_roll_deferred_to_later_chapter",
-            self.chapter_roll_overrides_path,
-            str(chapter_num),
-            before,
-            deepcopy(self.chapter_roll_overrides),
-            extra={
-                "index": index,
-                "display_position_policy": display_position_policy,
-            },
-        )
-        return roll
-
-    def clear_roll_deferral(self, chapter_num: str, index: int) -> dict:
-        """Remove roll-level deferral and keep display at the mechanical slot."""
-        before = deepcopy(self.chapter_roll_overrides)
-        roll = self.get_or_create_roll_at_index(chapter_num, index)
-        roll["mention_chapter_num"] = str(chapter_num)
-        roll["mention_word_position"] = None
-        roll["display_position_policy"] = "mechanical"
-        roll["deferred_to_later_chapter"] = False
-        self._write_chapter_roll_overrides(before)
-        self._append_journal(
-            "clear_roll_deferral",
-            self.chapter_roll_overrides_path,
-            str(chapter_num),
-            before,
-            deepcopy(self.chapter_roll_overrides),
-            extra={"index": int(index)},
-        )
-        return roll
 
     def set_roll_visualization_anchor(
         self,
@@ -1228,6 +1152,32 @@ class CurationPersistence:
             },
         )
         return resolution
+
+    def mark_auto_associations_reviewed_through(
+        self,
+        chapter_num: str,
+        *,
+        baseline_fingerprint: str,
+        baseline_roll_count: int,
+    ) -> dict:
+        """Advance the accepted-auto-association baseline marker."""
+        before = deepcopy(self.chapter_roll_overrides)
+        marker = {
+            "reviewed_through_chapter_num": str(chapter_num),
+            "baseline_fingerprint": str(baseline_fingerprint),
+            "baseline_roll_count": int(baseline_roll_count),
+        }
+        self.chapter_roll_overrides["association_review"] = marker
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "mark_auto_associations_reviewed_through",
+            self.chapter_roll_overrides_path,
+            str(chapter_num),
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra=marker,
+        )
+        return marker
 
     # ------------------------------------------------------------------
     # Action handlers — one per <space>X keybind.

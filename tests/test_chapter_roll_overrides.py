@@ -292,7 +292,7 @@ def test_source_miss_metadata_does_not_replace_paid_units(capsys: pytest.Capture
                     },
                     {
                         "outcome": "miss",
-                        "source_roll_number": 3,
+                        "source_ordinal": 3,
                         "evidence_quotes": [
                             {
                                 "text": "The later source roll missed.",

@@ -37,16 +37,16 @@ def test_schema_version_field_is_const_pinned():
     assert isinstance(prop["const"], int) and prop["const"] >= 1
 
 
-def test_predicted_rolls_item_shape_uses_regime_not_cp_rule_regime():
-    """Bundle's predicted_rolls items use `regime` (matches render-code reader); pipeline file's
-    cp_rule_regime is the upstream name and gets renamed by the bundler."""
+def test_predicted_rolls_item_shape_uses_explicit_predicted_identity_and_regime():
+    """Bundle predicted_rolls use explicit predicted identity and render-side regime."""
     doc = json.loads(SCHEMA.read_text())
     item = doc["properties"]["predicted_rolls"]["items"]
     assert set(item["required"]) == {
-        "roll_number", "cp_offset", "epub_offset", "chapter_num",
-        "slot_index", "regime", "roll_trigger_cp_threshold",
+        "predicted_ordinal", "predicted_label", "cp_offset", "epub_offset",
+        "chapter_num", "slot_index", "regime", "roll_trigger_cp_threshold",
     }
     assert item["properties"]["regime"]["enum"] == [1, 2, 3]
+    assert "roll_number" not in item["properties"]
     assert "cp_rule_regime" not in item["properties"], (
         "bundle schema must use the render-side name `regime`, not the pipeline name `cp_rule_regime`"
     )

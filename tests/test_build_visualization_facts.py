@@ -116,11 +116,12 @@ def test_bundle_predicted_rolls_renames_cp_rule_regime_to_regime(tmp_path: Path)
     the render-side reader at web/app.js:1021 (`tick.regime`). Synthetic ticks already use `regime`."""
     bundle = build(_seed_inputs(tmp_path))
     assert bundle["predicted_rolls"] == [
-        {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
-         "chapter_num": "1", "slot_index": 1, "regime": 1,
-         "roll_trigger_cp_threshold": 100},
+        {"predicted_ordinal": 1, "predicted_label": "P1", "cp_offset": 2000,
+         "epub_offset": 2253, "chapter_num": "1", "slot_index": 1,
+         "regime": 1, "roll_trigger_cp_threshold": 100},
     ]
     for row in bundle["predicted_rolls"]:
+        assert "roll_number" not in row
         assert "cp_rule_regime" not in row, (
             "bundler must drop the upstream cp_rule_regime field after renaming"
         )

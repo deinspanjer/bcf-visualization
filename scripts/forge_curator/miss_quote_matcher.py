@@ -236,14 +236,34 @@ def _focused_miss_relative_span(
     if constellation is None or miss is None:
         return None
 
-    cf = re.search(r"(?i)(?:\bI\s+watched\s+as\s+)?\bthe\s+Celestial\s+Forge\b", sentence)
+    cf = re.search(
+        r"(?i)(?:\bI\s+watched\s+as\s+)?\bthe\s+(?:Celestial\s+)?Forge\b",
+        sentence,
+    )
     if cf is not None and cf.start() <= miss.start():
-        end = _trim_end_after(sentence, constellation.end())
+        end = _trim_end_after(
+            sentence,
+            _constellation_reference_end(sentence, constellation.end()),
+        )
         return _strip_span(sentence, cf.start(), end)
 
     start = _article_start(sentence, constellation.start())
-    end = _trim_end_after(sentence, max(constellation.end(), _miss_phrase_end(sentence, miss)))
+    end = _trim_end_after(
+        sentence,
+        max(
+            _constellation_reference_end(sentence, constellation.end()),
+            _miss_phrase_end(sentence, miss),
+        ),
+    )
     return _strip_span(sentence, start, end)
+
+
+def _constellation_reference_end(sentence: str, end: int) -> int:
+    suffix = sentence[end:]
+    match = re.match(r"(?i)\s+constellation\b", suffix)
+    if match is None:
+        return end
+    return end + match.end()
 
 
 def _miss_phrase_end(sentence: str, miss: re.Match[str]) -> int:
@@ -253,7 +273,7 @@ def _miss_phrase_end(sentence: str, miss: re.Match[str]) -> int:
         r"(?is)\Amiss(?:ed|es|ing)?(?:\s+(?:a\s+)?connection)?",
         r"(?is)\Afail(?:ed|s|ing)?(?:\s+to\s+secure\s+a\s+connection)?",
         r"(?is)\A(?:mov(?:e|ed|es|ing)|drift(?:ed|s|ing)?)\s+(?:by|past|on)"
-        r"(?:\s+as\s+the\s+Celestial\s+Forge\s+fail(?:ed|s|ing)?"
+        r"(?:\s+as\s+the\s+(?:Celestial\s+)?Forge\s+fail(?:ed|s|ing)?"
         r"\s+to\s+secure\s+a\s+connection)?",
         r"(?is)\Ano\s+connection\s+formed\s+before\s+it\s+moved\s+on",
         r"(?is)\Aconnection\s+(?:was\s+)?missed",

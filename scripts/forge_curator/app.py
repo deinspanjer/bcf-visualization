@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -44,7 +45,7 @@ from scripts.forge_curator.data_loader import MANUAL, ROOT
 from scripts.forge_curator.miss_quote_matcher import find_miss_quote_candidates
 from scripts.forge_curator.passage_view import PassageView as BasePassageView
 from scripts.forge_curator.persistence import CurationPersistence
-from scripts.forge_curator.state import ForgeCuratorState
+from scripts.forge_curator.state import ChapterState, ForgeCuratorState
 from scripts.eligibility_spans import section_cp_word_count, section_span_overrides
 
 STATE_FILE = MANUAL / ".forge_curator_state.json"
@@ -560,12 +561,33 @@ class StatsPanel(Static):
 
         unified = app._unified_rolls(cs)
         chapter_rolls = app._roll_slot_rows(cs, unified)
-        deferred_rolls = [
-            roll for roll in unified
-            if roll.get("display_kind") in {"deferred_in", "source_deferred"}
+        selected_or_current = app._stats_selected_roll_target()
+
+        def _target_chapter_num(roll: dict) -> str:
+            return str(
+                roll.get("target_chapter_num")
+                or roll.get("mechanical_chapter_num")
+                or roll.get("chapter_num")
+                or cn
+            )
+
+        def _is_prior_roll(roll: dict) -> bool:
+            return app._chapter_sort_key(_target_chapter_num(roll)) < app._chapter_sort_key(cn)
+
+        def _target_sort_key(roll: dict) -> tuple:
+            return (
+                app._chapter_sort_key(_target_chapter_num(roll)),
+                int(roll.get("target_roll_index") or roll.get("index") or 0),
+                int(roll.get("roll_ordinal") or 0),
+            )
+
+        prior_rolls = sorted(
+            [roll for roll in chapter_rolls if _is_prior_roll(roll)],
+            key=_target_sort_key,
+        )
+        current_rolls = [
+            roll for roll in chapter_rolls if not _is_prior_roll(roll)
         ]
-        deferred_rolls.extend(app._deferred_predicted_slot_rolls(cs, unified))
-        selected_or_current = app._selected_or_default_roll_target()
 
         self._roll_line_targets: dict[int, dict] = {}
         pre_roll_body = (
@@ -608,36 +630,39 @@ class StatsPanel(Static):
             line_cursor += max(1, len(line.splitlines()))
             return line
 
-        deferred_block = ""
-        if deferred_rolls:
-            line_cursor += 2
-            lines = []
-            for roll in deferred_rolls:
-                marker = "▸" if app._same_roll_target(roll, selected_or_current) else " "
-                lines.append(_register_block_line(
-                    app._format_roll_stat_line(roll, marker), roll
-                ))
-            deferred_block = "\n\n[bold]Deferred rolls[/bold]\n" + "\n".join(lines)
-
-        line_cursor += 2
-        roll_lines: list[str] = []
-        if not chapter_rolls:
-            roll_lines.append(_register_block_line("  (no same-chapter rolls)"))
-        else:
-            for roll in chapter_rolls:
+        def _render_roll_lines(rolls: list[dict], *, dim_future_current: bool) -> list[str]:
+            lines: list[str] = []
+            if not rolls:
+                lines.append(_register_block_line("  (no same-chapter rolls)"))
+                return lines
+            for roll in rolls:
                 marker = "▸" if app._same_roll_target(roll, selected_or_current) else " "
                 line = app._format_roll_stat_line(roll, marker)
-                if roll["word_position"] > cp_word_idx:
+                if dim_future_current and roll["word_position"] > cp_word_idx:
                     line = f"[dim]{line}[/]"
-                roll_lines.append(_register_block_line(line, roll))
-        rolls_block = "\n".join(roll_lines)
+                lines.append(_register_block_line(line, roll))
+            return lines
+
+        line_cursor += 2
+        prior_rolls_block = ""
+        if prior_rolls:
+            prior_lines = _render_roll_lines(prior_rolls, dim_future_current=False)
+            prior_rolls_block = (
+                "\n\n[bold]Prior Chapter Rolls[/bold]\n"
+                f"{chr(10).join(prior_lines)}"
+            )
+
+        line_cursor += 2
+        rolls_block = "\n".join(
+            _render_roll_lines(current_rolls, dim_future_current=True)
+        )
 
         evidence_block = app._evidence_block(cs)
         perks_block = app._perks_this_chapter_block(cs)
 
         body = (
             pre_roll_body +
-            f"{deferred_block}"
+            prior_rolls_block +
             f"\n\n[bold]Rolls[/bold] [dim]({app._rolls_header_count(cs)})[/]\n"
             f"{rolls_block}\n\n"
             f"[bold]Evidence[/bold]\n{evidence_block}\n\n"
@@ -771,7 +796,6 @@ class ActionsPanel(Static):
             "  ⎵S  Assign source roll to selected slot\n"
             "  ⎵h  Last roll = hit\n"
             "  ⎵m  Last roll = miss\n"
-            "  ⎵d  Toggle evidence deferral to later chapter\n"
             "  ⎵v  Roll display position\n"
             "  ⎵c  Set constellation\n"
             "  ⎵p  Set perks\n\n"
@@ -931,7 +955,6 @@ class HelpScreen(ModalScreen):
             "  <space>s         predicted slot = skipped\n"
             "  <space>S         assign source roll to selected slot\n"
             "  <space>_         source-only roll anchor at cursor\n"
-            "  <space>d         toggle roll evidence deferral to later chapter\n"
             "  <space>D         delete curation data for chapter\n"
             "  <space>h / m     last roll = hit / miss\n"
             "  <space>c / p     constellation / perks pickers\n"
@@ -1280,7 +1303,7 @@ class SourceRollPicker(ModalScreen):
                 classes="title",
             )
             for idx, roll in enumerate(self._rolls, start=1):
-                roll_number = roll.get("roll_number")
+                source_label = ForgeCuratorApp._source_reference_label(roll)
                 outcome = roll.get("outcome") or roll.get("source_kind") or "unknown"
                 perk = _rolled_perk_display(roll)
                 constellation = roll.get("constellation")
@@ -1295,7 +1318,7 @@ class SourceRollPicker(ModalScreen):
                 if roll.get("source_kind") == "obtained_perk":
                     label = f"Obtained: {outcome}{detail}{raw}"
                 else:
-                    label = f"Roll {roll_number}: {outcome}{detail}{raw}"
+                    label = f"{source_label}: {outcome}{detail}{raw}"
                 if len(label) > 76:
                     label = label[:73] + "..."
                 yield Button(
@@ -1357,21 +1380,18 @@ class SourceAssignmentTargetPicker(ModalScreen):
     @staticmethod
     def _roll_button_label(roll: dict) -> str:
         target = ForgeCuratorApp._roll_target_message_label(roll)
-        roll_number = roll.get("roll_number")
-        global_part = f"global #{roll_number}" if roll_number is not None else "global #?"
+        global_part = ForgeCuratorApp._roll_reference_label(roll)
         outcome = roll.get("outcome") or "open"
-        if roll.get("display_kind") == "deferred_in":
-            label = f"{target}: deferred ({global_part})  {outcome}"
-        else:
-            label = f"{target}: {global_part}  {outcome}"
+        label = f"{target}: {global_part}  {outcome}"
         perk = _rolled_perk_display(roll)
         constellation = roll.get("constellation")
         if perk and constellation:
             label = f"{label}  {constellation} - {perk}"
         elif constellation:
             label = f"{label}  {constellation}"
-        if roll.get("source_roll_number") is not None:
-            label = f"{label}  source Roll {roll.get('source_roll_number')}"
+        if roll.get("source_ordinal") is not None:
+            source_label = roll.get("source_label") or f"S{roll.get('source_ordinal')}"
+            label = f"{label}  {source_label}"
         if len(label) > 76:
             label = label[:73] + "..."
         return label
@@ -1470,26 +1490,27 @@ class SourceLinkPicker(ModalScreen):
     def _target_label(roll: dict, *, selected: bool = False) -> str:
         prefix = "LEFT > " if selected else "       "
         target = ForgeCuratorApp._roll_target_message_label(roll)
-        roll_number = roll.get("roll_number")
+        roll_ref = ForgeCuratorApp._roll_reference_label(roll)
         outcome = roll.get("outcome") or "open"
-        if roll.get("display_kind") == "deferred_in":
-            label = f"{prefix}{target}  deferred  global {roll_number or '?'}  {outcome}"
-        else:
-            label = f"{prefix}{target}  global {roll_number or '?'}  {outcome}"
+        label = f"{prefix}{target}  {roll_ref}  {outcome}"
         perk = _rolled_perk_display(roll)
         constellation = roll.get("constellation")
         if perk and constellation:
             label = f"{label}  {constellation} - {perk}"
         elif constellation:
             label = f"{label}  {constellation}"
-        if roll.get("source_roll_number") is not None:
-            label = f"{label}  source Roll {roll.get('source_roll_number')}"
+        if roll.get("source_ordinal") is not None:
+            source_label = roll.get("source_label") or f"S{roll.get('source_ordinal')}"
+            label = f"{label}  {source_label}"
         return label[:73] + "..." if len(label) > 76 else label
 
     @staticmethod
     def _source_label(roll: dict, *, selected: bool = False) -> str:
         prefix = "RIGHT > " if selected else "        "
-        roll_number = roll.get("roll_number")
+        source_label = roll.get("source_label") or (
+            f"S{roll.get('source_ordinal')}"
+            if roll.get("source_ordinal") is not None else "S?"
+        )
         outcome = roll.get("outcome") or roll.get("source_kind") or "unknown"
         perk = _rolled_perk_display(roll)
         constellation = roll.get("constellation")
@@ -1498,34 +1519,32 @@ class SourceLinkPicker(ModalScreen):
             detail = f"  {constellation} - {perk}"
         elif constellation:
             detail = f"  {constellation}"
-        deferred_from = roll.get("source_deferred_from_chapter")
-        deferred = f"deferred from ch {deferred_from}  " if deferred_from else ""
         if roll.get("source_kind") == "obtained_perk":
-            label = f"{prefix}{deferred}Obtained: {outcome}{detail}"
+            label = f"{prefix}Obtained: {outcome}{detail}"
         else:
-            label = f"{prefix}{deferred}Roll {roll_number}: {outcome}{detail}"
+            label = f"{prefix}{source_label}: {outcome}{detail}"
         return label[:73] + "..." if len(label) > 76 else label
 
     def _existing_links_text(self) -> str:
-        by_roll = {
-            int(source["roll_number"]): source
+        by_source = {
+            int(source["source_ordinal"]): source
             for source in self._sources
-            if source.get("roll_number") is not None
+            if source.get("source_ordinal") is not None
         }
         lines: list[str] = []
         for target in self._targets:
-            source_roll_number = target.get("source_roll_number")
-            if source_roll_number is None:
+            source_ordinal = target.get("source_ordinal")
+            if source_ordinal is None:
                 continue
             try:
-                source_roll_number = int(source_roll_number)
+                source_ordinal = int(source_ordinal)
             except (TypeError, ValueError):
                 continue
-            if source_roll_number not in by_roll:
+            if source_ordinal not in by_source:
                 continue
             lines.append(
                 f"{ForgeCuratorApp._roll_target_message_label(target)} "
-                f"──────── Roll {source_roll_number}"
+                f"──────── S{source_ordinal}"
             )
         return "\n".join(lines) if lines else "Existing links: none in this view."
 
@@ -1539,7 +1558,9 @@ class SourceLinkPicker(ModalScreen):
             else "none"
         )
         source = (
-            f"Roll {self._sources[self._source_index - 1].get('roll_number')}"
+            ForgeCuratorApp._source_reference_label(
+                self._sources[self._source_index - 1]
+            )
             if self._source_index is not None
             and 1 <= self._source_index <= len(self._sources)
             else "none"
@@ -1804,7 +1825,7 @@ class ChapterCurationDeletePicker(ModalScreen):
 
 
 class GlobalRollNumberPrompt(ModalScreen):
-    """Prompt for attaching selected narrative evidence by global roll number."""
+    """Prompt for attaching selected narrative evidence by roll ordinal."""
 
     DEFAULT_CSS = """
     GlobalRollNumberPrompt {
@@ -1844,8 +1865,8 @@ class GlobalRollNumberPrompt(ModalScreen):
 
     def compose(self) -> ComposeResult:
         with Container():
-            yield Static("Attach quote to global roll", classes="title")
-            yield Input(placeholder="Global roll #", id="global_roll_number")
+            yield Static("Attach quote to roll ordinal", classes="title")
+            yield Input(placeholder="Roll ordinal", id="global_roll_number")
             with Horizontal():
                 yield Button("Attach", id="attach", variant="primary")
                 yield Button("Cancel", id="cancel")
@@ -1940,16 +1961,10 @@ class RollEvidencePicker(ModalScreen):
 
     def _roll_button_label(self, index: int, roll: dict) -> str:
         marker = "(x)" if index in self._selected else "( )"
-        global_num = roll.get("roll_number")
-        global_part = f"global #{global_num}" if global_num is not None else "global #?"
+        roll_ref = ForgeCuratorApp._roll_reference_label(roll)
         outcome = roll.get("outcome") or "unknown"
-        if roll.get("display_kind") == "deferred_in":
-            return (
-                f"{marker} deferred from ch {roll.get('target_chapter_num')} "
-                f"#{roll.get('target_roll_index')} ({global_part})  {outcome}"
-            )
         stable_index = ForgeCuratorApp._display_roll_identity(roll)
-        return f"{marker} #{stable_index} ({global_part})  {outcome}"
+        return f"{marker} #{stable_index} ({roll_ref})  {outcome}"
 
     def compose(self) -> ComposeResult:
         with Container():
@@ -1973,7 +1988,7 @@ class RollEvidencePicker(ModalScreen):
             with Horizontal(id="roll_evidence_actions", classes="roll-actions"):
                 yield Button(self._display_position_label(), id="display_policy")
                 if self._on_global_roll is not None:
-                    yield Button("Enter global roll #", id="global_roll")
+                    yield Button("Enter roll ordinal", id="global_roll")
             yield Button("Confirm", id="confirm", variant="primary")
 
     @on(Button.Pressed)
@@ -2256,16 +2271,10 @@ class QuoteMoveTargetPicker(ModalScreen):
         self._on_select = on_select
 
     def _roll_button_label(self, index: int, roll: dict) -> str:
-        global_num = roll.get("roll_number")
-        global_part = f"global #{global_num}" if global_num is not None else "global #?"
+        roll_ref = ForgeCuratorApp._roll_reference_label(roll)
         outcome = roll.get("outcome") or "unknown"
-        if roll.get("display_kind") in {"deferred_in", "source_deferred"}:
-            return (
-                f"ch {roll.get('target_chapter_num')} "
-                f"#{roll.get('target_roll_index')} ({global_part})  {outcome}"
-            )
         stable_index = ForgeCuratorApp._display_roll_identity(roll)
-        return f"#{stable_index} ({global_part})  {outcome}"
+        return f"#{stable_index} ({roll_ref})  {outcome}"
 
     def compose(self) -> ComposeResult:
         with Container():
@@ -2689,9 +2698,8 @@ class ForgeCuratorApp(App):
         """Return current-chapter prose spans backed by saved roll evidence.
 
         The derived roll fact owns whether evidence exists. The TUI only
-        maps the saved quote back onto the already-loaded prose for display;
-        if the quote is not present in this chapter, it falls back to the
-        roll's display slot.
+        maps saved quote text back onto the already-loaded prose when that
+        text is actually present in this chapter.
         """
         wo = cs.prose.word_offsets
         if not wo:
@@ -2716,13 +2724,13 @@ class ForgeCuratorApp(App):
     def _roll_evidence_highlight_rolls(self, cs) -> list[dict]:
         rows = list(self._roll_evidence_picker_rolls(cs))
         seen_ids = {
-            int(roll["roll_number"])
+            int(roll["roll_ordinal"])
             for roll in rows
-            if roll.get("roll_number") is not None
+            if roll.get("roll_ordinal") is not None
         }
         for roll in self.data.roll_facts.get("rolls", []):
-            roll_number = roll.get("roll_number")
-            if roll_number is not None and int(roll_number) in seen_ids:
+            roll_ordinal = roll.get("roll_ordinal")
+            if roll_ordinal is not None and int(roll_ordinal) in seen_ids:
                 continue
             if not any(
                 str(quote.get("mention_chapter_num")) == cs.meta.chapter_num
@@ -2731,8 +2739,8 @@ class ForgeCuratorApp(App):
             ):
                 continue
             rows.append(roll)
-            if roll_number is not None:
-                seen_ids.add(int(roll_number))
+            if roll_ordinal is not None:
+                seen_ids.add(int(roll_ordinal))
         return rows
 
     def _quote_text_char_span(self, cs, quote: dict) -> tuple[int, int] | None:
@@ -2759,7 +2767,7 @@ class ForgeCuratorApp(App):
             starts.append(start)
             start = cs.prose.text.find(text, start + 1)
         if not starts:
-            return (0, 0)
+            return None
         if anchor_char is not None:
             start = min(starts, key=lambda candidate: abs(candidate - anchor_char))
         else:
@@ -3367,14 +3375,10 @@ class ForgeCuratorApp(App):
 
     def _rolls_header_count(self, cs) -> str:
         predicted = _fmt_int(len(cs.derived.predicted_rolls))
-        current = sum(
-            1 for roll in self._unified_rolls(cs)
-            if roll.get("display_kind") not in {"deferred_in", "source_deferred"}
-        )
+        current = len(self._unified_rolls(cs))
         source = sum(
             1 for roll in self._unified_rolls(cs)
-            if roll.get("display_kind") not in {"deferred_in", "source_deferred"}
-            and self._is_source_evidence_roll(roll)
+            if self._is_source_evidence_roll(roll)
         )
         curated = max(0, current - source)
         source_text = f"{_fmt_int(source)} source"
@@ -3409,7 +3413,11 @@ class ForgeCuratorApp(App):
                 "source": "prediction",
                 "source_kind": "predicted_slot",
                 "outcome": "open",
-                "roll_number": roll.get("roll_number"),
+                "predicted_ordinal": roll.get("roll_number"),
+                "predicted_label": (
+                    f"P{int(roll['roll_number'])}"
+                    if roll.get("roll_number") is not None else None
+                ),
                 "word_position": local_cp,
                 "raw_word_position": raw,
                 "global_cp_word": int(global_cp),
@@ -3430,9 +3438,6 @@ class ForgeCuratorApp(App):
                 if override else [],
                 "use_stable_target_identity": True,
                 "skipped": self._roll_override_skipped(cn, idx),
-                "deferred_to_later_chapter": bool(
-                    (override or {}).get("deferred_to_later_chapter")
-                ),
             })
         return rows
 
@@ -3464,142 +3469,12 @@ class ForgeCuratorApp(App):
             return None
         return rows[int(index) - 1]
 
-    def _deferred_predicted_slot_rolls(
-        self, cs, unified: list[dict] | None = None,
-    ) -> list[dict]:
-        """Open predicted slots from prior chapters deferred into this chapter."""
-        cn = cs.meta.chapter_num
-        represented = {
-            (
-                str(roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")),
-                int(roll.get("target_roll_index") or 0),
-            )
-            for roll in (unified if unified is not None else self._unified_rolls(cs))
-            if roll.get("display_kind") == "deferred_in"
-            and roll.get("target_roll_index") is not None
-        }
-        rows: list[dict] = []
-        overrides = (
-            self.persistence.chapter_roll_overrides
-            .get("chapter_roll_overrides", {})
-        )
-        display_cp = self._chapter_cp_start(cn)
-
-        def _unresolved_locationless_deferral(override: dict) -> bool:
-            if override.get("skipped"):
-                return False
-            if override.get("source_roll_number") is not None:
-                return False
-            if override.get("evidence_quotes"):
-                return False
-            if override.get("mention_word_position") is not None:
-                return False
-            return True
-
-        def _later_than_target(target_chapter: str) -> bool:
-            return self._chapter_sort_key(str(target_chapter)) < self._chapter_sort_key(cn)
-
-        def _floating_deferral_visible(target_chapter: str, override: dict) -> bool:
-            return (
-                override.get("deferred_to_later_chapter")
-                and override.get("mention_chapter_num") is None
-                and _unresolved_locationless_deferral(override)
-                and _later_than_target(target_chapter)
-            )
-
-        def _concrete_deferral_visible(target_chapter: str, override: dict) -> bool:
-            if str(override.get("mention_chapter_num") or "") == cn:
-                return True
-            return (
-                override.get("mention_chapter_num") is not None
-                and _unresolved_locationless_deferral(override)
-                and _later_than_target(target_chapter)
-            )
-
-        for target_chapter, entry in overrides.items():
-            if str(target_chapter) == cn:
-                continue
-            for idx, override in enumerate(entry.get("rolls") or [], start=1):
-                if not isinstance(override, dict):
-                    continue
-                if not (
-                    _concrete_deferral_visible(str(target_chapter), override)
-                    or _floating_deferral_visible(str(target_chapter), override)
-                ):
-                    continue
-                key = (str(target_chapter), int(idx))
-                if key in represented:
-                    continue
-                predicted = self._predicted_roll_for_chapter_index(target_chapter, idx)
-                if predicted is None:
-                    continue
-                global_cp = int(predicted.get("cp_offset") or 0)
-                local_cp = global_cp - self._chapter_cp_start(str(target_chapter))
-                row = {
-                    "index": None,
-                    "target_roll_index": idx,
-                    "target_chapter_num": str(target_chapter),
-                    "visible_chapter_num": cn,
-                    "display_kind": "deferred_in",
-                    "source": "prediction",
-                    "source_kind": "predicted_slot",
-                    "outcome": "open",
-                    "roll_number": predicted.get("roll_number"),
-                    "word_position": 0,
-                    "raw_word_position": 0,
-                    "global_cp_word": display_cp,
-                    "mechanical_chapter_num": str(target_chapter),
-                    "mechanical_word_position": local_cp,
-                    "mechanical_cumulative_word_offset": global_cp,
-                    "display_chapter_num": cn,
-                    "display_word_position": 0,
-                    "display_cumulative_word_offset": display_cp,
-                    "mention_chapter_num": cn,
-                    "mention_word_position": override.get("mention_word_position"),
-                    "display_position_policy": override.get("display_position_policy"),
-                    "evidence_quotes": list(override.get("evidence_quotes") or []),
-                    "use_stable_target_identity": False,
-                    "skipped": bool(override.get("skipped")),
-                    "deferred_to_later_chapter": bool(
-                        override.get("deferred_to_later_chapter")
-                    ),
-                }
-                source_roll_number = override.get("source_roll_number")
-                if source_roll_number is not None:
-                    row["source_roll_number"] = int(source_roll_number)
-                source_fact = self._roll_fact_for_roll_number(source_roll_number)
-                if source_fact is not None:
-                    for key in (
-                        "roll_number",
-                        "outcome",
-                        "constellation",
-                        "available_cp",
-                        "banked_cp_after_roll",
-                        "purchased_perks",
-                        "purchased_perk_cost_total",
-                        "rolled_perk_name",
-                        "rolled_perk_cost",
-                        "miss_cost_estimate",
-                        "free_perks",
-                        "raw",
-                    ):
-                        if source_fact.get(key) is not None:
-                            row[key] = source_fact.get(key)
-                    row["fact_source_kind"] = source_fact.get("source_kind")
-                rows.append(row)
-        return sorted(
-            rows,
-            key=lambda roll: (
-                self._chapter_sort_key(str(roll["target_chapter_num"])),
-                int(roll["target_roll_index"]),
-            ),
-        )
-
-    def _roll_fact_for_roll_number(self, roll_number) -> dict | None:
-        if roll_number is None:
+    def _roll_fact_for_source_ordinal(self, source_ordinal) -> dict | None:
+        if source_ordinal is None:
             return None
+        source_ordinal = int(source_ordinal)
         for roll in self.data.roll_facts.get("rolls", []):
-            if roll.get("roll_number") == roll_number:
+            if roll.get("source_ordinal") == source_ordinal:
                 return roll
         return None
 
@@ -3624,8 +3499,6 @@ class ForgeCuratorApp(App):
         """
         assigned: dict[int, dict] = {}
         for roll in unified if unified is not None else self._unified_rolls(cs):
-            if roll.get("display_kind") in {"deferred_in", "source_deferred"}:
-                continue
             if str(roll.get("target_chapter_num") or cs.meta.chapter_num) != cs.meta.chapter_num:
                 continue
             target = roll.get("target_roll_index")
@@ -3646,8 +3519,6 @@ class ForgeCuratorApp(App):
             rows.append(source)
             represented.add((str(source["target_chapter_num"]), idx))
         for roll in unified if unified is not None else self._unified_rolls(cs):
-            if roll.get("display_kind") in {"deferred_in", "source_deferred"}:
-                continue
             target = roll.get("target_roll_index")
             target_chapter = str(roll.get("target_chapter_num") or cs.meta.chapter_num)
             if target is not None and (target_chapter, int(target)) in represented:
@@ -3662,19 +3533,12 @@ class ForgeCuratorApp(App):
         on emitted roll/source rows or open slots, not on skipped slots.
         """
         unified = self._unified_rolls(cs)
-        deferred_rows = [
-            roll for roll in unified
-            if roll.get("display_kind") in {"deferred_in", "source_deferred"}
-        ]
-        deferred_rows.extend(self._deferred_predicted_slot_rolls(cs, unified))
         current_rows: list[dict] = []
         seen_targets: set[tuple] = set()
         for roll in [
+            *self._prior_unassigned_roll_target_rows(cs),
             *self._roll_slot_rows(cs, unified),
-            *[
-                roll for roll in unified
-                if roll.get("display_kind") not in {"deferred_in", "source_deferred"}
-            ],
+            *unified,
         ]:
             if (
                 roll.get("display_kind") == "predicted_slot"
@@ -3687,15 +3551,14 @@ class ForgeCuratorApp(App):
             current_rows.append(roll)
             if key is not None:
                 seen_targets.add(key)
-        return [*deferred_rows, *current_rows]
+        return current_rows
 
     def _open_predicted_slot_rolls(self, cs) -> list[dict]:
         occupied = {
             int(roll["target_roll_index"])
             for roll in self._unified_rolls(cs)
             if (
-                roll.get("display_kind") != "deferred_in"
-                and str(roll.get("target_chapter_num") or cs.meta.chapter_num)
+                str(roll.get("target_chapter_num") or cs.meta.chapter_num)
                 == cs.meta.chapter_num
                 and roll.get("target_roll_index") is not None
             )
@@ -3711,7 +3574,6 @@ class ForgeCuratorApp(App):
         return (
             str(roll.get("target_chapter_num") or roll.get("mechanical_chapter_num") or ""),
             int(roll.get("target_roll_index") or roll.get("index") or 0),
-            str(roll.get("display_kind") or ""),
         )
 
     def _same_roll_target(self, left: dict | None, right: dict | None) -> bool:
@@ -3728,12 +3590,9 @@ class ForgeCuratorApp(App):
             return None
         unified = self._unified_rolls(cs)
         visible = [
+            *self._prior_unassigned_roll_target_rows(cs),
             *self._roll_slot_rows(cs, unified),
-            *[
-                roll for roll in unified
-                if roll.get("display_kind") in {"deferred_in", "source_deferred"}
-            ],
-            *self._deferred_predicted_slot_rolls(cs, unified),
+            *unified,
         ]
         for roll in visible:
             if self._same_roll_target(roll, self._selected_roll_target):
@@ -3743,6 +3602,18 @@ class ForgeCuratorApp(App):
 
     def _selected_or_default_roll_target(self) -> dict | None:
         return self._selected_roll_target_if_visible() or self._default_roll_target()
+
+    def _stats_selected_roll_target(self) -> dict | None:
+        selected = self._selected_roll_target_if_visible()
+        if selected is not None:
+            return selected
+        try:
+            quote_targets = self._roll_evidence_quote_targets_at_selection_or_cursor()
+        except (NoMatches, ScreenStackError):
+            quote_targets = []
+        if quote_targets:
+            return quote_targets[0]["roll"]
+        return self._default_roll_target()
 
     def _mechanical_roll_index(self, roll: dict) -> int | None:
         chapter_num = roll.get("mechanical_chapter_num")
@@ -3773,13 +3644,13 @@ class ForgeCuratorApp(App):
                 if (r.get("mechanical_word_position") or r.get("word_position")) is not None
                 else 10**12
             ),
-            int(r.get("roll_number") or r.get("roll_sequence_in_chapter") or 0),
+            int(r.get("roll_ordinal") or r.get("roll_sequence_in_chapter") or 0),
         ))
-        roll_number = roll.get("roll_number")
+        roll_ordinal = roll.get("roll_ordinal")
         for idx, candidate in enumerate(rows, start=1):
             if (
-                roll_number is not None
-                and candidate.get("roll_number") == roll_number
+                roll_ordinal is not None
+                and candidate.get("roll_ordinal") == roll_ordinal
             ):
                 return idx
             if candidate is roll:
@@ -3803,12 +3674,6 @@ class ForgeCuratorApp(App):
 
         result: list[dict] = []
 
-        def _is_deferred_in(row: dict, local_cp: int | None) -> bool:
-            return (
-                str(row.get("chapter_num")) == cn
-                and str(row.get("mechanical_chapter_num") or cn) != cn
-            )
-
         def _is_unslotted_current_chapter(row: dict, local_cp: int | None) -> bool:
             return (
                 local_cp is None
@@ -3820,7 +3685,6 @@ class ForgeCuratorApp(App):
                 local_cp is None
                 and str(row.get("source_chapter_num")) == cn
                 and str(row.get("mechanical_chapter_num") or row.get("chapter_num")) != cn
-                and not _is_deferred_in(row, local_cp)
             )
 
         def _sort_key(row: dict) -> tuple[int, int, int, int]:
@@ -3829,9 +3693,7 @@ class ForgeCuratorApp(App):
                 local_cp = self._cp_earning_word_offset(display_raw)
             else:
                 local_cp = self._local_cp_from_roll(cn, row)
-            if _is_deferred_in(row, local_cp):
-                bucket = 0
-            elif _is_source_projection(row, local_cp):
+            if _is_source_projection(row, local_cp):
                 bucket = 1
                 local_cp = row.get("source_word_position")
             elif local_cp is not None:
@@ -3842,7 +3704,7 @@ class ForgeCuratorApp(App):
                 bucket,
                 local_cp if local_cp is not None else 10**12,
                 int(row.get("mechanical_cumulative_word_offset") or 10**12),
-                int(row.get("roll_number") or row.get("roll_sequence_in_chapter") or 0),
+                int(row.get("roll_ordinal") or row.get("roll_sequence_in_chapter") or 0),
             )
 
         rows = sorted(canonical_rows, key=_sort_key)
@@ -3858,31 +3720,14 @@ class ForgeCuratorApp(App):
                 if display_raw is not None
                 else self._local_cp_from_roll(cn, row)
             )
-            is_deferred_in = _is_deferred_in(row, local_cp)
             is_unslotted_current = _is_unslotted_current_chapter(row, local_cp)
             is_source_projection = _is_source_projection(row, local_cp)
             if local_cp is None and not (
-                is_deferred_in or is_unslotted_current or is_source_projection
+                is_unslotted_current or is_source_projection
             ):
                 continue
-            if is_deferred_in:
-                display_kind = "deferred_in"
-                word_position = int(local_cp) if local_cp is not None else 0
-                if display_raw is not None:
-                    raw_word_position = display_raw
-                elif local_cp is not None:
-                    raw_word_position = self._roll_marker_word_index_from_cp(
-                        cs, int(local_cp)
-                    )
-                else:
-                    raw_word_position = 0
-                global_cp = (
-                    self._chapter_cp_start(cn) + int(word_position)
-                    if local_cp is not None
-                    else row.get("mechanical_cumulative_word_offset")
-                )
-            elif is_source_projection:
-                display_kind = "source_deferred"
+            if is_source_projection:
+                display_kind = "chapter_roll"
                 word_position = int(row.get("source_word_position") or 0)
                 raw_word_position = word_position
                 global_cp = (
@@ -3916,11 +3761,11 @@ class ForgeCuratorApp(App):
             target_chapter_num = str(row.get("mechanical_chapter_num") or cn)
             predicted_target_index = (
                 self._predicted_slot_index_for_cp(cs, int(word_position))
-                if not is_deferred_in and target_chapter_num == cn else None
+                if target_chapter_num == cn else None
             )
             entry = {
                 **row,
-                "index": local_index if not is_deferred_in else None,
+                "index": local_index,
                 "display_kind": display_kind,
                 "word_position": int(word_position),
                 "global_cp_word": global_cp,
@@ -3943,16 +3788,10 @@ class ForgeCuratorApp(App):
                 override = self._roll_override_entry(target_chapter_num, int(target_index))
                 if (
                     override is not None
-                    and override.get("source_deferred_to_chapter") is not None
+                    and override.get("source_ordinal") is not None
                 ):
-                    entry["source_deferred_to_chapter"] = str(
-                        override["source_deferred_to_chapter"]
-                    )
-                if (
-                    override is not None
-                    and override.get("source_roll_number") is not None
-                ):
-                    entry["source_roll_number"] = int(override["source_roll_number"])
+                    entry["source_ordinal"] = int(override["source_ordinal"])
+                    entry["source_label"] = f"S{int(override['source_ordinal'])}"
             result.append(entry)
         return result
 
@@ -4026,44 +3865,20 @@ class ForgeCuratorApp(App):
         )
 
     def _format_roll_stat_line(self, roll: dict, marker: str) -> str:
-        global_num = roll.get("roll_number")
+        roll_ref = self._roll_reference_label(roll)
         outcome = roll.get("outcome") or "unknown"
         evidence = self._roll_evidence_marker(roll)
         constel = roll.get("constellation") or "unknown"
         if roll.get("display_kind") == "predicted_slot":
-            chapter_idx = self._display_roll_identity(roll)
+            chapter_idx = self._roll_stat_identity_label(roll)
             word_position = roll.get("word_position")
-            mention_chapter = roll.get("mention_chapter_num")
-            target_chapter = roll.get("target_chapter_num")
-            locationless_future_deferral = False
             if roll.get("skipped"):
                 status = "skipped"
-            elif roll.get("deferred_to_later_chapter"):
-                status = "deferred to future chapter"
-                locationless_future_deferral = True
-            elif (
-                mention_chapter is not None
-                and target_chapter is not None
-                and str(mention_chapter) != str(target_chapter)
-            ):
-                if (
-                    roll.get("mention_word_position") is None
-                    and not self._roll_evidence_quotes(roll)
-                ):
-                    status = "deferred to future chapter"
-                    locationless_future_deferral = True
-                else:
-                    status = f"deferred to ch {mention_chapter}"
             else:
                 status = "predicted"
-            if locationless_future_deferral:
-                return (
-                    f"  {marker} # {chapter_idx} {status} "
-                    f"({global_num if global_num is not None else '?'})"
-                )
             return (
-                f"  {marker} # {chapter_idx} {status} "
-                f"({global_num if global_num is not None else '?'}) "
+                f"  {marker} {chapter_idx} {status} "
+                f"({roll_ref}) "
                 f"at CP {_fmt_int(word_position)}"
             )
         if outcome == "miss":
@@ -4088,47 +3903,6 @@ class ForgeCuratorApp(App):
         available_part = (
             f"Avail CP {int(available)}" if available is not None else "Avail CP ?"
         )
-        if roll.get("display_kind") == "source_deferred":
-            source_idx = roll.get("source_roll_index") or roll.get("target_roll_index") or "?"
-            mechanical_chapter = (
-                roll.get("mechanical_chapter_num")
-                or roll.get("display_chapter_num")
-                or "?"
-            )
-            target_chapter = roll.get("target_chapter_num") or mechanical_chapter
-            target_idx = roll.get("target_roll_index") or "?"
-            source_chapter = roll.get("source_chapter_num")
-            source_detail = (
-                f"    source/narrative from ch {source_chapter} #{source_idx}"
-                if source_chapter is not None
-                else f"    source row #{source_idx}"
-            )
-            return "\n".join([
-                (
-                    f"  {marker} deferred from ch {target_chapter} #{target_idx} source "
-                    f"({global_num if global_num is not None else '?'}) "
-                    f"{available_part} {outcome} {evidence}"
-                ),
-                source_detail,
-                *detail_lines,
-            ])
-        if roll.get("display_kind") == "deferred_in":
-            source_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
-            source_idx = roll.get("target_roll_index") or "?"
-            if roll.get("source_kind") == "predicted_slot" and outcome == "open":
-                return (
-                    f"  {marker} deferred from ch {source_chapter} #{source_idx} "
-                    f"({global_num if global_num is not None else '?'}) "
-                    f"predicted {evidence}"
-                )
-            return "\n".join([
-                (
-                    f"  {marker} deferred from ch {source_chapter} #{source_idx} "
-                    f"({global_num if global_num is not None else '?'}) "
-                    f"{available_part} {outcome} {evidence}"
-                ),
-                *detail_lines,
-            ])
         mechanical_chapter = roll.get("mechanical_chapter_num")
         mention_chapter = roll.get("mention_chapter_num")
         if (
@@ -4143,7 +3917,7 @@ class ForgeCuratorApp(App):
                 ),
             )
         source_chapter = roll.get("source_chapter_num")
-        source_index = roll.get("source_roll_index")
+        source_index = roll.get("source_chapter_ordinal")
         if (
             source_chapter is not None
             and mechanical_chapter is not None
@@ -4156,21 +3930,39 @@ class ForgeCuratorApp(App):
                     f" #{source_index if source_index is not None else '?'}"
                 ),
             )
-        source_deferred_to = roll.get("source_deferred_to_chapter")
-        if source_deferred_to is not None:
-            detail_lines.insert(0, f"    source roll deferred to ch {source_deferred_to}")
         display_line = self._roll_display_policy_detail(roll)
         if display_line:
             detail_lines.insert(0, display_line)
-        chapter_idx = self._display_roll_identity(roll)
+        chapter_idx = self._roll_stat_identity_label(roll)
         return "\n".join([
             (
-                f"  {marker} # {chapter_idx} "
-                f"({global_num if global_num is not None else '?'}) "
+                f"  {marker} {chapter_idx} "
+                f"({roll_ref}) "
                 f"{available_part} {outcome} {evidence}"
             ),
             *detail_lines,
         ])
+
+    def _roll_stat_identity_label(self, roll: dict) -> str:
+        target_chapter = (
+            roll.get("target_chapter_num")
+            or roll.get("mechanical_chapter_num")
+            or roll.get("chapter_num")
+        )
+        target_index = roll.get("target_roll_index") or roll.get("index")
+        if target_index is None:
+            target_index = self._display_roll_identity(roll)
+        visible_chapter = roll.get("visible_chapter_num")
+        cs = self.state.chapter
+        if visible_chapter is None and cs is not None:
+            visible_chapter = cs.meta.chapter_num
+        if (
+            target_chapter is not None
+            and visible_chapter is not None
+            and str(target_chapter) != str(visible_chapter)
+        ):
+            return f"ch {target_chapter} # {int(target_index)}"
+        return f"# {int(target_index)}"
 
     @staticmethod
     def _chapter_sort_key(chapter_num: str) -> tuple[int, int]:
@@ -4187,7 +3979,7 @@ class ForgeCuratorApp(App):
         if cls._chapter_sort_key(mention_chapter) > cls._chapter_sort_key(
             mechanical_chapter
         ):
-            return f"    narrative deferred to ch {mention_chapter}"
+            return f"    narrative in ch {mention_chapter}"
         return f"    narrative evidence from ch {mention_chapter}"
 
     @staticmethod
@@ -4230,6 +4022,29 @@ class ForgeCuratorApp(App):
             return int(roll["target_roll_index"])
         return int(roll.get("index") or roll.get("roll_sequence_in_chapter") or 0)
 
+    @staticmethod
+    def _roll_reference_label(roll: dict) -> str:
+        labels: list[str] = []
+        for prefix, label_key, ordinal_key in (
+            ("R", "roll_label", "roll_ordinal"),
+            ("P", "predicted_label", "predicted_ordinal"),
+            ("S", "source_label", "source_ordinal"),
+        ):
+            label = roll.get(label_key)
+            if label:
+                labels.append(str(label))
+            elif roll.get(ordinal_key) is not None:
+                labels.append(f"{prefix}{int(roll[ordinal_key])}")
+        return "/".join(labels) if labels else "R?"
+
+    @staticmethod
+    def _source_reference_label(roll: dict) -> str:
+        if roll.get("source_label"):
+            return str(roll["source_label"])
+        if roll.get("source_ordinal") is not None:
+            return f"S{int(roll['source_ordinal'])}"
+        return "S?"
+
     def _miss_possible_suffix(self, roll: dict, min_cost) -> str:
         if min_cost is None:
             return ""
@@ -4268,11 +4083,10 @@ class ForgeCuratorApp(App):
             if self._is_source_evidence_roll(roll):
                 target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
                 target_index = roll.get("target_roll_index") or roll.get("index") or "?"
-                global_num = roll.get("roll_number")
-                global_part = f"global #{global_num}" if global_num is not None else "global #?"
+                roll_ref = self._roll_reference_label(roll)
                 raw = str(roll.get("raw") or "").strip()
                 rows.append(
-                    f"  S against ch {target_chapter} #{target_index} ({global_part})"
+                    f"  S against ch {target_chapter} #{target_index} ({roll_ref})"
                 )
                 if raw:
                     rows.append(f"    {raw}")
@@ -4281,8 +4095,7 @@ class ForgeCuratorApp(App):
                 quote_start = cs.prose.text.find(text)
                 target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
                 target_index = roll.get("target_roll_index") or roll.get("index") or "?"
-                global_num = roll.get("roll_number")
-                global_part = f"global #{global_num}" if global_num is not None else "global #?"
+                roll_ref = self._roll_reference_label(roll)
                 quote_key = (
                     str(roll.get("target_chapter_num") or cs.meta.chapter_num),
                     int(target_index) if target_index != "?" else -1,
@@ -4293,7 +4106,7 @@ class ForgeCuratorApp(App):
                 marker = "▸" if quote_key in selected_quote_keys else " "
                 rows.append(
                     f"  {marker} Q{quote_idx} against ch {target_chapter} "
-                    f"#{target_index} ({global_part})"
+                    f"#{target_index} ({roll_ref})"
                 )
                 if quote_start >= 0:
                     quote_word = _word_index_for_char_offset(
@@ -4477,15 +4290,8 @@ class ForgeCuratorApp(App):
                     "char_spans": list(cs.regex_hits[3].char_spans),
                 }
             ]
-            unified = self._unified_rolls(cs)
-            deferred_rolls = [
-                roll for roll in unified
-                if roll.get("display_kind") in {"deferred_in", "source_deferred"}
-            ]
-            deferred_rolls.extend(self._deferred_predicted_slot_rolls(cs, unified))
             snap["rolls"] = [
-                *deferred_rolls,
-                *self._roll_slot_rows(cs, unified),
+                *self._roll_slot_rows(cs, self._unified_rolls(cs)),
             ]
             snap["derived"] = {
                 "chapter_facts": cs.derived.chapter_facts,
@@ -4586,8 +4392,6 @@ class ForgeCuratorApp(App):
             self._action_assign_source_roll(cn)
         elif ch == "_":
             self._action_anchor_roll_without_quote(cn)
-        elif ch == "d":
-            self._action_defer_roll_to_next_chapter(cn)
         elif ch == "D":
             self._action_delete_chapter_curation_data(cn)
         elif ch == "i":
@@ -4998,8 +4802,10 @@ class ForgeCuratorApp(App):
                 moved = self.persistence.move_roll_evidence_quote_between_indices(
                     source_chapter_num=source["target_chapter"],
                     source_index=int(source["target_index"]),
+                    source_source_ordinal=source["roll"].get("source_ordinal"),
                     target_chapter_num=target_chapter,
                     target_index=int(target_index),
+                    target_source_ordinal=target.get("source_ordinal"),
                     quote=source["quote"],
                 )
                 if not moved:
@@ -5024,11 +4830,6 @@ class ForgeCuratorApp(App):
         return sorted(
             [
                 *self._roll_slot_rows(cs, unified),
-                *[
-                    roll for roll in unified
-                    if roll.get("display_kind") == "deferred_in"
-                ],
-                *self._deferred_predicted_slot_rolls(cs, unified),
             ],
             key=lambda roll: (
                 self._roll_action_word_position(cs, roll),
@@ -5037,7 +4838,7 @@ class ForgeCuratorApp(App):
         )
 
     def _roll_action_word_position(self, cs, roll: dict) -> int:
-        if roll.get("display_kind") in {"deferred_in", "predicted_slot"}:
+        if roll.get("display_kind") == "predicted_slot":
             return int(roll.get("word_position") or 0)
         target_chapter = str(roll.get("target_chapter_num") or cs.meta.chapter_num)
         display_chapter = str(roll.get("display_chapter_num") or cs.meta.chapter_num)
@@ -5069,10 +4870,6 @@ class ForgeCuratorApp(App):
         )
         target: dict | None = None
         for roll in self._actionable_roll_targets(cs):
-            if roll.get("display_kind") == "deferred_in":
-                if int(roll.get("word_position") or 0) <= cp_word_idx:
-                    target = roll
-                continue
             if roll.get("display_kind") == "predicted_slot":
                 if int(roll.get("word_position") or 0) <= cp_word_idx:
                     target = roll
@@ -5107,46 +4904,14 @@ class ForgeCuratorApp(App):
             and selected.get("skipped")
         ):
             return selected
-        cs = self.state.chapter
-        if cs is None:
+        target = self._default_roll_target(word_idx=word_idx)
+        if target is None:
             return None
-        cp_word_idx = self._cp_earning_word_offset(
-            cs.cursor_word_index if word_idx is None else word_idx
-        )
-        target: dict | None = None
-        for roll in self._roll_evidence_picker_rolls(cs):
-            if roll.get("display_kind") == "deferred_in":
-                if int(roll.get("word_position") or 0) <= cp_word_idx:
-                    target = roll
-                continue
-            if roll.get("display_kind") == "predicted_slot":
-                if int(roll.get("word_position") or 0) <= cp_word_idx:
-                    target = roll
-                else:
-                    break
-                continue
-            target_chapter = str(roll.get("target_chapter_num") or cs.meta.chapter_num)
-            display_chapter = str(roll.get("display_chapter_num") or cs.meta.chapter_num)
-            if target_chapter != str(cs.meta.chapter_num) and display_chapter != str(
-                cs.meta.chapter_num
-            ):
-                continue
-            display_raw = self._roll_display_raw_word_index(cs.meta.chapter_num, roll)
-            mechanical_word = (
-                self._cp_earning_word_offset(display_raw)
-                if display_raw is not None
-                else (
-                    roll.get("word_position")
-                    if display_chapter == str(cs.meta.chapter_num)
-                    else roll.get("mechanical_word_position")
-                )
-            )
-            if mechanical_word is None:
-                mechanical_word = roll.get("word_position")
-            if int(mechanical_word) <= cp_word_idx:
-                target = roll
-            else:
-                break
+        if (
+            target.get("display_kind") == "predicted_slot"
+            and target.get("skipped")
+        ):
+            return None
         return target
 
     def _current_roll_index(self) -> int | None:
@@ -5224,16 +4989,17 @@ class ForgeCuratorApp(App):
     def _source_roll_picker_rows(self, chapter_num: str) -> list[dict]:
         rows = [
             roll for roll in self.data.roll_facts.get("rolls", [])
-            if str(roll.get("chapter_num")) == str(chapter_num)
+            if (
+                str(roll.get("chapter_num")) == str(chapter_num)
+                or str(roll.get("source_chapter_num")) == str(chapter_num)
+            )
             and roll.get("source_kind") != "trigger"
-            and roll.get("roll_number") is not None
+            and roll.get("source_ordinal") is not None
         ]
-        rows.extend(self._deferred_source_roll_rows(chapter_num))
         rows.extend(self._obtained_perk_source_rows(chapter_num, rows))
         rows.sort(key=lambda roll: (
-            0 if roll.get("source_deferred_from_chapter") is not None else 1,
             1 if roll.get("source_kind") == "obtained_perk" else 0,
-            int(roll.get("roll_number") or 0),
+            int(roll.get("source_ordinal") or 0),
             int(roll.get("source_row_index") or 0),
             str(roll.get("rolled_perk_name") or ""),
         ))
@@ -5243,10 +5009,10 @@ class ForgeCuratorApp(App):
             if roll.get("source_kind") == "obtained_perk":
                 unique.append(roll)
                 continue
-            roll_number = int(roll["roll_number"])
-            if roll_number in seen:
+            source_ordinal = int(roll["source_ordinal"])
+            if source_ordinal in seen:
                 continue
-            seen.add(roll_number)
+            seen.add(source_ordinal)
             unique.append(roll)
         return unique
 
@@ -5275,7 +5041,6 @@ class ForgeCuratorApp(App):
                 "source": "obtained_perks",
                 "source_kind": "obtained_perk",
                 "outcome": "hit",
-                "roll_number": None,
                 "chapter_num": cn,
                 "rolled_perk_name": name,
                 "rolled_perk_cost": cost,
@@ -5292,60 +5057,10 @@ class ForgeCuratorApp(App):
             })
         return rows
 
-    def _deferred_source_roll_rows(self, chapter_num: str) -> list[dict]:
-        rows: list[dict] = []
-        overrides = (
-            self.persistence.chapter_roll_overrides
-            .get("chapter_roll_overrides", {})
-        )
-        for source_chapter, entry in overrides.items():
-            if str(source_chapter) == str(chapter_num):
-                continue
-            for idx, override in enumerate(entry.get("rolls") or [], start=1):
-                if not isinstance(override, dict):
-                    continue
-                if str(override.get("source_deferred_to_chapter") or "") != str(chapter_num):
-                    continue
-                source = None
-                source_roll_number = override.get("source_roll_number")
-                if source_roll_number is not None:
-                    source = self._roll_fact_for_roll_number(source_roll_number)
-                if source is None:
-                    source = next(
-                        (
-                            roll for roll in self.data.roll_facts.get("rolls", [])
-                            if str(roll.get("chapter_num")) == str(source_chapter)
-                            and int(roll.get("roll_sequence_in_chapter") or 0) == idx
-                            and roll.get("roll_number") is not None
-                        ),
-                        None,
-                    )
-                if source is None:
-                    source = next(
-                        (
-                            roll for roll in self.data.roll_facts.get("rolls", [])
-                            if str(roll.get("source_chapter_num")) == str(source_chapter)
-                            and int(roll.get("source_roll_index") or 0) == idx
-                            and roll.get("roll_number") is not None
-                        ),
-                        None,
-                    )
-                if source is None:
-                    continue
-                row = dict(source)
-                row["source_deferred_from_chapter"] = str(source_chapter)
-                row["source_deferred_from_index"] = idx
-                rows.append(row)
-        return rows
-
     def _source_assignment_target_rows(self, cs) -> list[dict]:
         unified = self._unified_rolls(cs)
         rows = [
-            *[
-                roll for roll in unified
-                if roll.get("display_kind") in {"deferred_in", "source_deferred"}
-            ],
-            *self._deferred_predicted_slot_rolls(cs, unified),
+            *self._prior_unassigned_roll_target_rows(cs),
             *self._roll_slot_rows(cs, unified),
         ]
         out: list[dict] = []
@@ -5361,7 +5076,6 @@ class ForgeCuratorApp(App):
         return sorted(
             out,
             key=lambda roll: (
-                0 if roll.get("display_kind") == "deferred_in" else 1,
                 self._chapter_sort_key(str(
                     roll.get("target_chapter_num")
                     or roll.get("mechanical_chapter_num")
@@ -5371,18 +5085,104 @@ class ForgeCuratorApp(App):
             ),
         )
 
+    def _prior_unassigned_roll_target_rows(self, cs) -> list[dict]:
+        order = self.data.chapter_order
+        try:
+            current_index = order.index(cs.meta.chapter_num)
+        except ValueError:
+            return []
+        if current_index <= 0:
+            return []
+        prior_chapters = set(order[:current_index])
+        assigned_targets = {
+            (
+                str(roll.get("mechanical_chapter_num") or roll.get("chapter_num")),
+                int(roll.get("chapter_ordinal") or 0),
+            )
+            for roll in self.data.roll_facts.get("rolls", [])
+            if roll.get("source_kind") != "trigger"
+            and not (
+                roll.get("source_kind") == "interpolated"
+                and roll.get("source_ordinal") is None
+            )
+            and roll.get("chapter_ordinal") is not None
+            and str(roll.get("mechanical_chapter_num") or roll.get("chapter_num"))
+            in prior_chapters
+        }
+        rows: list[dict] = []
+        for chapter_num in order[:current_index]:
+            chapter_cp_start = self._chapter_cp_start(chapter_num)
+            predicted = [
+                roll for roll in self.data.predicted.get("predicted", [])
+                if str(roll.get("chapter_num")) == str(chapter_num)
+            ]
+            predicted.sort(key=lambda roll: roll.get("cp_offset") or 0)
+            for idx, predicted_roll in enumerate(predicted, start=1):
+                override = self._roll_override_entry(chapter_num, idx)
+                if (override or {}).get("skipped"):
+                    continue
+                if (override or {}).get("source_ordinal") is not None:
+                    continue
+                if (str(chapter_num), int(idx)) in assigned_targets:
+                    continue
+                global_cp = predicted_roll.get("cp_offset")
+                local_cp = (
+                    int(global_cp) - chapter_cp_start
+                    if global_cp is not None else 0
+                )
+                rows.append({
+                    "index": idx,
+                    "target_roll_index": idx,
+                    "target_chapter_num": str(chapter_num),
+                    "visible_chapter_num": cs.meta.chapter_num,
+                    "display_kind": "predicted_slot",
+                    "source": "prediction",
+                    "source_kind": "predicted_slot",
+                    "outcome": "open",
+                    "predicted_ordinal": predicted_roll.get("roll_number"),
+                    "predicted_label": (
+                        f"P{int(predicted_roll['roll_number'])}"
+                        if predicted_roll.get("roll_number") is not None else None
+                    ),
+                    "word_position": local_cp,
+                    "raw_word_position": None,
+                    "global_cp_word": int(global_cp) if global_cp is not None else None,
+                    "mechanical_chapter_num": str(chapter_num),
+                    "mechanical_word_position": local_cp,
+                    "mechanical_cumulative_word_offset": (
+                        int(global_cp) if global_cp is not None else None
+                    ),
+                    "display_chapter_num": str(chapter_num),
+                    "display_word_position": local_cp,
+                    "display_cumulative_word_offset": (
+                        int(global_cp) if global_cp is not None else None
+                    ),
+                    "mention_chapter_num": (
+                        str(override.get("mention_chapter_num"))
+                        if override and override.get("mention_chapter_num") is not None
+                        else str(chapter_num)
+                    ),
+                    "mention_word_position": (
+                        override.get("mention_word_position") if override else None
+                    ),
+                    "display_position_policy": (
+                        override.get("display_position_policy") if override else None
+                    ),
+                    "evidence_quotes": list((override or {}).get("evidence_quotes") or []),
+                    "use_stable_target_identity": True,
+                    "skipped": False,
+                })
+        return rows
+
     def _source_link_rows(self, cs, chapter_num: str) -> list[dict]:
         rows = [
             *self._source_assignment_target_rows(cs),
-            *self._deferred_source_roll_rows(chapter_num),
             *self._source_roll_picker_rows(chapter_num),
         ]
         out: list[dict] = []
         seen: set[tuple] = set()
         for roll in rows:
             key = (
-                str(roll.get("source_deferred_from_chapter") or ""),
-                int(roll.get("source_deferred_from_index") or 0),
                 str(
                     roll.get("target_chapter_num")
                     or roll.get("mechanical_chapter_num")
@@ -5390,7 +5190,7 @@ class ForgeCuratorApp(App):
                     or ""
                 ),
                 int(roll.get("target_roll_index") or roll.get("index") or 0),
-                int(roll.get("roll_number") or 0),
+                int(roll.get("source_ordinal") or 0),
                 str(roll.get("display_kind") or ""),
             )
             if key in seen:
@@ -5401,19 +5201,13 @@ class ForgeCuratorApp(App):
 
     @staticmethod
     def _is_source_link_source(roll: dict) -> bool:
-        if roll.get("display_kind") == "source_deferred":
-            return False
         return (
-            roll.get("source_deferred_from_chapter") is not None
-            or (
-                roll.get("roll_number") is not None
-                and (
-                    roll.get("source_kind") in {"roll", "miss"}
-                    or bool(str(roll.get("raw") or "").strip())
-                )
+            roll.get("source_ordinal") is not None
+            and (
+                roll.get("source_kind") in {"roll", "miss"}
+                or bool(str(roll.get("raw") or "").strip())
             )
-            or roll.get("source_kind") == "obtained_perk"
-        )
+        ) or roll.get("source_kind") == "obtained_perk"
 
     @staticmethod
     def _is_source_link_target(roll: dict) -> bool:
@@ -5426,39 +5220,15 @@ class ForgeCuratorApp(App):
         right_source = self._is_source_link_source(right)
         left_target = self._is_source_link_target(left)
         right_target = self._is_source_link_target(right)
-        if left.get("source_deferred_from_chapter") is not None and right_target:
-            return right, left
-        if right.get("source_deferred_from_chapter") is not None and left_target:
+        if left_target and right_source:
             return left, right
-        if left_target and right_source and not left_source:
-            return left, right
-        if right_target and left_source and not right_source:
-            return right, left
-        if left.get("display_kind") == "deferred_in" and right_source:
-            return left, right
-        if right.get("display_kind") == "deferred_in" and left_source:
+        if right_target and left_source:
             return right, left
         return None
 
     def _canonical_source_assignment_target(
         self, target: dict, source_roll: dict, targets: list[dict],
     ) -> dict:
-        if (
-            target.get("display_kind") != "deferred_in"
-            or not target.get("deferred_to_later_chapter")
-            or source_roll.get("roll_number") is None
-        ):
-            return target
-        source_roll_number = int(source_roll["roll_number"])
-        for candidate in targets:
-            if candidate is target:
-                continue
-            if candidate.get("display_kind") != "deferred_in":
-                continue
-            if candidate.get("deferred_to_later_chapter"):
-                continue
-            if int(candidate.get("roll_number") or 0) == source_roll_number:
-                return candidate
         return target
 
     def _action_assign_source_roll(self, chapter_num: str) -> None:
@@ -5497,40 +5267,39 @@ class ForgeCuratorApp(App):
                     f"ch {target_chapter} roll #{idx} source = {perk_name}"
                 )
                 return
-            source_roll_number = int(source_roll["roll_number"])
+            source_ordinal = int(source_roll["source_ordinal"])
             should_shift_quotes = (
-                target.get("display_kind") == "deferred_in"
-                and str(target_chapter) != str(chapter_num)
+                str(target_chapter) != str(chapter_num)
                 and str(source_roll.get("chapter_num") or "") == str(chapter_num)
-                and source_roll.get("source_roll_index") is not None
+                and source_roll.get("source_chapter_ordinal") is not None
             )
             result = self.persistence.assign_source_roll_with_evidence_at_index(
                 target_chapter_num=target_chapter,
                 target_index=idx,
-                source_roll_number=source_roll_number,
+                source_ordinal=source_ordinal,
                 copied_quotes=list(source_roll.get("evidence_quotes") or []),
                 mention_chapter_num=(
                     chapter_num
-                    if target.get("deferred_to_later_chapter") or should_shift_quotes
+                    if should_shift_quotes
                     else None
                 ),
                 display_position_policy=(
                     "mechanical"
-                    if target.get("deferred_to_later_chapter") or should_shift_quotes
+                    if should_shift_quotes
                     else None
                 ),
                 shift_source_chapter_num=(
                     chapter_num if should_shift_quotes else None
                 ),
                 shift_source_index=(
-                    int(source_roll["source_roll_index"])
+                    int(source_roll["source_chapter_ordinal"])
                     if should_shift_quotes else None
                 ),
             )
             if result == "target_has_evidence":
-                self._flash("assign source: deferred target already has quote evidence")
+                self._flash("assign source: target already has quote evidence")
             self._post_curation_refresh(
-                f"ch {target_chapter} roll #{idx} source = Roll {source_roll_number}"
+                f"ch {target_chapter} roll #{idx} source = S{source_ordinal}"
             )
 
         self.push_screen(SourceLinkPicker(
@@ -5627,6 +5396,7 @@ class ForgeCuratorApp(App):
                     "record": {
                         "chapter_num": target_chapter,
                         "index": int(target_index),
+                        "source_ordinal": roll.get("source_ordinal"),
                         "text": candidate.text,
                         "mention_chapter_num": cs.meta.chapter_num,
                         "mention_word_position": mention_word,
@@ -5666,6 +5436,7 @@ class ForgeCuratorApp(App):
                 "record": {
                     "chapter_num": target_chapter,
                     "index": int(target_index),
+                    "source_ordinal": roll.get("source_ordinal"),
                     "text": variant.text,
                     "mention_chapter_num": cs.meta.chapter_num,
                     "mention_word_position": mention_word,
@@ -5677,19 +5448,17 @@ class ForgeCuratorApp(App):
     def _source_context_label(roll: dict) -> str:
         source_kind = roll.get("source_kind") or roll.get("slot_source") or "source"
         source_chapter = roll.get("source_chapter_num") or roll.get("chapter_num")
-        source_index = roll.get("source_roll_index") or roll.get("source_row_index")
-        roll_number = roll.get("roll_number")
+        source_index = roll.get("source_chapter_ordinal") or roll.get("source_row_index")
+        roll_ordinal = roll.get("roll_ordinal")
         parts = [str(source_kind)]
-        if roll_number is not None:
-            parts.append(f"global #{int(roll_number)}")
+        if roll_ordinal is not None:
+            parts.append(f"R{int(roll_ordinal)}")
         if roll.get("constellation"):
             parts.append(f"constellation {roll.get('constellation')}")
         if source_chapter is not None and source_index is not None:
             parts.append(f"source ch {source_chapter} #{int(source_index)}")
         elif source_chapter is not None:
             parts.append(f"source ch {source_chapter}")
-        if roll.get("display_kind") in {"deferred_in", "source_deferred"}:
-            parts.append("deferred")
         return ", ".join(parts)
 
     def _action_save_quote(self, chapter_num: str) -> None:
@@ -5816,11 +5585,11 @@ class ForgeCuratorApp(App):
         try:
             global_roll_number = int(global_roll_number_text.strip())
         except ValueError:
-            self._flash(f"save quote: invalid global roll #{global_roll_number_text}")
+            self._flash(f"save quote: invalid roll ordinal {global_roll_number_text}")
             return
         target = self._roll_evidence_target_for_global_roll_number(global_roll_number)
         if target is None:
-            self._flash(f"save quote: global roll #{global_roll_number} not found")
+            self._flash(f"save quote: roll ordinal R{global_roll_number} not found")
             return
         target_chapter = str(target["target_chapter_num"])
         target_index = int(target["target_roll_index"])
@@ -5833,7 +5602,7 @@ class ForgeCuratorApp(App):
             display_position_policy=display_position_policy,
         )
         self._post_curation_refresh(
-            f"quote saved to global #{global_roll_number} "
+            f"quote saved to R{global_roll_number} "
             f"({self._roll_target_message_label(target)})"
         )
 
@@ -5842,7 +5611,7 @@ class ForgeCuratorApp(App):
     ) -> dict | None:
         for roll in self.data.roll_facts.get("rolls", []):
             try:
-                if int(roll.get("roll_number")) != int(global_roll_number):
+                if int(roll.get("roll_ordinal")) != int(global_roll_number):
                     continue
             except (TypeError, ValueError):
                 continue
@@ -5854,7 +5623,7 @@ class ForgeCuratorApp(App):
             )
             target_index = (
                 roll.get("target_roll_index")
-                or roll.get("source_roll_index")
+                or roll.get("source_chapter_ordinal")
                 or roll.get("roll_sequence_in_chapter")
                 or roll.get("index")
             )
@@ -5881,23 +5650,23 @@ class ForgeCuratorApp(App):
             return f"ch {target_chapter} #{int(target_index)}"
         return f"ch {target_chapter} #?"
 
-    def _source_roll_number_for_chapter_source_index(
+    def _source_ordinal_for_chapter_source_index(
         self, chapter_num: str, source_index: int,
     ) -> int | None:
         for roll in self.data.roll_facts.get("rolls", []):
             if (
                 str(roll.get("source_chapter_num")) == str(chapter_num)
-                and int(roll.get("source_roll_index") or 0) == int(source_index)
-                and roll.get("roll_number") is not None
+                and int(roll.get("source_chapter_ordinal") or 0) == int(source_index)
+                and roll.get("source_ordinal") is not None
             ):
-                return int(roll["roll_number"])
+                return int(roll["source_ordinal"])
         for roll in self.data.roll_facts.get("rolls", []):
             if (
                 str(roll.get("chapter_num")) == str(chapter_num)
                 and int(roll.get("roll_sequence_in_chapter") or 0) == int(source_index)
-                and roll.get("roll_number") is not None
+                and roll.get("source_ordinal") is not None
             ):
-                return int(roll["roll_number"])
+                return int(roll["source_ordinal"])
         return None
 
     def _chapter_curation_delete_candidates(
@@ -5909,7 +5678,6 @@ class ForgeCuratorApp(App):
         )
         candidates: list[CurationDeleteCandidate] = []
         seen: set[tuple] = set()
-        related_source_rolls: set[int] = set()
 
         def add(label: str, item: dict) -> None:
             key = tuple(sorted(item.items()))
@@ -5921,23 +5689,9 @@ class ForgeCuratorApp(App):
         def add_roll_candidates(chapter: str, idx: int, roll: dict, *, related: bool) -> None:
             prefix = f"ch {chapter} roll #{idx}"
             rel = "related " if related else ""
-            if roll.get("source_deferred_to_chapter") is not None:
+            if roll.get("source_ordinal") is not None:
                 add(
-                    f"{rel}{prefix}: source deferred to ch {roll.get('source_deferred_to_chapter')}",
-                    {
-                        "kind": "source_deferral",
-                        "chapter_num": str(chapter),
-                        "roll_index": int(idx),
-                    },
-                )
-                source_roll = self._source_roll_number_for_chapter_source_index(
-                    str(chapter), idx,
-                )
-                if source_roll is not None:
-                    related_source_rolls.add(source_roll)
-            if roll.get("source_roll_number") is not None:
-                add(
-                    f"{rel}{prefix}: source = Roll {roll.get('source_roll_number')}",
+                    f"{rel}{prefix}: source = S{roll.get('source_ordinal')}",
                     {
                         "kind": "source_assignment",
                         "chapter_num": str(chapter),
@@ -5980,17 +5734,16 @@ class ForgeCuratorApp(App):
                         "roll_index": int(idx),
                     },
                 )
-            roll_deferral = (
-                roll.get("deferred_to_later_chapter")
-                or roll.get("mention_chapter_num") is not None
+            roll_display_override = (
+                roll.get("mention_chapter_num") is not None
                 or roll.get("mention_word_position") is not None
                 or roll.get("display_position_policy") is not None
             )
-            if roll_deferral:
+            if roll_display_override:
                 add(
-                    f"{rel}{prefix}: roll deferral/display position override",
+                    f"{rel}{prefix}: roll display position override",
                     {
-                        "kind": "roll_deferral",
+                        "kind": "roll_display_position",
                         "chapter_num": str(chapter),
                         "roll_index": int(idx),
                     },
@@ -6059,17 +5812,6 @@ class ForgeCuratorApp(App):
                     },
                 )
 
-        for related_chapter, entry in overrides.items():
-            if str(related_chapter) == str(chapter_num):
-                continue
-            for idx, roll in enumerate(entry.get("rolls") or [], start=1):
-                if not isinstance(roll, dict):
-                    continue
-                if (
-                    roll.get("source_roll_number") is not None
-                    and int(roll["source_roll_number"]) in related_source_rolls
-                ):
-                    add_roll_candidates(str(related_chapter), idx, roll, related=True)
         return candidates
 
     def _action_delete_chapter_curation_data(self, chapter_num: str) -> None:
@@ -6159,69 +5901,6 @@ class ForgeCuratorApp(App):
             return None
         return order[idx + 1]
 
-    def _action_defer_roll_to_next_chapter(self, chapter_num: str) -> None:
-        target = self._current_roll_target()
-        if target is None or target.get("target_roll_index") is None:
-            self._flash("defer evidence: no predicted roll at/before cursor")
-            return
-        idx = int(target["target_roll_index"])
-        target_chapter = str(target.get("target_chapter_num") or chapter_num)
-        persisted_rolls = (
-            self.persistence.chapter_roll_overrides
-            .get("chapter_roll_overrides", {})
-            .get(target_chapter, {})
-            .get("rolls", [])
-        )
-        persisted_roll = (
-            persisted_rolls[idx - 1]
-            if 0 <= idx - 1 < len(persisted_rolls)
-            and isinstance(persisted_rolls[idx - 1], dict)
-            else {}
-        )
-        persisted_source_deferred_to = persisted_roll.get("source_deferred_to_chapter")
-        persisted_mention_chapter = persisted_roll.get("mention_chapter_num")
-        persisted_later_deferral = bool(persisted_roll.get("deferred_to_later_chapter"))
-        if (
-            target.get("display_kind") == "deferred_in"
-            or persisted_later_deferral
-            or (
-                persisted_mention_chapter is not None
-                and str(persisted_mention_chapter) != str(target_chapter)
-            )
-        ):
-            self.persistence.clear_roll_deferral(target_chapter, idx)
-            self._post_curation_refresh(f"roll #{idx} evidence deferral cleared")
-            return
-        if persisted_source_deferred_to is not None:
-            self.persistence.clear_source_roll_deferral(target_chapter, idx)
-            self._post_curation_refresh(f"roll #{idx} source deferral cleared")
-            return
-        if (
-            target.get("roll_number") is not None
-            and target.get("source_kind") in {"roll", "miss"}
-        ):
-            next_chapter = self._next_chapter_num(chapter_num)
-            if next_chapter is None:
-                self._flash("defer evidence: no next chapter")
-                return
-            self.persistence.mark_source_roll_deferred_to_chapter(
-                target_chapter,
-                idx,
-                next_chapter,
-            )
-            message = (
-                f"roll #{idx} source Roll {target.get('roll_number')} "
-                f"deferred to ch {next_chapter}"
-            )
-        else:
-            self.persistence.mark_roll_deferred_to_later_chapter(
-                target_chapter,
-                idx,
-                display_position_policy="mechanical",
-            )
-            message = f"roll #{idx} evidence deferred to later chapter"
-        self._post_curation_refresh(message)
-
     def _action_resolve_model_discrepancy(self, chapter_num: str) -> None:
         cs = self.state.chapter
         if cs is None:
@@ -6242,7 +5921,15 @@ class ForgeCuratorApp(App):
             )
         ]
         if not unresolved:
-            self._flash("resolve discrepancy: no unresolved model discrepancy here")
+            baseline = self._auto_association_review_baseline(chapter_num)
+            self.persistence.mark_auto_associations_reviewed_through(
+                chapter_num,
+                baseline_fingerprint=baseline["baseline_fingerprint"],
+                baseline_roll_count=baseline["baseline_roll_count"],
+            )
+            self._post_curation_refresh(
+                f"auto associations reviewed through ch {chapter_num}"
+            )
             return
         for code in dict.fromkeys(unresolved):
             self.persistence.resolve_model_validation_issue(
@@ -6252,6 +5939,46 @@ class ForgeCuratorApp(App):
                 note=self._resolution_note(chapter_num, code, model),
             )
         self._post_curation_refresh("model discrepancy resolved")
+
+    def _auto_association_review_baseline(self, chapter_num: str) -> dict:
+        chapter_index = {
+            str(ch): index
+            for index, ch in enumerate(self.data.chapter_order)
+        }
+        through = chapter_index.get(str(chapter_num), -1)
+        rows: list[dict] = []
+        for roll in self.data.roll_facts.get("rolls", []):
+            candidates = [
+                roll.get("chapter_num"),
+                roll.get("mechanical_chapter_num"),
+                roll.get("source_chapter_num"),
+                roll.get("display_chapter_num"),
+            ]
+            visible = roll.get("visible_chapter_nums") or []
+            candidates.extend(visible)
+            if not any(
+                chapter_index.get(str(candidate), 10**9) <= through
+                for candidate in candidates
+                if candidate is not None
+            ):
+                continue
+            rows.append({
+                "roll_key": roll.get("roll_key"),
+                "predicted_ordinal": roll.get("predicted_ordinal"),
+                "source_ordinal": roll.get("source_ordinal"),
+                "roll_ordinal": roll.get("roll_ordinal"),
+                "chapter_ordinal": roll.get("chapter_ordinal"),
+                "association_source": roll.get("association_source"),
+                "mechanical_chapter_num": roll.get("mechanical_chapter_num"),
+                "chapter_num": roll.get("chapter_num"),
+            })
+        digest = hashlib.sha256(
+            json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        return {
+            "baseline_fingerprint": digest,
+            "baseline_roll_count": len(rows),
+        }
 
     def _action_rebuild_derived_data(self, chapter_num: str) -> None:
         self._post_curation_refresh("full curation rebuild complete", full=True)

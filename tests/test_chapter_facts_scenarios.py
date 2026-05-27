@@ -33,7 +33,15 @@ def _roll_fact(
         "chapter_num": chapter_num,
         "roll_sequence_in_chapter": sequence,
         "source_row_index": sequence,
-        "roll_number": roll_number,
+        "predicted_ordinal": roll_number,
+        "predicted_label": f"P{roll_number}",
+        "source_ordinal": roll_number,
+        "source_label": f"S{roll_number}",
+        "roll_ordinal": roll_number,
+        "roll_label": f"R{roll_number}",
+        "chapter_ordinal": sequence,
+        "chapter_label": f"C{sequence}",
+        "association_source": "auto",
         "outcome": outcome,
         "constellation": "Magic",
         "mechanical_chapter_num": chapter_num,
@@ -45,7 +53,8 @@ def _roll_fact(
         "display_chapter_num": chapter_num,
         "display_word_position": display_word_position,
         "source_chapter_num": chapter_num,
-        "source_roll_index": sequence,
+        "source_chapter_ordinal": sequence,
+        "source_roll_label": f"Roll {roll_number}",
         "source_word_position": display_word_position,
         "source_cumulative_word_offset": display_word_position,
         "visible_chapter_nums": [chapter_num],
@@ -55,7 +64,11 @@ def _roll_fact(
         "purchased_perk_jump": None,
         "free_perks": [],
         "word_position": mechanical_word_position,
+        "cumulative_word_offset": display_word_position,
         "predicted_word_position_epub": mechanical_word_position,
+        "display_word_position_epub": display_word_position,
+        "epub_word_offset_predicted": mechanical_word_position,
+        "epub_word_offset_curated": display_word_position,
         "predicted_char_offset_in_chapter": None,
         "anchor_char_offset_in_chapter": None,
         "evidence_kind": "direct",
@@ -472,7 +485,14 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
     assert by_chapter["2"]["skipped_predicted_rolls"] == [
         {
             "slot_index": 1,
-            "roll_number": 2,
+            "predicted_ordinal": 2,
+            "predicted_label": "P2",
+            "source_ordinal": None,
+            "source_label": None,
+            "roll_ordinal": None,
+            "roll_label": None,
+            "skipped_ordinal": 1,
+            "skipped_label": "X1",
             "mechanical_chapter_num": "2",
             "mechanical_word_position": 500,
             "mechanical_cumulative_word_offset": 1500,
@@ -884,7 +904,6 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
                         {
                             "display_position_policy": "source_marker",
                             "mention_word_position": 850,
-                            "source_deferred_to_chapter": "3",
                             "evidence_quotes": [
                                 {
                                     "text": "chapter two source evidence for later miss",
@@ -895,12 +914,12 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
                         },
                     ]
                 },
-                "3": {
-                    "rolls": [
-                        {"source_roll_number": 3},
-                        {"skipped": True},
-                    ]
-                },
+                    "3": {
+                        "rolls": [
+                            {"outcome": "miss", "source_ordinal": 3},
+                            {"skipped": True},
+                        ]
+                    },
             }
         },
     )
@@ -938,54 +957,61 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
     build_chapter_facts.main()
 
     roll_facts = json.loads((derived / "roll_facts.json").read_text())
-    rolls_by_number = {
-        roll["roll_number"]: roll
+    rolls_by_source = {
+        roll["source_ordinal"]: roll
         for roll in roll_facts["rolls"]
-        if roll["roll_number"] is not None
+        if roll["source_ordinal"] is not None
     }
-    assert rolls_by_number[1]["evidence_quotes"] == [
+    assert rolls_by_source[1]["evidence_quotes"] == [
         {
             "text": "quote-only metadata anchors roll one",
             "mention_chapter_num": "1",
             "mention_word_position": 250,
         }
     ]
-    assert rolls_by_number[1]["mechanical_word_position"] == 200
-    assert rolls_by_number[1]["mention_word_position"] == 250
-    assert rolls_by_number[1]["display_position_policy"] == "mention"
-    assert rolls_by_number[1]["display_word_position"] == 250
-    assert rolls_by_number[1]["word_position"] == 250
+    assert rolls_by_source[1]["mechanical_word_position"] == 200
+    assert rolls_by_source[1]["mention_word_position"] == 250
+    assert rolls_by_source[1]["display_position_policy"] == "mention"
+    assert rolls_by_source[1]["display_word_position"] == 250
+    assert rolls_by_source[1]["word_position"] == 250
 
-    deferred_hit = rolls_by_number[2]
-    assert deferred_hit["mechanical_chapter_num"] == "2"
-    assert deferred_hit["mechanical_word_position"] == 200
-    assert deferred_hit["mention_chapter_num"] == "3"
-    assert deferred_hit["mention_word_position"] == 100
-    assert deferred_hit["display_position_policy"] == "mechanical"
-    assert deferred_hit["display_chapter_num"] == "2"
-    assert deferred_hit["visible_chapter_nums"] == ["2", "3"]
-    assert deferred_hit["rolled_perk_name"] == "Deferred Spark"
-    assert deferred_hit["evidence_quotes"][0]["mention_chapter_num"] == "3"
+    cross_chapter_hit = rolls_by_source[2]
+    assert cross_chapter_hit["mechanical_chapter_num"] == "2"
+    assert cross_chapter_hit["mechanical_word_position"] == 200
+    assert cross_chapter_hit["mention_chapter_num"] == "3"
+    assert cross_chapter_hit["mention_word_position"] == 100
+    assert cross_chapter_hit["display_position_policy"] == "mechanical"
+    assert cross_chapter_hit["display_chapter_num"] == "2"
+    assert cross_chapter_hit["visible_chapter_nums"] == ["2", "3"]
+    assert cross_chapter_hit["rolled_perk_name"] == "Deferred Spark"
+    assert cross_chapter_hit["evidence_quotes"][0]["mention_chapter_num"] == "3"
 
-    source_deferred = rolls_by_number[3]
-    assert source_deferred["mechanical_chapter_num"] == "3"
-    assert source_deferred["source_chapter_num"] == "2"
-    assert source_deferred["source_roll_index"] == 2
-    assert source_deferred["source_word_position"] == 850
-    assert source_deferred["visible_chapter_nums"] == ["2", "3"]
+    cross_chapter_source = rolls_by_source[3]
+    assert cross_chapter_source["mechanical_chapter_num"] == "3"
+    assert cross_chapter_source["source_chapter_num"] == "2"
+    assert cross_chapter_source["source_chapter_ordinal"] == 2
+    assert cross_chapter_source["source_word_position"] == 850
+    assert cross_chapter_source["visible_chapter_nums"] == ["2", "3"]
     assert [
-        roll["roll_number"] for roll in roll_facts["rolls"]
-        if roll["roll_number"] == 3
+        roll["source_ordinal"] for roll in roll_facts["rolls"]
+        if roll["source_ordinal"] == 3
     ] == [3]
 
     chapter_facts = json.loads((derived / "chapter_facts.json").read_text())
     chapters_by_num = {chapter["chapter_num"]: chapter for chapter in chapter_facts["chapters"]}
-    chapter_three_roll_numbers = [roll["roll_number"] for roll in chapters_by_num["3"]["rolls"]]
-    assert {2, 3}.issubset(set(chapter_three_roll_numbers))
+    chapter_three_source_ordinals = [roll["source_ordinal"] for roll in chapters_by_num["3"]["rolls"]]
+    assert {2, 3}.issubset(set(chapter_three_source_ordinals))
     assert chapters_by_num["3"]["skipped_predicted_rolls"] == [
         {
             "slot_index": 2,
-            "roll_number": 4,
+            "predicted_ordinal": 4,
+            "predicted_label": "P4",
+            "source_ordinal": None,
+            "source_label": None,
+            "roll_ordinal": None,
+            "roll_label": None,
+            "skipped_ordinal": 1,
+            "skipped_label": "X1",
             "mechanical_chapter_num": "3",
             "mechanical_word_position": 700,
             "mechanical_cumulative_word_offset": 2700,

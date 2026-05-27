@@ -390,7 +390,7 @@ def test_actions_panel_lists_roll_display_controls() -> None:
     text = str(rendered) if rendered is not None else ""
 
     assert "⎵v  Roll display position" in text
-    assert "⎵d  Toggle evidence deferral to later chapter" in text
+    assert "⎵d" not in text
 
 
 def test_actions_panel_omits_read_only_roll_structure_copy() -> None:
@@ -546,7 +546,7 @@ def test_anchor_roll_without_quote_writes_source_marker_metadata(tmp_path: Path)
     assert anchored["curator_note"] == "source-only roll anchor"
 
 
-def test_rolls_header_counts_source_curated_and_deferred_rows(
+def test_rolls_header_counts_source_and_curated_rows(
     tmp_path: Path,
 ) -> None:
     app = _loaded_app("9", tmp_path)
@@ -563,19 +563,11 @@ def test_rolls_header_counts_source_curated_and_deferred_rows(
         "source_kind": "miss",
         "curator_added": True,
     }
-    deferred_row = {
-        "display_kind": "deferred_in",
-        "source": "curator_rolls",
-        "source_kind": "miss",
-    }
     app._unified_rolls = lambda _cs: [
         source_row,
         source_row,
         source_row,
         curated_row,
-        deferred_row,
-        deferred_row,
-        deferred_row,
     ]
 
     assert app._rolls_header_count(cs) == (
@@ -611,9 +603,15 @@ def test_multi_quote_picker_targets_visible_slot_rows_not_source_row_indexes(
 
     assert rows
     assert all(row.get("target_roll_index") for row in rows)
-    assert [row.get("target_roll_index") for row in rows] == [
-        row.get("target_roll_index") for row in app._unified_rolls(cs)
-    ]
+    unified_targets = {
+        (row.get("target_chapter_num"), row.get("target_roll_index"))
+        for row in app._unified_rolls(cs)
+    }
+    picker_targets = {
+        (row.get("target_chapter_num"), row.get("target_roll_index"))
+        for row in rows
+    }
+    assert unified_targets.issubset(picker_targets)
 
 
 def test_curation_status_message_is_visible_in_stats(tmp_path: Path) -> None:
@@ -624,48 +622,6 @@ def test_curation_status_message_is_visible_in_stats(tmp_path: Path) -> None:
     app._flash("skip roll: select an open predicted slot first")
 
     assert "skip roll: select an open predicted slot first" in _render_stats_text(app)
-
-
-def test_same_chapter_locationless_deferral_marks_predicted_slot_deferred(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    chapter_roll_overrides_path = tmp_path / "chapter_roll_overrides.json"
-    chapter_roll_overrides_path.write_text(json.dumps({
-        "chapter_roll_overrides": {
-            "2": {
-                "rolls": [
-                    {
-                        "perks": [],
-                        "outcome": None,
-                        "constellation": None,
-                        "word_position": None,
-                        "mention_chapter_num": None,
-                        "mention_word_position": None,
-                        "display_position_policy": "mechanical",
-                        "skipped": False,
-                        "source_roll_number": None,
-                        "evidence_quotes": [],
-                        "deferred_to_later_chapter": True,
-                        "curator_note": None,
-                    }
-                ],
-            }
-        }
-    }))
-    app = _loaded_app("2", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=chapter_roll_overrides_path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    cs = app.state.chapter
-    assert cs is not None
-
-    first_slot = app._predicted_slot_rolls(cs)[0]
-
-    assert first_slot["deferred_to_later_chapter"] is True
-    assert "deferred to future chapter" in app._format_roll_stat_line(first_slot, " ")
 
 
 def test_stats_click_selects_roll_action_target(tmp_path: Path) -> None:
@@ -817,158 +773,21 @@ def test_chapter_1_override_preserves_trigger_without_local_paid_perk() -> None:
     assert cross_chapter
 
 
-def test_defer_roll_action_uses_lowercase_space_d(tmp_path) -> None:
+def test_space_d_is_unbound_and_space_D_deletes_curation(tmp_path) -> None:
     app = _loaded_app("2", tmp_path)
     calls: list[tuple[str, str]] = []
+    flashes: list[str] = []
 
-    app._action_defer_roll_to_next_chapter = lambda cn: calls.append(("defer", cn))
     app._action_delete_chapter_curation_data = (
         lambda cn: calls.append(("delete_curation", cn))
     )
+    app._flash = lambda message: flashes.append(message)
 
     app._handle_space_chord("d")
     app._handle_space_chord("D")
 
-    assert calls == [("defer", "2"), ("delete_curation", "2")]
-
-
-def test_chapter_curation_delete_candidates_include_related_source_deferrals(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    chapter_roll_overrides_path = tmp_path / "chapter_roll_overrides.json"
-    chapter_roll_overrides_path.write_text(json.dumps({
-        "chapter_roll_overrides": {
-            "19": {
-                "rolls": [
-                    {
-                        "perks": [],
-                        "outcome": None,
-                        "constellation": None,
-                        "word_position": None,
-                        "mention_chapter_num": None,
-                        "mention_word_position": None,
-                        "display_position_policy": None,
-                        "skipped": False,
-                        "source_roll_number": None,
-                        "source_deferred_to_chapter": "20",
-                        "evidence_quotes": [],
-                        "curator_note": None,
-                    }
-                    for _ in range(8)
-                ],
-            },
-            "20": {
-                "rolls": [
-                    {
-                        "perks": [],
-                        "outcome": None,
-                        "constellation": None,
-                        "word_position": None,
-                        "mention_chapter_num": None,
-                        "mention_word_position": None,
-                        "display_position_policy": None,
-                        "skipped": False,
-                        "source_roll_number": 88,
-                        "evidence_quotes": [],
-                        "curator_note": None,
-                    }
-                ],
-            },
-        }
-    }))
-    app = _loaded_app("19", tmp_path)
-    app.persistence = CurationPersistence(
-        chapter_roll_overrides_path=chapter_roll_overrides_path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-
-    candidates = app._chapter_curation_delete_candidates("19")
-    labels = [candidate.label for candidate in candidates]
-
-    assert any("ch 19 roll #8: source deferred to ch 20" in label for label in labels)
-    assert any("ch 20 roll #1: source = Roll 88" in label for label in labels)
-
-
-def test_delete_chapter_curation_items_clears_stale_source_deferral(
-    tmp_path: Path,
-) -> None:
-    from scripts.forge_curator.persistence import CurationPersistence
-
-    chapter_roll_overrides_path = tmp_path / "chapter_roll_overrides.json"
-    chapter_roll_overrides_path.write_text(json.dumps({
-        "chapter_roll_overrides": {
-            "19": {
-                "rolls": [
-                    {
-                        "perks": [],
-                        "outcome": None,
-                        "constellation": None,
-                        "word_position": None,
-                        "mention_chapter_num": None,
-                        "mention_word_position": None,
-                        "display_position_policy": None,
-                        "skipped": False,
-                        "source_roll_number": None,
-                        "source_deferred_to_chapter": None,
-                        "evidence_quotes": [],
-                        "curator_note": None,
-                    }
-                    for _ in range(8)
-                ],
-            },
-            "20": {
-                "rolls": [
-                    {
-                        "perks": [],
-                        "outcome": None,
-                        "constellation": None,
-                        "word_position": None,
-                        "mention_chapter_num": None,
-                        "mention_word_position": None,
-                        "display_position_policy": None,
-                        "skipped": False,
-                        "source_roll_number": 88,
-                        "evidence_quotes": [{"text": "keep me"}],
-                        "curator_note": None,
-                    }
-                ],
-            },
-        }
-    }))
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=chapter_roll_overrides_path,
-        journal_dir_path=tmp_path / ".journals",
-    )
-    persistence.chapter_roll_overrides["chapter_roll_overrides"]["19"]["rolls"][7][
-        "source_deferred_to_chapter"
-    ] = "20"
-
-    deleted = persistence.delete_chapter_curation_items([
-        {
-            "kind": "source_deferral",
-            "chapter_num": "19",
-            "roll_index": 8,
-        },
-        {
-            "kind": "source_assignment",
-            "chapter_num": "20",
-            "roll_index": 1,
-        },
-    ])
-
-    saved = json.loads(chapter_roll_overrides_path.read_text())
-    assert deleted == 2
-    assert saved["chapter_roll_overrides"]["19"]["rolls"][7][
-        "source_deferred_to_chapter"
-    ] is None
-    assert saved["chapter_roll_overrides"]["20"]["rolls"][0][
-        "source_roll_number"
-    ] is None
-    assert saved["chapter_roll_overrides"]["20"]["rolls"][0]["evidence_quotes"] == [
-        {"text": "keep me"}
-    ]
+    assert flashes == ["<space>d: not bound"]
+    assert calls == [("delete_curation", "2")]
 
 
 def test_resolve_model_discrepancy_persists_chapter_resolution(tmp_path) -> None:
@@ -1051,6 +870,38 @@ def test_space_r_resolves_current_model_discrepancy(tmp_path) -> None:
     assert flashes == []
 
 
+def test_space_r_without_discrepancy_marks_auto_associations_reviewed(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    chapter_num = "1"
+    app = _loaded_app(chapter_num, tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=tmp_path / "chapter_roll_overrides.json",
+        journal_dir_path=tmp_path / ".journals",
+    )
+    assert app.state.chapter is not None
+    app.state.chapter.derived.chapter_facts["model_validation"] = {
+        "issues": [],
+        "current_discrepancy": False,
+    }
+    refreshes: list[str] = []
+    flashes: list[str] = []
+    app._post_curation_refresh = (
+        lambda message, *, full=False: refreshes.append(message)
+    )
+    app._flash = flashes.append
+
+    app._handle_space_chord("r")
+
+    saved = json.loads((tmp_path / "chapter_roll_overrides.json").read_text())
+    review = saved["association_review"]
+    assert review["reviewed_through_chapter_num"] == chapter_num
+    assert review["baseline_fingerprint"]
+    assert review["baseline_roll_count"] >= 1
+    assert refreshes == ["auto associations reviewed through ch 1"]
+    assert flashes == []
+
+
 def test_remove_annotations_action_clears_roll_evidence_under_cursor(
     tmp_path, monkeypatch,
 ) -> None:
@@ -1069,13 +920,12 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
     app._post_curation_refresh = lambda message, *, full=False: None
     cs = app.state.chapter
     assert cs is not None
-    deferred = next(
+    roll_with_quote = next(
         r for r in app._unified_rolls(cs)
-        if r.get("display_kind") == "deferred_in"
-        and r.get("target_roll_index") is not None
+        if r.get("target_roll_index") is not None
         and r.get("evidence_quotes")
     )
-    quote_start = cs.prose.text.find(deferred["evidence_quotes"][0]["text"])
+    quote_start = cs.prose.text.find(roll_with_quote["evidence_quotes"][0]["text"])
     assert quote_start >= 0
     cs.cursor_char = quote_start
     monkeypatch.setattr(
@@ -1088,8 +938,8 @@ def test_remove_annotations_action_clears_roll_evidence_under_cursor(
 
     rolls = json.loads(chapter_roll_overrides_path.read_text())[
         "chapter_roll_overrides"
-    ][str(deferred["target_chapter_num"])]["rolls"]
-    assert rolls[int(deferred["target_roll_index"]) - 1]["evidence_quotes"] == []
+    ][str(roll_with_quote["target_chapter_num"])]["rolls"]
+    assert rolls[int(roll_with_quote["target_roll_index"]) - 1]["evidence_quotes"] == []
 
 
 @pytest.mark.asyncio

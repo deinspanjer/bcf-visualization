@@ -133,7 +133,7 @@ def test_roll_evidence_picker_global_roll_button_uses_current_display_policy() -
     )
     picker._display_position_policy = "mention"
 
-    picker._on_pressed(Button.Pressed(Button("Enter global roll #", id="global_roll")))
+    picker._on_pressed(Button.Pressed(Button("Enter roll ordinal", id="global_roll")))
 
     assert selected == ["mention"]
 
@@ -154,7 +154,7 @@ def test_batch_miss_quote_picker_defaults_to_confident_rows_only() -> None:
             {
                 "id": 1,
                 "target_label": "ch 1 #1",
-                "source_context": "source Roll 1",
+                "source_context": "source S1",
                 "quote_text": "The Magic constellation missed a connection.",
                 "mention_label": "ch 1:24",
                 "distance_label": "+4 words",
@@ -164,7 +164,7 @@ def test_batch_miss_quote_picker_defaults_to_confident_rows_only() -> None:
             {
                 "id": 2,
                 "target_label": "ch 1 #2",
-                "source_context": "source Roll 2",
+                "source_context": "source S2",
                 "quote_text": "The Time constellation moved nearby.",
                 "mention_label": "ch 1:40",
                 "distance_label": "+20 words",
@@ -193,7 +193,7 @@ def test_batch_miss_quote_picker_label_preserves_full_quote_text() -> None:
             {
                 "id": 1,
                 "target_label": "ch 1 #1",
-                "source_context": "roll, global #1, constellation Magic",
+                "source_context": "roll, R1, constellation Magic",
                 "quote_text": long_quote,
                 "mention_label": "ch 1:24",
                 "distance_label": "+4 words",
@@ -216,7 +216,7 @@ def test_batch_miss_quote_picker_can_widen_and_narrow_focused_match() -> None:
             {
                 "id": 1,
                 "target_label": "ch 1 #1",
-                "source_context": "roll, global #1, constellation Clothing",
+                "source_context": "roll, R1, constellation Clothing",
                 "quote_text": "the Clothing constellation missed a connection",
                 "mention_label": "ch 1:24",
                 "distance_label": "+4 words",
@@ -300,7 +300,7 @@ async def test_batch_miss_quote_picker_populates_matches_after_mount(
             {
                 "id": 1,
                 "target_label": "ch 1 #1",
-                "source_context": "roll, global #1, constellation Magic",
+                "source_context": "roll, R1, constellation Magic",
                 "quote_text": "The Magic constellation missed a connection.",
                 "mention_label": "ch 1:24",
                 "distance_label": "+4 words",
@@ -576,7 +576,7 @@ async def test_source_link_picker_supports_keyboard_only_selection_and_escape(
         assert targets.highlighted == 0
         assert sources.highlighted == 0
         assert "ch 2 #1" in _static_text(summary)
-        assert "Roll 2" in _static_text(summary)
+        assert "S2" in _static_text(summary)
 
         await pilot.press("down", "enter")
         await pilot.pause()
@@ -584,7 +584,7 @@ async def test_source_link_picker_supports_keyboard_only_selection_and_escape(
 
         await pilot.press("tab", "enter")
         await pilot.pause()
-        assert "Roll 2" in _static_text(summary)
+        assert "S2" in _static_text(summary)
 
         await pilot.press("escape")
         await pilot.pause()
@@ -611,7 +611,7 @@ async def test_source_link_picker_keyboard_confirm_assigns_selected_pair(
 
     overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
     saved = overrides["chapter_roll_overrides"]["2"]["rolls"][1]
-    assert saved["source_roll_number"] == 2
+    assert saved["source_ordinal"] == 2
     assert saved["evidence_quotes"] == [
         {
             "text": "forge motes connection",

@@ -95,6 +95,23 @@ def test_miss_quote_matcher_keeps_full_sentence_when_forge_failure_clause_is_rel
     assert candidates[0].text == text
 
 
+def test_miss_quote_matcher_focuses_short_forge_name_miss_clause() -> None:
+    text = (
+        "Skidmark started to turn to Trickster as the Forge missed a connection "
+        "to the Size constellation, but the cape jumped in."
+    )
+    word_offsets = _compute_word_offsets(text)
+
+    candidates = find_miss_quote_candidates(
+        text,
+        word_offsets,
+        constellation="Size",
+        anchor_word_index=0,
+    )
+
+    assert candidates[0].text == "the Forge missed a connection to the Size constellation"
+
+
 def test_miss_quote_matcher_trims_trailing_unrelated_clause() -> None:
     text = (
         "Somewhat appropriately, the Celestial Forge missed a connection "

@@ -26,6 +26,13 @@
 - TUI code must not reconcile, reinterpret, clamp, or synthesize roll, word, or accounting facts except for direct display formatting.
 - If derived facts disagree, fix the derivation pipeline and schema, then regenerate data.
 - When refactoring a data model or source-of-truth path, remove obsolete fields, files, actions, tests, and compatibility shims in the same change unless a real external contract requires a transition. Do not preserve dead code or empty generated fields just to avoid touching call sites.
+- When implementing a supplied plan, convert the plan into an acceptance
+  matrix before coding and keep it current through final verification. Before
+  reporting completion, every plan requirement must be marked implemented,
+  intentionally changed with the reason, or not done; for requirements that
+  say to remove, retire, collapse, or replace behavior, also audit the
+  obsolete terms/actions/tests and remove or explicitly justify every
+  remaining reference.
 - Tests must assert semantic invariants of the model, not UI symptoms.
 - Before adding or materially changing tests, read the project-specific
   testing pattern in `DEVELOPERS.md` under `Testing Design Pattern`.

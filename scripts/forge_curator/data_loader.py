@@ -381,7 +381,7 @@ class ForgeCuratorData:
         ]
         rf.sort(key=lambda r: (
             _chapter_roll_sort_word(cn, r),
-            r.get("roll_number") or r.get("roll_sequence_in_chapter") or 0,
+            r.get("roll_ordinal") or r.get("roll_sequence_in_chapter") or 0,
         ))
 
         preds = [

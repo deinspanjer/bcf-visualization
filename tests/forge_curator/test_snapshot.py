@@ -30,9 +30,10 @@ def test_snapshot_writes_fixture_backed_contract(
     assert snapshot["regex"][0]["slot"] == "*"
     assert snapshot["regex"][0]["pattern"] == "motes|connection"
     assert snapshot["regex"][0]["word_indices"]
-    assert snapshot["rolls"][0]["roll_number"] == 1
+    assert snapshot["rolls"][0]["roll_ordinal"] == 1
+    assert snapshot["rolls"][0]["roll_label"] == "R1"
     assert snapshot["derived"]["chapter_facts"]["chapter_num"] == "1"
-    assert snapshot["derived"]["roll_facts"][0]["roll_number"] == 1
+    assert snapshot["derived"]["roll_facts"][0]["roll_ordinal"] == 1
     assert snapshot["prose"]["text"].startswith("chapter1 forge motes")
 
 
@@ -54,33 +55,7 @@ async def test_ctrl_s_writes_fixture_backed_snapshot(
     assert snapshot["chapter"]["chapter_num"] == "2"
 
 
-def test_snapshot_includes_fixture_deferred_predicted_slots(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
-
-    app.action_snapshot()
-    snapshot = json.loads(fixture.snapshot_path.read_text())
-
-    deferred = [
-        roll for roll in snapshot["rolls"]
-        if roll.get("display_kind") == "deferred_in"
-        and roll.get("source_kind") == "predicted_slot"
-    ]
-    assert len(deferred) == 1
-    assert deferred[0]["target_chapter_num"] == "1"
-    assert deferred[0]["target_roll_index"] == 1
-    assert deferred[0]["visible_chapter_num"] == "2"
-    assert deferred[0]["mechanical_chapter_num"] == "1"
-    assert deferred[0]["mention_chapter_num"] == "2"
-    assert deferred[0]["roll_number"] == 1
-    assert deferred[0]["evidence_quotes"] == []
-
-
-def test_snapshot_groups_source_deferred_rolls_before_current_rolls(
+def test_snapshot_includes_cross_chapter_source_projection_as_roll(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -100,7 +75,7 @@ def test_snapshot_groups_source_deferred_rolls_before_current_rolls(
             "display_word_position": 20,
             "display_cumulative_word_offset": 20,
             "source_chapter_num": "2",
-            "source_roll_index": 1,
+            "source_chapter_ordinal": 1,
             "source_word_position": 40,
             "source_cumulative_word_offset": 120,
             "visible_chapter_nums": ["1", "2"],
@@ -112,7 +87,10 @@ def test_snapshot_groups_source_deferred_rolls_before_current_rolls(
     app.action_snapshot()
     snapshot = json.loads(fixture.snapshot_path.read_text())
 
-    roll_kinds = [roll.get("display_kind") for roll in snapshot["rolls"]]
-    assert roll_kinds[0] == "source_deferred"
-    assert "chapter_roll" in roll_kinds
-    assert roll_kinds.index("source_deferred") < roll_kinds.index("chapter_roll")
+    projected = next(
+        roll for roll in snapshot["rolls"]
+        if roll.get("target_chapter_num") == "1"
+        and roll.get("target_roll_index") == 2
+    )
+    assert projected["display_kind"] == "chapter_roll"
+    assert projected["source_chapter_num"] == "2"

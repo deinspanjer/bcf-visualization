@@ -659,7 +659,7 @@ def _is_metadata_only_roll_override(
         return False
     if entry.get("skipped") not in (None, False):
         return False
-    if entry.get("source_roll_number") is not None:
+    if entry.get("source_ordinal") is not None:
         return False
     if entry.get("curator_added"):
         return False
@@ -740,10 +740,6 @@ def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None
     if entry.get("constellation") is not None:
         payload["constellation"] = entry.get("constellation")
         payload["constellation_revealed"] = True
-    if entry.get("source_deferred_to_chapter") is not None:
-        payload["_source_deferred_to_chapter"] = str(
-            entry.get("source_deferred_to_chapter")
-        )
 
 
 def _resolution_for_issue(override: dict | None, issue_code: str) -> dict | None:
@@ -812,7 +808,7 @@ def _manual_override_issues(chapter_num: str, override: dict | None) -> list[dic
         if (
             entry.get("outcome") != "hit"
             or entry.get("perks")
-            or entry.get("source_roll_number") is not None
+            or entry.get("source_ordinal") is not None
         ):
             continue
         issues.append({
@@ -1204,13 +1200,13 @@ def _override_needs_direct_rows(
     curator hit rows.
 
     Existing multi-grab overrides split curator rows within a chapter.
-    Deferred rolls point at a later mention/listing chapter, so they need
-    direct construction from obtained_perks instead.
+    Cross-chapter evidence can point at a later mention/listing chapter,
+    so those overrides need direct construction from obtained_perks instead.
     """
     for entry in override.get("rolls") or []:
         if isinstance(entry, dict) and entry.get("skipped"):
             return True
-        if isinstance(entry, dict) and entry.get("source_roll_number") is not None:
+        if isinstance(entry, dict) and entry.get("source_ordinal") is not None:
             return True
         if _norm_chapter(entry.get("mention_chapter_num"), chapter_num) != str(chapter_num):
             return True
@@ -1258,16 +1254,20 @@ def _source_roll_occurrences(
     curator_rolls: list[dict],
     multi_overrides: dict,
     chapter_word_start_global: dict[str, int] | None = None,
-) -> dict[int, dict]:
+) -> tuple[dict[int, dict], dict[tuple[str, int], dict], dict[int, dict]]:
     chapter_word_start_global = chapter_word_start_global or {}
     non_trigger_seq_by_chapter: dict[str, int] = {}
-    out: dict[int, dict] = {}
-    for row in curator_rolls:
+    by_raw_roll_number: dict[int, dict] = {}
+    by_chapter_index: dict[tuple[str, int], dict] = {}
+    by_source_ordinal: dict[int, dict] = {}
+    source_ordinal = 0
+    for source_row_index, row in enumerate(curator_rolls):
         if row.get("kind") not in {"roll", "miss"}:
             continue
         roll_number = row.get("roll_number")
         if roll_number is None:
             continue
+        source_ordinal += 1
         chapter_num = str(row.get("chapter_num"))
         seq = non_trigger_seq_by_chapter.get(chapter_num, 0) + 1
         non_trigger_seq_by_chapter[chapter_num] = seq
@@ -1289,19 +1289,19 @@ def _source_roll_occurrences(
             chapter_word_start_global.get(chapter_num, 0) + word_position
             if word_position is not None else None
         )
-        out.setdefault(int(roll_number), {
+        info = {
+            "source_row_index": int(source_row_index),
+            "source_ordinal": source_ordinal,
             "source_chapter_num": chapter_num,
-            "source_roll_index": seq,
+            "source_chapter_ordinal": seq,
+            "source_roll_label": f"Roll {int(roll_number)}",
             "source_word_position": word_position,
             "source_cumulative_word_offset": cumulative,
-            "source_deferred_to_chapter": (
-                str(override.get("source_deferred_to_chapter"))
-                if override is not None
-                and override.get("source_deferred_to_chapter") is not None
-                else None
-            ),
-        })
-    return out
+        }
+        by_raw_roll_number.setdefault(int(roll_number), info)
+        by_chapter_index[(chapter_num, seq)] = info
+        by_source_ordinal[source_ordinal] = info
+    return by_raw_roll_number, by_chapter_index, by_source_ordinal
 
 
 def _visible_chapter_nums(*values: str | None) -> list[str]:
@@ -1324,7 +1324,7 @@ def _direct_override_rows(
     curator_rows: list[tuple[int, dict]],
     override: dict,
     obtained_lookup: dict[tuple[str, str], list[dict]],
-    source_templates_by_roll_number: dict[int, tuple[int, dict]] | None = None,
+    source_templates_by_source_ordinal: dict[int, tuple[int, dict]] | None = None,
 ) -> list[dict]:
     """Build curator-equivalent rows directly from an index-aligned
     chapter override.
@@ -1339,6 +1339,10 @@ def _direct_override_rows(
         for source_idx, row in curator_rows
         if row.get("kind") != "trigger"
     ]
+    source_position_by_row_index = {
+        source_idx: position
+        for position, (source_idx, _row) in enumerate(non_trigger_templates)
+    }
     for source_idx, row in curator_rows:
         if row.get("kind") != "trigger":
             continue
@@ -1360,12 +1364,7 @@ def _direct_override_rows(
     override_rolls = override.get("rolls") or []
     source_cursor = 0
     consumed_source_positions: set[int] = set()
-    template_by_roll_number = {
-        row.get("roll_number"): (pos, source_idx, row)
-        for pos, (source_idx, row) in enumerate(non_trigger_templates)
-        if row.get("roll_number") is not None
-    }
-    source_templates_by_roll_number = source_templates_by_roll_number or {}
+    source_templates_by_source_ordinal = source_templates_by_source_ordinal or {}
 
     def _next_source_template() -> tuple[int | None, dict]:
         nonlocal source_cursor
@@ -1382,19 +1381,17 @@ def _direct_override_rows(
         return source_idx, template
 
     def _source_template_for_entry(entry: dict | None) -> tuple[int | None, dict]:
-        source_roll_number = (
-            entry.get("source_roll_number")
+        source_ordinal = (
+            entry.get("source_ordinal")
             if isinstance(entry, dict) else None
         )
-        if source_roll_number is not None:
-            found = template_by_roll_number.get(int(source_roll_number))
+        if source_ordinal is not None:
+            found = source_templates_by_source_ordinal.get(int(source_ordinal))
             if found is not None:
-                pos, source_idx, template = found
-                consumed_source_positions.add(pos)
-                return source_idx, template
-            global_found = source_templates_by_roll_number.get(int(source_roll_number))
-            if global_found is not None:
-                return global_found
+                position = source_position_by_row_index.get(int(found[0]))
+                if position is not None:
+                    consumed_source_positions.add(position)
+                return found
         return _next_source_template()
 
     for override_idx, entry in enumerate(override_rolls):
@@ -1429,20 +1426,17 @@ def _direct_override_rows(
                 "constellation_revealed": template.get("constellation_revealed", False),
                 "roll_number": template.get("roll_number"),
                 "raw": template.get("raw"),
+                "_source_identity_inferred": True,
             }
             if isinstance(entry, dict):
-                if entry.get("source_roll_number") is not None:
-                    payload["_source_roll_number"] = int(entry["source_roll_number"])
-                if entry.get("source_deferred_to_chapter") is not None:
-                    payload["_source_deferred_to_chapter"] = str(
-                        entry["source_deferred_to_chapter"]
-                    )
+                if entry.get("source_ordinal") is not None:
+                    payload["_source_ordinal"] = int(entry["source_ordinal"])
             _apply_metadata(payload, entry, chapter_num)
             out_rows.append(payload)
             continue
         if (
             entry.get("curator_added")
-            and entry.get("source_roll_number") is None
+            and entry.get("source_ordinal") is None
             and entry.get("outcome") == "miss"
             and not entry.get("perks")
         ):
@@ -1451,6 +1445,7 @@ def _direct_override_rows(
         else:
             source_idx, template = _source_template_for_entry(entry)
             curator_added = False
+        has_source_template = bool(template)
         mention_chapter = _norm_chapter(entry.get("mention_chapter_num"), chapter_num)
         template_kind = template.get("kind")
         outcome = entry.get("outcome") or (
@@ -1477,10 +1472,9 @@ def _direct_override_rows(
         display_policy = entry.get("display_position_policy")
         if display_policy is None:
             display_policy = "mechanical"
-        explicit_source_roll_number = entry.get("source_roll_number")
-        explicit_roll_number = (
-            int(explicit_source_roll_number)
-            if explicit_source_roll_number is not None else None
+        explicit_source_ordinal = (
+            int(entry["source_ordinal"])
+            if entry.get("source_ordinal") is not None else None
         )
         payload = {
             "_source_idx": source_idx,
@@ -1501,21 +1495,13 @@ def _direct_override_rows(
                 or template.get("constellation")
             ),
             "constellation_revealed": bool(entry.get("constellation")),
-            "roll_number": (
-                explicit_roll_number
-                if explicit_roll_number is not None else template.get("roll_number")
-            ),
+            "roll_number": template.get("roll_number"),
             "raw": template.get("raw"),
+            "_source_identity_inferred": has_source_template,
         }
-        if explicit_roll_number is not None:
-            payload["_source_roll_number"] = explicit_roll_number
-            if not template or str(template.get("chapter_num")) == str(chapter_num):
-                payload["_source_chapter_num"] = chapter_num
-                payload["_source_roll_index"] = override_idx + 1
-        if entry.get("source_deferred_to_chapter") is not None:
-            payload["_source_deferred_to_chapter"] = str(
-                entry["source_deferred_to_chapter"]
-            )
+        if explicit_source_ordinal is not None:
+            payload["_source_ordinal"] = explicit_source_ordinal
+            payload["_source_identity_inferred"] = True
         out_rows.append(payload)
     for pos, (source_idx, template) in enumerate(non_trigger_templates):
         if pos in consumed_source_positions:
@@ -1532,6 +1518,7 @@ def _direct_override_rows(
             "constellation_revealed": template.get("constellation_revealed", False),
             "roll_number": template.get("roll_number"),
             "raw": template.get("raw"),
+            "_source_identity_inferred": True,
         }
         out_rows.append(payload)
     return out_rows
@@ -1554,6 +1541,104 @@ def _apply_overrides(rolls: list[dict], overrides_doc: dict) -> int:
     return applied
 
 
+def _ordinal_label(prefix: str, value: int | None) -> str | None:
+    return f"{prefix}{value}" if value is not None else None
+
+
+def _record_roll_identity(
+    record: dict,
+    *,
+    predicted_ordinal: int | None,
+    source_ordinal: int | None,
+    association_source: str,
+) -> None:
+    record["_predicted_ordinal"] = predicted_ordinal
+    record["_source_ordinal"] = source_ordinal
+    record["association_source"] = association_source
+
+
+def _association_source_for(
+    *,
+    predicted_ordinal: int | None,
+    source_ordinal: int | None,
+    curated: bool,
+) -> str:
+    if predicted_ordinal is None or source_ordinal is None:
+        return "none"
+    return "curated" if curated else "auto"
+
+
+def _owner_chapter_sort_key(chapter_order: list[str], chapter_num: str) -> tuple[int, tuple[int, int]]:
+    try:
+        return (chapter_order.index(chapter_num), (0, 0))
+    except ValueError:
+        return (10**9, sort_key_for_chapter(chapter_num))
+
+
+def _stamp_explicit_ordinals(rolls: list[dict], chapter_order: list[str]) -> None:
+    def roll_owner_chapter(roll: dict) -> str:
+        return str(roll.get("mechanical_chapter_num") or roll["chapter_num"])
+
+    def roll_owner_position(roll: dict) -> int:
+        value = (
+            roll.get("mechanical_cumulative_word_offset")
+            if roll.get("mechanical_cumulative_word_offset") is not None
+            else roll.get("display_cumulative_word_offset")
+        )
+        return int(value) if value is not None else 10**12
+
+    rolls_by_owner: dict[str, list[dict]] = {}
+    for roll in rolls:
+        rolls_by_owner.setdefault(roll_owner_chapter(roll), []).append(roll)
+
+    ordered_rolls: list[dict] = []
+    ordered_all_rolls: list[dict] = []
+    for owner_chapter, owner_rolls in sorted(
+        rolls_by_owner.items(),
+        key=lambda item: _owner_chapter_sort_key(chapter_order, item[0]),
+    ):
+        owner_rolls.sort(key=lambda r: (
+            0 if r.get("source_kind") == "trigger" else 1,
+            roll_owner_position(r),
+            r.get("source_ordinal") if r.get("source_ordinal") is not None else 10**12,
+            r.get("source_row_index", 0),
+            r.get("roll_key", ""),
+        ))
+        total_owner_rolls = len(owner_rolls)
+        chapter_ordinal = 0
+        for seq, roll in enumerate(owner_rolls, start=1):
+            roll["roll_sequence_in_chapter"] = seq
+            roll["rolls_in_chapter"] = total_owner_rolls
+            if roll.get("source_kind") == "trigger":
+                roll["chapter_ordinal"] = None
+                roll["chapter_label"] = None
+                ordered_all_rolls.append(roll)
+                continue
+            chapter_ordinal += 1
+            roll["chapter_ordinal"] = chapter_ordinal
+            roll["chapter_label"] = _ordinal_label("C", chapter_ordinal)
+            ordered_rolls.append(roll)
+            ordered_all_rolls.append(roll)
+
+    for roll_ordinal, roll in enumerate(ordered_rolls, start=1):
+        roll["roll_ordinal"] = roll_ordinal
+        roll["roll_label"] = _ordinal_label("R", roll_ordinal)
+
+    for roll in rolls:
+        predicted_ordinal = int_or_none(roll.pop("_predicted_ordinal", None))
+        source_ordinal = int_or_none(roll.pop("_source_ordinal", None))
+        roll.setdefault("roll_ordinal", None)
+        roll.setdefault("roll_label", None)
+        roll.setdefault("chapter_ordinal", None)
+        roll.setdefault("chapter_label", None)
+        roll["predicted_ordinal"] = predicted_ordinal
+        roll["predicted_label"] = _ordinal_label("P", predicted_ordinal)
+        roll["source_ordinal"] = source_ordinal
+        roll["source_label"] = _ordinal_label("S", source_ordinal)
+        roll.pop("roll_number", None)
+    rolls[:] = ordered_all_rolls
+
+
 def main() -> None:
     curator_doc = json.loads(CURATOR_ROLLS.read_text())
     outcomes_doc = json.loads(ROLL_OUTCOMES.read_text())
@@ -1568,28 +1653,38 @@ def main() -> None:
     multi_overrides_doc = load_multi_grab_overrides()
     multi_overrides = multi_overrides_doc.get("chapter_roll_overrides") or {}
     obtained_lookup = _build_obtained_lookup(obtained_doc["perks"])
-    source_templates_by_roll_number = {
-        int(row["roll_number"]): (idx, row)
-        for idx, row in enumerate(curator_doc["rolls"])
-        if row.get("kind") in {"roll", "miss"}
-        and row.get("roll_number") is not None
+    (
+        _early_source_occurrences_by_roll_number,
+        _early_source_occurrences_by_chapter_index,
+        early_source_occurrences_by_ordinal,
+    ) = _source_roll_occurrences(curator_doc["rolls"], multi_overrides)
+    early_source_occurrences_by_row_index = {
+        int(info["source_row_index"]): info
+        for info in early_source_occurrences_by_ordinal.values()
+    }
+    source_templates_by_source_ordinal = {
+        int(info["source_ordinal"]): (
+            int(info["source_row_index"]),
+            curator_doc["rolls"][int(info["source_row_index"])],
+        )
+        for info in early_source_occurrences_by_ordinal.values()
     }
     cross_chapter_source_assignments: dict[int, str] = {}
     for mechanical_chapter, override in multi_overrides.items():
         for entry in override.get("rolls") or []:
-            source_roll_number = entry.get("source_roll_number")
-            if source_roll_number is None:
+            source_ordinal = entry.get("source_ordinal")
+            if source_ordinal is None:
                 continue
             try:
-                roll_number = int(source_roll_number)
+                source_ordinal = int(source_ordinal)
             except (TypeError, ValueError):
                 continue
-            template = source_templates_by_roll_number.get(roll_number)
+            template = source_templates_by_source_ordinal.get(source_ordinal)
             if template is None:
                 continue
             _idx, source_row = template
             if str(source_row.get("chapter_num")) != str(mechanical_chapter):
-                cross_chapter_source_assignments[roll_number] = str(mechanical_chapter)
+                cross_chapter_source_assignments[source_ordinal] = str(mechanical_chapter)
     deferred_consumed_by_mention_chapter: dict[str, set[str]] = {}
     for mechanical_chapter, override in multi_overrides.items():
         for entry in override.get("rolls") or []:
@@ -1614,10 +1709,14 @@ def main() -> None:
     for idx, row in enumerate(curator_doc["rolls"]):
         if row.get("kind") not in {"trigger", "roll", "miss"}:
             continue
-        roll_number = row.get("roll_number")
+        source_info = early_source_occurrences_by_row_index.get(idx)
+        source_ordinal = (
+            int(source_info["source_ordinal"])
+            if source_info is not None else None
+        )
         if (
-            roll_number is not None
-            and int(roll_number) in cross_chapter_source_assignments
+            source_ordinal is not None
+            and source_ordinal in cross_chapter_source_assignments
         ):
             continue
         deferred_names = deferred_consumed_by_mention_chapter.get(
@@ -1631,6 +1730,10 @@ def main() -> None:
         if row.get("kind") == "roll" and row_paid_names & deferred_names:
             continue
         curator_by_chapter.setdefault(row["chapter_num"], []).append((idx, row))
+    for cn, override in multi_overrides.items():
+        rows = curator_by_chapter.get(cn, [])
+        if _override_needs_direct_rows(str(cn), override, rows):
+            curator_by_chapter.setdefault(str(cn), rows)
 
     # ---- scheduler pass: per-chapter feasibility + slot assignment ----
     scheduler_inputs = _build_scheduler_inputs()
@@ -1675,11 +1778,26 @@ def main() -> None:
     chapter_word_start_global = {
         cn: inp["chapter_word_start"] for cn, inp in scheduler_inputs.items()
     }
-    source_occurrences_by_roll_number = _source_roll_occurrences(
+    (
+        _source_occurrences_by_roll_number,
+        source_occurrences_by_chapter_index,
+        source_occurrences_by_ordinal,
+    ) = _source_roll_occurrences(
         curator_doc["rolls"],
         multi_overrides,
         chapter_word_start_global,
     )
+    source_templates_by_source_ordinal: dict[int, tuple[int, dict]] = {
+        int(info["source_ordinal"]): (
+            int(info["source_row_index"]),
+            curator_doc["rolls"][int(info["source_row_index"])],
+        )
+        for info in source_occurrences_by_ordinal.values()
+    }
+    source_occurrences_by_row_index = {
+        int(info["source_row_index"]): info
+        for info in source_occurrences_by_ordinal.values()
+    }
     scheduler_results: dict = {}
     strict_scheduler_results: dict = {}
     strict_infeasible_by_chapter: dict[str, dict] = {}
@@ -1833,7 +1951,7 @@ def main() -> None:
                         rows_raw,
                         chapter_override,
                         obtained_lookup,
-                        source_templates_by_roll_number,
+                        source_templates_by_source_ordinal,
                     )
                 else:
                     synthetic = _restructure_curator_rows(
@@ -1953,14 +2071,22 @@ def main() -> None:
                         banked_after = available_cp
                     elif banked_after is None:
                         banked_after = assignment.banked_cp_after_roll
-                canonical_roll_number = (
-                    roll_number
-                    if roll_number is not None
-                    else (
-                        pred_slot.get("roll_number")
-                        if pred_slot is not None
-                        else None
+                predicted_ordinal = (
+                    int(pred_slot["roll_number"]) if pred_slot is not None else None
+                )
+                source_info = None
+                if row.get("_source_ordinal") is not None:
+                    source_info = source_occurrences_by_ordinal.get(
+                        int(row["_source_ordinal"])
                     )
+                if (
+                    source_info is None
+                    and row.get("_source_identity_inferred", True)
+                ):
+                    source_info = source_occurrences_by_row_index.get(int(source_idx))
+                source_ordinal = (
+                    int(source_info["source_ordinal"])
+                    if source_info is not None else None
                 )
                 # Join evidence by (chapter, slot_index). pred_slot — which is
                 # the chapter-local match for this curator row — is the
@@ -1980,7 +2106,7 @@ def main() -> None:
                 )
                 record = roll_base(
                     roll_key=roll_key,
-                    roll_number=canonical_roll_number,
+                    roll_number=predicted_ordinal,
                     chapter_num=owner_chapter_num,
                     predicted_chapter_num=predicted_chapter_num,
                     source="curator_rolls",
@@ -2051,31 +2177,26 @@ def main() -> None:
                 principal_instance = (
                     paid_meta.get("instance") if paid_meta else None
                 )
-                if row.get("_source_chapter_num") is not None:
-                    source_chapter_num = str(row["_source_chapter_num"])
-                    source_roll_index = row.get("_source_roll_index")
-                    if source_roll_index is None:
-                        source_roll_index = local_roll_index
-                    source_word_position = row.get("_source_word_position")
-                    source_cumulative_word_offset = row.get(
-                        "_source_cumulative_word_offset"
-                    )
-                else:
-                    source_info = (
-                        source_occurrences_by_roll_number.get(int(canonical_roll_number))
-                        if canonical_roll_number is not None else None
-                    )
-                    source_chapter_num = str(
-                        (source_info or {}).get("source_chapter_num")
-                        or owner_chapter_num
-                    )
-                    source_roll_index = (source_info or {}).get("source_roll_index")
-                    if source_roll_index is None:
-                        source_roll_index = local_roll_index
-                    source_word_position = (source_info or {}).get("source_word_position")
-                    source_cumulative_word_offset = (
-                        (source_info or {}).get("source_cumulative_word_offset")
-                    )
+                source_chapter_num = (
+                    str(source_info["source_chapter_num"])
+                    if source_info is not None else None
+                )
+                source_chapter_ordinal = (
+                    int(source_info["source_chapter_ordinal"])
+                    if source_info is not None else None
+                )
+                source_roll_label = (
+                    str(source_info["source_roll_label"])
+                    if source_info is not None else None
+                )
+                source_word_position = (
+                    source_info.get("source_word_position")
+                    if source_info is not None else None
+                )
+                source_cumulative_word_offset = (
+                    source_info.get("source_cumulative_word_offset")
+                    if source_info is not None else None
+                )
                 visible_chapters = _visible_chapter_nums(
                     owner_chapter_num,
                     chapter_num,
@@ -2100,10 +2221,8 @@ def main() -> None:
                         int(display_cum_word) if display_cum_word is not None else None
                     ),
                     "source_chapter_num": source_chapter_num,
-                    "source_roll_index": (
-                        int(source_roll_index)
-                        if source_roll_index is not None else None
-                    ),
+                    "source_chapter_ordinal": source_chapter_ordinal,
+                    "source_roll_label": source_roll_label,
                     "source_word_position": (
                         int(source_word_position)
                         if source_word_position is not None else None
@@ -2141,6 +2260,21 @@ def main() -> None:
                         int(display_cum_word) if display_cum_word is not None else None
                     ),
                 })
+                _record_roll_identity(
+                    record,
+                    predicted_ordinal=predicted_ordinal,
+                    source_ordinal=source_ordinal,
+                    association_source=_association_source_for(
+                        predicted_ordinal=predicted_ordinal,
+                        source_ordinal=source_ordinal,
+                        curated=bool(
+                            chapter_override is not None
+                            or ov_origin is not None
+                            or row.get("_source_ordinal") is not None
+                            or row.get("_override_direct")
+                        ),
+                    ),
+                )
                 if row.get("_curator_added"):
                     record["curator_added"] = True
                 rolls.append(record)
@@ -2386,26 +2520,10 @@ def main() -> None:
                 display_chapter_num = chapter_num
                 display_word_position = word_position_local
                 display_cum_word = cum_word
-            current_roll_number = record.get("roll_number")
-            source_info = (
-                source_occurrences_by_roll_number.get(int(current_roll_number))
-                if current_roll_number is not None else None
-            )
-            source_chapter_num = str(
-                (source_info or {}).get("source_chapter_num") or owner_chapter_num
-            )
-            source_roll_index = (source_info or {}).get("source_roll_index")
-            if source_roll_index is None and record["source_kind"] != "trigger":
-                source_roll_index = seq
-            source_word_position = (source_info or {}).get("source_word_position")
-            source_cumulative_word_offset = (
-                (source_info or {}).get("source_cumulative_word_offset")
-            )
             visible_chapters = _visible_chapter_nums(
                 owner_chapter_num,
                 chapter_num,
                 display_chapter_num,
-                source_chapter_num,
             )
             record.update({
                 "mechanical_chapter_num": chapter_num,
@@ -2424,19 +2542,11 @@ def main() -> None:
                 "display_cumulative_word_offset": (
                     int(display_cum_word) if display_cum_word is not None else None
                 ),
-                "source_chapter_num": source_chapter_num,
-                "source_roll_index": (
-                    int(source_roll_index)
-                    if source_roll_index is not None else None
-                ),
-                "source_word_position": (
-                    int(source_word_position)
-                    if source_word_position is not None else None
-                ),
-                "source_cumulative_word_offset": (
-                    int(source_cumulative_word_offset)
-                    if source_cumulative_word_offset is not None else None
-                ),
+                "source_chapter_num": None,
+                "source_chapter_ordinal": None,
+                "source_roll_label": None,
+                "source_word_position": None,
+                "source_cumulative_word_offset": None,
                 "visible_chapter_nums": visible_chapters,
                 "constellation": constellation,
                 "constellation_revealed": False,
@@ -2466,27 +2576,30 @@ def main() -> None:
                 "word_position": display_word_position,
                 "cumulative_word_offset": display_cum_word,
             })
+            predicted_ordinal = int_or_none(record.get("roll_number"))
+            _record_roll_identity(
+                record,
+                predicted_ordinal=predicted_ordinal,
+                source_ordinal=None,
+                association_source=_association_source_for(
+                    predicted_ordinal=predicted_ordinal,
+                    source_ordinal=None,
+                    curated=False,
+                ),
+            )
             rolls.append(record)
 
     # ---- apply overrides as a final pass ----
     overrides_applied = _apply_overrides(rolls, overrides_doc)
 
-    rolls_by_owner: dict[str, list[dict]] = {}
-    for roll in rolls:
-        rolls_by_owner.setdefault(str(roll["chapter_num"]), []).append(roll)
-    for owner_rolls in rolls_by_owner.values():
-        owner_rolls.sort(key=lambda r: (
-            0 if r.get("source_kind") == "trigger" else 1,
-            r.get("display_cumulative_word_offset")
-            if r.get("display_cumulative_word_offset") is not None
-            else 10**12,
-            r.get("source_row_index", 0),
-            r.get("roll_key", ""),
-        ))
-        total_owner_rolls = len(owner_rolls)
-        for seq, roll in enumerate(owner_rolls, start=1):
-            roll["roll_sequence_in_chapter"] = seq
-            roll["rolls_in_chapter"] = total_owner_rolls
+    chapter_order = [
+        c["chapter_num"]
+        for c in sorted(
+            json.loads(CHAPTERS_JSON.read_text())["chapters"],
+            key=lambda c: tuple(c["sort_key"]),
+        )
+    ]
+    _stamp_explicit_ordinals(rolls, chapter_order)
 
     known_attempt_count_by_chapter: dict[str, int] = {}
     for roll in rolls:
@@ -2544,13 +2657,6 @@ def main() -> None:
     ambiguous_by_chapter = {
         row["chapter_num"]: row for row in ambiguous
     }
-    chapter_order = [
-        c["chapter_num"]
-        for c in sorted(
-            json.loads(CHAPTERS_JSON.read_text())["chapters"],
-            key=lambda c: tuple(c["sort_key"]),
-        )
-    ]
     chapter_checks: list[dict] = []
     for cn in chapter_order:
         inp = scheduler_inputs.get(cn, {})

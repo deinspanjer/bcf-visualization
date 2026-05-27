@@ -67,7 +67,13 @@ def test_gutter_marks_include_hits_annotation_spans_and_suppress_off_chapter_quo
     assert cs is not None
     cs.derived.roll_facts[0]["evidence_quotes"] = []
     app.data.roll_facts["rolls"][0]["evidence_quotes"] = []
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
+    app.persistence.set_roll_visualization_anchor(
+        "1",
+        1,
+        mention_chapter_num="2",
+        mention_word_position=None,
+        display_position_policy="mechanical",
+    )
     app.persistence.append_roll_evidence_at_indices(
         "1",
         [1],
@@ -77,29 +83,6 @@ def test_gutter_marks_include_hits_annotation_spans_and_suppress_off_chapter_quo
     )
 
     assert [mark for mark in app._compute_gutter_marks() if mark.glyph == "Q"] == []
-
-
-def test_deferred_quote_highlights_in_mention_chapter_text(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
-    quote = "chapter2 forge motes"
-    app.persistence.append_roll_evidence_at_indices(
-        "1",
-        [1],
-        text=quote,
-        mention_chapter_num="2",
-        mention_word_position=0,
-    )
-
-    text = app.state.chapter.prose.text
-    start = text.find(quote)
-
-    assert start >= 0
-    assert (start, start + len(quote)) in app._roll_evidence_char_spans(app.state.chapter)
 
 
 def test_global_roll_quote_highlights_in_mention_chapter_without_visible_roll(
@@ -121,6 +104,49 @@ def test_global_roll_quote_highlights_in_mention_chapter_without_visible_roll(
 
     assert start >= 0
     assert (start, start + len(quote)) in app._roll_evidence_char_spans(app.state.chapter)
+
+
+def test_prior_curated_roll_without_source_identity_does_not_leak_into_evidence_rows(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    prior_roll = app.data.roll_facts["rolls"][0]
+    prior_roll.pop("source_ordinal", None)
+    prior_roll.pop("source_label", None)
+
+    rows = app._roll_evidence_picker_rolls(app.state.chapter)
+
+    assert not any(
+        row.get("display_kind") == "predicted_slot"
+        and row.get("target_chapter_num") == "1"
+        and row.get("target_roll_index") == 1
+        for row in rows
+    )
+
+
+def test_stats_panel_groups_prior_visible_rolls_before_current_chapter_rolls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    prior_roll = app.data.roll_facts["rolls"][0]
+    prior_roll["visible_chapter_nums"] = ["1", "2"]
+    prior_roll["source_chapter_num"] = "2"
+    prior_roll["source_word_position"] = 10
+    prior_roll["source_cumulative_word_offset"] = 90
+    app.state.chapter.derived.roll_facts.insert(0, prior_roll)
+
+    text, _stats = _render_stats_text(app)
+
+    prior_section = text.index("Prior Chapter Rolls")
+    current_section = text.index("Rolls (")
+    prior_roll_line = text.index("(R1/P1/S1)")
+    current_roll_line = text.index("(R2/P2/S2)")
+
+    assert prior_section < prior_roll_line < current_section < current_roll_line
 
 
 def test_quote_highlight_uses_saved_mention_position_for_duplicate_text(
@@ -207,17 +233,51 @@ def test_stats_registers_roll_targets_for_curated_and_open_slots(
 
     assert "Rolls" in text
     assert [
-        (
-            target["display_kind"],
-            target["target_roll_index"],
-            target["roll_number"],
-            target["outcome"],
-        )
+            (
+                target["display_kind"],
+                target["target_roll_index"],
+                target.get("roll_ordinal") or target.get("predicted_ordinal"),
+                target["outcome"],
+            )
         for target in targets
     ] == [
         ("chapter_roll", 1, 2, "miss"),
         ("predicted_slot", 2, 3, "open"),
     ]
+
+
+def test_stats_roll_marker_prefers_quote_target_over_mechanical_cursor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    app.state.set_cursor_char(cs.prose.word_offsets[45][0])
+    quote_roll = next(
+        roll for roll in app._roll_slot_rows(cs, app._unified_rolls(cs))
+        if roll.get("target_roll_index") == 1
+    )
+    monkeypatch.setattr(
+        app,
+        "_roll_evidence_quote_targets_at_selection_or_cursor",
+        lambda: [{
+            "roll": quote_roll,
+            "target_chapter": "2",
+            "target_index": 1,
+            "quote": {
+                "text": "chapter2 forge motes",
+                "mention_chapter_num": "2",
+                "mention_word_position": 0,
+            },
+        }],
+    )
+
+    text, _stats = _render_stats_text(app)
+
+    assert "▸ # 1" in text
+    assert "▸ # 2" not in text
 
 
 def test_stats_panel_summarizes_long_curation_errors(
@@ -247,71 +307,6 @@ def test_stats_panel_summarizes_long_curation_errors(
     assert "ch 67" not in text
 
 
-def test_stats_registers_deferred_predicted_slot_before_current_slots(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
-
-    text, stats = _render_stats_text(app)
-    targets = list(stats._roll_line_targets.values())
-
-    assert "Deferred rolls" in text
-    assert targets[0]["display_kind"] == "deferred_in"
-    assert targets[0]["source_kind"] == "predicted_slot"
-    assert targets[0]["target_chapter_num"] == "1"
-    assert targets[0]["target_roll_index"] == 1
-    assert [target["display_kind"] for target in targets[1:]] == [
-        "chapter_roll",
-        "predicted_slot",
-    ]
-
-
-def test_stats_groups_source_deferred_projection_with_deferred_rolls(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    cs = app.state.chapter
-    assert cs is not None
-    source_projected = dict(cs.derived.roll_facts[0])
-    source_projected.update(
-        {
-            "chapter_num": "1",
-            "roll_sequence_in_chapter": 2,
-            "mechanical_chapter_num": "1",
-            "mechanical_word_position": 20,
-            "mechanical_cumulative_word_offset": 20,
-            "display_chapter_num": "1",
-            "display_word_position": 20,
-            "display_cumulative_word_offset": 20,
-            "source_chapter_num": "2",
-            "source_roll_index": 1,
-            "source_word_position": 20,
-            "source_cumulative_word_offset": 100,
-            "visible_chapter_nums": ["1", "2"],
-        }
-    )
-    cs.derived.roll_facts = [source_projected, *cs.derived.roll_facts]
-    app.data.roll_facts["rolls"] = [source_projected, *app.data.roll_facts["rolls"]]
-
-    text, stats = _render_stats_text(app)
-    targets = list(stats._roll_line_targets.values())
-
-    assert "Deferred rolls" in text
-    assert "deferred from ch 1 #2 source" in text
-    assert targets[0]["display_kind"] == "source_deferred"
-    assert targets[0]["target_chapter_num"] == "1"
-    assert targets[0]["target_roll_index"] == 2
-    assert all(
-        target.get("display_kind") != "source_deferred"
-        for target in targets[1:]
-    )
-
-
 def test_roll_stat_line_repeats_q_for_each_evidence_quote(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -338,7 +333,7 @@ def test_roll_stat_line_repeats_q_for_each_evidence_quote(
     assert "hit QQ" in line
 
 
-def test_roll_stat_line_notes_later_chapter_evidence_as_deferred(
+def test_roll_stat_line_notes_later_chapter_evidence_location(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -370,11 +365,11 @@ def test_roll_stat_line_notes_later_chapter_evidence_as_deferred(
         " ",
     )
 
-    assert "narrative deferred to ch 2" in line
+    assert "narrative in ch 2" in line
     assert "display at predicted roll position" in line
 
 
-def test_roll_stat_line_notes_prior_chapter_evidence_without_deferral_label(
+def test_roll_stat_line_notes_prior_chapter_evidence_as_source_location(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -407,7 +402,7 @@ def test_roll_stat_line_notes_prior_chapter_evidence_without_deferral_label(
     )
 
     assert "narrative evidence from ch 1" in line
-    assert "narrative deferred to ch 1" not in line
+    assert "narrative in ch 1" not in line
     assert "display at predicted roll position" in line
 
 
@@ -458,7 +453,8 @@ def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
         {
             "index": 4,
             "target_roll_index": 3,
-            "roll_number": 19,
+            "roll_ordinal": 19,
+            "roll_label": "R19",
             "outcome": "hit",
             "constellation": "Magic",
             "available_cp": 200,
@@ -474,7 +470,90 @@ def test_roll_stat_line_uses_stable_target_index_when_display_order_changes(
         " ",
     )
 
-    assert "# 3 (19)" in line
+    assert "# 3 (R19)" in line
+
+
+def test_roll_stat_line_shows_roll_predicted_and_source_ordinals(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "target_roll_index": 1,
+            "roll_ordinal": 48,
+            "roll_label": "R48",
+            "predicted_ordinal": 53,
+            "predicted_label": "P53",
+            "source_ordinal": 48,
+            "source_label": "S48",
+            "outcome": "miss",
+            "constellation": "Magic",
+            "available_cp": 100,
+            "rolled_perk_cost": 200,
+            "evidence_quotes": [
+                {
+                    "text": "The Celestial Forge missed a connection",
+                    "mention_chapter_num": "13",
+                    "mention_word_position": 599,
+                },
+            ],
+        },
+        " ",
+    )
+    predicted_line = app._format_roll_stat_line(
+        {
+            "display_kind": "predicted_slot",
+            "target_roll_index": 5,
+            "predicted_ordinal": 48,
+            "predicted_label": "P48",
+            "outcome": "open",
+            "word_position": 9631,
+        },
+        " ",
+    )
+
+    assert "# 1 (R48/P53/S48)" in line
+    assert "# 5 predicted (P48)" in predicted_line
+
+
+def test_roll_stat_line_labels_cross_chapter_targets_with_chapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "target_chapter_num": "1",
+            "target_roll_index": 2,
+            "roll_ordinal": 15,
+            "roll_label": "R15",
+            "source_ordinal": 15,
+            "source_label": "S15",
+            "outcome": "hit",
+            "constellation": "Vehicles",
+            "available_cp": 100,
+            "purchased_perks": [
+                {"name": "Aerospace Engineering Makes Things Go Fast", "cost": 100}
+            ],
+            "evidence_quotes": [
+                {
+                    "text": "The Vehicles constellation swung towards me",
+                    "mention_chapter_num": "2",
+                    "mention_word_position": 24,
+                },
+            ],
+        },
+        " ",
+    )
+
+    assert "ch 1 # 2 (R15/S15)" in line
 
 
 def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost(
@@ -516,7 +595,7 @@ def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost
     assert "missed >= 400 CP (2 possible)" in line
 
 
-def test_roll_stat_line_labels_locationless_predicted_deferral_as_future(
+def test_roll_stat_line_does_not_render_future_narrative_status_for_predicted_slots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -538,9 +617,9 @@ def test_roll_stat_line_labels_locationless_predicted_deferral_as_future(
         " ",
     )
 
-    assert "deferred to future chapter" in line
-    assert "deferred to ch 3" not in line
-    assert "at CP" not in line
+    assert "predicted" in line
+    assert "narrative" not in line
+    assert "at CP 40" in line
 
 
 def test_skipped_slots_source_markers_status_and_click_targets_use_stats_model(

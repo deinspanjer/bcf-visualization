@@ -100,8 +100,8 @@ def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> Non
         for roll in rolls:
             if roll.get("source_kind") == "trigger":
                 continue
-            roll_number = roll.get("roll_number")
-            if roll_number is None:
+            predicted_ordinal = roll.get("predicted_ordinal")
+            if predicted_ordinal is None:
                 continue
             if roll.get("mechanical_cumulative_word_offset") is None:
                 continue

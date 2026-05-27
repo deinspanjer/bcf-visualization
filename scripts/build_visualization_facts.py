@@ -69,8 +69,15 @@ def build(input_dir: Path) -> dict:
     # at the render-side consumer (`web/app.js:1021` reads `tick.regime`); the pipeline
     # file's `cp_rule_regime` stays unchanged for internal use.
     predicted_rolls = [
-        {**{k: v for k, v in row.items() if k != "cp_rule_regime"},
-         "regime": row["cp_rule_regime"]}
+        {
+            **{
+                k: v for k, v in row.items()
+                if k not in {"cp_rule_regime", "roll_number"}
+            },
+            "predicted_ordinal": int(row["roll_number"]),
+            "predicted_label": f"P{int(row['roll_number'])}",
+            "regime": row["cp_rule_regime"],
+        }
         for row in predicted["predicted"]
     ]
 

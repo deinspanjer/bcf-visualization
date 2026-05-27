@@ -27,6 +27,9 @@
 
 - Add an in-world time/date track once chapter-level in-world dates are
   available.
+- Prominently display Survey designation codes for hit rolls in the web
+  visualization now that designation data flows through derived perk
+  records.
 - Link perk names in tooltips, selected-chapter details, and recent
   acquisitions to source descriptions once `description_url` exists.
 - Continue refining dense roll clusters at high zoom, especially where

@@ -212,8 +212,15 @@ def test_web_app_detail_roll_log_filters_sorts_and_click_moves_playhead(tmp_path
         facts = json.loads(facts_path.read_text())
         facts["chapters"][2]["rolls"].append(
             {
-                "roll_number": 4,
-                "global_roll_number": 4,
+                "predicted_ordinal": 4,
+                "predicted_label": "P4",
+                "source_ordinal": None,
+                "source_label": None,
+                "roll_ordinal": 4,
+                "roll_label": "R4",
+                "chapter_ordinal": 2,
+                "chapter_label": "C2",
+                "association_source": "none",
                 "outcome": "hit",
                 "constellation": "Magic",
                 "epub_word_offset_predicted": 8200,
@@ -261,8 +268,15 @@ def test_web_app_displays_canonical_epub_word_offset_for_each_roll(tmp_path):
         facts = json.loads(facts_path.read_text())
         facts["chapters"][1]["rolls"].append(
             {
-                "roll_number": 9,
-                "global_roll_number": 9,
+                "predicted_ordinal": 9,
+                "predicted_label": "P9",
+                "source_ordinal": None,
+                "source_label": None,
+                "roll_ordinal": 9,
+                "roll_label": "R9",
+                "chapter_ordinal": 2,
+                "chapter_label": "C2",
+                "association_source": "none",
                 "outcome": "hit",
                 "constellation": "Toolkits",
                 "epub_word_offset_predicted": 4000,
@@ -308,8 +322,15 @@ def test_web_app_places_rolls_without_epub_offsets_inside_their_chapter(tmp_path
         facts = json.loads(facts_path.read_text())
         facts["chapters"][2]["rolls"].append(
             {
-                "roll_number": 99,
-                "global_roll_number": 99,
+                "predicted_ordinal": None,
+                "predicted_label": None,
+                "source_ordinal": None,
+                "source_label": None,
+                "roll_ordinal": 99,
+                "roll_label": "R99",
+                "chapter_ordinal": 2,
+                "chapter_label": "C2",
+                "association_source": "none",
                 "outcome": "hit",
                 "constellation": "Magic",
                 "word_position": 600,

@@ -83,10 +83,9 @@ export function rollMarkerModel(roll) {
 
 export function skippedPredictedRollTitle(marker, chapter) {
   const chapterNum = chapter?.chapter_num ?? marker?.mechanical_chapter_num ?? "?";
-  const rollNumber = marker?.roll_number != null
-    ? `#${marker.roll_number}`
-    : `slot ${marker?.slot_index ?? "?"}`;
-  return `ch ${chapterNum} · predicted roll ${rollNumber} · skipped to align with narrative mentions`;
+  const predictedLabel = marker?.predicted_label ?? `slot ${marker?.slot_index ?? "?"}`;
+  const skippedLabel = marker?.skipped_label ? ` / ${marker.skipped_label}` : "";
+  return `ch ${chapterNum} · predicted roll ${predictedLabel}${skippedLabel} · skipped to align with narrative mentions`;
 }
 
 // `constellationOrder` is required: callers (web app, tests) must pass the canonical
@@ -153,14 +152,14 @@ export function fieldLogModel(roll, chapter) {
     .map(text => text.trim());
   const chapterNum = roll?.chapter_num || chapter?.chapter_num || "?";
   const outcome = String(roll?.outcome || "unknown").toUpperCase();
-  const rollNumber = roll?.roll_number ?? "?";
+  const rollLabel = roll?.roll_label ?? "?";
   return {
     kind: quotes.length ? "quotes" : "placeholder",
     heading: "Field log",
     source: roll?.evidence_kind || null,
     quotes,
     placeholder: quotes.length ? null : `No log data for ch ${chapterNum}.`,
-    rollLabel: `roll ${rollNumber} · ch ${chapterNum} · ${outcome}`,
+    rollLabel: `${rollLabel} · ch ${chapterNum} · ${outcome}`,
   };
 }
 
@@ -196,9 +195,8 @@ function finiteNumber(value) {
 }
 
 function rollOrderValue(roll) {
-  return finiteNumber(roll?.roll_number)
-    ?? finiteNumber(roll?.global_roll_number)
-    ?? finiteNumber(roll?.source_roll_index)
+  return finiteNumber(roll?.roll_ordinal)
+    ?? finiteNumber(roll?.source_chapter_ordinal)
     ?? finiteNumber(roll?.word_position)
     ?? finiteNumber(roll?.epub_word_offset_curated)
     ?? finiteNumber(roll?.epub_word_offset_predicted)
@@ -293,7 +291,7 @@ export function buildRollLogRows(rolls, currentWord, options = {}) {
       ].filter(Boolean);
       return {
         roll,
-        rollNumber: roll.roll_number,
+        rollNumber: roll.roll_label,
         chapterNum: roll.chapter_num,
         outcome: roll.outcome || "unknown",
         constellation: roll.constellation || null,
@@ -466,7 +464,7 @@ function resolveStandInConstellation(roll, data) {
 
   const unrevealed = allNames.filter(name => !revealed.has(name));
   const pool = unrevealed.length ? unrevealed : allNames;
-  const seedKey = roll?.uid ?? roll?.roll_number ?? roll?.word_position ?? roll?.chapter_num ?? "";
+  const seedKey = roll?.uid ?? roll?.roll_label ?? roll?.word_position ?? roll?.chapter_num ?? "";
   const idx = hashSeed(seedKey) % pool.length;
   return pool[idx];
 }

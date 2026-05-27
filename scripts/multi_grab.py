@@ -99,14 +99,7 @@ def _normalise_roll_entry(entry) -> dict:
             "evidence_quotes": list(entry.get("evidence_quotes") or []),
             "curator_note": entry.get("curator_note"),
             "skipped": bool(entry.get("skipped", False)),
-            "source_roll_number": entry.get("source_roll_number"),
-            "source_deferred_to_chapter": (
-                str(entry.get("source_deferred_to_chapter"))
-                if entry.get("source_deferred_to_chapter") is not None else None
-            ),
-            "deferred_to_later_chapter": bool(
-                entry.get("deferred_to_later_chapter", False)
-            ),
+            "source_ordinal": entry.get("source_ordinal"),
             "curator_added": bool(entry.get("curator_added", False)),
         }
     raise ValueError(
@@ -145,10 +138,7 @@ def load_overrides(path: Path | None = None) -> dict:
         normalised_rolls = []
         for r in rolls:
             roll = _normalise_roll_entry(r)
-            if (
-                roll.get("mention_chapter_num") is None
-                and not roll.get("deferred_to_later_chapter")
-            ):
+            if roll.get("mention_chapter_num") is None:
                 roll["mention_chapter_num"] = str(cn)
             if roll.get("display_position_policy") is None:
                 roll["display_position_policy"] = "mechanical"

@@ -20,8 +20,9 @@ from multi_grab import (  # noqa: E402
     merge_paid_units,
 )
 from _common import _load_schema  # noqa: E402
+from build_chapter_facts import _auto_association_review_baseline  # noqa: E402
 from chapter_alignment import model_issues_by_chapter  # noqa: E402
-from data_paths import DERIVED  # noqa: E402
+from data_paths import DERIVED, MANUAL  # noqa: E402
 
 
 CHAPTERS_JSON = DERIVED / "chapters.json"
@@ -30,6 +31,7 @@ PREDICTED_JSON = DERIVED / "predicted_rolls.json"
 ROLL_FACTS_JSON = DERIVED / "roll_facts.json"
 ROLL_VALIDATION_JSON = DERIVED / "roll_validation.json"
 CHAPTER_FACTS_JSON = DERIVED / "chapter_facts.json"
+CHAPTER_ROLL_OVERRIDES_JSON = MANUAL / "chapter_roll_overrides.json"
 
 
 def _chapter_nums() -> list[str]:
@@ -104,7 +106,15 @@ def test_roll_facts_use_evidence_quotes_contract() -> None:
     }
     minimal_roll = {
         "roll_key": "fixture:0001",
-        "roll_number": 1,
+        "predicted_ordinal": 1,
+        "predicted_label": "P1",
+        "source_ordinal": 1,
+        "source_label": "S1",
+        "roll_ordinal": 1,
+        "roll_label": "R1",
+        "chapter_ordinal": 1,
+        "chapter_label": "C1",
+        "association_source": "auto",
         "chapter_num": "1",
         "predicted_chapter_num": "1",
         "mechanical_chapter_num": "1",
@@ -116,9 +126,10 @@ def test_roll_facts_use_evidence_quotes_contract() -> None:
         "display_chapter_num": "1",
         "display_word_position": 10,
         "display_cumulative_word_offset": 10,
-        "source_chapter_num": "1",
-        "source_roll_index": 1,
-        "source_word_position": 10,
+            "source_chapter_num": "1",
+            "source_chapter_ordinal": 1,
+            "source_roll_label": "Roll 1",
+            "source_word_position": 10,
         "source_cumulative_word_offset": 10,
         "visible_chapter_nums": ["1"],
         "chapter_attribution_disagreement": False,
@@ -218,7 +229,15 @@ def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None
         model = chapter["model_validation"]
         check = checks[chapter_num]
         has_alignment_issue = bool(alignment_issues.get(chapter_num))
-        expected_current = bool(check["has_discrepancy"] or has_alignment_issue)
+        has_association_review_issue = any(
+            issue.get("code") == "auto_association_review_stale"
+            for issue in model["issues"]
+        )
+        expected_current = bool(
+            check["has_discrepancy"]
+            or has_alignment_issue
+            or has_association_review_issue
+        )
         expected_status = "discrepancy" if expected_current else check["status"]
 
         assert model["status"] == expected_status
@@ -230,3 +249,37 @@ def test_chapter_facts_embed_current_and_prior_model_discrepancy_flags() -> None
             if first_discrepancy is None:
                 first_discrepancy = chapter_num
             prior_discrepancy = True
+
+
+def test_chapter_facts_invalidate_stale_auto_association_review_marker() -> None:
+    marker = json.loads(CHAPTER_ROLL_OVERRIDES_JSON.read_text()).get(
+        "association_review"
+    )
+    if not marker:
+        return
+    reviewed_through = str(marker["reviewed_through_chapter_num"])
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    chapter_order = _chapter_nums()
+    current_baseline = _auto_association_review_baseline(
+        roll_facts=roll_facts,
+        chapter_order=chapter_order,
+        reviewed_through_chapter_num=reviewed_through,
+    )
+    expected_stale = (
+        current_baseline["baseline_fingerprint"] != marker["baseline_fingerprint"]
+        or current_baseline["baseline_roll_count"] != marker["baseline_roll_count"]
+    )
+
+    chapters = json.loads(CHAPTER_FACTS_JSON.read_text())["chapters"]
+    issue_chapters = [
+        chapter
+        for chapter in chapters
+        for issue in chapter["model_validation"]["issues"]
+        if issue.get("code") == "auto_association_review_stale"
+    ]
+
+    assert bool(issue_chapters) is expected_stale
+    if expected_stale:
+        assert [chapter["chapter_num"] for chapter in issue_chapters] == [
+            reviewed_through
+        ]

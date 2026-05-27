@@ -88,8 +88,15 @@ def _manifest(package_id: str) -> dict:
 
 def _roll_hit() -> dict:
     return {
-        "roll_number": 1,
-        "global_roll_number": 1,
+        "predicted_ordinal": 1,
+        "predicted_label": "P1",
+        "source_ordinal": 1,
+        "source_label": "S1",
+        "roll_ordinal": 1,
+        "roll_label": "R1",
+        "chapter_ordinal": 1,
+        "chapter_label": "C1",
+        "association_source": "auto",
         "outcome": "hit",
         "constellation": "Toolkits",
         "epub_word_offset_predicted": 1500,
@@ -111,8 +118,15 @@ def _roll_hit() -> dict:
 
 def _roll_miss() -> dict:
     return {
-        "roll_number": 2,
-        "global_roll_number": 2,
+        "predicted_ordinal": 2,
+        "predicted_label": "P2",
+        "source_ordinal": None,
+        "source_label": None,
+        "roll_ordinal": 2,
+        "roll_label": "R2",
+        "chapter_ordinal": 1,
+        "chapter_label": "C1",
+        "association_source": "none",
         "outcome": "miss",
         "constellation": None,
         "epub_word_offset_predicted": 6500,
@@ -205,7 +219,14 @@ def _chapter_facts() -> dict:
                 rolls=[_roll_hit()],
                 skipped=[
                     {
-                        "roll_number": 3,
+                        "predicted_ordinal": 3,
+                        "predicted_label": "P3",
+                        "source_ordinal": None,
+                        "source_label": None,
+                        "roll_ordinal": None,
+                        "roll_label": None,
+                        "skipped_ordinal": 1,
+                        "skipped_label": "X1",
                         "slot_index": 1,
                         "mechanical_chapter_num": "2",
                         "display_chapter_num": "2",

@@ -85,6 +85,22 @@ _CURATED_COVERAGE_NOTE = (
     "Curated: rolls 61/207/319 promoted from annotation→roll/miss; "
     "roll 98 constellation Tollkits→Toolkits (raw preserved)"
 )
+_CH351_MALFORMED_ROLL_LINES = {
+    "Roll ? (<=300): Crafting → Weaponsmith (Light of Terra DLC 5 A Sky Filled With Steel - Warhammer 40,000) (<=300-300) → (<=0)",
+    "Roll ? (<=400): Knowledge → I Am Iron Man (Marvel Cinematic Universe) (<=400-400) → (<=0)",
+    "Roll 207 (<=200): ??? → ??? (<=200-<=0) → (200)",
+    "8 Rolls occured during this interlude with 6 Misses and 2 Perks acquired (100 Banked + 800 - 700 Points worth of acquired Perks = 200)",
+}
+_CH351_OVERLAY_ROLL_LINES = [
+    "Roll 200 (200): ??? → Miss → (200)",
+    "Roll 201 (300): Crafting → Weaponsmith (Light of Terra DLC 5 A Sky Filled With Steel - Warhammer 40,000) (300-300) → (0)",
+    "Roll 202 (100): ??? → Miss → (100)",
+    "Roll 203 (200): ??? → Miss → (200)",
+    "Roll 204 (300): ??? → Miss → (300)",
+    "Roll 205 (400): Knowledge → I Am Iron Man (Marvel Cinematic Universe) (400-400) → (0)",
+    "Roll 206 (100): ??? → Miss → (100)",
+    "Roll 207 (200): ??? → Miss → (200)",
+]
 # perk piece in result. The source is optional (some Personal Reality
 # perks don't list one). Cost forms:
 #   - "X-Y" (banked_before-banked_after style; Y is the actual CP cost)
@@ -231,6 +247,7 @@ def _parse_roll_line(line: str, chapter_num: str) -> Roll:
 def parse_rolls(wb) -> list[Roll]:
     ws = wb["List of Rolls & Perk Order"]
     rolls: list[Roll] = []
+    emitted_ch351_overlay = False
     for r in range(2, ws.max_row + 1):
         chapter = ws.cell(r, 1).value
         body = ws.cell(r, 2).value
@@ -240,6 +257,14 @@ def parse_rolls(wb) -> list[Roll]:
         for line in str(body).splitlines():
             line = line.strip()
             if not line:
+                continue
+            if chapter_num == "35.1" and line in _CH351_MALFORMED_ROLL_LINES:
+                if not emitted_ch351_overlay:
+                    rolls.extend(
+                        _parse_roll_line(overlay_line, chapter_num)
+                        for overlay_line in _CH351_OVERLAY_ROLL_LINES
+                    )
+                    emitted_ch351_overlay = True
                 continue
             rolls.append(_parse_roll_line(line, chapter_num))
     return rolls

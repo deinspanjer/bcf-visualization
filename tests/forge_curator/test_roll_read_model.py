@@ -85,7 +85,7 @@ def test_roll_slot_rows_merge_assigned_rolls_and_open_predicted_slots(
         (
             row["display_kind"],
             row["target_roll_index"],
-            row["roll_number"],
+            row["predicted_ordinal"],
             row["outcome"],
         )
         for row in rows
@@ -97,165 +97,174 @@ def test_roll_slot_rows_merge_assigned_rolls_and_open_predicted_slots(
     assert rows[1]["mechanical_cumulative_word_offset"] == 120
 
 
-def test_deferred_predicted_slot_is_first_source_assignment_target(
+def test_source_assignment_targets_include_previous_unassigned_rolls(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    previous_roll = roll_facts["rolls"][0]
+    previous_roll.update({
+        "source": "roll_outcomes",
+        "source_kind": "interpolated",
+        "source_ordinal": None,
+        "source_label": None,
+        "source_chapter_num": None,
+        "source_chapter_ordinal": None,
+        "source_roll_label": None,
+        "association_source": "none",
+    })
+    _write_json(roll_facts_path, roll_facts)
+
     app = fixture.loaded_app("2")
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
     cs = app.state.chapter
     assert cs is not None
 
     targets = app._source_assignment_target_rows(cs)
 
-    assert targets[0]["display_kind"] == "deferred_in"
-    assert targets[0]["source_kind"] == "predicted_slot"
-    assert targets[0]["target_chapter_num"] == "1"
-    assert targets[0]["target_roll_index"] == 1
-    assert targets[0]["visible_chapter_num"] == "2"
-    assert targets[0]["mechanical_chapter_num"] == "1"
-    assert targets[0]["mention_chapter_num"] == "2"
-    assert targets[0]["use_stable_target_identity"] is False
-    assert [(row["target_chapter_num"], row["target_roll_index"]) for row in targets] == [
+    assert [
+        (row["target_chapter_num"], row["target_roll_index"])
+        for row in targets
+    ] == [
         ("1", 1),
         ("2", 1),
         ("2", 2),
     ]
 
 
-def test_unresolved_later_chapter_deferral_projects_into_each_later_chapter(
+def test_source_assignment_targets_include_all_prior_unassigned_open_slots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    _add_fixture_chapter(fixture)
-    _write_json(
-        fixture.manual / "chapter_roll_overrides.json",
-        {
-            "chapter_roll_overrides": {
-                "1": {
-                    "rolls": [
-                        {
-                            "perks": [],
-                            "outcome": None,
-                            "constellation": None,
-                            "word_position": None,
-                            "mention_chapter_num": None,
-                            "mention_word_position": None,
-                            "display_position_policy": "mechanical",
-                            "skipped": False,
-                            "source_roll_number": None,
-                            "evidence_quotes": [],
-                            "deferred_to_later_chapter": True,
-                        }
-                    ]
-                }
-            }
-        },
-    )
-
-    app_ch2 = fixture.loaded_app("2")
-    app_ch3 = fixture.loaded_app("3")
-
-    for app, visible_chapter in [(app_ch2, "2"), (app_ch3, "3")]:
-        cs = app.state.chapter
-        assert cs is not None
-        deferred = app._deferred_predicted_slot_rolls(cs)
-        assert [(row["target_chapter_num"], row["target_roll_index"]) for row in deferred] == [
-            ("1", 1)
-        ]
-        assert deferred[0]["visible_chapter_num"] == visible_chapter
-        assert deferred[0]["mention_chapter_num"] == visible_chapter
-
-
-def test_unresolved_concrete_chapter_deferral_stays_visible_in_later_chapters(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    _add_fixture_chapter(fixture)
-    _write_json(
-        fixture.manual / "chapter_roll_overrides.json",
-        {
-            "chapter_roll_overrides": {
-                "1": {
-                    "rolls": [
-                        {
-                            "perks": [],
-                            "outcome": None,
-                            "constellation": None,
-                            "word_position": None,
-                            "mention_chapter_num": "2",
-                            "mention_word_position": None,
-                            "display_position_policy": "mechanical",
-                            "skipped": False,
-                            "source_roll_number": None,
-                            "evidence_quotes": [],
-                        }
-                    ]
-                }
-            }
-        },
-    )
+    _add_fixture_chapter(fixture, "3")
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    prior_roll = roll_facts["rolls"][0]
+    prior_roll.update({
+        "source": "roll_outcomes",
+        "source_kind": "interpolated",
+        "source_ordinal": None,
+        "source_label": None,
+        "source_chapter_num": None,
+        "source_chapter_ordinal": None,
+        "source_roll_label": None,
+        "association_source": "none",
+    })
+    _write_json(roll_facts_path, roll_facts)
 
     app = fixture.loaded_app("3")
     cs = app.state.chapter
     assert cs is not None
 
-    deferred = app._deferred_predicted_slot_rolls(cs)
+    targets = app._source_assignment_target_rows(cs)
 
-    assert [(row["target_chapter_num"], row["target_roll_index"]) for row in deferred] == [
-        ("1", 1)
+    assert ("1", 1) in [
+        (row["target_chapter_num"], row["target_roll_index"])
+        for row in targets
     ]
-    assert deferred[0]["visible_chapter_num"] == "3"
 
 
-def test_later_chapter_deferral_stops_projecting_after_source_or_evidence_assignment(
+def test_source_assignment_targets_exclude_prior_skipped_slots(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    _add_fixture_chapter(fixture)
-    base_roll = {
-        "perks": [],
-        "outcome": None,
-        "constellation": None,
-        "word_position": None,
-        "mention_chapter_num": None,
-        "mention_word_position": None,
-        "display_position_policy": "mechanical",
-        "skipped": False,
-        "source_roll_number": None,
-        "evidence_quotes": [],
-        "deferred_to_later_chapter": True,
-    }
+    _add_fixture_chapter(fixture, "3")
+    app = fixture.loaded_app("1")
+    app.persistence.mark_roll_skipped("1", 1)
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    prior_roll = roll_facts["rolls"][0]
+    prior_roll.update({
+        "source": "roll_outcomes",
+        "source_kind": "interpolated",
+        "source_ordinal": None,
+        "source_label": None,
+        "source_chapter_num": None,
+        "source_chapter_ordinal": None,
+        "source_roll_label": None,
+        "association_source": "none",
+        "skipped": True,
+    })
+    _write_json(roll_facts_path, roll_facts)
 
-    for resolved_fields in [
-        {"source_roll_number": 2},
-        {
-            "evidence_quotes": [
-                {
-                    "text": "later evidence",
-                    "mention_chapter_num": "2",
-                    "mention_word_position": 20,
-                }
-            ]
-        },
-    ]:
-        roll = {**base_roll, **resolved_fields}
-        _write_json(
-            fixture.manual / "chapter_roll_overrides.json",
-            {"chapter_roll_overrides": {"1": {"rolls": [roll]}}},
-        )
-        app = fixture.loaded_app("3")
-        cs = app.state.chapter
-        assert cs is not None
+    app = fixture.loaded_app("3")
+    cs = app.state.chapter
+    assert cs is not None
 
-        assert app._deferred_predicted_slot_rolls(cs) == []
+    targets = app._source_assignment_target_rows(cs)
+
+    assert ("1", 1) not in [
+        (row["target_chapter_num"], row["target_roll_index"])
+        for row in targets
+    ]
 
 
-def test_same_chapter_rolls_remain_current_and_cross_chapter_display_is_deferred(
+def test_source_roll_picker_uses_source_ordinals_without_legacy_roll_number(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    source_rows = [
+        dict(app.data.roll_facts["rolls"][1], roll_number=None),
+        dict(
+            app.data.roll_facts["rolls"][1],
+            roll_ordinal=3,
+            roll_label="R3",
+            source_ordinal=4,
+            source_label="S4",
+            source_chapter_ordinal=2,
+            raw="Roll 2 again",
+        ),
+    ]
+    for ordinal, row in enumerate(source_rows, start=2):
+        row.update({
+            "chapter_num": "2",
+            "source_chapter_num": "2",
+            "source_ordinal": ordinal,
+            "source_label": f"S{ordinal}",
+        })
+    app.data.roll_facts["rolls"] = source_rows
+
+    rows = app._source_roll_picker_rows("2")
+
+    assert [(row["source_ordinal"], row["source_chapter_ordinal"]) for row in rows] == [
+        (2, 1),
+        (3, 2),
+    ]
+
+
+def test_source_roll_picker_includes_rows_by_source_chapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    roll_facts["rolls"][0].update({
+        "chapter_num": "1",
+        "mechanical_chapter_num": "1",
+        "source_chapter_num": "2",
+        "source_chapter_ordinal": 1,
+        "source_ordinal": 1,
+        "source_label": "S1",
+    })
+    _write_json(roll_facts_path, roll_facts)
+    app = fixture.loaded_app("2")
+
+    rows = app._source_roll_picker_rows("2")
+
+    assert any(
+        row.get("source_ordinal") == 1
+        and row.get("source_chapter_num") == "2"
+        for row in rows
+    )
+
+
+def test_same_chapter_rolls_remain_current_and_cross_chapter_display_stays_chapter_roll(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -291,36 +300,14 @@ def test_same_chapter_rolls_remain_current_and_cross_chapter_display_is_deferred
         }
     ]
 
-    deferred = app._unified_rolls(cs)
-    assert len(deferred) == 1
-    assert deferred[0]["display_kind"] == "deferred_in"
-    assert deferred[0]["target_chapter_num"] == "1"
-    assert deferred[0]["word_position"] == 24
+    projected = app._unified_rolls(cs)
+    assert len(projected) == 1
+    assert projected[0]["display_kind"] == "chapter_roll"
+    assert projected[0]["target_chapter_num"] == "1"
+    assert projected[0]["word_position"] == 24
 
 
-def test_deferred_predicted_slot_projects_explicit_source_roll_identity(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
-    app.persistence.assign_source_roll_at_index("1", 1, 2)
-    cs = app.state.chapter
-    assert cs is not None
-
-    deferred = app._deferred_predicted_slot_rolls(cs)
-
-    assert len(deferred) == 1
-    assert deferred[0]["target_chapter_num"] == "1"
-    assert deferred[0]["target_roll_index"] == 1
-    assert deferred[0]["source_roll_number"] == 2
-    assert deferred[0]["roll_number"] == 2
-    assert deferred[0]["outcome"] == "miss"
-    assert deferred[0]["constellation"] == "Magic"
-
-
-def test_roll_evidence_targets_include_deferred_and_source_only_rows(
+def test_roll_evidence_targets_include_source_only_rows(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -328,13 +315,6 @@ def test_roll_evidence_targets_include_deferred_and_source_only_rows(
     app = fixture.loaded_app("2")
     cs = app.state.chapter
     assert cs is not None
-    deferred = {
-        "display_kind": "deferred_in",
-        "target_chapter_num": "1",
-        "target_roll_index": 1,
-        "word_position": 0,
-        "outcome": "miss",
-    }
     current = {
         "display_kind": "chapter_roll",
         "target_chapter_num": "2",
@@ -360,12 +340,11 @@ def test_roll_evidence_targets_include_deferred_and_source_only_rows(
         "word_position": 40,
         "skipped": True,
     }
-    app._unified_rolls = lambda _cs: [deferred, current, source_only]
+    app._unified_rolls = lambda _cs: [current, source_only]
     app._roll_slot_rows = lambda _cs, unified=None: [current, skipped]
 
     rows = app._roll_evidence_picker_rolls(cs)
 
-    assert rows[0] == deferred
     assert any(row.get("roll_number") == 4 for row in rows)
     assert all(not row.get("skipped") for row in rows)
 
@@ -403,86 +382,19 @@ def test_open_predicted_slot_exposes_saved_quote_for_evidence_cleanup(
     ]
 
 
-def test_roll_evidence_picker_groups_source_deferred_targets_with_deferred_rows(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    app.persistence.mark_source_roll_deferred_to_chapter("1", 2, "2")
-    app.persistence.assign_source_roll_at_index("1", 2, 2)
-    cs = app.state.chapter
-    assert cs is not None
-    source_projected = dict(cs.derived.roll_facts[0])
-    source_projected.update(
-        {
-            "chapter_num": "1",
-            "roll_sequence_in_chapter": 2,
-            "mechanical_chapter_num": "1",
-            "mechanical_word_position": 20,
-            "mechanical_cumulative_word_offset": 20,
-            "display_chapter_num": "1",
-            "display_word_position": 20,
-            "display_cumulative_word_offset": 20,
-            "source_chapter_num": "2",
-            "source_roll_index": 1,
-            "source_word_position": 20,
-            "source_cumulative_word_offset": 100,
-            "visible_chapter_nums": ["1", "2"],
-        }
-    )
-    cs.derived.roll_facts = [source_projected, *cs.derived.roll_facts]
-    app.data.roll_facts["rolls"] = [source_projected, *app.data.roll_facts["rolls"]]
-
-    rows = app._roll_evidence_picker_rolls(cs)
-
-    assert rows[0]["display_kind"] == "source_deferred"
-    assert rows[0]["target_chapter_num"] == "1"
-    assert rows[0]["target_roll_index"] == 2
-    assert rows[0]["source_roll_number"] == 2
-
-
-def test_beginning_quote_defaults_to_visible_deferred_roll(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    cs = app.state.chapter
-    assert cs is not None
-    deferred = {
-        "display_kind": "deferred_in",
-        "target_chapter_num": "1",
-        "target_roll_index": 1,
-        "word_position": 0,
-        "outcome": "miss",
-    }
-    current = {
-        "display_kind": "chapter_roll",
-        "target_chapter_num": "2",
-        "target_roll_index": 1,
-        "word_position": 20,
-        "display_chapter_num": "2",
-        "outcome": "miss",
-    }
-    app._unified_rolls = lambda _cs: [deferred, current]
-    app._roll_slot_rows = lambda _cs, unified=None: [current]
-
-    target = app._current_roll_evidence_target(word_idx=1)
-
-    assert target is not None
-    assert target["display_kind"] == "deferred_in"
-    assert target["target_chapter_num"] == "1"
-    assert target["target_roll_index"] == 1
-
-
 def test_action_target_uses_mechanical_slot_when_visual_marker_is_later(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fixture = forge_curator_fixture(tmp_path, monkeypatch)
     app = fixture.loaded_app("2")
-    app.persistence.mark_roll_deferred_to_chapter("1", 1, "2")
+    app.persistence.set_roll_visualization_anchor(
+        "1",
+        1,
+        mention_chapter_num="2",
+        mention_word_position=None,
+        display_position_policy="mechanical",
+    )
     cs = app.state.chapter
     assert cs is not None
     chapter_roll = next(
@@ -502,40 +414,7 @@ def test_action_target_uses_mechanical_slot_when_visual_marker_is_later(
     assert target["target_roll_index"] == 1
 
 
-def test_source_link_rows_include_deferred_source_and_normalize_pair(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fixture = forge_curator_fixture(tmp_path, monkeypatch)
-    app = fixture.loaded_app("2")
-    app.persistence.mark_source_roll_deferred_to_chapter("1", 1, "2")
-    cs = app.state.chapter
-    assert cs is not None
-
-    rows = app._source_link_rows(cs, "2")
-    deferred_source = next(
-        row for row in rows
-        if row.get("source_deferred_from_chapter") == "1"
-        and row.get("source_deferred_from_index") == 1
-    )
-    open_target = next(
-        row for row in rows
-        if row.get("display_kind") == "predicted_slot"
-        and row.get("target_chapter_num") == "2"
-        and row.get("target_roll_index") == 2
-    )
-
-    assert deferred_source["roll_number"] == 1
-    assert deferred_source["source_word_position"] == 20
-    assert app._is_source_link_source(deferred_source) is True
-    assert app._is_source_link_target(open_target) is True
-    assert app._normalize_source_link_pair(deferred_source, open_target) == (
-        open_target,
-        deferred_source,
-    )
-
-
-def test_source_deferred_projection_keeps_mechanical_target_identity(
+def test_source_projection_keeps_mechanical_target_identity(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -555,7 +434,7 @@ def test_source_deferred_projection_keeps_mechanical_target_identity(
             "display_word_position": 20,
             "display_cumulative_word_offset": 20,
             "source_chapter_num": "2",
-            "source_roll_index": 1,
+            "source_chapter_ordinal": 1,
             "source_word_position": 20,
             "source_cumulative_word_offset": 100,
             "visible_chapter_nums": ["1", "2"],
@@ -563,13 +442,13 @@ def test_source_deferred_projection_keeps_mechanical_target_identity(
     )
     cs.derived.roll_facts = [source_projected]
     app.data.roll_facts["rolls"] = [source_projected]
-    app.persistence.assign_source_roll_at_index("1", 1, 2)
+    app.persistence.assign_source_ordinal_at_index("1", 1, 2)
 
     projected = app._unified_rolls(cs)[0]
 
-    assert projected["display_kind"] == "source_deferred"
+    assert projected["display_kind"] == "chapter_roll"
     assert projected["target_chapter_num"] == "1"
     assert projected["target_roll_index"] == 1
-    assert projected["source_roll_number"] == 2
-    assert app._is_source_link_source(projected) is False
+    assert projected["source_ordinal"] == 2
+    assert app._is_source_link_source(projected) is True
     assert app._is_source_link_target(projected) is True

@@ -52,13 +52,19 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "roll_key", "roll_number", "chapter_num", "predicted_chapter_num",
+        "roll_key",
+        "predicted_ordinal", "predicted_label",
+        "source_ordinal", "source_label",
+        "roll_ordinal", "roll_label",
+        "chapter_ordinal", "chapter_label",
+        "association_source",
+        "chapter_num", "predicted_chapter_num",
         "mechanical_chapter_num", "mechanical_word_position",
         "mechanical_cumulative_word_offset",
         "mention_chapter_num", "mention_word_position",
         "display_position_policy", "display_chapter_num",
         "display_word_position", "display_cumulative_word_offset",
-        "source_chapter_num", "source_roll_index",
+        "source_chapter_num", "source_chapter_ordinal", "source_roll_label",
         "source_word_position", "source_cumulative_word_offset",
         "visible_chapter_nums",
         "chapter_attribution_disagreement", "source", "source_kind",
@@ -77,9 +83,23 @@
       ],
       "properties": {
         "roll_key": { "type": "string", "minLength": 1 },
-        "roll_number": {
+        "predicted_ordinal": {
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
         },
+        "predicted_label": { "type": ["string", "null"], "pattern": "^P\\d+$" },
+        "source_ordinal": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "source_label": { "type": ["string", "null"], "pattern": "^S\\d+$" },
+        "roll_ordinal": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "roll_label": { "type": ["string", "null"], "pattern": "^R\\d+$" },
+        "chapter_ordinal": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "chapter_label": { "type": ["string", "null"], "pattern": "^C\\d+$" },
+        "association_source": { "enum": ["auto", "curated", "none"] },
         "chapter_num": { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
         "predicted_chapter_num": {
           "type": ["string", "null"],
@@ -119,12 +139,13 @@
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },
         "source_chapter_num": {
-          "type": "string",
+          "type": ["string", "null"],
           "pattern": "^\\d+(\\.\\d+)?$"
         },
-        "source_roll_index": {
+        "source_chapter_ordinal": {
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
         },
+        "source_roll_label": { "type": ["string", "null"] },
         "source_word_position": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
         },

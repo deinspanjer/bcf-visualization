@@ -112,11 +112,11 @@ def test_skipped_predicted_roll_title_explains_narrative_alignment() -> None:
     source = """
       import { skippedPredictedRollTitle } from './web/viz-model.js';
       const chapter = { chapter_num: '9' };
-      const marker = { slot_index: 2, roll_number: 35 };
+      const marker = { slot_index: 2, predicted_ordinal: 35, predicted_label: 'P35', skipped_label: 'X1' };
       console.log(skippedPredictedRollTitle(marker, chapter));
     """
     assert _node_eval(source) == (
-        "ch 9 · predicted roll #35 · skipped to align with narrative mentions"
+        "ch 9 · predicted roll P35 / X1 · skipped to align with narrative mentions"
     )
 
 
@@ -203,14 +203,16 @@ def test_field_log_uses_evidence_quotes_and_placeholder_without_synthetic_prose(
       const quoted = fieldLogModel({
         evidence_quotes: [{ text: 'Actual Joe narration.' }, { text: 'Second quote.' }],
         evidence_kind: 'narrative',
-        roll_number: 7,
+        roll_ordinal: 7,
+        roll_label: 'R7',
         chapter_num: '2',
         outcome: 'hit',
       }, { chapter_num: '2' });
       const missing = fieldLogModel({
         evidence_quotes: [],
         evidence_kind: 'predicted',
-        roll_number: 8,
+        roll_ordinal: 8,
+        roll_label: 'R8',
         chapter_num: '3',
         outcome: 'miss',
       }, { chapter_num: '3' });
@@ -223,7 +225,7 @@ def test_field_log_uses_evidence_quotes_and_placeholder_without_synthetic_prose(
             "source": "narrative",
             "quotes": ["Actual Joe narration.", "Second quote."],
             "placeholder": None,
-            "rollLabel": "roll 7 · ch 2 · HIT",
+            "rollLabel": "R7 · ch 2 · HIT",
         },
         "missing": {
             "kind": "placeholder",
@@ -231,7 +233,7 @@ def test_field_log_uses_evidence_quotes_and_placeholder_without_synthetic_prose(
             "source": "predicted",
             "quotes": [],
             "placeholder": "No log data for ch 3.",
-            "rollLabel": "roll 8 · ch 3 · MISS",
+            "rollLabel": "R8 · ch 3 · MISS",
         },
     }
 
@@ -394,7 +396,8 @@ def test_constellation_outlines_are_roll_time_knowledge_not_later_playback_state
         constellationOutlineVisibleForRoll,
       } from './web/viz-model.js';
       const alchemyMissBeforeReveal = {
-        roll_number: 1,
+        roll_ordinal: 1,
+        roll_label: 'R1',
         outcome: 'miss',
         constellation: 'Alchemy',
         word_position: 2253,
@@ -402,7 +405,8 @@ def test_constellation_outlines_are_roll_time_knowledge_not_later_playback_state
         free_perks: [],
       };
       const clothingHit = {
-        roll_number: 2,
+        roll_ordinal: 2,
+        roll_label: 'R2',
         outcome: 'hit',
         constellation: 'Clothing',
         word_position: 4253,
@@ -453,7 +457,8 @@ def test_constellation_outline_knowledge_uses_roll_order_before_display_position
         constellationOutlineVisibleForRoll,
       } from './web/viz-model.js';
       const missDisplayedLater = {
-        roll_number: 1,
+        roll_ordinal: 1,
+        roll_label: 'R1',
         outcome: 'miss',
         constellation: 'Alchemy',
         word_position: 5_000,
@@ -461,7 +466,8 @@ def test_constellation_outline_knowledge_uses_roll_order_before_display_position
         free_perks: [],
       };
       const hitDisplayedEarlier = {
-        roll_number: 2,
+        roll_ordinal: 2,
+        roll_label: 'R2',
         outcome: 'hit',
         constellation: 'Alchemy',
         word_position: 1_000,
@@ -487,11 +493,11 @@ def test_roll_log_filtering_sorting_and_click_targets_use_word_positions() -> No
     source = """
       import { buildRollLogRows } from './web/viz-model.js';
       const rolls = [
-        { roll_number: 1, outcome: 'hit', word_position: 1000, chapter_num: '1',
+        { roll_ordinal: 1, roll_label: 'R1', outcome: 'hit', word_position: 1000, chapter_num: '1',
           purchased_perks: [{ name: 'Single', cost: 100, free: false }], free_perks: [] },
-        { roll_number: 2, outcome: 'miss', word_position: 2000, chapter_num: '2',
+        { roll_ordinal: 2, roll_label: 'R2', outcome: 'miss', word_position: 2000, chapter_num: '2',
           miss_cost_estimate: 300, purchased_perks: [], free_perks: [] },
-        { roll_number: 3, outcome: 'hit', word_position: 3000, chapter_num: '2',
+        { roll_ordinal: 3, roll_label: 'R3', outcome: 'hit', word_position: 3000, chapter_num: '2',
           purchased_perks: [
             { name: 'Multi A', cost: 200, free: false },
             { name: 'Multi B', cost: 400, free: false },
@@ -505,10 +511,10 @@ def test_roll_log_filtering_sorting_and_click_targets_use_word_positions() -> No
       }));
     """
     assert json.loads(_node_eval(source)) == {
-        "all": [[3, "hit", 3000], [2, "miss", 2000], [1, "hit", 1000]],
-        "misses": [2],
-        "multi": [[3, ["Multi A", "Multi B", "Free C (free)"]]],
-        "cost": [[3, 600], [2, 300], [1, 100]],
+            "all": [["R3", "hit", 3000], ["R2", "miss", 2000], ["R1", "hit", 1000]],
+            "misses": ["R2"],
+            "multi": [["R3", ["Multi A", "Multi B", "Free C (free)"]]],
+            "cost": [["R3", 600], ["R2", 300], ["R1", 100]],
     }
 
 

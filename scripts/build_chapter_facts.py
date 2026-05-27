@@ -257,6 +257,60 @@ def _load_chapter_roll_overrides() -> dict[str, dict]:
     }
 
 
+def _load_association_review_marker() -> dict | None:
+    if not CHAPTER_ROLL_OVERRIDES.exists():
+        return None
+    data = json.loads(CHAPTER_ROLL_OVERRIDES.read_text())
+    marker = data.get("association_review")
+    return marker if isinstance(marker, dict) else None
+
+
+def _auto_association_review_baseline(
+    *,
+    roll_facts: list[dict],
+    chapter_order: list[str],
+    reviewed_through_chapter_num: str,
+) -> dict:
+    chapter_index = {
+        str(chapter_num): index
+        for index, chapter_num in enumerate(chapter_order)
+    }
+    through = chapter_index.get(str(reviewed_through_chapter_num), -1)
+    rows: list[dict] = []
+    for roll in roll_facts:
+        candidates = [
+            roll.get("chapter_num"),
+            roll.get("mechanical_chapter_num"),
+            roll.get("source_chapter_num"),
+            roll.get("display_chapter_num"),
+        ]
+        candidates.extend(roll.get("visible_chapter_nums") or [])
+        if not any(
+            chapter_index.get(str(candidate), 10**9) <= through
+            for candidate in candidates
+            if candidate is not None
+        ):
+            continue
+        rows.append({
+            "roll_key": roll.get("roll_key"),
+            "predicted_ordinal": roll.get("predicted_ordinal"),
+            "source_ordinal": roll.get("source_ordinal"),
+            "roll_ordinal": roll.get("roll_ordinal"),
+            "chapter_ordinal": roll.get("chapter_ordinal"),
+            "association_source": roll.get("association_source"),
+            "mechanical_chapter_num": roll.get("mechanical_chapter_num"),
+            "chapter_num": roll.get("chapter_num"),
+        })
+    import hashlib
+    digest = hashlib.sha256(
+        json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return {
+        "baseline_fingerprint": digest,
+        "baseline_roll_count": len(rows),
+    }
+
+
 def _predicted_rolls_by_chapter(predicted_doc: dict) -> dict[str, list[dict]]:
     by_chapter: dict[str, list[dict]] = {}
     for roll in predicted_doc.get("predicted", []):
@@ -292,7 +346,14 @@ def _skipped_predicted_roll_markers(
         predicted_word_position = int(predicted_roll["cp_offset"])
         markers.append({
             "slot_index": slot_index,
-            "roll_number": int(predicted_roll["roll_number"]),
+            "predicted_ordinal": int(predicted_roll["roll_number"]),
+            "predicted_label": f"P{int(predicted_roll['roll_number'])}",
+            "source_ordinal": None,
+            "source_label": None,
+            "roll_ordinal": None,
+            "roll_label": None,
+            "skipped_ordinal": None,
+            "skipped_label": None,
             "mechanical_chapter_num": str(chapter_num),
             "mechanical_word_position": max(
                 0,
@@ -336,6 +397,7 @@ def main() -> None:
     predicted_rolls_doc = json.loads(PREDICTED_ROLLS.read_text())
     predicted_by_chapter = _predicted_rolls_by_chapter(predicted_rolls_doc)
     chapter_roll_overrides = _load_chapter_roll_overrides()
+    association_review_marker = _load_association_review_marker()
     obtained_doc = json.loads(OBTAINED_PERKS.read_text())
     obtained_counts_by_chapter: dict[str, dict[str, int]] = {}
     for perk in obtained_doc.get("perks", []):
@@ -366,6 +428,39 @@ def main() -> None:
         for row in roll_validation_doc.get("chapter_checks", [])
     }
     alignment_issues_by_chapter = model_issues_by_chapter()
+    chapter_order = [str(chapter["chapter_num"]) for chapter in chapters]
+    association_review_issues_by_chapter: dict[str, list[dict]] = {}
+    if (
+        association_review_marker is not None
+        and association_review_marker.get("reviewed_through_chapter_num") is not None
+    ):
+        reviewed_through = str(association_review_marker["reviewed_through_chapter_num"])
+        current_baseline = _auto_association_review_baseline(
+            roll_facts=roll_facts_doc.get("rolls", []),
+            chapter_order=chapter_order,
+            reviewed_through_chapter_num=reviewed_through,
+        )
+        if (
+            current_baseline["baseline_fingerprint"]
+            != association_review_marker.get("baseline_fingerprint")
+            or int(current_baseline["baseline_roll_count"])
+            != int(association_review_marker.get("baseline_roll_count") or -1)
+        ):
+            association_review_issues_by_chapter.setdefault(reviewed_through, []).append({
+                "code": "auto_association_review_stale",
+                "severity": "warning",
+                "message": (
+                    "Auto-association review baseline changed after it was marked "
+                    f"reviewed through chapter {reviewed_through}."
+                ),
+                "reviewed_through_chapter_num": reviewed_through,
+                "expected_baseline_fingerprint": (
+                    association_review_marker.get("baseline_fingerprint")
+                ),
+                "actual_baseline_fingerprint": current_baseline["baseline_fingerprint"],
+                "expected_roll_count": association_review_marker.get("baseline_roll_count"),
+                "actual_roll_count": current_baseline["baseline_roll_count"],
+            })
     pub_rows = json.loads(PUBLICATION_DATES.read_text())["chapters"]
     pub_by_chap = {r["chapter_num"]: r for r in pub_rows}
 
@@ -412,6 +507,7 @@ def main() -> None:
     cumulative_roll_constellations: Counter[str] = Counter()
     cumulative_acquired_constellations: Counter[str] = Counter()
     shadow_periods: list[dict] = []
+    skipped_roll_count = 0
 
     for c in chapters:
         cn = c["chapter_num"]
@@ -505,6 +601,10 @@ def main() -> None:
             chapter_roll_overrides.get(cn),
             chapter_cp_start=chapter_cp_start,
         )
+        for marker in skipped_predicted_rolls:
+            skipped_roll_count += 1
+            marker["skipped_ordinal"] = skipped_roll_count
+            marker["skipped_label"] = f"X{skipped_roll_count}"
         rolls_out: list[dict] = []
         hits = 0
         misses = 0
@@ -611,7 +711,15 @@ def main() -> None:
             banked_cp_at_end = roll.get("banked_cp_after_roll")
             display_pos = _story_cumulative_for_roll(roll)
             roll_record = {
-                "roll_number": roll["roll_number"],
+                "predicted_ordinal": roll["predicted_ordinal"],
+                "predicted_label": roll["predicted_label"],
+                "source_ordinal": roll["source_ordinal"],
+                "source_label": roll["source_label"],
+                "roll_ordinal": roll["roll_ordinal"],
+                "roll_label": roll["roll_label"],
+                "chapter_ordinal": roll["chapter_ordinal"],
+                "chapter_label": roll["chapter_label"],
+                "association_source": roll["association_source"],
                 "section_index": _section_index_for_roll(roll),
                 "outcome": roll["outcome"],
                 "constellation": roll["constellation"],
@@ -625,7 +733,8 @@ def main() -> None:
                 "display_word_position": roll["display_word_position"],
                 "display_cumulative_word_offset": display_pos,
                 "source_chapter_num": roll["source_chapter_num"],
-                "source_roll_index": roll["source_roll_index"],
+                "source_chapter_ordinal": roll["source_chapter_ordinal"],
+                "source_roll_label": roll["source_roll_label"],
                 "source_word_position": roll["source_word_position"],
                 "source_cumulative_word_offset": roll["source_cumulative_word_offset"],
                 "visible_chapter_nums": roll["visible_chapter_nums"],
@@ -683,6 +792,14 @@ def main() -> None:
         alignment_issues = alignment_issues_by_chapter.get(cn, [])
         if alignment_issues:
             model_check["issues"] = list(model_check.get("issues") or []) + alignment_issues
+            model_check["status"] = "discrepancy"
+            model_check["has_discrepancy"] = True
+            model_check["raw_has_discrepancy"] = True
+        association_review_issues = association_review_issues_by_chapter.get(cn, [])
+        if association_review_issues:
+            model_check["issues"] = (
+                list(model_check.get("issues") or []) + association_review_issues
+            )
             model_check["status"] = "discrepancy"
             model_check["has_discrepancy"] = True
             model_check["raw_has_discrepancy"] = True

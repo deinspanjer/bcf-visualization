@@ -486,7 +486,15 @@ function buildStory(chapterFacts) {
       const wpCurated = rawRoll.epub_word_offset_curated ?? fallbackWordPosition ?? wpPredicted;
       const roll = {
         uid: `${ch.chapter_num}#${rawRoll.roll_sequence_in_chapter ?? index + 1}`,
-        roll_number: rawRoll.roll_number ?? rawRoll.global_roll_number ?? `${ch.chapter_num}.${index + 1}`,
+        predicted_ordinal: rawRoll.predicted_ordinal ?? null,
+        predicted_label: rawRoll.predicted_label ?? null,
+        source_ordinal: rawRoll.source_ordinal ?? null,
+        source_label: rawRoll.source_label ?? null,
+        roll_ordinal: rawRoll.roll_ordinal ?? null,
+        roll_label: rawRoll.roll_label ?? null,
+        chapter_ordinal: rawRoll.chapter_ordinal ?? null,
+        chapter_label: rawRoll.chapter_label ?? null,
+        association_source: rawRoll.association_source || "none",
         chapter_num: ch.chapter_num,
         mechanical_chapter_num: rawRoll.mechanical_chapter_num,
         display_chapter_num: rawRoll.display_chapter_num,
@@ -720,7 +728,7 @@ function rebuildRollLocationCaches() {
 function formatRollLabel(roll) {
   if (!roll) return "";
   const chRef = roll.roll_sequence_in_chapter != null ? `ch ${roll.chapter_num} #${roll.roll_sequence_in_chapter}` : `ch ${roll.chapter_num}`;
-  return roll.roll_number != null ? `roll #${roll.roll_number} · ${chRef}` : chRef;
+  return roll.roll_label ? `${roll.roll_label} · ${chRef}` : chRef;
 }
 
 function setWordPos(value) {
@@ -2209,7 +2217,7 @@ function renderNarrativeReadout(roll, chapter) {
   } else {
     body.append(el("p", { class: "no-log" },
       el("span", { class: "no-log-kicker", text: "No log data" }),
-      el("span", { class: "no-log-detail", text: roll ? `roll ${roll.roll_number} · ch ${roll.chapter_num}` : `ch ${chapter.chapter_num} · the Forge is between reaches` }),
+      el("span", { class: "no-log-detail", text: roll ? `${roll.roll_label || "roll"} · ch ${roll.chapter_num}` : `ch ${chapter.chapter_num} · the Forge is between reaches` }),
     ));
   }
   if (roll) body.append(el("span", { class: `roll-line ${roll.outcome === "hit" ? "accent-hit" : "accent-miss"}`, text: model.rollLabel }));
@@ -2229,7 +2237,7 @@ function renderRecentRolls(wordPos) {
     el("div", { class: "head", text: "Recent reaches" }),
     el("ol", {}, recentRolls(wordPos, 8).map(roll => el("li", { class: roll.outcome },
       el("span", { class: "dot" }),
-      el("span", { class: "roll-id", text: `#${String(roll.roll_number).slice(0, 6)}` }),
+      el("span", { class: "roll-id", text: roll.roll_label || roll.chapter_label || "--" }),
       el("span", {}, el("span", { class: "roll-where", text: roll.constellation || "-" }), el("span", { style: { display: "block", color: "var(--dim)", fontFamily: "var(--mono)", fontSize: "9.5px" }, text: `${roll.jump || "-"} · ch ${roll.chapter_num}` })),
       el("span", { class: "roll-cost", text: roll.outcome === "hit" ? `${rollTotalCost(roll)} CP` : `miss ${roll.miss_cost_estimate ?? "?"}` }),
     ))),
@@ -2670,7 +2678,7 @@ function detailFrameKeys() {
 }
 
 function rollIdentity(roll) {
-  return String(roll?.uid ?? roll?.global_roll_number ?? roll?.roll_number ?? roll?.word_position ?? "");
+  return String(roll?.uid ?? roll?.roll_label ?? roll?.word_position ?? "");
 }
 
 function updateCarouselFrame(focusT = null, firingCinematic = false) {

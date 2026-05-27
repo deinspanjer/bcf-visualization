@@ -45,7 +45,7 @@ def _perk(
     }
 
 
-def test_override_loader_defaults_deferred_roll_fields(tmp_path: Path) -> None:
+def test_override_loader_defaults_cross_chapter_roll_fields(tmp_path: Path) -> None:
     path = tmp_path / "chapter_roll_overrides.json"
     path.write_text(json.dumps({
         "chapter_roll_overrides": {
@@ -71,31 +71,6 @@ def test_override_loader_defaults_deferred_roll_fields(tmp_path: Path) -> None:
     assert rolls[1]["mention_chapter_num"] == "6"
     assert rolls[1]["mention_word_position"] == 123
     assert rolls[1]["display_position_policy"] == "mechanical"
-
-
-def test_override_loader_preserves_unresolved_later_chapter_deferral(
-    tmp_path: Path,
-) -> None:
-    path = tmp_path / "chapter_roll_overrides.json"
-    path.write_text(json.dumps({
-        "chapter_roll_overrides": {
-            "5": {
-                "rolls": [
-                    {
-                        "perks": [],
-                        "outcome": None,
-                        "deferred_to_later_chapter": True,
-                    },
-                ],
-            },
-        },
-    }))
-
-    roll = load_overrides(path)["chapter_roll_overrides"]["5"]["rolls"][0]
-
-    assert roll["deferred_to_later_chapter"] is True
-    assert roll["mention_chapter_num"] is None
-    assert roll["display_position_policy"] == "mechanical"
 
 
 def test_override_loader_preserves_skipped_roll_slots(tmp_path: Path) -> None:
@@ -134,7 +109,14 @@ def test_skipped_roll_override_exports_predicted_slot_marker() -> None:
     assert markers == [
         {
             "slot_index": 2,
-            "roll_number": 35,
+            "predicted_ordinal": 35,
+            "predicted_label": "P35",
+            "source_ordinal": None,
+            "source_label": None,
+            "roll_ordinal": None,
+            "roll_label": None,
+            "skipped_ordinal": None,
+            "skipped_label": None,
             "mechanical_chapter_num": "9",
             "mechanical_word_position": 4000,
             "mechanical_cumulative_word_offset": 104000,
@@ -249,7 +231,7 @@ def test_direct_deferred_rows_can_use_cross_chapter_source_template() -> None:
             "rolls": [
                 {
                     "outcome": "miss",
-                    "source_roll_number": 33,
+                    "source_ordinal": 33,
                     "mention_chapter_num": "10",
                     "mention_word_position": 294,
                     "display_position_policy": "mention",
@@ -291,26 +273,25 @@ def test_direct_deferred_rows_can_use_cross_chapter_source_template() -> None:
             "constellation_revealed": False,
             "roll_number": 33,
             "raw": "Roll 33 (100): Size -> Miss -> (100)",
-            "_source_roll_number": 33,
+            "_source_ordinal": 33,
+            "_source_identity_inferred": True,
         }
     ]
 
 
-def test_explicit_source_roll_number_is_identity_without_template() -> None:
+def test_explicit_source_ordinal_is_identity_without_template() -> None:
     rows = _direct_override_rows(
         "35.1",
         [],
-        {"rolls": [{"outcome": "miss", "source_roll_number": 200}]},
+        {"rolls": [{"outcome": "miss", "source_ordinal": 200}]},
         {},
     )
 
-    assert rows[0]["roll_number"] == 200
-    assert rows[0]["_source_roll_number"] == 200
-    assert rows[0]["_source_chapter_num"] == "35.1"
-    assert rows[0]["_source_roll_index"] == 1
+    assert rows[0]["roll_number"] is None
+    assert rows[0]["_source_ordinal"] == 200
 
 
-def test_explicit_source_roll_number_wins_over_fallback_template() -> None:
+def test_explicit_source_ordinal_wins_over_fallback_template() -> None:
     rows = _direct_override_rows(
         "35.1",
         [
@@ -328,22 +309,35 @@ def test_explicit_source_roll_number_wins_over_fallback_template() -> None:
                 },
             )
         ],
-        {"rolls": [{"outcome": "miss", "source_roll_number": 200}]},
+        {"rolls": [{"outcome": "miss", "source_ordinal": 200}]},
         {},
+        {
+            200: (
+                2,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 200,
+                    "banked_after": 200,
+                    "roll_number": 200,
+                    "chapter_num": "35.1",
+                    "constellation": None,
+                    "raw": "Roll 200",
+                },
+            )
+        },
     )
 
     assert rows[0]["roll_number"] == 200
-    assert rows[0]["_source_roll_number"] == 200
-    assert rows[0]["_source_chapter_num"] == "35.1"
-    assert rows[0]["_source_roll_index"] == 1
-    assert rows[0]["constellation"] == "Crafting"
+    assert rows[0]["_source_ordinal"] == 200
+    assert rows[0]["constellation"] is None
 
 
 def test_source_roll_assignment_uses_direct_rows_even_in_same_chapter() -> None:
     override = {
         "rolls": [
             {
-                "source_roll_number": 38,
+                "source_ordinal": 38,
                 "mention_chapter_num": "10",
                 "mention_word_position": 6755,
                 "display_position_policy": "mention",
@@ -386,7 +380,7 @@ def test_source_roll_assignment_inherits_source_hit_without_redeclared_perks() -
     override = {
         "rolls": [
             {
-                "source_roll_number": 37,
+                "source_ordinal": 37,
                 "mention_chapter_num": "10",
                 "mention_word_position": 6755,
                 "display_position_policy": "mention",
@@ -570,7 +564,7 @@ def test_explicit_empty_hit_override_reports_model_issue() -> None:
 def test_source_linked_hit_without_redeclared_perks_does_not_report_model_issue() -> None:
     override = {
         "rolls": [
-            {"outcome": "hit", "perks": [], "source_roll_number": 37},
+            {"outcome": "hit", "perks": [], "source_ordinal": 37},
         ],
     }
 
