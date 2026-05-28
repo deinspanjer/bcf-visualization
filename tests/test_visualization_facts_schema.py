@@ -18,10 +18,11 @@ def test_schema_requires_all_bundle_keys():
     doc = json.loads(SCHEMA.read_text())
     required = set(doc["required"])
     assert required == {
-        "schema_version", "_source", "_method", "version",
+        "schema_version", "_source", "_method",
         "shadow_periods", "in_world_timeline", "chapters",
         "constellation_wireframes", "predicted_rolls", "predicted_rolls_meta",
     }
+    assert "version" not in doc["properties"]
 
 
 def test_schema_version_field_is_const_pinned():

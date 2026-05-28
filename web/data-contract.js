@@ -45,24 +45,44 @@ export function validateDataDocument(name, doc, meta, options = {}) {
 
 export function dataVersionLabel(pkg) {
   if (!pkg || typeof pkg !== "object") return "Data version unknown";
+
   if (pkg.version_label) return String(pkg.version_label);
 
   const date = pkg.package_date;
   const build = pkg.build_number;
-  const ordinal = pkg.story_chapter_ordinal;
-  const chapterNum = pkg.story_chapter_num;
-  if (date && build != null && ordinal != null && chapterNum) {
-    return `BCF data ${date}.${build}, story ch ${ordinal} / ${chapterNum}`;
+  if (date && build != null) {
+    return `BCF data ${date}.${build}`;
   }
 
   return pkg.package_id || "Data version unknown";
+}
+
+export function dataVersionDescription(pkg, isDefault = false) {
+  if (!pkg || typeof pkg !== "object") return "";
+  const parts = [];
+  if (pkg.version_description) {
+    parts.push(String(pkg.version_description));
+  } else {
+    const storyOrdinal = pkg.story_chapter_ordinal;
+    const storyChapter = pkg.story_chapter_num;
+    if (storyOrdinal != null && storyChapter) {
+      parts.push(`story data through ch ${storyOrdinal} / ${storyChapter}`);
+    }
+    const reviewedOrdinal = pkg.curation_reviewed_chapter_ordinal;
+    const reviewedChapter = pkg.curation_reviewed_chapter_num;
+    if (reviewedOrdinal != null && reviewedChapter) {
+      parts.push(`curation data through ch ${reviewedOrdinal} / ${reviewedChapter}`);
+    }
+  }
+  if (pkg.smoke_status === "failed") parts.push("smoke failed");
+  if (isDefault) parts.push("default data");
+  return parts.join("; ");
 }
 
 export function dataVersionOptionLabel(pkg, isDefault = false) {
   const suffixes = [];
   const smokeStatus = pkg && typeof pkg === "object" ? pkg.smoke_status : null;
   if (smokeStatus === "failed") suffixes.push("smoke failed");
-  else if (smokeStatus === "passed") suffixes.push("smoke passed");
   if (isDefault) suffixes.push("default");
 
   const label = dataVersionLabel(pkg);

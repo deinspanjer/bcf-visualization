@@ -296,10 +296,51 @@ def _package_id(
 
 
 def _version_label(*, package_date: str, build_number: int, story: StoryFreshness) -> str:
-    return (
-        f"BCF data {package_date}.{build_number}, "
-        f"story ch {story.chapter_ordinal} / {story.chapter_num}"
-    )
+    return f"BCF data {package_date}.{build_number}"
+
+
+def _curation_review_freshness(source_dir: Path) -> StoryFreshness | None:
+    marker_path = source_dir.parent / "manual" / "chapter_roll_overrides.json"
+    if not marker_path.exists():
+        return None
+    try:
+        marker_doc = _read_json(marker_path)
+    except Exception:
+        return None
+    marker = marker_doc.get("association_review")
+    if not isinstance(marker, dict):
+        return None
+    reviewed_chapter_num = marker.get("reviewed_through_chapter_num")
+    if reviewed_chapter_num is None:
+        return None
+    reviewed_chapter_num = str(reviewed_chapter_num)
+    try:
+        chapters = _read_json(source_dir / "chapter_facts.json").get("chapters") or []
+    except Exception:
+        return None
+    for ordinal, chapter in enumerate(chapters, start=1):
+        if str(chapter.get("chapter_num")) != reviewed_chapter_num:
+            continue
+        return StoryFreshness(
+            chapter_ordinal=ordinal,
+            chapter_num=reviewed_chapter_num,
+            chapter_title=str(chapter.get("full_title") or reviewed_chapter_num),
+        )
+    return None
+
+
+def _version_description(
+    *,
+    story: StoryFreshness,
+    curation_review: StoryFreshness | None,
+) -> str:
+    parts = [f"story data through ch {story.chapter_ordinal} / {story.chapter_num}"]
+    if curation_review is not None:
+        parts.append(
+            "curation data through ch "
+            f"{curation_review.chapter_ordinal} / {curation_review.chapter_num}"
+        )
+    return "; ".join(parts)
 
 
 def _safe_manifest_path(path: str) -> Path:
@@ -401,6 +442,7 @@ def build_manifest(
         story=story,
         source_epub=source_epub,
     )
+    curation_review = _curation_review_freshness(source_dir)
 
     if bundle_class == "pages-runtime":
         file_names = [
@@ -445,6 +487,10 @@ def build_manifest(
             build_number=build_number,
             story=story,
         ),
+        "version_description": _version_description(
+            story=story,
+            curation_review=curation_review,
+        ),
         "contract": CONTRACT,
         "contract_version": CONTRACT_VERSION,
         "bundle_class": bundle_class,
@@ -459,6 +505,12 @@ def build_manifest(
         },
         "files": files,
     }
+    if curation_review is not None:
+        manifest.update({
+            "curation_reviewed_chapter_ordinal": curation_review.chapter_ordinal,
+            "curation_reviewed_chapter_num": curation_review.chapter_num,
+            "curation_reviewed_chapter_title": curation_review.chapter_title,
+        })
     if source_epub:
         manifest["source_epub"] = source_epub
     return manifest
@@ -889,6 +941,16 @@ def prepare_pages(
                 "story_chapter_num": manifest.get("story_chapter_num"),
                 "story_chapter_title": manifest.get("story_chapter_title"),
                 "version_label": manifest.get("version_label", package_id),
+                "version_description": manifest.get("version_description"),
+                "curation_reviewed_chapter_ordinal": manifest.get(
+                    "curation_reviewed_chapter_ordinal"
+                ),
+                "curation_reviewed_chapter_num": manifest.get(
+                    "curation_reviewed_chapter_num"
+                ),
+                "curation_reviewed_chapter_title": manifest.get(
+                    "curation_reviewed_chapter_title"
+                ),
                 "smoke_status": smoke_status,
                 "path": f"data/packages/{package_id}",
             }

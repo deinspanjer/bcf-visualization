@@ -1,4 +1,4 @@
-"""Bundle chapter_facts, constellation_wireframes, predicted_rolls, and version metadata into the single visualization_facts.json file consumed by the web visualization."""
+"""Bundle chapter_facts, constellation_wireframes, and predicted_rolls into the single visualization_facts.json file consumed by the web visualization."""
 
 from __future__ import annotations
 
@@ -19,12 +19,6 @@ except ModuleNotFoundError:
 SOURCE = "scripts/build_visualization_facts.py"
 METHOD = ("Bundles chapter_facts + constellation_wireframes + "
           "predicted_rolls into the single web-facing visualization data file.")
-
-VERSION_FIELDS = (
-    "package_id", "version_label", "package_date", "build_number",
-    "source_commit", "story_chapter_ordinal", "story_chapter_num",
-    "story_chapter_title",
-)
 
 CHAPTER_FACTS_PAYLOAD_KEYS = ("shadow_periods", "in_world_timeline")
 WIREFRAME_PAYLOAD_KEYS = ("cluster_constellations", "jump_constellations")
@@ -61,9 +55,6 @@ def build(input_dir: Path) -> dict:
     chapter_facts = _read_json(input_dir / "chapter_facts.json")
     wireframes = _read_json(input_dir / "constellation_wireframes.json")
     predicted = _read_json(input_dir / "predicted_rolls.json")
-    manifest = _read_json(input_dir / "data_package.json")
-
-    version = {key: manifest[key] for key in VERSION_FIELDS}
 
     # Rename cp_rule_regime → regime on the way through. Keeps a single canonical name
     # at the render-side consumer (`web/app.js:1021` reads `tick.regime`); the pipeline
@@ -85,7 +76,6 @@ def build(input_dir: Path) -> dict:
         "schema_version": 2,
         "_source": SOURCE,
         "_method": METHOD,
-        "version": version,
         **{key: chapter_facts[key] for key in CHAPTER_FACTS_PAYLOAD_KEYS},
         "chapters": [_project_bundle_chapter(c) for c in chapter_facts["chapters"]],
         "constellation_wireframes": {
@@ -103,7 +93,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--input-dir", type=Path, default=DERIVED,
-        help="Directory containing chapter_facts.json, constellation_wireframes.json, predicted_rolls.json, data_package.json. Defaults to data/derived/.",
+        help="Directory containing chapter_facts.json, constellation_wireframes.json, and predicted_rolls.json. Defaults to data/derived/.",
     )
     parser.add_argument(
         "--output", type=Path, default=DERIVED / "visualization_facts.json",

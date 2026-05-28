@@ -87,54 +87,59 @@ def test_web_contract_helpers_allow_bad_optional_document_to_disable_feature() -
     }
 
 
-def test_web_contract_helper_formats_data_version_label() -> None:
+def test_web_contract_helper_uses_package_version_label() -> None:
     source = """
       import { dataVersionLabel } from './web/data-contract.js';
       console.log(dataVersionLabel({
-        version_label: 'BCF data 20260509.7, story ch 194 / 120.1',
+        version_label: 'BCF data 20260509.7',
+        package_date: '20260510',
+        build_number: 2,
         package_id: 'bcf-visualization-runtime-v20260509.7-ch194-120.1',
       }));
     """
-    assert _node_eval(source) == "BCF data 20260509.7, story ch 194 / 120.1"
+    assert _node_eval(source) == "BCF data 20260509.7"
 
 
-def test_web_contract_helper_falls_back_to_story_metadata_label() -> None:
+def test_web_contract_helper_formats_data_version_description() -> None:
     source = """
-      import { dataVersionLabel } from './web/data-contract.js';
-      console.log(dataVersionLabel({
+      import { dataVersionDescription } from './web/data-contract.js';
+      console.log(dataVersionDescription({
         package_date: '20260509',
         build_number: 7,
         story_chapter_ordinal: 194,
         story_chapter_num: '120.1',
-      }));
+        curation_reviewed_chapter_ordinal: 66,
+        curation_reviewed_chapter_num: '66',
+      }, true));
     """
-    assert _node_eval(source) == "BCF data 20260509.7, story ch 194 / 120.1"
+    assert _node_eval(source) == (
+        "story data through ch 194 / 120.1; "
+        "curation data through ch 66 / 66; default data"
+    )
 
 
 def test_web_contract_helper_marks_smoke_failed_data_label() -> None:
     source = """
       import { dataVersionOptionLabel } from './web/data-contract.js';
       console.log(dataVersionOptionLabel({
-        version_label: 'BCF data 20260509.7, story ch 194 / 120.1',
+        package_date: '20260509',
+        build_number: 7,
         smoke_status: 'failed',
       }, false));
     """
-    assert _node_eval(source) == (
-        "BCF data 20260509.7, story ch 194 / 120.1 (smoke failed)"
-    )
+    assert _node_eval(source) == "BCF data 20260509.7 (smoke failed)"
 
 
-def test_web_contract_helper_marks_default_after_smoke_status() -> None:
+def test_web_contract_helper_marks_default_without_passed_smoke_noise() -> None:
     source = """
       import { dataVersionOptionLabel } from './web/data-contract.js';
       console.log(dataVersionOptionLabel({
-        version_label: 'BCF data 20260509.7, story ch 194 / 120.1',
+        package_date: '20260509',
+        build_number: 7,
         smoke_status: 'passed',
       }, true));
     """
-    assert _node_eval(source) == (
-        "BCF data 20260509.7, story ch 194 / 120.1 (smoke passed, default)"
-    )
+    assert _node_eval(source) == "BCF data 20260509.7 (default)"
 
 
 def test_visualization_facts_bundle_has_keys_loader_reads() -> None:
@@ -147,12 +152,13 @@ def test_visualization_facts_bundle_has_keys_loader_reads() -> None:
     )
     bundle = json.loads(bundle_path.read_text())
     required_keys = {
-        "schema_version", "version",
+        "schema_version",
         "shadow_periods", "in_world_timeline", "chapters",
         "constellation_wireframes", "predicted_rolls", "predicted_rolls_meta",
     }
     missing = required_keys - set(bundle.keys())
     assert not missing, f"bundle missing keys the loader reads: {sorted(missing)}"
+    assert "version" not in bundle
 
 
 def test_visualization_facts_predicted_rolls_use_renamed_regime_field() -> None:

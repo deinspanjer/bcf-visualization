@@ -2,11 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bcf-visualization/derived/visualization_facts.schema.json",
   "title": "Visualization Facts",
-  "description": "Single bundled data file consumed by the web visualization. Combines chapter facts, constellation wireframes, predicted roll positions, and version metadata so the web layer reads exactly one payload file (plus the deployment manifest).",
+  "description": "Single bundled data file consumed by the web visualization. Combines chapter facts, constellation wireframes, and predicted roll positions. Release metadata lives in the deployment manifest.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "_source", "_method", "version",
+    "schema_version", "_source", "_method",
     "shadow_periods", "in_world_timeline", "chapters",
     "constellation_wireframes", "predicted_rolls", "predicted_rolls_meta"
   ],
@@ -14,25 +14,6 @@
     "schema_version": { "const": 2 },
     "_source": { "type": "string" },
     "_method": { "type": "string" },
-    "version": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "package_id", "version_label", "package_date", "build_number",
-        "source_commit", "story_chapter_ordinal", "story_chapter_num",
-        "story_chapter_title"
-      ],
-      "properties": {
-        "package_id":            { "type": "string" },
-        "version_label":         { "type": "string" },
-        "package_date":          { "type": "string", "pattern": "^[0-9]{8}$" },
-        "build_number":          { "type": "integer", "minimum": 0 },
-        "source_commit":         { "type": "string" },
-        "story_chapter_ordinal": { "type": "integer", "minimum": 1 },
-        "story_chapter_num":     { "type": "string" },
-        "story_chapter_title":   { "type": "string" }
-      }
-    },
     "shadow_periods":     { "type": "array", "items": { "$ref": "#/$defs/shadow_period" } },
     "in_world_timeline":  { "$ref": "#/$defs/in_world_timeline" },
     "chapters":           { "type": "array", "items": { "$ref": "#/$defs/chapter" } },

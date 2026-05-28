@@ -1,14 +1,27 @@
 {
-  "default_package_id": "bcf-visualization-runtime-v20260516.20-ch194-120.1",
+  "default_package_id": "bcf-visualization-runtime-v20260520.7-ch195-120.2",
   "packages": [
     {
-      "package_date": "20260516",
-      "package_id": "bcf-visualization-runtime-v20260516.20-ch194-120.1",
+      "build_number": 7,
+      "bundle_class": "pages-runtime",
+      "contract_version": 1,
+      "curation_reviewed_chapter_num": "66",
+      "curation_reviewed_chapter_ordinal": 90,
+      "curation_reviewed_chapter_title": "66 Review and Preparation",
+      "generated_at": "2026-05-28T19:09:01Z",
+      "package_date": "20260520",
+      "package_id": "bcf-visualization-runtime-v20260520.7-ch195-120.2",
+      "package_kind": "runtime",
+      "package_prefix": "bcf-visualization",
       "path": "data/derived",
+      "release_tag": "bcf-visualization-data-v20260520.7-ch195-120.2",
       "smoke_status": "passed",
-      "story_chapter_num": "120.1",
-      "story_chapter_ordinal": 194,
-      "version_label": "BCF data 20260516.20, story ch 194 / 120.1"
+      "source_commit": "0bac41383d0199927a8effb3ff4a092e9e8fc66e",
+      "story_chapter_num": "120.2",
+      "story_chapter_ordinal": 195,
+      "story_chapter_title": "120.2 Interlude Accord - Preamble Mike",
+      "version_description": "story data through ch 195 / 120.2; curation data through ch 90 / 66",
+      "version_label": "BCF data 20260520.7"
     }
   ],
   "schema_version": 1

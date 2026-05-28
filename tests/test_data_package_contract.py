@@ -32,16 +32,6 @@ def _write_tiny_package_source(path: Path) -> Path:
             "schema_version": 2,
             "_source": "fixture",
             "_method": "fixture",
-            "version": {
-                "package_id": "fixture",
-                "version_label": "fixture",
-                "package_date": "20260101",
-                "build_number": 1,
-                "source_commit": "fixture",
-                "story_chapter_ordinal": len(chapters),
-                "story_chapter_num": chapters[-1]["chapter_num"],
-                "story_chapter_title": chapters[-1]["full_title"],
-            },
             "shadow_periods": [],
             "in_world_timeline": {
                 "_sources_used": [], "_count": 0,
@@ -140,6 +130,14 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     chapter_facts = _load_json(DERIVED / "chapter_facts.json")
     chapters = chapter_facts["chapters"]
     latest = chapters[-1]
+    association_review = _load_json(
+        ROOT / "data" / "manual" / "chapter_roll_overrides.json"
+    )["association_review"]
+    reviewed_chapter_num = str(association_review["reviewed_through_chapter_num"])
+    reviewed_chapter_ordinal = {
+        str(chapter["chapter_num"]): ordinal
+        for ordinal, chapter in enumerate(chapters, start=1)
+    }[reviewed_chapter_num]
 
     assert manifest["schema_version"] == 1
     assert manifest["package_prefix"] == "bcf-visualization"
@@ -149,9 +147,16 @@ def test_web_runtime_manifest_matches_files_and_hashes() -> None:
     assert manifest["story_chapter_ordinal"] == len(chapters)
     assert manifest["story_chapter_num"] == str(latest["chapter_num"])
     assert manifest["version_label"] == (
-        f"BCF data {manifest['package_date']}.{manifest['build_number']}, "
-        f"story ch {manifest['story_chapter_ordinal']} / {manifest['story_chapter_num']}"
+        f"BCF data {manifest['package_date']}.{manifest['build_number']}"
     )
+    assert manifest["version_description"] == (
+        f"story data through ch {manifest['story_chapter_ordinal']} / "
+        f"{manifest['story_chapter_num']}; "
+        f"curation data through ch {reviewed_chapter_ordinal} / "
+        f"{reviewed_chapter_num}"
+    )
+    assert manifest["curation_reviewed_chapter_num"] == reviewed_chapter_num
+    assert manifest["curation_reviewed_chapter_ordinal"] == reviewed_chapter_ordinal
     assert manifest["contract"] == "bcf-visualization-data"
     assert manifest["contract_version"] == 1
     assert manifest["bundle_class"] == "pages-runtime"
@@ -233,7 +238,8 @@ def test_package_command_builds_runtime_and_dev_bundles(tmp_path: Path) -> None:
     assert manifest["release_tag"] == outputs.release_tag
     assert manifest["story_chapter_ordinal"] == 2
     assert manifest["story_chapter_num"] == "2.5"
-    assert manifest["version_label"] == "BCF data 20260509.7, story ch 2 / 2.5"
+    assert manifest["version_label"] == "BCF data 20260509.7"
+    assert manifest["version_description"] == "story data through ch 2 / 2.5"
 
     with tarfile.open(outputs.dev_tar, "r:gz") as tf:
         dev_names = set(tf.getnames())
@@ -353,16 +359,6 @@ def test_refresh_runtime_manifest_preserves_version_and_updates_hashes(tmp_path:
         "schema_version": 2,
         "_source": "fixture",
         "_method": "fixture",
-        "version": {
-            "package_id": "fixture",
-            "version_label": "fixture",
-            "package_date": "20260101",
-            "build_number": 1,
-            "source_commit": "fixture",
-            "story_chapter_ordinal": len(chapters),
-            "story_chapter_num": chapters[-1]["chapter_num"],
-            "story_chapter_title": chapters[-1]["full_title"],
-        },
         "shadow_periods": [],
         "in_world_timeline": {
             "_sources_used": [], "_count": 0,
@@ -425,16 +421,6 @@ def test_download_dev_keeps_dev_manifest_separate_and_writes_runtime_manifest(
             "schema_version": 2,
             "_source": "fixture",
             "_method": "fixture",
-            "version": {
-                "package_id": "fixture",
-                "version_label": "fixture",
-                "package_date": "20260101",
-                "build_number": 1,
-                "source_commit": "fixture",
-                "story_chapter_ordinal": len(chapters),
-                "story_chapter_num": chapters[-1]["chapter_num"],
-                "story_chapter_title": chapters[-1]["full_title"],
-            },
             "shadow_periods": [],
             "in_world_timeline": {
                 "_sources_used": [], "_count": 0,
@@ -649,7 +635,8 @@ def test_prepare_pages_index_carries_display_version_metadata(tmp_path: Path) ->
     )
     assert package["story_chapter_ordinal"] == 2
     assert package["story_chapter_num"] == "2.5"
-    assert package["version_label"] == "BCF data 20260509.10, story ch 2 / 2.5"
+    assert package["version_label"] == "BCF data 20260509.10"
+    assert package["version_description"] == "story data through ch 2 / 2.5"
 
 
 def test_prepare_pages_supports_multiple_runtime_packages(tmp_path: Path) -> None:

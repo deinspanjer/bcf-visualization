@@ -76,17 +76,15 @@ def _seed_inputs(tmp_path: Path) -> Path:
 def test_bundle_has_required_top_level_keys(tmp_path: Path):
     bundle = build(_seed_inputs(tmp_path))
     assert set(bundle.keys()) >= {
-        "schema_version", "_source", "_method", "version",
+        "schema_version", "_source", "_method",
         "shadow_periods", "in_world_timeline", "chapters",
         "constellation_wireframes", "predicted_rolls", "predicted_rolls_meta",
     }
 
 
-def test_bundle_version_matches_manifest(tmp_path: Path):
+def test_bundle_does_not_embed_manifest_version(tmp_path: Path):
     bundle = build(_seed_inputs(tmp_path))
-    assert bundle["version"]["package_id"] == "fixture-pkg"
-    assert bundle["version"]["version_label"] == "fixture label"
-    assert bundle["version"]["build_number"] == 1
+    assert "version" not in bundle
 
 
 def test_bundle_chapters_projected_with_rolls_list(tmp_path: Path):

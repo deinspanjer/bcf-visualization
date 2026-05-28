@@ -1,5 +1,7 @@
 import {
+  dataVersionDescription,
   dataVersionOptionLabel,
+  dataVersionLabel,
   validateDataDocument,
   validateDataPackageManifest,
 } from "./data-contract.js";
@@ -88,6 +90,7 @@ const app = {
   infoOpen: false,
   packageIndex: null,
   selectedPackageId: null,
+  selectedPackageMeta: null,
   mode: readStoredChoice(LS_MODE, ["playthrough", "detail"], "playthrough"),
   wordPos: readStoredNumber(LS_BOOKMARK, DEFAULT_WORD_POS),
   playing: false,
@@ -363,20 +366,21 @@ function selectPackage(packageIndex) {
   const defaultId = packageIndex?.default_package_id || packages[0]?.package_id || null;
   if (requested) {
     const match = packages.find(pkg => pkg.package_id === requested);
-    if (match) return { base: `../${match.path}`, packageId: match.package_id, defaultId };
-    return { base: DATA_BASE, packageId: null, defaultId };
+    if (match) return { base: `../${match.path}`, packageId: match.package_id, packageMeta: match, defaultId };
+    return { base: DATA_BASE, packageId: null, packageMeta: null, defaultId };
   }
   const defaultPackage = packages.find(pkg => pkg.package_id === defaultId);
   if (defaultPackage) {
-    return { base: `../${defaultPackage.path}`, packageId: defaultPackage.package_id, defaultId };
+    return { base: `../${defaultPackage.path}`, packageId: defaultPackage.package_id, packageMeta: defaultPackage, defaultId };
   }
-  return { base: DATA_BASE, packageId: null, defaultId };
+  return { base: DATA_BASE, packageId: null, packageMeta: null, defaultId };
 }
 
 async function loadRuntime() {
   app.packageIndex = await loadPackageIndex();
   const selected = selectPackage(app.packageIndex);
   app.selectedPackageId = selected.packageId;
+  app.selectedPackageMeta = selected.packageMeta;
 
   const manifest = await fetchJSON(`${selected.base}/data_package.json?v=${DATA_VERSION}`);
   const manifestInfo = validateDataPackageManifest(manifest);
@@ -402,7 +406,7 @@ async function loadRuntime() {
 
   app.data = {
     pkg: manifest,
-    bundleVersion: bundle.version,
+    packageMeta: selected.packageMeta || manifest,
     story,
     wireframes: bundle.constellation_wireframes,
     constellations,
@@ -982,7 +986,7 @@ function renderHeader() {
 function renderPackageSelector() {
   const packages = Array.isArray(app.packageIndex?.packages) ? app.packageIndex.packages : [];
   if (!packages.length) {
-    return el("span", { class: "data-version", text: app.data.bundleVersion.version_label || "BCF data" });
+    return el("span", { class: "data-version", text: dataVersionLabel(app.data.pkg) });
   }
   const defaultId = app.packageIndex.default_package_id || packages[0].package_id;
   const select = el("select", {
@@ -1031,7 +1035,8 @@ function renderInfoPopover() {
     el("div", { class: "meta-row" },
       el("span", { text: "Visualization by deinspanjer" }),
       el("a", { class: "gh-link", href: PROJECT_REPO, target: "_blank", rel: "noopener noreferrer", text: "github.com/deinspanjer/bcf-visualization" }),
-      el("span", { text: app.data.bundleVersion.version_label || app.data.bundleVersion.package_id || "BCF data" }),
+      el("span", { text: dataVersionLabel(app.data.packageMeta || app.data.pkg) }),
+      el("span", { text: dataVersionDescription(app.data.packageMeta || app.data.pkg, app.selectedPackageId === (app.packageIndex?.default_package_id || app.selectedPackageId)) }),
       renderPackageSelector(),
     ),
   );
