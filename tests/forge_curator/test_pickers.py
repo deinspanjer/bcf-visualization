@@ -124,6 +124,29 @@ def test_roll_evidence_picker_label_uses_stable_target_index() -> None:
     assert picker._roll_button_label(1, picker._rolls[0]).startswith("( ) #3")
 
 
+def test_roll_evidence_picker_label_names_cross_chapter_target() -> None:
+    picker = RollEvidencePicker(
+        rolls=[
+            {
+                "index": 4,
+                "target_chapter_num": "67",
+                "target_roll_index": 5,
+                "visible_chapter_num": "68",
+                "roll_label": "R460",
+                "predicted_label": "P487",
+                "source_label": "S460",
+                "outcome": "miss",
+            },
+        ],
+        on_confirm=lambda _indices, _display_policy: None,
+    )
+
+    assert (
+        picker._roll_button_label(1, picker._rolls[0])
+        == "( ) ch 67 #5 (R460/P487/S460)  miss"
+    )
+
+
 def test_roll_evidence_picker_global_roll_button_uses_current_display_policy() -> None:
     selected: list[str | None] = []
     picker = RollEvidencePicker(

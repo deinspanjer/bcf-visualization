@@ -681,6 +681,15 @@ def _is_metadata_only_roll_override(
     )
 
 
+def _metadata_only_roll_override_has_manual_content(entry: dict) -> bool:
+    return (
+        bool(entry.get("constellation"))
+        or bool(entry.get("evidence_quotes"))
+        or entry.get("mention_word_position") is not None
+        or entry.get("mention_chapter_num") is not None
+    )
+
+
 def _has_structural_roll_override(
     override: dict, chapter_num: str | None = None
 ) -> bool:
@@ -1363,24 +1372,43 @@ def _direct_override_rows(
     last_source_idx = non_trigger_templates[-1][0] if non_trigger_templates else 0
     override_rolls = override.get("rolls") or []
     source_cursor = 0
-    consumed_source_positions: set[int] = set()
     source_templates_by_source_ordinal = source_templates_by_source_ordinal or {}
+    explicit_source_positions: set[int] = set()
+    for entry in override_rolls:
+        source_ordinal = (
+            entry.get("source_ordinal")
+            if isinstance(entry, dict) else None
+        )
+        if source_ordinal is None:
+            continue
+        found = source_templates_by_source_ordinal.get(int(source_ordinal))
+        if found is None:
+            continue
+        position = source_position_by_row_index.get(int(found[0]))
+        if position is not None:
+            explicit_source_positions.add(position)
+    consumed_source_positions: set[int] = set(explicit_source_positions)
 
-    def _next_source_template() -> tuple[int | None, dict]:
+    def _next_source_template() -> tuple[int | None, dict, bool]:
         nonlocal source_cursor
+        skipped_explicit_source = False
         while (
             source_cursor < len(non_trigger_templates)
             and source_cursor in consumed_source_positions
         ):
+            if source_cursor in explicit_source_positions:
+                skipped_explicit_source = True
             source_cursor += 1
         if source_cursor >= len(non_trigger_templates):
-            return last_source_idx, {}
+            return last_source_idx, {}, skipped_explicit_source
         consumed_source_positions.add(source_cursor)
         source_idx, template = non_trigger_templates[source_cursor]
         source_cursor += 1
-        return source_idx, template
+        return source_idx, template, skipped_explicit_source
 
-    def _source_template_for_entry(entry: dict | None) -> tuple[int | None, dict]:
+    def _source_template_for_entry(
+        entry: dict | None,
+    ) -> tuple[int | None, dict, bool]:
         source_ordinal = (
             entry.get("source_ordinal")
             if isinstance(entry, dict) else None
@@ -1391,7 +1419,7 @@ def _direct_override_rows(
                 position = source_position_by_row_index.get(int(found[0]))
                 if position is not None:
                     consumed_source_positions.add(position)
-                return found
+                return found[0], found[1], False
         return _next_source_template()
 
     for override_idx, entry in enumerate(override_rolls):
@@ -1411,8 +1439,38 @@ def _direct_override_rows(
             })
             continue
         if entry is None or _is_metadata_only_roll_override(entry, chapter_num):
-            source_idx, template = _source_template_for_entry(entry)
+            source_idx, template, skipped_explicit_source = (
+                _source_template_for_entry(entry)
+            )
             if not template:
+                if (
+                    skipped_explicit_source and isinstance(entry, dict)
+                    and _metadata_only_roll_override_has_manual_content(entry)
+                ):
+                    display_policy = entry.get("display_position_policy")
+                    if display_policy is None:
+                        display_policy = "mechanical"
+                    out_rows.append({
+                        "_source_idx": source_idx,
+                        "_override_origin": override_idx,
+                        "_override_direct": True,
+                        "_curator_added": False,
+                        "_mention_chapter_num": _norm_chapter(
+                            entry.get("mention_chapter_num"), chapter_num
+                        ),
+                        "_mention_word_position": entry.get("mention_word_position"),
+                        "_display_position_policy": display_policy,
+                        "_evidence_quotes": _evidence_quotes(entry),
+                        "kind": "miss",
+                        "perks": [],
+                        "banked_before": None,
+                        "banked_after": None,
+                        "constellation": entry.get("constellation"),
+                        "constellation_revealed": bool(entry.get("constellation")),
+                        "roll_number": None,
+                        "raw": None,
+                        "_source_identity_inferred": False,
+                    })
                 continue
             payload = {
                 "_source_idx": source_idx,
@@ -1443,7 +1501,7 @@ def _direct_override_rows(
             source_idx, template = last_source_idx, {}
             curator_added = True
         else:
-            source_idx, template = _source_template_for_entry(entry)
+            source_idx, template, _skipped_explicit_source = _source_template_for_entry(entry)
             curator_added = False
         has_source_template = bool(template)
         mention_chapter = _norm_chapter(entry.get("mention_chapter_num"), chapter_num)

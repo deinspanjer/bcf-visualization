@@ -1963,8 +1963,18 @@ class RollEvidencePicker(ModalScreen):
         marker = "(x)" if index in self._selected else "( )"
         roll_ref = ForgeCuratorApp._roll_reference_label(roll)
         outcome = roll.get("outcome") or "unknown"
-        stable_index = ForgeCuratorApp._display_roll_identity(roll)
-        return f"{marker} #{stable_index} ({roll_ref})  {outcome}"
+        target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
+        visible_chapter = roll.get("visible_chapter_num") or roll.get("chapter_num")
+        if (
+            target_chapter is not None
+            and visible_chapter is not None
+            and str(target_chapter) != str(visible_chapter)
+            and roll.get("target_roll_index") is not None
+        ):
+            stable_index = ForgeCuratorApp._roll_target_message_label(roll)
+        else:
+            stable_index = f"#{ForgeCuratorApp._display_roll_identity(roll)}"
+        return f"{marker} {stable_index} ({roll_ref})  {outcome}"
 
     def compose(self) -> ComposeResult:
         with Container():
@@ -3551,7 +3561,23 @@ class ForgeCuratorApp(App):
             current_rows.append(roll)
             if key is not None:
                 seen_targets.add(key)
-        return current_rows
+        return sorted(
+            current_rows,
+            key=lambda roll: (
+                self._chapter_sort_key(str(
+                    roll.get("target_chapter_num")
+                    or roll.get("mechanical_chapter_num")
+                    or cs.meta.chapter_num
+                )),
+                int(roll.get("target_roll_index") or roll.get("index") or 0),
+                int(
+                    roll.get("source_ordinal")
+                    or roll.get("roll_ordinal")
+                    or roll.get("predicted_ordinal")
+                    or 0
+                ),
+            ),
+        )
 
     def _open_predicted_slot_rolls(self, cs) -> list[dict]:
         occupied = {

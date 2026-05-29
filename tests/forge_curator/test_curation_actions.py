@@ -695,6 +695,66 @@ def test_save_quote_multi_can_attach_to_prior_open_slot(
     assert refreshes == ["quote saved to rolls ch 1 #1"]
 
 
+def test_save_quote_multi_orders_source_linked_prior_target_before_current_slots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    predicted_path = fixture.derived / "predicted_rolls.json"
+    predicted = json.loads(predicted_path.read_text())
+    predicted["predicted"].append({
+        "chapter_num": "1",
+        "slot_index": 2,
+        "cp_offset": 40,
+        "epub_offset": 40,
+        "roll_number": 3,
+    })
+    _write_json(predicted_path, predicted)
+
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    prior_target_source = {
+        **roll_facts["rolls"][1],
+        "chapter_num": "2",
+        "roll_sequence_in_chapter": 2,
+        "chapter_ordinal": 2,
+        "source_chapter_num": "2",
+        "source_chapter_ordinal": 1,
+        "source_ordinal": 3,
+        "source_label": "S3",
+        "source_word_position": 10,
+        "source_cumulative_word_offset": len(_chapter_words("1")) + 10,
+        "mechanical_chapter_num": "1",
+        "mechanical_word_position": 40,
+        "mechanical_cumulative_word_offset": 40,
+        "predicted_chapter_num": "1",
+        "predicted_ordinal": 3,
+        "predicted_label": "P3",
+        "roll_ordinal": 3,
+        "roll_label": "R3",
+        "evidence_quotes": [],
+    }
+    roll_facts["rolls"].append(prior_target_source)
+    _write_json(roll_facts_path, roll_facts)
+
+    app = fixture.loaded_app("2")
+    monkeypatch.setattr(app, "_selected_quote", lambda _action_name: "chapter two quote")
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 24)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    screens: list[RollEvidencePicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_save_quote_multi("2")
+
+    assert [type(screen) for screen in screens] == [RollEvidencePicker]
+    labels = [
+        app._roll_target_message_label(roll)
+        for roll in screens[0]._rolls
+    ]
+    assert labels[:3] == ["ch 1 #2", "ch 2 #1", "ch 2 #2"]
+    assert app._roll_reference_label(screens[0]._rolls[0]) == "R3/P3/S3"
+
+
 def test_save_quote_multi_can_attach_to_global_roll(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

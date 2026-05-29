@@ -333,6 +333,189 @@ def test_explicit_source_ordinal_wins_over_fallback_template() -> None:
     assert rows[0]["constellation"] is None
 
 
+def test_later_explicit_source_assignment_prevents_prior_manual_miss_from_inheriting_it() -> None:
+    rows = _direct_override_rows(
+        "72",
+        [
+            (
+                517,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 400,
+                    "banked_after": 400,
+                    "roll_number": 478,
+                    "chapter_num": "72",
+                    "constellation": "Magic",
+                    "raw": "Roll 478",
+                },
+            ),
+            (
+                518,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 500,
+                    "banked_after": 500,
+                    "roll_number": 479,
+                    "chapter_num": "72",
+                    "constellation": "Knowledge",
+                    "raw": "Roll 479",
+                },
+            ),
+        ],
+        {
+            "rolls": [
+                {
+                    "evidence_quotes": [
+                        {
+                            "text": "Magic miss evidence",
+                            "mention_chapter_num": "72",
+                            "mention_word_position": 2427,
+                        }
+                    ],
+                },
+                {
+                    "outcome": "miss",
+                    "constellation": "Size",
+                    "evidence_quotes": [
+                        {
+                            "text": "the Size constellation missed a connection",
+                            "mention_chapter_num": "72",
+                            "mention_word_position": 4401,
+                        }
+                    ],
+                },
+                {"outcome": "miss", "source_ordinal": 482},
+            ]
+        },
+        {},
+        {
+            481: (
+                517,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 400,
+                    "banked_after": 400,
+                    "roll_number": 478,
+                    "chapter_num": "72",
+                    "constellation": "Magic",
+                    "raw": "Roll 478",
+                },
+            ),
+            482: (
+                518,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 500,
+                    "banked_after": 500,
+                    "roll_number": 479,
+                    "chapter_num": "72",
+                    "constellation": "Knowledge",
+                    "raw": "Roll 479",
+                },
+            ),
+        },
+    )
+
+    assert [row["constellation"] for row in rows] == [
+        "Magic",
+        "Size",
+        "Knowledge",
+    ]
+    assert rows[1]["_source_identity_inferred"] is False
+    assert "_source_ordinal" not in rows[1]
+    assert rows[2]["_source_ordinal"] == 482
+
+
+def test_reserved_source_keeps_prior_quote_only_miss_as_source_less_manual_row() -> None:
+    rows = _direct_override_rows(
+        "72",
+        [
+            (
+                517,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 400,
+                    "banked_after": 400,
+                    "roll_number": 478,
+                    "chapter_num": "72",
+                    "constellation": "Magic",
+                    "raw": "Roll 478",
+                },
+            ),
+            (
+                518,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 500,
+                    "banked_after": 500,
+                    "roll_number": 479,
+                    "chapter_num": "72",
+                    "constellation": "Knowledge",
+                    "raw": "Roll 479",
+                },
+            ),
+        ],
+        {
+            "rolls": [
+                {
+                    "evidence_quotes": [
+                        {
+                            "text": "Magic miss evidence",
+                            "mention_chapter_num": "72",
+                            "mention_word_position": 2427,
+                        }
+                    ],
+                },
+                {
+                    "constellation": "Size",
+                    "evidence_quotes": [
+                        {
+                            "text": "the Size constellation missed a connection",
+                            "mention_chapter_num": "72",
+                            "mention_word_position": 4401,
+                        }
+                    ],
+                },
+                {"source_ordinal": 482},
+            ]
+        },
+        {},
+        {
+            482: (
+                518,
+                {
+                    "kind": "miss",
+                    "perks": [],
+                    "banked_before": 500,
+                    "banked_after": 500,
+                    "roll_number": 479,
+                    "chapter_num": "72",
+                    "constellation": "Knowledge",
+                    "raw": "Roll 479",
+                },
+            ),
+        },
+    )
+
+    assert [row["kind"] for row in rows] == ["miss", "miss", "miss"]
+    assert [row["constellation"] for row in rows] == [
+        "Magic",
+        "Size",
+        "Knowledge",
+    ]
+    assert rows[1]["_source_identity_inferred"] is False
+    assert rows[1]["_evidence_quotes"][0]["text"] == (
+        "the Size constellation missed a connection"
+    )
+    assert rows[2]["_source_ordinal"] == 482
+
+
 def test_source_roll_assignment_uses_direct_rows_even_in_same_chapter() -> None:
     override = {
         "rolls": [
