@@ -501,7 +501,19 @@
         },
         "mention_word_position": {
           "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "cp_ledger_checkpoint": {
+          "$ref": "#/$defs/cp_ledger_checkpoint"
         }
+      }
+    },
+    "cp_ledger_checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "banked_cp_after_roll"],
+      "properties": {
+        "kind": { "const": "post_roll_banked_cp_reset" },
+        "banked_cp_after_roll": { "type": "integer", "minimum": 0 }
       }
     },
     "skipped_predicted_roll": {

@@ -1,9 +1,9 @@
 {
-  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. evidence_quotes may optionally carry cp_ledger_checkpoint metadata when the quote itself attests a banked-CP reset. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "association_review": {
-    "reviewed_through_chapter_num": "81",
-    "baseline_fingerprint": "6d276d448419d15a779d7735fd870d4501c86f40799b906e8788ec8ef066a507",
-    "baseline_roll_count": 535
+    "reviewed_through_chapter_num": "82.1",
+    "baseline_fingerprint": "8871a3e6d97f8882b8c690a37a3170689a8f0c1352f51c157d54aa94ebbbc4f5",
+    "baseline_roll_count": 553
   },
   "chapter_roll_overrides": {
     "67": {
@@ -11938,9 +11938,413 @@
             }
           ],
           "curator_note": null
+        },
+        {
+          "perks": [
+            "Whispered",
+            "ARM SLAVE M6 Bushnell"
+          ],
+          "outcome": "hit",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "mention_chapter_num": "82",
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The instant the world finished shifting around us I felt a titanic mote from the Knowledge constellation being secured by my power and drawn towards me.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 427
+            },
+            {
+              "text": "Whispered.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 644
+            },
+            {
+              "text": "That was the name of the power.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 637
+            },
+            {
+              "text": "In my workshop stood a M6 Bushnell second generation Arm Slave mech.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 794
+            }
+          ],
+          "curator_note": null
         }
       ],
       "_fingerprint": "sha256:fcf9d5f82f020eb8"
+    },
+    "82": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Alchemy",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The Alchemy constellation passed by",
+              "mention_chapter_num": "82",
+              "mention_word_position": 2862
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Resources and Durability",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Resources and Durability constellation passed by",
+              "mention_chapter_num": "82",
+              "mention_word_position": 4724
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Knowledge constellation missed a connection",
+              "mention_chapter_num": "82",
+              "mention_word_position": 6074
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Computer Hub",
+            "Office"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt a connection forming to the Personal Reality constellation and nodded, doing my best to conceal my reaction as I assessed the new power. It was a pair of small motes, once again only tangentially related. The first was called Office. Unsurprisingly, it gave me an office.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 8063
+            },
+            {
+              "text": "The second item was a Computer Hub.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 8253
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Size",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Size constellation passed by",
+              "mention_chapter_num": "82",
+              "mention_word_position": 10058
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Dig it",
+            "Realistic Ground Cover"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt another connection form to the Personal Reality constellation. A pair of motes, slightly larger than the last ones, called Realistic Ground Cover and Dig It.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 12083
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Time",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Time constellation passed by",
+              "mention_chapter_num": "82",
+              "mention_word_position": 14431
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magitech",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Forge missed a connection to the Magitech constellation",
+              "mention_chapter_num": "82",
+              "mention_word_position": 16421
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Craftsman of the Gods",
+            "Farming tool"
+          ],
+          "outcome": null,
+          "constellation": "Quality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "As I considered the situation I felt the Quality constellation draw close. This wasn't like the previous connections, where tiny motes had broken off from the Personal Reality constellation. This was a big one, a major power descending on me with no regard to the situation at hand. I braced as a mote like a blazing sun enveloped my senses.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 18341
+            },
+            {
+              "text": "The power was called Craftsmen of the Gods.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 18800
+            },
+            {
+              "text": "I also received a basic farming implement of no extraordinary craftsmanship and a design dating to the Viking age. But, hey, it was a free hoe.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 19418
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Time",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Forge missed a connection to the Time constellation",
+              "mention_chapter_num": "82",
+              "mention_word_position": 20127
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magitech",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "For those interested, points were earned during the addendum, with a single failed roll on the Magitech constellation. There are currently 200 points banked, with the next roll being at 300.",
+              "mention_chapter_num": "82",
+              "mention_word_position": 22910,
+              "cp_ledger_checkpoint": {
+                "kind": "post_roll_banked_cp_reset",
+                "banked_cp_after_roll": 200
+              }
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:5b211388beb65add"
+    },
+    "82.1": {
+      "rolls": [
+        {
+          "perks": [
+            "Divine Weapon"
+          ],
+          "outcome": "hit",
+          "constellation": "Capstone",
+          "word_position": null,
+          "mention_chapter_num": "82.1",
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Capstone",
+              "mention_chapter_num": "82.1",
+              "mention_word_position": 11682
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magitech",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Magitech",
+              "mention_chapter_num": "82.1",
+              "mention_word_position": 11682
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Size",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Size",
+              "mention_chapter_num": "82.1",
+              "mention_word_position": 11682
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Vehicles",
+              "mention_chapter_num": "82.1",
+              "mention_word_position": 11682
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Time",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Time",
+              "mention_chapter_num": "82.1",
+              "mention_word_position": 11682
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Dynamic Waterworks",
+            "Pipes Pipes Pipes",
+            "Waterworld"
+          ],
+          "outcome": null,
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Personal Reality",
+              "mention_chapter_num": "82.1",
+              "mention_word_position": 11682
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
     }
   }
 }

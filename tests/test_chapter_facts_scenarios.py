@@ -1177,6 +1177,326 @@ def test_fallback_roll_facts_apply_index_aligned_manual_metadata(
     ]
 
 
+def test_hit_accounting_normalizes_stale_overrides_after_normalized_cost_units(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import derive_roll_facts
+
+    project = tmp_path / "project"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = project / "data" / "raw" / "fixture.epub"
+    chapters = [_fixture_chapter("2", "2 Fixture", sort_key=[2, 0])]
+    _write_json(derived / "chapters.json", {"chapters": chapters})
+    _write_json(
+        derived / "chapter_sections.json",
+        {"chapters": [_fixture_section("2", "2 Fixture")]},
+    )
+    _write_json(
+        manual / "section_classifications.json",
+        {"classifications": {"2@0": {"counts_for_cp": True}}},
+    )
+    _write_json(
+        derived / "predicted_rolls.json",
+        {
+            "predicted": [
+                {
+                    "chapter_num": "2",
+                    "slot_index": 1,
+                    "cp_offset": 200,
+                    "epub_offset": 200,
+                    "roll_number": 1,
+                    "roll_trigger_cp_threshold": 100,
+                }
+            ]
+        },
+    )
+    _write_json(
+        derived / "roll_text_evidence.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": 1,
+                    "chapter_num": "2",
+                    "slot_index": 1,
+                    "cp_offset": 200,
+                    "epub_offset": 200,
+                }
+            ]
+        },
+    )
+    _write_json(
+        derived / "rolls.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": 1,
+                    "chapter_num": "2",
+                    "kind": "roll",
+                    "banked_before": 600,
+                    "banked_after": 600,
+                    "constellation": "Magic",
+                    "constellation_revealed": True,
+                    "perks": [
+                        {
+                            "name": "Forge Spark",
+                            "source": "Fixture Jump",
+                            "cost": 400,
+                            "free": False,
+                        },
+                        {
+                            "name": "Side Equipment",
+                            "source": "Fixture Jump",
+                            "cost": 300,
+                            "cost_unit": "Customization Points",
+                            "free": False,
+                        },
+                    ],
+                    "raw": "Roll 1 hit",
+                }
+            ]
+        },
+    )
+    _write_json(derived / "roll_outcomes.json", {"rolls": []})
+    _write_json(derived / "obtained_perks.json", {"perks": []})
+    _write_json(
+        derived / "perk_directory.json",
+        {
+            "perks": [
+                _fixture_directory_perk(
+                    name="Forge Spark",
+                    jump="Fixture Jump",
+                    constellation="Magic",
+                    cost=400,
+                ),
+                _fixture_directory_perk(
+                    name="Side Equipment",
+                    jump="Fixture Jump",
+                    constellation="Magic",
+                    cost=300,
+                ),
+            ]
+        },
+    )
+    _write_json(
+        derived / "outstanding_perks_by_chapter.json",
+        {
+            "chapters": [
+                {
+                    "chapter_num": "2",
+                    "before_chapter": {
+                        "total_count": 0,
+                        "by_constellation": {},
+                    },
+                }
+            ]
+        },
+    )
+    _write_json(manual / "chapter_roll_overrides.json", {"chapter_roll_overrides": {}})
+    _write_json(
+        manual / "roll_overrides.json",
+        {
+            "roll_overrides": {
+                "curator:0000": {
+                    "available_cp": 600,
+                    "banked_cp_after_roll": 600,
+                    "slot_source": "override",
+                }
+            }
+        },
+    )
+    _patch_pipeline_paths(monkeypatch, project, epub)
+
+    derive_roll_facts.main()
+
+    roll_facts = json.loads((derived / "roll_facts.json").read_text())
+    [roll] = roll_facts["rolls"]
+    assert roll["available_cp"] == 600
+    assert roll["banked_cp_after_roll"] == 0
+    assert roll["slot_source"] == "override"
+    assert roll["purchased_perk_cost_total"] == 700
+    assert [
+        (perk["name"], perk["cost"], perk.get("cost_unit"))
+        for perk in roll["purchased_perks"]
+    ] == [
+        ("Forge Spark", 400, None),
+        ("Side Equipment", 300, "Customization Points"),
+    ]
+
+    validation = json.loads((derived / "roll_validation.json").read_text())
+    [correction] = validation["hit_accounting_corrections"]
+    assert correction["roll_ordinal"] == 1
+    assert correction["roll_label"] == "R1"
+    assert correction["row_index"] == 0
+    assert roll_facts["rolls"][correction["row_index"]]["roll_key"] == "curator:0000"
+    assert correction["roll_key"] == "curator:0000"
+    assert correction["mechanical_chapter_num"] == "2"
+    assert correction["predicted_label"] == "P1"
+    assert correction["source_label"] == "S1"
+    assert correction["available_cp"] == 600
+    assert correction["debit"] == 700
+    assert correction["old_banked_cp_after_roll"] == 600
+    assert correction["new_banked_cp_after_roll"] == 0
+
+
+def test_quote_carried_cp_checkpoint_resets_downstream_roll_ledger(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import derive_roll_facts
+
+    project = tmp_path / "project"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = project / "data" / "raw" / "fixture.epub"
+    chapters = [_fixture_chapter("2", "2 Fixture", sort_key=[2, 0])]
+    _write_json(derived / "chapters.json", {"chapters": chapters})
+    _write_json(
+        derived / "chapter_sections.json",
+        {"chapters": [_fixture_section("2", "2 Fixture")]},
+    )
+    _write_json(
+        manual / "section_classifications.json",
+        {"classifications": {"2@0": {"counts_for_cp": True}}},
+    )
+    _write_json(
+        derived / "predicted_rolls.json",
+        {
+            "predicted": [
+                {
+                    "chapter_num": "2",
+                    "slot_index": slot,
+                    "cp_offset": slot * 100,
+                    "epub_offset": slot * 100,
+                    "roll_number": slot,
+                    "roll_trigger_cp_threshold": 100,
+                }
+                for slot in (1, 2, 3)
+            ]
+        },
+    )
+    _write_json(
+        derived / "roll_text_evidence.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": slot,
+                    "chapter_num": "2",
+                    "slot_index": slot,
+                    "cp_offset": slot * 100,
+                    "epub_offset": slot * 100,
+                }
+                for slot in (1, 2, 3)
+            ]
+        },
+    )
+    _write_json(
+        derived / "rolls.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": slot,
+                    "chapter_num": "2",
+                    "kind": "miss",
+                    "banked_before": slot * 100,
+                    "banked_after": slot * 100,
+                    "constellation": "Magic",
+                    "constellation_revealed": True,
+                    "perks": [],
+                    "raw": f"Roll {slot} miss",
+                }
+                for slot in (1, 2, 3)
+            ]
+        },
+    )
+    _write_json(derived / "roll_outcomes.json", {"rolls": []})
+    _write_json(derived / "obtained_perks.json", {"perks": []})
+    _write_json(derived / "perk_directory.json", {"perks": []})
+    _write_json(
+        derived / "outstanding_perks_by_chapter.json",
+        {
+            "chapters": [
+                {
+                    "chapter_num": "2",
+                    "before_chapter": {
+                        "total_count": 0,
+                        "by_constellation": {},
+                    },
+                }
+            ]
+        },
+    )
+    _write_json(
+        manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "2": {
+                    "rolls": [
+                        {
+                            "evidence_quotes": [
+                                {
+                                    "text": "There are currently 25 points banked.",
+                                    "mention_chapter_num": "2",
+                                    "mention_word_position": 900,
+                                    "cp_ledger_checkpoint": {
+                                        "kind": "post_roll_banked_cp_reset",
+                                        "banked_cp_after_roll": 25,
+                                    },
+                                }
+                            ]
+                        },
+                        {},
+                        {},
+                    ]
+                }
+            }
+        },
+    )
+    _write_json(manual / "roll_overrides.json", {"roll_overrides": {}})
+    _patch_pipeline_paths(monkeypatch, project, epub)
+
+    derive_roll_facts.main()
+
+    roll_facts = json.loads((derived / "roll_facts.json").read_text())
+    rolls = roll_facts["rolls"]
+    assert [
+        (roll["roll_label"], roll["available_cp"], roll["banked_cp_after_roll"])
+        for roll in rolls
+    ] == [
+        ("R1", 25, 25),
+        ("R2", 30, 30),
+        ("R3", 35, 35),
+    ]
+    assert rolls[0]["evidence_quotes"][0]["cp_ledger_checkpoint"] == {
+        "kind": "post_roll_banked_cp_reset",
+        "banked_cp_after_roll": 25,
+    }
+
+    validation = json.loads((derived / "roll_validation.json").read_text())
+    assert validation["cp_ledger_checkpoint_applications"] == [
+        {
+            "row_index": 0,
+            "roll_ordinal": 1,
+            "roll_label": "R1",
+            "predicted_ordinal": 1,
+            "roll_key": "curator:0000",
+            "mechanical_chapter_num": "2",
+            "predicted_label": "P1",
+            "source_ordinal": 1,
+            "source_label": "S1",
+            "old_available_cp": 100,
+            "old_banked_cp_after_roll": 100,
+            "new_available_cp": 25,
+            "new_banked_cp_after_roll": 25,
+            "checkpoint": {
+                "kind": "post_roll_banked_cp_reset",
+                "banked_cp_after_roll": 25,
+            },
+        }
+    ]
+
+
 def test_manual_obtained_perk_assignment_pins_hit_to_override_slot(
     tmp_path: Path,
     monkeypatch,

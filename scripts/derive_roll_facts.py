@@ -42,6 +42,7 @@ from regime_simulator import (
     load_regime_transitions,
     regime_for_chapter,
     regimes_for_chapter,
+    shadow_words,
 )
 from roll_scheduler import (
     HitInput,
@@ -706,7 +707,7 @@ def _evidence_quotes(entry: dict | None) -> list[dict]:
     for quote in entry.get("evidence_quotes") or []:
         if not isinstance(quote, dict) or not quote.get("text"):
             continue
-        quotes.append({
+        payload = {
             "text": str(quote["text"]),
             "mention_chapter_num": (
                 str(quote.get("mention_chapter_num"))
@@ -716,7 +717,19 @@ def _evidence_quotes(entry: dict | None) -> list[dict]:
                 int(quote["mention_word_position"])
                 if quote.get("mention_word_position") is not None else None
             ),
-        })
+        }
+        checkpoint = quote.get("cp_ledger_checkpoint")
+        if isinstance(checkpoint, dict):
+            banked_after = int_or_none(checkpoint.get("banked_cp_after_roll"))
+            if (
+                checkpoint.get("kind") == "post_roll_banked_cp_reset"
+                and banked_after is not None
+            ):
+                payload["cp_ledger_checkpoint"] = {
+                    "kind": "post_roll_banked_cp_reset",
+                    "banked_cp_after_roll": banked_after,
+                }
+        quotes.append(payload)
     return quotes
 
 
@@ -1653,6 +1666,254 @@ def _apply_overrides(rolls: list[dict], overrides_doc: dict) -> int:
         r["slot_source"] = "override"
         applied += 1
     return applied
+
+
+def _forge_cp_debit_total(roll: dict) -> int:
+    total = 0
+    for perk in roll.get("purchased_perks") or []:
+        if perk.get("cost") is None:
+            continue
+        total += int(perk["cost"])
+    return total
+
+
+def _roll_accounting_locator(index: int, roll: dict) -> dict:
+    return {
+        "roll_ordinal": roll.get("roll_ordinal"),
+        "roll_label": roll.get("roll_label"),
+        "predicted_ordinal": roll.get("predicted_ordinal"),
+        "predicted_label": roll.get("predicted_label"),
+        "source_ordinal": roll.get("source_ordinal"),
+        "source_label": roll.get("source_label"),
+        "mechanical_chapter_num": roll.get("mechanical_chapter_num"),
+        "row_index": index,
+        "roll_key": roll.get("roll_key"),
+    }
+
+
+def _normalize_hit_accounting(rolls: list[dict]) -> tuple[list[dict], list[dict]]:
+    corrections: list[dict] = []
+    missing_available: list[dict] = []
+    for index, roll in enumerate(rolls):
+        if roll.get("outcome") != "hit":
+            continue
+        debit = _forge_cp_debit_total(roll)
+        if debit <= 0:
+            continue
+        available_cp = int_or_none(roll.get("available_cp"))
+        if available_cp is None:
+            missing_available.append(_roll_accounting_locator(index, roll) | {
+                "debit": debit,
+                "available_cp": roll.get("available_cp"),
+                "banked_cp_after_roll": roll.get("banked_cp_after_roll"),
+            })
+            continue
+        expected = max(0, available_cp - debit)
+        if roll.get("banked_cp_after_roll") != expected:
+            old = roll.get("banked_cp_after_roll")
+            roll["banked_cp_after_roll"] = expected
+            corrections.append(_roll_accounting_locator(index, roll) | {
+                "available_cp": available_cp,
+                "debit": debit,
+                "old_banked_cp_after_roll": old,
+                "new_banked_cp_after_roll": expected,
+            })
+    return corrections, missing_available
+
+
+def _principal_forge_cp_cost(roll: dict) -> int:
+    costs = [
+        int(perk["cost"])
+        for perk in roll.get("purchased_perks") or []
+        if perk.get("cost") is not None
+    ]
+    return max(costs) if costs else 0
+
+
+def _ledger_checkpoint_for_roll(roll: dict) -> dict | None:
+    for quote in roll.get("evidence_quotes") or []:
+        if not isinstance(quote, dict):
+            continue
+        checkpoint = quote.get("cp_ledger_checkpoint")
+        if not isinstance(checkpoint, dict):
+            continue
+        if checkpoint.get("kind") != "post_roll_banked_cp_reset":
+            continue
+        if int_or_none(checkpoint.get("banked_cp_after_roll")) is None:
+            continue
+        return dict(checkpoint)
+    return None
+
+
+def _accumulate_ledger_span(
+    *,
+    start_global: int,
+    end_global: int,
+    banked_cp_x100: int,
+    shadow_state: ShadowState,
+    chapter_order: list[str],
+    scheduler_inputs: dict[str, dict],
+) -> int:
+    if end_global <= start_global:
+        return banked_cp_x100
+    cursor = int(start_global)
+    for chapter_num in chapter_order:
+        inp = scheduler_inputs.get(chapter_num)
+        if inp is None:
+            continue
+        chapter_start = int(inp.get("chapter_word_start") or 0)
+        chapter_words = int(inp.get("chapter_words") or 0)
+        chapter_end = chapter_start + chapter_words
+        if cursor >= end_global:
+            break
+        if end_global <= chapter_start or cursor >= chapter_end:
+            continue
+        local_start = max(0, cursor - chapter_start)
+        local_end = min(end_global, chapter_end) - chapter_start
+        if local_end <= local_start:
+            continue
+        segment_start = 0
+        for segment in inp.get("segments") or []:
+            segment_end = (
+                int(segment.end_word_local)
+                if segment.end_word_local is not None else chapter_words
+            )
+            span_start = max(local_start, segment_start)
+            span_end = min(local_end, segment_end)
+            if span_end > span_start:
+                banked_cp_x100 = _accumulate_x100(
+                    span_end - span_start,
+                    int(segment.regime),
+                    banked_cp_x100,
+                    shadow_state,
+                )
+            segment_start = segment_end
+            if segment_start >= local_end:
+                break
+        cursor = chapter_start + local_end
+    return banked_cp_x100
+
+
+def _restamp_roll_accounting(
+    roll: dict,
+    *,
+    available_cp: int,
+    outstanding_by_chapter: dict[str, dict],
+) -> int:
+    roll["available_cp"] = int(available_cp)
+    if roll.get("outcome") == "hit":
+        after = max(0, int(available_cp) - _forge_cp_debit_total(roll))
+        roll["banked_cp_after_roll"] = after
+        return after
+
+    roll["banked_cp_after_roll"] = int(available_cp)
+    estimate = miss_cost_estimate(
+        outstanding_by_chapter,
+        str(roll.get("mechanical_chapter_num") or roll.get("chapter_num")),
+        roll.get("constellation"),
+        int(available_cp),
+    )
+    roll["miss_cost_estimate"] = estimate
+    roll["rolled_perk_cost"] = estimate
+    return int(available_cp)
+
+
+def _apply_cp_ledger_checkpoints(
+    rolls: list[dict],
+    *,
+    chapter_order: list[str],
+    scheduler_inputs: dict[str, dict],
+    outstanding_by_chapter: dict[str, dict],
+) -> list[dict]:
+    applications: list[dict] = []
+    ordered_indices = sorted(
+        range(len(rolls)),
+        key=lambda index: (
+            rolls[index].get("mechanical_cumulative_word_offset")
+            if rolls[index].get("mechanical_cumulative_word_offset") is not None
+            else 10**18,
+            index,
+        ),
+    )
+    ledger_active = False
+    cursor_global = 0
+    banked_cp_x100 = 0
+    shadow_state = ShadowState()
+
+    for index in ordered_indices:
+        roll = rolls[index]
+        if roll.get("source_kind") == "trigger":
+            continue
+        coord = int_or_none(roll.get("mechanical_cumulative_word_offset"))
+        if ledger_active and coord is not None:
+            banked_cp_x100 = _accumulate_ledger_span(
+                start_global=cursor_global,
+                end_global=coord,
+                banked_cp_x100=banked_cp_x100,
+                shadow_state=shadow_state,
+                chapter_order=chapter_order,
+                scheduler_inputs=scheduler_inputs,
+            )
+            available = banked_cp_x100 // 100
+            after = _restamp_roll_accounting(
+                roll,
+                available_cp=available,
+                outstanding_by_chapter=outstanding_by_chapter,
+            )
+            banked_cp_x100 = after * 100
+            if roll.get("outcome") == "hit":
+                regime = regime_for_chapter(
+                    str(roll.get("mechanical_chapter_num") or roll.get("chapter_num"))
+                )
+                shadow_state.remaining += shadow_words(
+                    _principal_forge_cp_cost(roll),
+                    regime,
+                )
+            cursor_global = coord
+
+        checkpoint = _ledger_checkpoint_for_roll(roll)
+        if checkpoint is None:
+            continue
+        reset_after = int(checkpoint["banked_cp_after_roll"])
+        debit = _forge_cp_debit_total(roll)
+        new_available = (
+            reset_after + debit if roll.get("outcome") == "hit" else reset_after
+        )
+        application = _roll_accounting_locator(index, roll) | {
+            "old_available_cp": roll.get("available_cp"),
+            "old_banked_cp_after_roll": roll.get("banked_cp_after_roll"),
+            "new_available_cp": new_available,
+            "new_banked_cp_after_roll": reset_after,
+            "checkpoint": checkpoint,
+        }
+        roll["available_cp"] = new_available
+        roll["banked_cp_after_roll"] = reset_after
+        if roll.get("outcome") == "miss":
+            estimate = miss_cost_estimate(
+                outstanding_by_chapter,
+                str(roll.get("mechanical_chapter_num") or roll.get("chapter_num")),
+                roll.get("constellation"),
+                new_available,
+            )
+            roll["miss_cost_estimate"] = estimate
+            roll["rolled_perk_cost"] = estimate
+        applications.append(application)
+
+        ledger_active = coord is not None
+        if ledger_active:
+            cursor_global = int(coord)
+            banked_cp_x100 = reset_after * 100
+            shadow_state = ShadowState()
+            if roll.get("outcome") == "hit":
+                regime = regime_for_chapter(
+                    str(roll.get("mechanical_chapter_num") or roll.get("chapter_num"))
+                )
+                shadow_state.remaining += shadow_words(
+                    _principal_forge_cp_cost(roll),
+                    regime,
+                )
+
+    return applications
 
 
 def _ordinal_label(prefix: str, value: int | None) -> str | None:
@@ -2756,6 +3017,16 @@ def main() -> None:
         )
     ]
     _stamp_explicit_ordinals(rolls, chapter_order)
+    (
+        hit_accounting_corrections,
+        hit_accounting_missing_available_cp,
+    ) = _normalize_hit_accounting(rolls)
+    cp_ledger_checkpoint_applications = _apply_cp_ledger_checkpoints(
+        rolls,
+        chapter_order=chapter_order,
+        scheduler_inputs=scheduler_inputs,
+        outstanding_by_chapter=outstanding_by_chapter,
+    )
 
     known_attempt_count_by_chapter: dict[str, int] = {}
     for roll in rolls:
@@ -2779,7 +3050,13 @@ def main() -> None:
             "scheduler (scripts/roll_scheduler.py) decides which predicted "
             "slots are hits via latest-feasible backtracking. Free perks "
             "attach to the paid hit and do not consume separate roll slots. "
-            "Manual roll/chapter overrides land last (slot_source='override')."
+            "Manual roll/chapter overrides land last (slot_source='override'). "
+            "After final roll ordering, hit banked-CP-after values are "
+            "normalized from available CP minus paid perk costs. Perk costs "
+            "are already normalized to effective Forge CP; cost_unit is "
+            "provenance metadata. Quote-carried CP ledger checkpoints apply "
+            "after this normalization and reset downstream derived ledger "
+            "balances without moving predicted slots."
         ),
         "_caveat": (
             "Curator rows are the trusted source. Solver rows are "
@@ -2915,6 +3192,11 @@ def main() -> None:
         "generation_infeasible": infeasible_records,
         "curator_solver_divergences": curator_solver_divergences,
         "ambiguous_chapters": ambiguous,
+        "hit_accounting_corrections": hit_accounting_corrections,
+        "hit_accounting_missing_available_cp": (
+            hit_accounting_missing_available_cp
+        ),
+        "cp_ledger_checkpoint_applications": cp_ledger_checkpoint_applications,
     }
     VALIDATION_OUT.parent.mkdir(parents=True, exist_ok=True)
     VALIDATION_OUT.write_text(

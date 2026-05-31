@@ -66,6 +66,14 @@ def _known_attempt_counts() -> Counter[str]:
     )
 
 
+def _forge_cp_debit(roll: dict) -> int:
+    return sum(
+        int(perk["cost"])
+        for perk in roll.get("purchased_perks") or []
+        if perk.get("cost") is not None
+    )
+
+
 def test_roll_validation_reports_global_roll_capacity_checks() -> None:
     validation = json.loads(ROLL_VALIDATION_JSON.read_text())
     checks = {
@@ -97,12 +105,59 @@ def test_roll_validation_reports_global_roll_capacity_checks() -> None:
         ) is (attempts > predicted)
 
 
+def test_hit_roll_accounting_debits_forge_cp_costs() -> None:
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    validation = json.loads(ROLL_VALIDATION_JSON.read_text())
+    missing_audit = {
+        int(row["row_index"]): row
+        for row in validation.get("hit_accounting_missing_available_cp", [])
+    }
+    mismatches: list[tuple[int, str | None, int, int | None, int]] = []
+    missing_available: list[int] = []
+
+    for index, roll in enumerate(roll_facts):
+        if roll.get("outcome") != "hit":
+            continue
+        debit = _forge_cp_debit(roll)
+        if debit <= 0:
+            continue
+        available_cp = roll.get("available_cp")
+        if not isinstance(available_cp, int):
+            missing_available.append(index)
+            continue
+        expected_after = max(0, available_cp - debit)
+        if roll.get("banked_cp_after_roll") != expected_after:
+            mismatches.append((
+                index,
+                roll.get("roll_key"),
+                available_cp,
+                roll.get("banked_cp_after_roll"),
+                debit,
+            ))
+
+    assert mismatches == []
+    for index in missing_available:
+        audited = missing_audit[index]
+        roll = roll_facts[index]
+        assert audited["roll_ordinal"] == roll["roll_ordinal"]
+        assert audited["roll_label"] == roll["roll_label"]
+        assert audited["row_index"] == index
+        assert audited["roll_key"] == roll["roll_key"]
+        assert audited["mechanical_chapter_num"] == roll["mechanical_chapter_num"]
+        assert audited["predicted_label"] == roll["predicted_label"]
+        assert audited["source_label"] == roll["source_label"]
+
+
 def test_roll_facts_use_evidence_quotes_contract() -> None:
     validator = Draft202012Validator(_load_schema("roll_facts"))
     valid_quote = {
         "text": "synthetic quote",
         "mention_chapter_num": "1",
         "mention_word_position": 10,
+        "cp_ledger_checkpoint": {
+            "kind": "post_roll_banked_cp_reset",
+            "banked_cp_after_roll": 75,
+        },
     }
     minimal_roll = {
         "roll_key": "fixture:0001",
@@ -189,6 +244,24 @@ def test_roll_facts_use_evidence_quotes_contract() -> None:
     errors = list(validator.iter_errors(invalid_doc))
 
     assert any("Additional properties" in error.message for error in errors)
+
+    invalid_quote_doc = valid_doc | {
+        "rolls": [
+            minimal_roll | {
+                "evidence_quotes": [
+                    valid_quote | {
+                        "cp_ledger_checkpoint": {
+                            "kind": "post_roll_banked_cp_reset",
+                            "banked_cp_after_roll": -1,
+                        },
+                    }
+                ]
+            }
+        ],
+    }
+    checkpoint_errors = list(validator.iter_errors(invalid_quote_doc))
+
+    assert checkpoint_errors
 
 
 def test_roll_validation_status_matches_blocking_model_issues() -> None:

@@ -97,6 +97,46 @@ def test_roll_slot_rows_merge_assigned_rolls_and_open_predicted_slots(
     assert rows[1]["mechanical_cumulative_word_offset"] == 120
 
 
+def test_prior_roll_visible_only_by_mention_chapter_is_quote_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    prior_roll = dict(app.data.roll_facts["rolls"][0])
+    prior_roll.update({
+        "chapter_num": "2",
+        "source_ordinal": None,
+        "source_label": None,
+        "source_chapter_num": None,
+        "source_chapter_ordinal": None,
+        "source_roll_label": None,
+        "source_word_position": None,
+        "source_cumulative_word_offset": None,
+        "mention_chapter_num": "2",
+        "mention_word_position": None,
+        "display_chapter_num": "1",
+        "display_position_policy": "mechanical",
+        "visible_chapter_nums": ["1", "2"],
+        "evidence_quotes": [],
+    })
+    cs.derived.roll_facts.insert(0, prior_roll)
+
+    rows = app._roll_slot_rows(cs, app._unified_rolls(cs))
+    quote_targets = app._current_chapter_roll_evidence_picker_rolls(cs)
+
+    assert ("1", 1) in [
+        (row["target_chapter_num"], row["target_roll_index"])
+        for row in rows
+    ]
+    assert ("1", 1) in [
+        (row["target_chapter_num"], row["target_roll_index"])
+        for row in quote_targets
+    ]
+
+
 def test_source_assignment_targets_include_previous_unassigned_rolls(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -674,7 +674,10 @@ async def test_stats_click_refocuses_prose_for_motion_and_space_chords() -> None
             if "# 2 (R520/P548)" in text
         )
 
-        await pilot.click("#stats", offset=(2, visible_roll_line))
+        await pilot.click(
+            "#stats",
+            offset=(2, visible_roll_line + stats.content_region.y),
+        )
         await pilot.pause()
 
         selected = app._selected_roll_target_if_visible()
@@ -701,7 +704,10 @@ async def test_stats_click_jumps_prose_to_selected_roll_location() -> None:
         )
         assert expected_word is not None
 
-        await pilot.click("#stats", offset=(2, visible_roll_line))
+        await pilot.click(
+            "#stats",
+            offset=(2, visible_roll_line + stats.content_region.y),
+        )
         await pilot.pause()
 
         assert app.state.chapter.cursor_word_index == expected_word
@@ -721,7 +727,7 @@ async def test_click_roll_then_space_p_opens_perk_picker_for_selected_roll() -> 
             if "# 2 (R520/P548)" in text
         )
 
-        stats.on_click(_FakeMouseEvent(0, visible_roll_line))
+        stats.on_click(_FakeMouseEvent(0, visible_roll_line + stats.content_region.y))
         await pilot.press("space", "p")
         await pilot.pause()
 

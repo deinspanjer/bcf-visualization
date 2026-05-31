@@ -169,7 +169,7 @@ def test_stats_evidence_omits_prior_unassigned_slot_quotes(
     cs = app.state.chapter
     assert cs is not None
 
-    assert ("1", 1) in [
+    assert ("1", 1) not in [
         (row["target_chapter_num"], row["target_roll_index"])
         for row in app._source_assignment_target_rows(cs)
     ]
@@ -618,6 +618,92 @@ def test_roll_stat_line_labels_cross_chapter_targets_with_chapter(
     assert "ch 1 # 2 (R15/S15)" in line
 
 
+def test_roll_stat_line_does_not_echo_paid_instance_as_free_perk(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app.persistence.update_roll_at_index(
+        "2",
+        1,
+        outcome="hit",
+        constellation="Personal Reality",
+        perks=["Dig it", "Realistic Ground Cover"],
+    )
+
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "target_chapter_num": "2",
+            "target_roll_index": 1,
+            "roll_ordinal": 541,
+            "roll_label": "R541",
+            "predicted_ordinal": 569,
+            "predicted_label": "P569",
+            "outcome": "hit",
+            "constellation": "Personal Reality",
+            "available_cp": 1330,
+            "purchased_perks": [
+                {
+                    "name": "Dig It",
+                    "instance": "Dig it",
+                    "cost": 100,
+                    "free": False,
+                },
+                {"name": "Realistic Ground Cover", "cost": 100, "free": False},
+            ],
+            "free_perks": [
+                {"name": "Farming tool", "constellation": "Quality"},
+            ],
+            "evidence_quotes": [],
+        },
+        " ",
+    )
+
+    assert "Personal Reality - Dig It (Dig it) (100)" in line
+    assert "Personal Reality - Dig it (free)" not in line
+
+
+def test_roll_stat_line_does_not_invent_free_perk_from_manual_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app.persistence.update_roll_at_index(
+        "2",
+        1,
+        outcome="hit",
+        constellation="Knowledge",
+        perks=["I Am Iron Man", "Missing Freebie"],
+    )
+
+    line = app._format_roll_stat_line(
+        {
+            "index": 1,
+            "target_chapter_num": "2",
+            "target_roll_index": 1,
+            "roll_ordinal": 2,
+            "roll_label": "R2",
+            "predicted_ordinal": 2,
+            "predicted_label": "P2",
+            "outcome": "hit",
+            "constellation": "Knowledge",
+            "available_cp": 400,
+            "purchased_perks": [
+                {"name": "I Am Iron Man", "cost": 400, "free": False},
+            ],
+            "free_perks": [],
+            "evidence_quotes": [],
+        },
+        " ",
+    )
+
+    assert "Knowledge - I Am Iron Man (400)" in line
+    assert "Missing Freebie" not in line
+
+
 def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -732,3 +818,82 @@ def test_skipped_slots_source_markers_status_and_click_targets_use_stats_model(
     assert selected is not None
     assert selected["display_kind"] == "predicted_slot"
     assert selected["target_roll_index"] == 2
+
+
+@pytest.mark.asyncio
+async def test_stats_click_maps_widget_padding_to_visible_roll_line(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    predicted_path = fixture.derived / "predicted_rolls.json"
+    predicted = json.loads(predicted_path.read_text())
+    predicted["predicted"].append(
+        {
+            "chapter_num": "2",
+            "slot_index": 3,
+            "cp_offset": 140,
+            "epub_offset": 140,
+            "roll_number": 4,
+        }
+    )
+    _write_json(predicted_path, predicted)
+
+    app = fixture.app("2")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        stats = app.query_one("#stats", StatsPanel)
+        target_line = next(
+            line for line, target in stats._roll_line_targets.items()
+            if target.get("display_kind") == "predicted_slot"
+            and target.get("target_roll_index") == 2
+        )
+
+        await pilot.click("#stats", offset=(2, target_line + stats.content_region.y))
+        await pilot.pause()
+
+        selected = app._selected_roll_target_if_visible()
+        assert selected is not None
+        assert selected["display_kind"] == "predicted_slot"
+        assert selected["target_roll_index"] == 2
+
+
+@pytest.mark.asyncio
+async def test_stats_click_maps_scrolled_visible_roll_line(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    predicted_path = fixture.derived / "predicted_rolls.json"
+    predicted = json.loads(predicted_path.read_text())
+    predicted["predicted"].append(
+        {
+            "chapter_num": "2",
+            "slot_index": 3,
+            "cp_offset": 140,
+            "epub_offset": 140,
+            "roll_number": 4,
+        }
+    )
+    _write_json(predicted_path, predicted)
+
+    app = fixture.app("2")
+    async with app.run_test(size=(120, 18)) as pilot:
+        await pilot.pause()
+        stats = app.query_one("#stats", StatsPanel)
+        target_line = next(
+            line for line, target in stats._roll_line_targets.items()
+            if target.get("display_kind") == "predicted_slot"
+            and target.get("target_roll_index") == 2
+        )
+        stats_scroll = app.query_one("#stats_scroll")
+        stats_scroll.scroll_to(y=max(1, target_line - 2), animate=False)
+        await pilot.pause()
+
+        await pilot.click(None, offset=(2, target_line + stats.content_region.y))
+        await pilot.pause()
+
+        selected = app._selected_roll_target_if_visible()
+        assert selected is not None
+        assert selected["display_kind"] == "predicted_slot"
+        assert selected["target_roll_index"] == 2

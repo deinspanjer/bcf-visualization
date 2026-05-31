@@ -14,6 +14,7 @@ from scripts.forge_curator.app import (
     QuoteMoveSourcePicker,
     QuoteMoveTargetPicker,
     RollEvidencePicker,
+    StatsPanel,
     SourceLinkPicker,
 )
 from scripts.forge_curator.data_loader import _compute_word_offsets
@@ -163,6 +164,58 @@ def test_evidence_block_renders_without_mounted_prose_view(
     evidence = app._evidence_block(cs)
 
     assert "Q1 against ch 1 #1 (R1/P1/S1)" in evidence
+
+
+def test_evidence_block_names_source_assigned_hit_bundle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    overrides_path = fixture.manual / "chapter_roll_overrides.json"
+    _write_json(overrides_path, {
+        "chapter_roll_overrides": {
+            "1": {
+                "rolls": [
+                    {
+                        "perks": ["I Am Iron Man", "Free Armor"],
+                        "outcome": "hit",
+                        "constellation": "Knowledge",
+                        "word_position": None,
+                        "mention_chapter_num": "1",
+                        "mention_word_position": None,
+                        "display_position_policy": None,
+                        "skipped": False,
+                        "source_ordinal": None,
+                        "evidence_quotes": [],
+                        "curator_note": None,
+                    }
+                ]
+            }
+        }
+    })
+    app = fixture.loaded_app("1")
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.roll_facts[0].update({
+        "outcome": "hit",
+        "constellation": "Knowledge",
+        "purchased_perks": [
+            {"name": "I Am Iron Man", "cost": 400, "free": False}
+        ],
+        "free_perks": [
+            {"name": "Free Armor", "constellation": "Vehicles", "free": True}
+        ],
+        "rolled_perk_name": "I Am Iron Man",
+        "rolled_perk_cost": 400,
+        "miss_cost_estimate": None,
+        "evidence_quotes": [],
+    })
+
+    evidence = app._evidence_block(cs)
+
+    assert "S against ch 1 #1 (R1/P1/S1)" in evidence
+    assert "Knowledge - I Am Iron Man (400)" in evidence
+    assert "Vehicles - Free Armor (free)" in evidence
 
 
 def test_metadata_only_quote_without_prose_match_does_not_target_roll_marker(
@@ -1190,6 +1243,7 @@ def test_pick_perks_writes_multiple_derived_perk_names_to_selected_roll(
     overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
     roll = overrides["chapter_roll_overrides"]["2"]["rolls"][1]
     assert roll["perks"] == ["Lofty Loft", "Underside"]
+    assert roll["constellation"] == "Personal Reality"
 
 
 def test_pick_perks_reopens_with_existing_roll_perks_selected(
@@ -1524,6 +1578,38 @@ def test_source_assignment_persistence_moves_duplicate_source_binding(
     assert rolls["2"]["rolls"][1]["source_ordinal"] is None
 
 
+def test_obtained_perk_assignment_moves_existing_manual_perk_binding(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    persistence = fixture.loaded_app("2").persistence
+    persistence.assign_obtained_perk_at_index(
+        "2",
+        1,
+        perk_name="I Am Iron Man",
+        constellation="Knowledge",
+        free_perk_names=["Free Armor"],
+        mention_chapter_num="2",
+    )
+
+    persistence.assign_obtained_perk_at_index(
+        "1",
+        1,
+        perk_name="I Am Iron Man",
+        constellation="Knowledge",
+        free_perk_names=["Free Armor"],
+        mention_chapter_num="2",
+    )
+
+    overrides = persistence.chapter_roll_overrides["chapter_roll_overrides"]
+    assert overrides["1"]["rolls"][0]["perks"] == ["I Am Iron Man", "Free Armor"]
+    assert overrides["2"]["rolls"][0]["perks"] == []
+    assert overrides["2"]["rolls"][0]["outcome"] is None
+    assert overrides["2"]["rolls"][0]["constellation"] is None
+    assert overrides["2"]["rolls"][0]["mention_chapter_num"] is None
+
+
 def test_source_assignment_action_links_open_target_to_source_roll(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1580,6 +1666,15 @@ def test_source_assignment_action_can_use_obtained_perk_source(
                 "cost": 400,
                 "free": False,
                 "constellation": "Knowledge",
+            },
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "Free Armor",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 0,
+                "free": True,
+                "constellation": "Personal Reality",
             }
         ]
     }))
@@ -1609,12 +1704,91 @@ def test_source_assignment_action_can_use_obtained_perk_source(
     saved = overrides["chapter_roll_overrides"]["2"]["rolls"][1]
     assert saved["source_ordinal"] is None
     assert saved["outcome"] == "hit"
-    assert saved["perks"] == ["I Am Iron Man"]
+    assert saved["perks"] == ["I Am Iron Man", "Free Armor"]
     assert saved["constellation"] == "Knowledge"
     assert refreshes == ["ch 2 roll #2 source = I Am Iron Man"]
 
 
-def test_source_assignment_obtained_perk_sources_only_show_current_chapter_targets(
+def test_open_prior_predicted_slot_is_visible_and_actionable_in_later_chapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _clear_first_source_assignment(fixture)
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+
+    action_targets = app._actionable_roll_targets(cs)
+    prior_target = next(
+        target for target in action_targets
+        if target.get("target_chapter_num") == "1"
+        and target.get("target_roll_index") == 1
+    )
+
+    stats = StatsPanel()
+    stats.render_stats(app.state, app)
+    assert any(
+        app._same_roll_target(target, prior_target)
+        for target in stats._roll_line_targets.values()
+    )
+
+
+def test_prior_predicted_slot_with_manual_curation_is_not_open_action_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _clear_first_source_assignment(fixture)
+    overrides_path = fixture.manual / "chapter_roll_overrides.json"
+    _write_json(overrides_path, {
+        "chapter_roll_overrides": {
+            "1": {
+                "rolls": [
+                    {
+                        "perks": [],
+                        "outcome": "hit",
+                        "constellation": "Knowledge",
+                        "word_position": None,
+                        "mention_chapter_num": "2",
+                        "mention_word_position": 24,
+                        "display_position_policy": None,
+                        "skipped": False,
+                        "source_ordinal": None,
+                        "evidence_quotes": [
+                            {
+                                "text": "chapter two quote",
+                                "mention_chapter_num": "2",
+                                "mention_word_position": 24,
+                            }
+                        ],
+                        "curator_note": None,
+                    }
+                ]
+            }
+        }
+    })
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+
+    assert all(
+        not (
+            target.get("target_chapter_num") == "1"
+            and target.get("target_roll_index") == 1
+        )
+        for target in app._actionable_roll_targets(cs)
+    )
+    assert all(
+        not (
+            target.get("target_chapter_num") == "1"
+            and target.get("target_roll_index") == 1
+        )
+        for target in app._source_assignment_target_rows(cs)
+    )
+
+
+def test_source_assignment_obtained_perk_sources_can_target_open_prior_slot(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1630,6 +1804,15 @@ def test_source_assignment_obtained_perk_sources_only_show_current_chapter_targe
                 "cost": 400,
                 "free": False,
                 "constellation": "Knowledge",
+            },
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "Free Armor",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 0,
+                "free": True,
+                "constellation": "Personal Reality",
             }
         ]
     }))
@@ -1641,8 +1824,74 @@ def test_source_assignment_obtained_perk_sources_only_show_current_chapter_targe
     app._action_assign_source_roll("2")
 
     assert [type(screen) for screen in screens] == [SourceLinkPicker]
-    assert {target["target_chapter_num"] for target in screens[0]._targets} == {"2"}
-    assert [target["target_roll_index"] for target in screens[0]._targets] == [1, 2]
+    target_keys = [
+        (target["target_chapter_num"], target["target_roll_index"])
+        for target in screens[0]._targets
+    ]
+    assert ("2", 1) in target_keys
+    assert ("2", 2) in target_keys
+    assert any(
+        target.get("target_chapter_num") == "1"
+        and target.get("target_roll_index") == 1
+        for target in screens[0]._targets
+    )
+
+
+def test_source_assignment_obtained_perk_on_prior_target_records_mention_chapter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _clear_first_source_assignment(fixture)
+    (fixture.derived / "obtained_perks.json").write_text(json.dumps({
+        "perks": [
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "I Am Iron Man",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 400,
+                "free": False,
+                "constellation": "Knowledge",
+            },
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "Free Armor",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 0,
+                "free": True,
+                "constellation": "Personal Reality",
+            }
+        ]
+    }))
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    app = fixture.loaded_app("2")
+    app._post_curation_refresh = lambda _message: None
+
+    def push_screen(screen) -> None:
+        target = next(
+            roll for roll in screen._targets
+            if roll.get("target_chapter_num") == "1"
+            and roll.get("target_roll_index") == 1
+        )
+        source = next(
+            roll for roll in screen._sources
+            if roll.get("rolled_perk_name") == "I Am Iron Man"
+        )
+        screen._on_confirm(target, source)
+
+    app.push_screen = push_screen
+
+    app._action_assign_source_roll("2")
+
+    saved = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())[
+        "chapter_roll_overrides"
+    ]["1"]["rolls"][0]
+    assert saved["outcome"] == "hit"
+    assert saved["perks"] == ["I Am Iron Man", "Free Armor"]
+    assert saved["constellation"] == "Knowledge"
+    assert saved["mention_chapter_num"] == "2"
 
 
 def test_source_assignment_action_can_target_prior_open_slot(
@@ -1889,7 +2138,7 @@ def test_source_assignment_action_uses_source_mechanical_target_for_open_prior_s
     assert json.loads((fixture.manual / "chapter_roll_overrides.json").read_text()) == before
 
 
-def test_source_assignment_action_skips_quote_shift_when_prior_target_has_evidence(
+def test_source_assignment_action_omits_prior_target_with_quote_evidence(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1910,32 +2159,23 @@ def test_source_assignment_action_skips_quote_shift_when_prior_target_has_eviden
         mention_chapter_num="2",
         mention_word_position=20,
     )
-    refreshes: list[str] = []
-    flashes: list[str] = []
-    app._post_curation_refresh = lambda message: refreshes.append(message)
-    app._flash = lambda message, **_kwargs: flashes.append(message)
-
-    def push_screen(screen) -> None:
-        target = next(
-            roll for roll in screen._targets
-            if roll.get("target_chapter_num") == "1"
-            and roll.get("target_roll_index") == 1
-        )
-        source = next(
-            roll for roll in screen._sources
-            if roll.get("chapter_num") == "2"
-            and roll.get("source_chapter_ordinal") == 1
-        )
-        screen._on_confirm(target, source)
-
-    app.push_screen = push_screen
+    screens: list[SourceLinkPicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
 
     app._action_assign_source_roll("2")
 
     overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
     ch1_roll = overrides["chapter_roll_overrides"]["1"]["rolls"][0]
     ch2_roll = overrides["chapter_roll_overrides"]["2"]["rolls"][0]
-    assert ch1_roll["source_ordinal"] == 2
+    assert [type(screen) for screen in screens] == [SourceLinkPicker]
+    assert all(
+        not (
+            target.get("target_chapter_num") == "1"
+            and target.get("target_roll_index") == 1
+        )
+        for target in screens[0]._targets
+    )
+    assert ch1_roll["source_ordinal"] is None
     assert ch1_roll["evidence_quotes"] == [
         {
             "text": "existing prior quote",
@@ -1950,8 +2190,6 @@ def test_source_assignment_action_skips_quote_shift_when_prior_target_has_eviden
             "mention_word_position": 20,
         }
     ]
-    assert refreshes == ["ch 1 roll #1 source = S2"]
-    assert flashes == ["assign source: target already has quote evidence"]
 
 
 def test_source_assignment_action_can_target_open_prior_slot_without_marker(

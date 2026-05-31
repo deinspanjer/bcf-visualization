@@ -9,6 +9,8 @@
 
 Deferred rolls are modeled as one mechanical predicted slot plus one narrated/listed roll fact. `mention_chapter_num` says where the author narrates or lists the result; `display_position_policy` selects whether visualization uses the mention, the mechanical slot, or the start of the mention chapter.
 
+Saved `evidence_quotes` may carry a `cp_ledger_checkpoint` object when the quote itself attests a banked-CP reset. In v1 the supported checkpoint is `kind: "post_roll_banked_cp_reset"` with `banked_cp_after_roll`; it applies after the quote's current parent roll at that roll's mechanical position and resets downstream derived ledger balances without moving predicted roll slots.
+
 ## Pipeline
 
 1. `scripts/predict_rolls.py` simulates CP accumulation across the documented rule regimes and writes `predicted_rolls.json`.

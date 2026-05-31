@@ -26,6 +26,14 @@
 - TUI code must not reconcile, reinterpret, clamp, or synthesize roll, word, or accounting facts except for direct display formatting.
 - If derived facts disagree, fix the derivation pipeline and schema, then regenerate data.
 - When refactoring a data model or source-of-truth path, remove obsolete fields, files, actions, tests, and compatibility shims in the same change unless a real external contract requires a transition. Do not preserve dead code or empty generated fields just to avoid touching call sites.
+- Before changing any data model, generated JSON contract, accounting
+  semantics, roll/source identity, or source-of-truth path, ask an explorer
+  subagent to review the existing code, schemas, tests, and docs for an
+  already-suitable contract. If the subagent has high confidence that an
+  existing contract covers the need, adapt the plan to use that contract. If
+  the subagent has low confidence or finds no suitable contract, provide the
+  user with a brief proposal for the data-model change and wait for approval
+  before implementing it.
 - When implementing a supplied plan, convert the plan into an acceptance
   matrix before coding and keep it current through final verification. Before
   reporting completion, every plan requirement must be marked implemented,

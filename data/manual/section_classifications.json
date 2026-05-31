@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
   "_count": 508,
-  "_mc_sections": 145,
-  "_non_mc_sections": 363,
+  "_mc_sections": 146,
+  "_non_mc_sections": 362,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Explicit curator section eligibility toggles and curated span_overrides from existing entries are preserved across regeneration.",
   "classifications": {
     "1@0": {
@@ -4985,8 +4985,8 @@
       "chapter_num": "82",
       "section_index": 1,
       "header": "Addendum Uppercrust",
-      "counts_for_cp": false,
-      "reason": "addendum 'uppercrust' (non-Joe)",
+      "counts_for_cp": true,
+      "reason": "curator toggle: eligible (was: addendum 'uppercrust' (non-Joe))",
       "span_overrides": [
         {
           "word_offset_start": 20233,

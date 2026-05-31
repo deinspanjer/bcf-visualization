@@ -495,7 +495,8 @@ class StatsPanel(Static):
 
     def on_click(self, event: events.Click) -> None:
         targets = getattr(self, "_roll_line_targets", {})
-        target = targets.get(int(getattr(event, "y", -1)))
+        padding_top = int(getattr(self.styles.padding, "top", 0) or 0)
+        target = targets.get(int(getattr(event, "y", -1)) - padding_top)
         if target is not None:
             app = getattr(self, "_render_app", None)
             if app is not None:
@@ -557,7 +558,7 @@ class StatsPanel(Static):
         )
 
         unified = app._unified_rolls(cs)
-        chapter_rolls = app._roll_slot_rows(cs, unified)
+        chapter_rolls = app._actionable_roll_targets(cs, unified=unified)
         selected_or_current = app._stats_selected_roll_target()
 
         def _target_chapter_num(roll: dict) -> str:
@@ -3607,9 +3608,21 @@ class ForgeCuratorApp(App):
         return [
             roll for roll in self._roll_evidence_picker_rolls(cs)
             if include_prior
+            or (
+                roll.get("display_kind") != "predicted_slot"
+                and self._roll_visible_in_chapter(roll, cs.meta.chapter_num)
+            )
             or str(roll.get("target_chapter_num") or cs.meta.chapter_num)
             == str(cs.meta.chapter_num)
         ]
+
+    @staticmethod
+    def _roll_visible_in_chapter(roll: dict, chapter_num: str) -> bool:
+        cn = str(chapter_num)
+        return (
+            str(roll.get("visible_chapter_num") or "") == cn
+            or cn in {str(ch) for ch in roll.get("visible_chapter_nums") or []}
+        )
 
     def _chapter_has_real_source_rolls(self, chapter_num: str) -> bool:
         for roll in self._source_roll_picker_rows(str(chapter_num)):
@@ -3824,8 +3837,13 @@ class ForgeCuratorApp(App):
             )
             is_unslotted_current = _is_unslotted_current_chapter(row, local_cp)
             is_source_projection = _is_source_projection(row, local_cp)
+            is_visible_projection = (
+                local_cp is None
+                and self._roll_visible_in_chapter(row, cn)
+                and not (is_unslotted_current or is_source_projection)
+            )
             if local_cp is None and not (
-                is_unslotted_current or is_source_projection
+                is_unslotted_current or is_source_projection or is_visible_projection
             ):
                 continue
             if is_source_projection:
@@ -3851,6 +3869,15 @@ class ForgeCuratorApp(App):
                     word_position = self._cp_earning_word_offset(raw_word_position)
                 else:
                     word_position = self._chapter_cp_total(cn, cs)
+                global_cp = self._chapter_cp_start(cn) + int(word_position)
+            elif is_visible_projection:
+                display_kind = "chapter_roll"
+                word_position = int(
+                    row.get("mention_word_position")
+                    or row.get("source_word_position")
+                    or 0
+                )
+                raw_word_position = None
                 global_cp = self._chapter_cp_start(cn) + int(word_position)
             else:
                 display_kind = "chapter_roll"
@@ -3992,15 +4019,7 @@ class ForgeCuratorApp(App):
             )
             detail_lines = [f"    {constel} - {perk_text}"]
         else:
-            perks = roll.get("purchased_perks") or []
-            if perks:
-                detail_lines = []
-                for p in perks:
-                    name = _perk_display_label(p) or "unknown"
-                    cost = "free" if p.get("free") else str(int(p.get("cost") or 0))
-                    detail_lines.append(f"    {constel} - {name} ({cost})")
-            else:
-                detail_lines = [f"    {constel} - perk unknown"]
+            detail_lines = self._roll_hit_detail_lines(roll)
         available = roll.get("available_cp")
         available_part = (
             f"Avail CP {int(available)}" if available is not None else "Avail CP ?"
@@ -4107,6 +4126,68 @@ class ForgeCuratorApp(App):
             return "    display at section end"
         return f"    display policy: {policy}"
 
+    def _roll_hit_detail_lines(self, roll: dict) -> list[str]:
+        constel = roll.get("constellation") or "unknown"
+        detail_lines: list[str] = []
+        paid_names: set[str] = set()
+        for perk in roll.get("purchased_perks") or []:
+            name = _perk_display_label(perk) or "unknown"
+            paid_names.add(name.casefold())
+            for key in ("name", "perk_name", "instance"):
+                raw_name = str(perk.get(key) or "").strip()
+                if raw_name:
+                    paid_names.add(raw_name.casefold())
+            cost = "free" if perk.get("free") else str(int(perk.get("cost") or 0))
+            detail_lines.append(f"    {constel} - {name} ({cost})")
+        for perk in self._roll_free_perks_for_display(roll, paid_names):
+            name = _perk_display_label(perk) or "unknown"
+            perk_constel = perk.get("constellation") or constel
+            detail_lines.append(f"    {perk_constel} - {name} (free)")
+        return detail_lines or [f"    {constel} - perk unknown"]
+
+    def _roll_free_perks_for_display(
+        self,
+        roll: dict,
+        paid_names: set[str],
+    ) -> list[dict]:
+        manual_names = self._manual_roll_perk_names(roll)
+        free_perks = list(roll.get("free_perks") or [])
+        if not manual_names:
+            return free_perks
+
+        allowed = {
+            name.casefold() for name in manual_names
+            if name.casefold() not in paid_names
+        }
+        selected: list[dict] = []
+        seen: set[str] = set()
+        for perk in free_perks:
+            name = _perk_display_label(perk)
+            key = name.casefold()
+            if key not in allowed:
+                continue
+            selected.append(perk)
+            seen.add(key)
+        return selected
+
+    def _manual_roll_perk_names(self, roll: dict) -> list[str]:
+        target_chapter = (
+            roll.get("target_chapter_num")
+            or roll.get("mechanical_chapter_num")
+            or roll.get("chapter_num")
+        )
+        target_index = roll.get("target_roll_index") or roll.get("index")
+        if target_chapter is None or target_index is None:
+            return []
+        override = self._roll_override_entry(str(target_chapter), int(target_index))
+        if not isinstance(override, dict):
+            return []
+        return [
+            str(name).strip()
+            for name in override.get("perks") or []
+            if str(name).strip()
+        ]
+
     @staticmethod
     def _display_roll_identity(roll: dict) -> int:
         visible_chapter = roll.get("visible_chapter_num") or roll.get("chapter_num")
@@ -4192,6 +4273,8 @@ class ForgeCuratorApp(App):
                 )
                 if raw:
                     rows.append(f"    {raw}")
+                elif roll.get("outcome") == "hit":
+                    rows.extend(self._roll_hit_detail_lines(roll))
             for quote_idx, quote in enumerate(self._roll_evidence_quotes(roll), start=1):
                 text = str(quote.get("text") or "")
                 quote_start = cs.prose.text.find(text)
@@ -4927,13 +5010,23 @@ class ForgeCuratorApp(App):
             on_select=choose_target,
         ))
 
-    def _actionable_roll_targets(self, cs) -> list[dict]:
-        unified = self._unified_rolls(cs)
+    def _actionable_roll_targets(
+        self,
+        cs,
+        unified: list[dict] | None = None,
+    ) -> list[dict]:
+        unified = self._unified_rolls(cs) if unified is None else unified
         return sorted(
             [
+                *self._prior_open_predicted_slot_rows(cs),
                 *self._roll_slot_rows(cs, unified),
             ],
             key=lambda roll: (
+                self._chapter_sort_key(str(
+                    roll.get("target_chapter_num")
+                    or roll.get("mechanical_chapter_num")
+                    or cs.meta.chapter_num
+                )),
                 self._roll_action_word_position(cs, roll),
                 int(roll.get("target_roll_index") or roll.get("index") or 0),
             ),
@@ -4973,6 +5066,11 @@ class ForgeCuratorApp(App):
         target: dict | None = None
         for roll in self._actionable_roll_targets(cs):
             if roll.get("display_kind") == "predicted_slot":
+                target_chapter = str(
+                    roll.get("target_chapter_num") or cs.meta.chapter_num
+                )
+                if target_chapter != str(cs.meta.chapter_num):
+                    continue
                 if int(roll.get("word_position") or 0) <= cp_word_idx:
                     target = roll
                 else:
@@ -5081,7 +5179,10 @@ class ForgeCuratorApp(App):
 
         def on_confirm(names: list[str]) -> None:
             self.persistence.update_roll_at_index(
-                target_chapter, idx, perks=names,
+                target_chapter,
+                idx,
+                perks=names,
+                constellation=self._constellation_for_selected_perks(perks, names),
             )
             self._post_curation_refresh(
                 f"roll #{idx} perks: {', '.join(names) or '(none)'}"
@@ -5095,6 +5196,20 @@ class ForgeCuratorApp(App):
             ),
             on_confirm=on_confirm,
         ))
+
+    @staticmethod
+    def _constellation_for_selected_perks(
+        perks: list[dict],
+        names: list[str],
+    ) -> str | None:
+        selected = {str(name).casefold() for name in names}
+        constellations = {
+            str(perk.get("constellation")).strip()
+            for perk in perks
+            if (_perk_display_label(perk) or "").casefold() in selected
+            and str(perk.get("constellation") or "").strip()
+        }
+        return next(iter(constellations)) if len(constellations) == 1 else None
 
     def _selected_roll_perk_names(
         self,
@@ -5167,7 +5282,8 @@ class ForgeCuratorApp(App):
             and str(roll.get("rolled_perk_name") or "").strip()
         }
         rows: list[dict] = []
-        for perk in self.data.obtained_perks.get("perks", []):
+        obtained_perks = list(self.data.obtained_perks.get("perks", []))
+        for perk_index, perk in enumerate(obtained_perks):
             if str(perk.get("chapter_num")) != cn:
                 continue
             if perk.get("free"):
@@ -5177,12 +5293,33 @@ class ForgeCuratorApp(App):
                 continue
             cost = int(perk.get("cost") or 0)
             constellation = perk.get("constellation")
+            free_perk_names: list[str] = []
+            for follower in obtained_perks[perk_index + 1:]:
+                if str(follower.get("chapter_num")) != cn:
+                    continue
+                if (
+                    not follower.get("free")
+                    and follower.get("epub_sequence") == perk.get("epub_sequence")
+                ):
+                    break
+                if (
+                    follower.get("free")
+                    and follower.get("epub_sequence") == perk.get("epub_sequence")
+                    and follower.get("jump") == perk.get("jump")
+                ):
+                    free_name = str(
+                        follower.get("perk_name") or follower.get("name") or ""
+                    ).strip()
+                    if free_name:
+                        free_perk_names.append(free_name)
             rows.append({
                 "source": "obtained_perks",
                 "source_kind": "obtained_perk",
                 "outcome": "hit",
                 "chapter_num": cn,
                 "rolled_perk_name": name,
+                "perks": [name, *free_perk_names],
+                "free_perk_names": free_perk_names,
                 "rolled_perk_cost": cost,
                 "constellation": constellation,
                 "purchased_perks": [
@@ -5205,7 +5342,7 @@ class ForgeCuratorApp(App):
     ) -> list[dict]:
         unified = self._unified_rolls(cs)
         prior_rows = (
-            self._prior_unassigned_roll_target_rows(cs)
+            self._prior_open_predicted_slot_rows(cs)
             if include_prior else []
         )
         rows = [
@@ -5323,6 +5460,43 @@ class ForgeCuratorApp(App):
                 })
         return rows
 
+    def _prior_open_predicted_slot_rows(self, cs) -> list[dict]:
+        return [
+            roll for roll in self._prior_unassigned_roll_target_rows(cs)
+            if self._override_leaves_predicted_slot_open(
+                self._roll_override_entry(
+                    str(roll.get("target_chapter_num") or ""),
+                    int(roll.get("target_roll_index") or 0),
+                )
+            )
+        ]
+
+    @staticmethod
+    def _override_leaves_predicted_slot_open(override: dict | None) -> bool:
+        if not override:
+            return True
+        if override.get("skipped"):
+            return False
+        if override.get("source_ordinal") is not None:
+            return False
+        if override.get("outcome") not in (None, ""):
+            return False
+        if override.get("constellation") not in (None, ""):
+            return False
+        if override.get("perks"):
+            return False
+        if override.get("evidence_quotes"):
+            return False
+        if override.get("mention_chapter_num") is not None:
+            return False
+        if override.get("mention_word_position") is not None:
+            return False
+        if override.get("display_position_policy") is not None:
+            return False
+        if override.get("curator_note") is not None:
+            return False
+        return True
+
     def _source_link_rows(self, cs, chapter_num: str) -> list[dict]:
         rows = [
             *self._source_assignment_target_rows(cs),
@@ -5388,15 +5562,7 @@ class ForgeCuratorApp(App):
         if not sources:
             self._flash("assign source: no source rolls in this chapter")
             return
-        include_prior_targets = any(
-            source.get("source_kind") != "obtained_perk"
-            and source.get("source_ordinal") is not None
-            for source in sources
-        )
-        targets = self._source_assignment_target_rows(
-            cs,
-            include_prior=include_prior_targets,
-        )
+        targets = self._source_assignment_target_rows(cs)
         if not targets:
             self._flash("assign source: no roll slots in this chapter")
             return
@@ -5419,6 +5585,10 @@ class ForgeCuratorApp(App):
                     idx,
                     perk_name=perk_name,
                     constellation=source_roll.get("constellation"),
+                    free_perk_names=[
+                        str(perk) for perk in (source_roll.get("free_perk_names") or [])
+                    ],
+                    mention_chapter_num=source_roll.get("chapter_num"),
                 )
                 self._post_curation_refresh(
                     f"ch {target_chapter} roll #{idx} source = {perk_name}"

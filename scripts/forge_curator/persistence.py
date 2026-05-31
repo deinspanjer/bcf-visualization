@@ -449,14 +449,28 @@ class CurationPersistence:
         *,
         perk_name: str,
         constellation: str | None = None,
+        free_perk_names: list[str] | None = None,
+        mention_chapter_num: str | None = None,
     ) -> dict:
         before = deepcopy(self.chapter_roll_overrides)
+        perk_names = [
+            str(name).strip()
+            for name in [perk_name, *(free_perk_names or [])]
+            if str(name).strip()
+        ]
+        self._clear_obtained_perk_binding_elsewhere(
+            chapter_num,
+            int(index),
+            perk_names,
+        )
         roll = self.get_or_create_roll_at_index(chapter_num, index)
         roll["outcome"] = "hit"
-        roll["perks"] = [str(perk_name)]
+        roll["perks"] = list(perk_names)
         roll["constellation"] = str(constellation) if constellation else None
         roll["skipped"] = False
         roll["source_ordinal"] = None
+        if mention_chapter_num is not None:
+            roll["mention_chapter_num"] = str(mention_chapter_num)
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "assign_obtained_perk_at_index",
@@ -468,9 +482,55 @@ class CurationPersistence:
                 "index": int(index),
                 "perk_name": str(perk_name),
                 "constellation": constellation,
+                "free_perk_names": list(free_perk_names or []),
+                "mention_chapter_num": mention_chapter_num,
             },
         )
         return roll
+
+    def _clear_obtained_perk_binding_elsewhere(
+        self,
+        chapter_num: str,
+        index: int,
+        perk_names: list[str],
+    ) -> None:
+        if not perk_names:
+            return
+        assigned = {name.casefold() for name in perk_names}
+        for other_chapter, entry in (
+            self.chapter_roll_overrides.get("chapter_roll_overrides", {}).items()
+        ):
+            for other_index, roll in enumerate(entry.get("rolls") or [], start=1):
+                if (
+                    str(other_chapter) == str(chapter_num)
+                    and int(other_index) == int(index)
+                ):
+                    continue
+                if not isinstance(roll, dict):
+                    continue
+                existing = [
+                    str(name).strip()
+                    for name in roll.get("perks") or []
+                    if str(name).strip()
+                ]
+                if not any(name.casefold() in assigned for name in existing):
+                    continue
+                roll["perks"] = [
+                    name for name in existing
+                    if name.casefold() not in assigned
+                ]
+                if not roll["perks"] and roll.get("outcome") == "hit":
+                    roll["outcome"] = None
+                    roll["constellation"] = None
+                    if (
+                        roll.get("word_position") is None
+                        and roll.get("mention_word_position") is None
+                        and roll.get("display_position_policy") is None
+                        and not roll.get("evidence_quotes")
+                        and roll.get("source_ordinal") is None
+                        and roll.get("curator_note") is None
+                    ):
+                        roll["mention_chapter_num"] = None
 
     def ensure_roll_count(self, chapter_num: str, count: int) -> None:
         before = deepcopy(self.chapter_roll_overrides)
