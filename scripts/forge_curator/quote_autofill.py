@@ -52,11 +52,8 @@ class QuoteAutofillSuggestion:
 
 def classify_quote_autofill(quote: str) -> QuoteAutofillSuggestion | None:
     """Return strict autofill metadata for unambiguous roll-evidence quotes."""
-    matches = [
-        match for match in CONSTELLATION_NAME_PATTERN.finditer(quote or "")
-        if _is_constellation_reference(quote or "", match)
-    ]
-    if len(matches) != 1:
+    constellation = single_constellation_reference(quote)
+    if constellation is None:
         return None
 
     has_miss = _MISS_LANGUAGE.search(quote or "") is not None
@@ -66,8 +63,19 @@ def classify_quote_autofill(quote: str) -> QuoteAutofillSuggestion | None:
 
     return QuoteAutofillSuggestion(
         outcome="miss" if has_miss else "hit",
-        constellation=matches[0].group(0),
+        constellation=constellation,
     )
+
+
+def single_constellation_reference(quote: str) -> str | None:
+    """Return the sole explicit constellation reference in a quote, if any."""
+    matches = [
+        match for match in CONSTELLATION_NAME_PATTERN.finditer(quote or "")
+        if _is_constellation_reference(quote or "", match)
+    ]
+    if len(matches) != 1:
+        return None
+    return matches[0].group(0)
 
 
 def _is_constellation_reference(text: str, match: re.Match[str]) -> bool:

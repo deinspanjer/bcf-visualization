@@ -1,9 +1,9 @@
 {
   "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. evidence_quotes may optionally carry cp_ledger_checkpoint metadata when the quote itself attests a banked-CP reset. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "association_review": {
-    "reviewed_through_chapter_num": "82.1",
-    "baseline_fingerprint": "8871a3e6d97f8882b8c690a37a3170689a8f0c1352f51c157d54aa94ebbbc4f5",
-    "baseline_roll_count": 553
+    "reviewed_through_chapter_num": "83.1",
+    "baseline_fingerprint": "f7991dc4243e5c5dce769cbba7057bce9e9b1a2547aa4a522b2e65e12e182d88",
+    "baseline_roll_count": 561
   },
   "chapter_roll_overrides": {
     "67": {
@@ -12345,6 +12345,198 @@
         }
       ],
       "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+    },
+    "83": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Alchemy",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "noting a failed connection to a small mote from the Alchemy constellation",
+              "mention_chapter_num": "83",
+              "mention_word_position": 1425
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Size",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Size constellation missed a connection",
+              "mention_chapter_num": "83",
+              "mention_word_position": 3386
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Additional Keys",
+            "Entrance Hall - Garment"
+          ],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "There had been a connection to the Personal Reality constellation. Two tiny motes, Entrance Hall and Additional Keys.",
+              "mention_chapter_num": "83",
+              "mention_word_position": 5665
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:83825097d256dac2"
+    },
+    "83.1": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Alchemy",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Alchemy",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            },
+            {
+              "text": "Points were earned during both the interlude and Joe's section. For those interested, the rolls were",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Alchemy",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Alchemy",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            },
+            {
+              "text": "Points were earned during both the interlude and Joe's section. For those interested, the rolls were",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Alchemy",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Alchemy",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            },
+            {
+              "text": "Points were earned during both the interlude and Joe's section. For those interested, the rolls were",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Armsthrift"
+          ],
+          "outcome": "hit",
+          "constellation": "Resources and Durability",
+          "word_position": null,
+          "mention_chapter_num": "83.1",
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Resources and Durability (Armsthrift)",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            },
+            {
+              "text": "Points were earned during both the interlude and Joe's section. For those interested, the rolls were",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magitech",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Magitech",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            },
+            {
+              "text": "Points were earned during both the interlude and Joe's section. For those interested, the rolls were",
+              "mention_chapter_num": "83.1",
+              "mention_word_position": 10014
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:49ac1f51a000d7ea"
     }
   }
 }

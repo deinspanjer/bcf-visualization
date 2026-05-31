@@ -873,6 +873,7 @@ class CurationPersistence:
         display_position_policy: str | None = None,
         autofill_outcome: str | None = None,
         autofill_constellation: str | None = None,
+        autofill_perks: list[str] | None = None,
     ) -> dict:
         before = deepcopy(self.chapter_roll_overrides)
         roll = self.get_or_create_roll_at_index(chapter_num, index)
@@ -891,6 +892,7 @@ class CurationPersistence:
             roll,
             outcome=autofill_outcome,
             constellation=autofill_constellation,
+            perks=autofill_perks,
         )
         self._write_chapter_roll_overrides(before)
         self._append_journal(
@@ -914,6 +916,7 @@ class CurationPersistence:
         display_position_policy: str | None = None,
         autofill_outcome: str | None = None,
         autofill_constellation: str | None = None,
+        autofill_perks: list[str] | None = None,
     ) -> list[dict]:
         """Append the same curated quote to multiple chapter-local rolls.
 
@@ -942,6 +945,7 @@ class CurationPersistence:
                 roll,
                 outcome=autofill_outcome,
                 constellation=autofill_constellation,
+                perks=autofill_perks,
             )
             updated.append(roll)
         self._write_chapter_roll_overrides(before)
@@ -964,12 +968,19 @@ class CurationPersistence:
         *,
         outcome: str | None,
         constellation: str | None,
+        perks: list[str] | None,
     ) -> None:
         if outcome in {"hit", "miss"} and roll.get("outcome") in (None, ""):
             roll["outcome"] = outcome
             roll["skipped"] = False
         if constellation and roll.get("constellation") in (None, ""):
             roll["constellation"] = constellation
+        clean_perks = [
+            str(perk).strip() for perk in (perks or []) if str(perk).strip()
+        ]
+        if clean_perks and not roll.get("perks"):
+            roll["perks"] = clean_perks
+            roll["skipped"] = False
 
     def append_roll_evidence_records(self, records: list[dict]) -> list[dict]:
         """Append distinct quote evidence records in one journaled mutation."""

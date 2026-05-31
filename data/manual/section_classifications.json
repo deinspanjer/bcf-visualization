@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
   "_count": 508,
-  "_mc_sections": 146,
-  "_non_mc_sections": 362,
+  "_mc_sections": 147,
+  "_non_mc_sections": 361,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Explicit curator section eligibility toggles and curated span_overrides from existing entries are preserved across regeneration.",
   "classifications": {
     "1@0": {
@@ -5135,8 +5135,8 @@
       "chapter_num": "83.1",
       "section_index": 1,
       "header": "83.1 Interlude Alec - Addendum Joe",
-      "counts_for_cp": false,
-      "reason": "chapter-title interlude 'alec'"
+      "counts_for_cp": true,
+      "reason": "curator toggle: eligible (was: chapter-title interlude 'alec')"
     },
     "83.1@2": {
       "chapter_num": "83.1",

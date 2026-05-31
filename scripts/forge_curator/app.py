@@ -49,8 +49,9 @@ from scripts.forge_curator.quote_autofill import (
     CONSTELLATION_NAME_PATTERN,
     KNOWN_CONSTELLATIONS,
     classify_quote_autofill,
+    single_constellation_reference,
 )
-from scripts.forge_curator.state import ChapterState, ForgeCuratorState
+from scripts.forge_curator.state import ForgeCuratorState
 from scripts.eligibility_spans import section_cp_word_count, section_span_overrides
 
 STATE_FILE = MANUAL / ".forge_curator_state.json"
@@ -4010,17 +4011,16 @@ class ForgeCuratorApp(App):
                 f"({roll_ref}) "
                 f"at CP {_fmt_int(word_position)}"
             )
+        available = roll.get("available_cp")
         if outcome == "miss":
-            min_cost = roll.get("miss_cost_estimate") or roll.get("rolled_perk_cost")
-            possible = self._miss_possible_suffix(roll, min_cost)
+            possible = self._miss_possible_suffix(roll, available)
             perk_text = (
-                f"missed >= {int(min_cost)} CP{possible}"
-                if min_cost is not None else "missed"
+                f"missed > {int(available)} CP{possible}"
+                if available is not None else "missed"
             )
             detail_lines = [f"    {constel} - {perk_text}"]
         else:
             detail_lines = self._roll_hit_detail_lines(roll)
-        available = roll.get("available_cp")
         available_part = (
             f"Avail CP {int(available)}" if available is not None else "Avail CP ?"
         )
@@ -4228,8 +4228,8 @@ class ForgeCuratorApp(App):
             return f"S{int(roll['source_ordinal'])}"
         return "S?"
 
-    def _miss_possible_suffix(self, roll: dict, min_cost) -> str:
-        if min_cost is None:
+    def _miss_possible_suffix(self, roll: dict, available_cp) -> str:
+        if available_cp is None:
             return ""
         constellation = roll.get("constellation")
         if not constellation:
@@ -4251,7 +4251,7 @@ class ForgeCuratorApp(App):
         )
         candidates = [
             p for p in before.get(str(constellation), [])
-            if p.get("cost") is not None and int(p["cost"]) >= int(min_cost)
+            if p.get("cost") is not None and int(p["cost"]) > int(available_cp)
         ]
         if not candidates:
             return ""
@@ -6171,6 +6171,59 @@ class ForgeCuratorApp(App):
             parts.append(f"source ch {source_chapter}")
         return ", ".join(parts)
 
+    def _quote_autofill_metadata(self, chapter_num: str, quote: str) -> dict:
+        suggestion = classify_quote_autofill(quote)
+        outcome = suggestion.outcome if suggestion is not None else None
+        constellation = (
+            suggestion.constellation
+            if suggestion is not None
+            else single_constellation_reference(quote)
+        )
+        perks: list[str] | None = None
+        matched_perk = self._quote_obtained_perk_match(chapter_num, quote)
+        if matched_perk is not None:
+            outcome = "hit"
+            perks = [
+                str(perk).strip()
+                for perk in (matched_perk.get("perks") or [])
+                if str(perk).strip()
+            ]
+            if matched_perk.get("constellation") not in (None, ""):
+                constellation = str(matched_perk["constellation"])
+        return {
+            "outcome": outcome,
+            "constellation": constellation,
+            "perks": perks,
+        }
+
+    def _quote_obtained_perk_match(self, chapter_num: str, quote: str) -> dict | None:
+        matches: list[dict] = []
+        for row in self._obtained_perk_source_rows(chapter_num, []):
+            names = [
+                str(name).strip()
+                for name in (
+                    row.get("perks")
+                    or [row.get("rolled_perk_name")]
+                    or []
+                )
+                if str(name).strip()
+            ]
+            if any(
+                self._quote_contains_exact_perk_name(quote, name)
+                for name in names
+            ):
+                matches.append(row)
+        return matches[0] if len(matches) == 1 else None
+
+    @staticmethod
+    def _quote_contains_exact_perk_name(quote: str, perk_name: str) -> bool:
+        if not perk_name:
+            return False
+        pattern = re.compile(
+            r"(?<![A-Za-z0-9])" + re.escape(perk_name) + r"(?![A-Za-z0-9])"
+        )
+        return pattern.search(quote or "") is not None
+
     def _action_save_quote(self, chapter_num: str) -> None:
         quote = self._selected_quote("save quote")
         if quote is None:
@@ -6183,15 +6236,16 @@ class ForgeCuratorApp(App):
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
         idx = int(target["target_roll_index"])
         mention_word = self._cp_earning_word_offset(target_word or 0)
-        autofill = classify_quote_autofill(quote)
+        autofill = self._quote_autofill_metadata(chapter_num, quote)
         self.persistence.append_roll_evidence_at_index(
             target_chapter,
             idx,
             text=quote,
             mention_chapter_num=chapter_num,
             mention_word_position=mention_word,
-            autofill_outcome=autofill.outcome if autofill else None,
-            autofill_constellation=autofill.constellation if autofill else None,
+            autofill_outcome=autofill["outcome"],
+            autofill_constellation=autofill["constellation"],
+            autofill_perks=autofill["perks"],
         )
         self._clear_prose_selection()
         self._post_curation_refresh(f"roll #{idx} quote saved ({len(quote)} chars)")
@@ -6228,7 +6282,7 @@ class ForgeCuratorApp(App):
             return
         target_word = self._selected_quote_start_word_index()
         mention_word = self._cp_earning_word_offset(target_word or 0)
-        autofill = classify_quote_autofill(quote)
+        autofill = self._quote_autofill_metadata(chapter_num, quote)
         rolls = self._current_chapter_roll_evidence_picker_rolls(cs)
         if not rolls:
             self._flash("save quote: no rolls in this chapter")
@@ -6264,8 +6318,9 @@ class ForgeCuratorApp(App):
                     mention_chapter_num=chapter_num,
                     mention_word_position=mention_word,
                     display_position_policy=display_position_policy,
-                    autofill_outcome=autofill.outcome if autofill else None,
-                    autofill_constellation=autofill.constellation if autofill else None,
+                    autofill_outcome=autofill["outcome"],
+                    autofill_constellation=autofill["constellation"],
+                    autofill_perks=autofill["perks"],
                 )
             self._post_curation_refresh(
                 f"quote saved to rolls {', '.join(target_labels)}"
@@ -6309,6 +6364,7 @@ class ForgeCuratorApp(App):
             return
         target_chapter = str(target["target_chapter_num"])
         target_index = int(target["target_roll_index"])
+        autofill = self._quote_autofill_metadata(chapter_num, quote)
         self.persistence.append_roll_evidence_at_index(
             target_chapter,
             target_index,
@@ -6316,6 +6372,9 @@ class ForgeCuratorApp(App):
             mention_chapter_num=chapter_num,
             mention_word_position=mention_word,
             display_position_policy=display_position_policy,
+            autofill_outcome=autofill["outcome"],
+            autofill_constellation=autofill["constellation"],
+            autofill_perks=autofill["perks"],
         )
         self._post_curation_refresh(
             f"quote saved to R{global_roll_number} "

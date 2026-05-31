@@ -304,6 +304,37 @@ def test_save_quote_action_autofills_only_unset_roll_fields(
     ]
 
 
+def test_save_quote_action_autofills_single_constellation_without_outcome_language(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    monkeypatch.setattr(
+        app,
+        "_selected_quote",
+        lambda _action_name: "the Capstone constellation shimmered nearby",
+    )
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 45)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    app._post_curation_refresh = lambda _message: None
+
+    app._action_save_quote("2")
+
+    roll = app.persistence.chapter_roll_overrides[
+        "chapter_roll_overrides"
+    ]["2"]["rolls"][1]
+    assert roll["constellation"] == "Capstone"
+    assert roll.get("outcome") is None
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "the Capstone constellation shimmered nearby",
+            "mention_chapter_num": "2",
+            "mention_word_position": 45,
+        }
+    ]
+
+
 def test_save_quote_action_preserves_existing_manual_roll_fields(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1196,6 +1227,64 @@ def test_save_quote_multi_autofills_selected_targets_without_overwriting_manual_
             "text": "The Magic constellation missed a connection",
             "mention_chapter_num": "2",
             "mention_word_position": 24,
+        }
+    ]
+
+
+def test_save_quote_multi_associates_exact_obtained_perk_match_as_hit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _write_json(fixture.derived / "obtained_perks.json", {
+        "perks": [
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "Lofty Loft",
+                "jump": "Personal Reality",
+                "cost": 100,
+                "free": False,
+                "constellation": "Personal Reality",
+            }
+        ]
+    })
+    app = fixture.loaded_app("2")
+    monkeypatch.setattr(
+        app,
+        "_selected_quote",
+        lambda _action_name: (
+            "I chose Lofty Loft from the Personal Reality constellation."
+        ),
+    )
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 45)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    app._post_curation_refresh = lambda _message: None
+    screens: list[RollEvidencePicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_save_quote_multi("2")
+
+    assert [type(screen) for screen in screens] == [RollEvidencePicker]
+    target_index = next(
+        index
+        for index, roll in enumerate(screens[0]._rolls, start=1)
+        if roll.get("target_chapter_num") == "2"
+        and roll.get("target_roll_index") == 2
+    )
+    screens[0]._on_confirm([target_index], None)
+
+    roll = app.persistence.chapter_roll_overrides[
+        "chapter_roll_overrides"
+    ]["2"]["rolls"][1]
+    assert roll["outcome"] == "hit"
+    assert roll["constellation"] == "Personal Reality"
+    assert roll["perks"] == ["Lofty Loft"]
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "I chose Lofty Loft from the Personal Reality constellation.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 45,
         }
     ]
 

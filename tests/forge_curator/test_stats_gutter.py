@@ -704,7 +704,7 @@ def test_roll_stat_line_does_not_invent_free_perk_from_manual_name(
     assert "Missing Freebie" not in line
 
 
-def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost(
+def test_miss_line_reports_available_cp_lower_bound_and_matching_candidates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -718,7 +718,7 @@ def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost
                     "by_constellation": {
                         "Magic": [
                             {"name": "Cheap Fixture", "cost": 200},
-                            {"name": "Exact Fixture", "cost": 400},
+                            {"name": "Odd Fixture", "cost": 333},
                             {"name": "Higher Fixture", "cost": 600},
                         ]
                     }
@@ -734,13 +734,13 @@ def test_miss_possible_suffix_counts_all_outstanding_perks_at_or_above_miss_cost
             "outcome": "miss",
             "constellation": "Magic",
             "available_cp": 300,
-            "miss_cost_estimate": 400,
+            "miss_cost_estimate": 600,
             "mechanical_chapter_num": "1",
         },
         " ",
     )
 
-    assert "missed >= 400 CP (2 possible)" in line
+    assert "missed > 300 CP (2 possible)" in line
 
 
 def test_roll_stat_line_does_not_render_future_narrative_status_for_predicted_slots(
