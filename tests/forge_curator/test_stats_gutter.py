@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
 from scripts.forge_curator.app import StatsPanel
-from tests.helpers.forge_curator_fixture import forge_curator_fixture
+from tests.helpers.forge_curator_fixture import forge_curator_fixture, _write_json
 
 
 def _render_stats_text(app) -> tuple[str, StatsPanel]:
@@ -126,6 +127,60 @@ def test_prior_curated_roll_without_source_identity_does_not_leak_into_evidence_
     )
 
 
+def test_stats_evidence_omits_prior_unassigned_slot_quotes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    roll_facts["rolls"][0].update({
+        "source": "roll_outcomes",
+        "source_kind": "interpolated",
+        "source_ordinal": None,
+        "source_label": None,
+        "source_chapter_num": None,
+        "source_chapter_ordinal": None,
+        "source_roll_label": None,
+        "association_source": "none",
+    })
+    _write_json(roll_facts_path, roll_facts)
+    _write_json(
+        fixture.manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "1": {
+                    "rolls": [
+                        {
+                            "evidence_quotes": [
+                                {
+                                    "text": "prior unresolved quote",
+                                    "mention_chapter_num": "1",
+                                    "mention_word_position": 5,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+    )
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+
+    assert ("1", 1) in [
+        (row["target_chapter_num"], row["target_roll_index"])
+        for row in app._source_assignment_target_rows(cs)
+    ]
+
+    evidence = app._evidence_block(cs)
+
+    assert "Q1 against ch 1 #1 (P1)" not in evidence
+    assert "mention: ch 1 word 5" not in evidence
+    assert "Q1 against ch 2 #1" in evidence
+
+
 def test_stats_panel_groups_prior_visible_rolls_before_current_chapter_rolls(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -229,7 +284,14 @@ def test_stats_registers_roll_targets_for_curated_and_open_slots(
     app = fixture.loaded_app("2")
 
     text, stats = _render_stats_text(app)
-    targets = list(stats._roll_line_targets.values())
+    target_keys = []
+    targets = []
+    for target in stats._roll_line_targets.values():
+        key = app._roll_target_key(target)
+        if key in target_keys:
+            continue
+        target_keys.append(key)
+        targets.append(target)
 
     assert "Rolls" in text
     assert [

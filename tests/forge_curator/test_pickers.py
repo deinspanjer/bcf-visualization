@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+from textual.app import App
 from textual.containers import Container
 from textual.widgets import Button, OptionList, Static
 
@@ -541,13 +542,84 @@ def test_perk_picker_space_action_toggles_focused_perk() -> None:
         ],
         on_confirm=lambda _names: None,
     )
-    button = Button("Fashion  200", name="Fashion")
+    button = Button("( ) Fashion  200", id="p_1", name="Fashion")
     picker.focused = button
 
     picker.action_toggle_focused_perk()
 
     assert picker._selected == {"Fashion"}
     assert "selected" in button.classes
+    assert str(button.label) == "(x) Fashion  200"
+
+
+@pytest.mark.asyncio
+async def test_perk_picker_uses_perk_name_from_derived_perks() -> None:
+    app = App()
+    picker = PerkPicker(
+        perks=[
+            {
+                "perk_name": "Lofty Loft",
+                "cost": 100,
+            },
+            {
+                "perk_name": "Underside",
+                "cost": 200,
+            },
+        ],
+        on_confirm=lambda _names: None,
+    )
+
+    async with app.run_test(size=(100, 30)) as pilot:
+        app.push_screen(picker)
+        await pilot.pause()
+
+        perk_buttons = [
+            button for button in app.screen.query(Button)
+            if button.id != "confirm"
+        ]
+
+    assert [button.name for button in perk_buttons] == [
+        "Lofty Loft",
+        "Underside",
+    ]
+    assert [str(button.label) for button in perk_buttons] == [
+        "( ) Lofty Loft  100",
+        "( ) Underside  200",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_perk_picker_marks_initial_selected_perks() -> None:
+    app = App()
+    picker = PerkPicker(
+        perks=[
+            {
+                "perk_name": "Lofty Loft",
+                "cost": 100,
+            },
+            {
+                "perk_name": "Underside",
+                "cost": 200,
+            },
+        ],
+        initial_selected=["Lofty Loft"],
+        on_confirm=lambda _names: None,
+    )
+
+    async with app.run_test(size=(100, 30)) as pilot:
+        app.push_screen(picker)
+        await pilot.pause()
+
+        perk_buttons = [
+            button for button in app.screen.query(Button)
+            if button.id != "confirm"
+        ]
+
+    assert picker._selected == {"Lofty Loft"}
+    assert [str(button.label) for button in perk_buttons] == [
+        "(x) Lofty Loft  100",
+        "( ) Underside  200",
+    ]
 
 
 @pytest.mark.asyncio

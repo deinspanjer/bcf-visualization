@@ -30,6 +30,7 @@ from scripts.forge_curator.app import (
     StatsPanel,
     ActionsPanel,
     RegexBar,
+    PerkPicker,
     GutterPanel,
     GutterMark,
     GLYPH_CSS_COLORS,
@@ -640,6 +641,98 @@ def test_stats_click_selects_roll_action_target(tmp_path: Path) -> None:
     selected = app._selected_roll_target_if_visible()
     assert selected is not None
     assert selected["display_kind"] == "predicted_slot"
+
+
+def test_stats_click_selects_actual_visible_roll_line(tmp_path: Path) -> None:
+    app = _loaded_app("79", tmp_path)
+    stats = StatsPanel()
+    stats.render_stats(app.state, app)
+    rendered = getattr(stats, "_renderable", None) or stats.render()
+    lines = str(rendered).splitlines()
+    visible_roll_line = next(
+        line for line, text in enumerate(lines)
+        if "# 2 (R520/P548)" in text
+    )
+
+    stats.on_click(_FakeMouseEvent(0, visible_roll_line))
+
+    selected = app._selected_roll_target_if_visible()
+    assert selected is not None
+    assert selected["target_roll_index"] == 2
+    assert selected["roll_label"] == "R520"
+
+
+@pytest.mark.asyncio
+async def test_stats_click_refocuses_prose_for_motion_and_space_chords() -> None:
+    app = ForgeCuratorApp(start_chapter="79")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        stats = app.query_one("#stats", StatsPanel)
+        rendered = getattr(stats, "_renderable", None) or stats.render()
+        visible_roll_line = next(
+            line for line, text in enumerate(str(rendered).splitlines())
+            if "# 2 (R520/P548)" in text
+        )
+
+        await pilot.click("#stats", offset=(2, visible_roll_line))
+        await pilot.pause()
+
+        selected = app._selected_roll_target_if_visible()
+        assert selected is not None
+        assert selected["target_roll_index"] == 2
+        assert isinstance(app.focused, PassageView)
+
+
+@pytest.mark.asyncio
+async def test_stats_click_jumps_prose_to_selected_roll_location() -> None:
+    app = ForgeCuratorApp(start_chapter="79")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        stats = app.query_one("#stats", StatsPanel)
+        rendered = getattr(stats, "_renderable", None) or stats.render()
+        visible_roll_line = next(
+            line for line, text in enumerate(str(rendered).splitlines())
+            if "# 2 (R520/P548)" in text
+        )
+        target = stats._roll_line_targets[visible_roll_line]
+        expected_word = app._roll_marker_word_index_from_cp(
+            app.state.chapter,
+            app._roll_action_word_position(app.state.chapter, target),
+        )
+        assert expected_word is not None
+
+        await pilot.click("#stats", offset=(2, visible_roll_line))
+        await pilot.pause()
+
+        assert app.state.chapter.cursor_word_index == expected_word
+        prose = app.query_one("#prose", PassageView)
+        assert prose.cursor == app.state.char_at_word_index(expected_word)
+
+
+@pytest.mark.asyncio
+async def test_click_roll_then_space_p_opens_perk_picker_for_selected_roll() -> None:
+    app = ForgeCuratorApp(start_chapter="79")
+    async with app.run_test(size=(180, 50)) as pilot:
+        await pilot.pause()
+        stats = app.query_one("#stats", StatsPanel)
+        rendered = getattr(stats, "_renderable", None) or stats.render()
+        visible_roll_line = next(
+            line for line, text in enumerate(str(rendered).splitlines())
+            if "# 2 (R520/P548)" in text
+        )
+
+        stats.on_click(_FakeMouseEvent(0, visible_roll_line))
+        await pilot.press("space", "p")
+        await pilot.pause()
+
+        selected = app._selected_roll_target_if_visible()
+        assert selected is not None
+        assert selected["target_roll_index"] == 2
+        assert isinstance(app.screen, PerkPicker)
+        assert [
+            button.name for button in app.screen.query("Button")
+            if button.id != "confirm"
+        ][:2] == ["Lofty Loft", "Underside"]
 
 
 def test_curated_evidence_distance_uses_visualized_quote_then_first_quote(

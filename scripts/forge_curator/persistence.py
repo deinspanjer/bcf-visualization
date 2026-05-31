@@ -811,6 +811,8 @@ class CurationPersistence:
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
         display_position_policy: str | None = None,
+        autofill_outcome: str | None = None,
+        autofill_constellation: str | None = None,
     ) -> dict:
         before = deepcopy(self.chapter_roll_overrides)
         roll = self.get_or_create_roll_at_index(chapter_num, index)
@@ -825,6 +827,11 @@ class CurationPersistence:
             if mention_word_position is not None:
                 roll["mention_word_position"] = int(mention_word_position)
             roll["display_position_policy"] = display_position_policy
+        self._apply_quote_autofill_if_unset(
+            roll,
+            outcome=autofill_outcome,
+            constellation=autofill_constellation,
+        )
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "append_roll_evidence_at_index",
@@ -845,6 +852,8 @@ class CurationPersistence:
         mention_chapter_num: str | None = None,
         mention_word_position: int | None = None,
         display_position_policy: str | None = None,
+        autofill_outcome: str | None = None,
+        autofill_constellation: str | None = None,
     ) -> list[dict]:
         """Append the same curated quote to multiple chapter-local rolls.
 
@@ -869,6 +878,11 @@ class CurationPersistence:
                 if mention_word_position is not None:
                     roll["mention_word_position"] = int(mention_word_position)
                 roll["display_position_policy"] = display_position_policy
+            self._apply_quote_autofill_if_unset(
+                roll,
+                outcome=autofill_outcome,
+                constellation=autofill_constellation,
+            )
             updated.append(roll)
         self._write_chapter_roll_overrides(before)
         self._append_journal(
@@ -883,6 +897,19 @@ class CurationPersistence:
             },
         )
         return updated
+
+    @staticmethod
+    def _apply_quote_autofill_if_unset(
+        roll: dict,
+        *,
+        outcome: str | None,
+        constellation: str | None,
+    ) -> None:
+        if outcome in {"hit", "miss"} and roll.get("outcome") in (None, ""):
+            roll["outcome"] = outcome
+            roll["skipped"] = False
+        if constellation and roll.get("constellation") in (None, ""):
+            roll["constellation"] = constellation
 
     def append_roll_evidence_records(self, records: list[dict]) -> list[dict]:
         """Append distinct quote evidence records in one journaled mutation."""
@@ -948,6 +975,95 @@ class CurationPersistence:
         self._write_chapter_roll_overrides(before)
         self._append_journal(
             "append_roll_evidence_records",
+            self.chapter_roll_overrides_path,
+            clean_records[0]["chapter_num"],
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"records": extras},
+        )
+        return updated
+
+    def apply_roll_lineup_records(self, records: list[dict]) -> list[dict]:
+        """Apply reviewed roll lineup records in one journaled mutation."""
+        clean_records: list[dict] = []
+        for record in records:
+            try:
+                chapter_num = str(record["chapter_num"])
+                index = int(record["index"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if index <= 0:
+                continue
+            outcome = record.get("outcome")
+            if outcome is not None:
+                outcome = str(outcome)
+                if outcome not in {"hit", "miss"}:
+                    outcome = None
+            perks = record.get("perks")
+            if perks is not None:
+                perks = [str(perk) for perk in perks if str(perk).strip()]
+            clean_records.append({
+                "chapter_num": chapter_num,
+                "index": index,
+                "outcome": outcome,
+                "constellation": (
+                    str(record["constellation"])
+                    if record.get("constellation") is not None else None
+                ),
+                "perks": perks,
+                "text": str(record.get("text") or ""),
+                "mention_chapter_num": (
+                    str(record["mention_chapter_num"])
+                    if record.get("mention_chapter_num") is not None else None
+                ),
+                "mention_word_position": record.get("mention_word_position"),
+                "display_position_policy": record.get("display_position_policy"),
+            })
+        if not clean_records:
+            return []
+        before = deepcopy(self.chapter_roll_overrides)
+        updated: list[dict] = []
+        extras: list[dict] = []
+        for item in clean_records:
+            roll = self.get_or_create_roll_at_index(item["chapter_num"], item["index"])
+            if item["outcome"] is not None:
+                roll["outcome"] = item["outcome"]
+                roll["skipped"] = False
+            if item["constellation"] is not None:
+                roll["constellation"] = item["constellation"]
+            if item["perks"] is not None:
+                roll["perks"] = list(item["perks"])
+                if item["perks"]:
+                    roll["skipped"] = False
+            quote = None
+            if item["text"].strip():
+                quote = self._quote_record(
+                    item["text"],
+                    item["mention_chapter_num"],
+                    item["mention_word_position"],
+                )
+                quotes = roll.setdefault("evidence_quotes", [])
+                was_empty = len(quotes) == 0
+                if quote not in quotes:
+                    quotes.append(quote)
+                if was_empty and item["display_position_policy"] is not None:
+                    if item["mention_chapter_num"] is not None:
+                        roll["mention_chapter_num"] = item["mention_chapter_num"]
+                    if item["mention_word_position"] is not None:
+                        roll["mention_word_position"] = int(item["mention_word_position"])
+                    roll["display_position_policy"] = item["display_position_policy"]
+            updated.append(roll)
+            extras.append({
+                "chapter_num": item["chapter_num"],
+                "index": item["index"],
+                "outcome": item["outcome"],
+                "constellation": item["constellation"],
+                "perks": item["perks"],
+                "quote": quote,
+            })
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "apply_roll_lineup_records",
             self.chapter_roll_overrides_path,
             clean_records[0]["chapter_num"],
             before,

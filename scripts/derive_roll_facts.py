@@ -751,6 +751,22 @@ def _apply_metadata(payload: dict, entry: dict | None, chapter_num: str) -> None
         payload["constellation_revealed"] = True
 
 
+def _fallback_projection_override(entry: dict | None) -> dict | None:
+    if not isinstance(entry, dict):
+        return None
+    if entry.get("skipped") not in (None, False):
+        return None
+    if entry.get("source_ordinal") is not None:
+        return None
+    if entry.get("curator_added"):
+        return None
+    if entry.get("perks"):
+        return None
+    if entry.get("word_position") not in (None, "", []):
+        return None
+    return entry
+
+
 def _resolution_for_issue(override: dict | None, issue_code: str) -> dict | None:
     resolution = (override or {}).get("model_validation_resolution") or {}
     if resolution.get("status") != "resolved":
@@ -1471,6 +1487,20 @@ def _direct_override_rows(
                         "raw": None,
                         "_source_identity_inferred": False,
                     })
+                elif isinstance(entry, dict):
+                    out_rows.append({
+                        "_source_idx": source_idx,
+                        "_override_origin": override_idx,
+                        "_override_direct": True,
+                        "kind": "skipped",
+                        "perks": [],
+                        "banked_before": None,
+                        "banked_after": None,
+                        "constellation": None,
+                        "constellation_revealed": False,
+                        "roll_number": None,
+                        "raw": None,
+                    })
                 continue
             payload = {
                 "_source_idx": source_idx,
@@ -1512,6 +1542,7 @@ def _direct_override_rows(
             else "hit" if entry.get("perks") else "miss"
         )
         roll_perks: list[dict] = []
+        matched_obtained_perks: list[dict] = []
         if entry.get("perks"):
             for name in entry.get("perks") or []:
                 candidates = obtained_lookup.get((mention_chapter, _norm_name(name))) or []
@@ -1523,7 +1554,32 @@ def _direct_override_rows(
                         f"references {name!r}, but obtained_perks has no matching "
                         f"perk in chapter {mention_chapter} or {chapter_num}"
                     )
-                roll_perks.append(_obtained_as_roll_perk(candidates[0]))
+                matched = candidates[0]
+                matched_obtained_perks.append(matched)
+                roll_perks.append(_obtained_as_roll_perk(matched))
+            seen_free_names = {
+                _norm_name(perk.get("name"))
+                for perk in roll_perks
+                if perk.get("free")
+            }
+            all_obtained = [
+                perk
+                for candidates in obtained_lookup.values()
+                for perk in candidates
+            ]
+            for matched in matched_obtained_perks:
+                for perk in all_obtained:
+                    if not perk.get("free"):
+                        continue
+                    if str(perk.get("chapter_num")) != str(matched.get("chapter_num")):
+                        continue
+                    if perk.get("epub_sequence") != matched.get("epub_sequence"):
+                        continue
+                    free_name = _norm_name(perk.get("perk_name") or perk.get("name"))
+                    if free_name in seen_free_names:
+                        continue
+                    seen_free_names.add(free_name)
+                    roll_perks.append(_obtained_as_roll_perk(perk))
         elif outcome == "hit":
             roll_perks = list(template.get("perks") or [])
 
@@ -2128,7 +2184,13 @@ def main() -> None:
                     if banked_after is None and row.get("_curator_added"):
                         banked_after = available_cp
                     elif banked_after is None:
-                        banked_after = assignment.banked_cp_after_roll
+                        if outcome == "hit" and purchased_perk_cost_total is not None:
+                            banked_after = max(
+                                0,
+                                int(available_cp) - int(purchased_perk_cost_total),
+                            )
+                        else:
+                            banked_after = assignment.banked_cp_after_roll
                 predicted_ordinal = (
                     int(pred_slot["roll_number"]) if pred_slot is not None else None
                 )
@@ -2356,10 +2418,16 @@ def main() -> None:
         sched_assignments = (
             sched.assignments if sched and sched.feasible else None
         )
+        chapter_override = multi_overrides.get(chapter_num) or {}
+        fallback_override_rolls = chapter_override.get("rolls") or []
         # Build a fast lookup: which "hit_index" (in the scheduler's hit
         # list, which is paid-acquisitions in epub_sequence) corresponds
         # to each slot.
         for seq, (source_idx, row) in enumerate(rows, start=1):
+            manual_entry = _fallback_projection_override(
+                fallback_override_rolls[seq - 1]
+                if seq - 1 < len(fallback_override_rolls) else None
+            )
             roll_number = row.get("roll_number")
             # Evidence is joined later by (chapter, slot_index) using the
             # matched pred_slot. Initialize lazily.
@@ -2373,6 +2441,11 @@ def main() -> None:
                 outcome = assignment.outcome
             else:
                 outcome = "hit" if row.get("outcome") == "hit" else "miss"
+            if (
+                manual_entry is not None
+                and manual_entry.get("outcome") in {"hit", "miss"}
+            ):
+                outcome = str(manual_entry["outcome"])
             # Pick perk source:
             # - If the scheduler assigned a hit, use the paid_perks list
             #   from sched_inp.hits[assignment.hit_index].
@@ -2450,7 +2523,15 @@ def main() -> None:
                 if available_cp is None:
                     available_cp = int_or_none(row.get("roll_trigger_cp_threshold"))
                 banked_cp_after = int_or_none(row.get("banked_cp_after_roll"))
-            constellation = paid_meta["constellation"] if paid_meta else None
+            manual_constellation = (
+                manual_entry.get("constellation")
+                if manual_entry is not None
+                and manual_entry.get("constellation") is not None
+                else None
+            )
+            constellation = (
+                paid_meta["constellation"] if paid_meta else manual_constellation
+            )
             miss_estimate = (
                 miss_cost_estimate(
                     outstanding_by_chapter,
@@ -2466,6 +2547,13 @@ def main() -> None:
                 if assigned_hit is not None and assigned_hit.mention_chapter_num
                 else chapter_num
             )
+            if (
+                manual_entry is not None
+                and manual_entry.get("mention_chapter_num") is not None
+            ):
+                owner_chapter_num = _norm_chapter(
+                    manual_entry.get("mention_chapter_num"), chapter_num
+                )
             record = roll_base(
                 roll_key=f"interpolated:{source_idx:04d}",
                 roll_number=roll_number,
@@ -2551,6 +2639,19 @@ def main() -> None:
                 assigned_hit.mention_word_position
                 if assigned_hit is not None else None
             )
+            evidence_quotes = (
+                assigned_hit.evidence_quotes
+                if assigned_hit is not None else []
+            )
+            constellation_revealed = False
+            if manual_entry is not None:
+                if manual_entry.get("display_position_policy") is not None:
+                    policy = manual_entry.get("display_position_policy")
+                if manual_entry.get("mention_word_position") is not None:
+                    mention_word_position = manual_entry.get("mention_word_position")
+                evidence_quotes = _evidence_quotes(manual_entry)
+                if manual_entry.get("constellation") is not None:
+                    constellation_revealed = True
             if (
                 policy in {"mention", "source_marker"}
                 and mention_word_position is not None
@@ -2607,7 +2708,7 @@ def main() -> None:
                 "source_cumulative_word_offset": None,
                 "visible_chapter_nums": visible_chapters,
                 "constellation": constellation,
-                "constellation_revealed": False,
+                "constellation_revealed": constellation_revealed,
                 "available_cp": available_cp,
                 "banked_cp_after_roll": banked_cp_after,
                 "purchased_perk_id": paid_meta["id"] if paid_meta else None,
@@ -2623,10 +2724,7 @@ def main() -> None:
                     purchased_perk_cost_total if paid_meta else miss_estimate
                 ),
                 "miss_cost_estimate": miss_estimate,
-                "evidence_quotes": (
-                    assigned_hit.evidence_quotes
-                    if assigned_hit is not None else []
-                ),
+                "evidence_quotes": evidence_quotes,
                 "raw": None,
                 "roll_sequence_in_chapter": seq,
                 "rolls_in_chapter": total,

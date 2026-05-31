@@ -45,6 +45,11 @@ from scripts.forge_curator.data_loader import MANUAL, ROOT
 from scripts.forge_curator.miss_quote_matcher import find_miss_quote_candidates
 from scripts.forge_curator.passage_view import PassageView as BasePassageView
 from scripts.forge_curator.persistence import CurationPersistence
+from scripts.forge_curator.quote_autofill import (
+    CONSTELLATION_NAME_PATTERN,
+    KNOWN_CONSTELLATIONS,
+    classify_quote_autofill,
+)
 from scripts.forge_curator.state import ChapterState, ForgeCuratorState
 from scripts.eligibility_spans import section_cp_word_count, section_span_overrides
 
@@ -52,17 +57,6 @@ STATE_FILE = MANUAL / ".forge_curator_state.json"
 # Fixed location for the TUI snapshot. Repeated use overwrites this file so
 # "look at the snapshot" can mean one stable artifact.
 SNAPSHOT_PATH = MANUAL / ".forge_curator_snapshot.json"
-
-KNOWN_CONSTELLATIONS = [
-    "Alchemy", "Capstone", "Clothing", "Crafting", "Knowledge",
-    "Magic", "Magitech", "Personal Reality", "Quality",
-    "Resources and Durability", "Size", "Time", "Toolkits", "Vehicles",
-]
-CONSTELLATION_NAME_PATTERN = re.compile(
-    r"(?<![A-Za-z])(?:"
-    + "|".join(re.escape(name) for name in sorted(KNOWN_CONSTELLATIONS, key=len, reverse=True))
-    + r")(?![A-Za-z])"
-)
 
 try:
     # Imported lazily so the top-level module remains usable in tests
@@ -506,7 +500,10 @@ class StatsPanel(Static):
             app = getattr(self, "_render_app", None)
             if app is not None:
                 app._select_roll_target(target)
-                self.render_stats(app.state, app)
+                try:
+                    app._jump_to_roll_target(target)
+                except Exception:
+                    self.render_stats(app.state, app)
                 event.stop()
 
     def render_stats(self, state: ForgeCuratorState, app: "ForgeCuratorApp") -> None:
@@ -589,7 +586,6 @@ class StatsPanel(Static):
             roll for roll in chapter_rolls if not _is_prior_roll(roll)
         ]
 
-        self._roll_line_targets: dict[int, dict] = {}
         pre_roll_body = (
             f"[bold]Chapter[/bold]\n"
             f"{title_block}\n"
@@ -621,54 +617,57 @@ class StatsPanel(Static):
             f"    total {_fmt_int(cp_stats['spent_total'])}\n"
             f"    chapter {_fmt_int(cp_stats['spent_chapter'])}\n"
         )
-        line_cursor = len(pre_roll_body.splitlines())
+        body_lines = pre_roll_body.splitlines()
+        self._roll_line_targets: dict[int, dict] = {}
 
-        def _register_block_line(line: str, target: dict | None = None) -> str:
-            nonlocal line_cursor
+        def _append_blank_line() -> None:
+            body_lines.append("")
+
+        def _append_line(line: str) -> None:
+            body_lines.append(line)
+
+        def _append_roll_line(line: str, target: dict | None = None) -> None:
+            parts = line.splitlines() or [""]
+            start = len(body_lines)
+            body_lines.extend(parts)
             if target is not None:
-                self._roll_line_targets[line_cursor] = target
-            line_cursor += max(1, len(line.splitlines()))
-            return line
+                for offset in range(len(parts)):
+                    self._roll_line_targets[start + offset] = target
 
-        def _render_roll_lines(rolls: list[dict], *, dim_future_current: bool) -> list[str]:
-            lines: list[str] = []
+        def _append_block(block: str) -> None:
+            body_lines.extend(block.splitlines())
+
+        def _append_roll_lines(rolls: list[dict], *, dim_future_current: bool) -> None:
             if not rolls:
-                lines.append(_register_block_line("  (no same-chapter rolls)"))
-                return lines
+                _append_line("  (no same-chapter rolls)")
+                return
             for roll in rolls:
                 marker = "▸" if app._same_roll_target(roll, selected_or_current) else " "
                 line = app._format_roll_stat_line(roll, marker)
                 if dim_future_current and roll["word_position"] > cp_word_idx:
                     line = f"[dim]{line}[/]"
-                lines.append(_register_block_line(line, roll))
-            return lines
+                _append_roll_line(line, roll)
 
-        line_cursor += 2
-        prior_rolls_block = ""
         if prior_rolls:
-            prior_lines = _render_roll_lines(prior_rolls, dim_future_current=False)
-            prior_rolls_block = (
-                "\n\n[bold]Prior Chapter Rolls[/bold]\n"
-                f"{chr(10).join(prior_lines)}"
-            )
+            _append_blank_line()
+            _append_blank_line()
+            _append_line("[bold]Prior Chapter Rolls[/bold]")
+            _append_roll_lines(prior_rolls, dim_future_current=False)
 
-        line_cursor += 2
-        rolls_block = "\n".join(
-            _render_roll_lines(current_rolls, dim_future_current=True)
-        )
+        _append_blank_line()
+        _append_blank_line()
+        _append_line(f"[bold]Rolls[/bold] [dim]({app._rolls_header_count(cs)})[/]")
+        _append_roll_lines(current_rolls, dim_future_current=True)
 
         evidence_block = app._evidence_block(cs)
         perks_block = app._perks_this_chapter_block(cs)
-
-        body = (
-            pre_roll_body +
-            prior_rolls_block +
-            f"\n\n[bold]Rolls[/bold] [dim]({app._rolls_header_count(cs)})[/]\n"
-            f"{rolls_block}\n\n"
-            f"[bold]Evidence[/bold]\n{evidence_block}\n\n"
-            f"[bold]Perks this chapter[/bold]\n{perks_block}\n"
-        )
-        self.update(body)
+        _append_blank_line()
+        _append_line("[bold]Evidence[/bold]")
+        _append_block(evidence_block)
+        _append_blank_line()
+        _append_line("[bold]Perks this chapter[/bold]")
+        _append_block(perks_block)
+        self.update("\n".join(body_lines) + "\n")
 
 
 def _fmt_int(value: int | None) -> str:
@@ -1212,21 +1211,34 @@ class PerkPicker(ModalScreen):
         Binding("q", "dismiss_picker", "cancel"),
     ]
 
-    def __init__(self, perks: list[dict], on_confirm, **kw):
+    def __init__(
+        self,
+        perks: list[dict],
+        on_confirm,
+        initial_selected: list[str] | None = None,
+        **kw,
+    ):
         super().__init__(**kw)
         self._perks = perks
         self._on_confirm = on_confirm
-        self._selected: set[str] = set()
+        self._selected: set[str] = set(initial_selected or [])
+
+    def _perk_button_label(self, name: str, perk: dict) -> str:
+        marker = "(x)" if name in self._selected else "( )"
+        cost = perk.get("cost", "")
+        free = " (free)" if perk.get("free") else ""
+        return f"{marker} {name}  {cost}{free}"
 
     def compose(self) -> ComposeResult:
         with Container():
             yield Static("Select perks (click to toggle, Enter to confirm)", classes="title")
-            for p in self._perks:
-                name = p.get("name", "?")
-                cost = p.get("cost", "")
-                free = " (free)" if p.get("free") else ""
-                label = f"{name}  {cost}{free}"
-                yield Button(label, id=f"p_{abs(hash(name))}", name=name)
+            for idx, p in enumerate(self._perks, start=1):
+                name = _perk_display_label(p) or "?"
+                yield Button(
+                    self._perk_button_label(name, p),
+                    id=f"p_{idx}",
+                    name=name,
+                )
             yield Button("Confirm", id="confirm", variant="primary")
 
     @on(Button.Pressed)
@@ -1246,6 +1258,13 @@ class PerkPicker(ModalScreen):
         else:
             self._selected.add(name)
             button.add_class("selected")
+        if button.id:
+            try:
+                idx = int(str(button.id).removeprefix("p_"))
+            except ValueError:
+                return
+            if 1 <= idx <= len(self._perks):
+                button.label = self._perk_button_label(name, self._perks[idx - 1])
 
     def action_toggle_focused_perk(self) -> None:
         if isinstance(self.focused, Button) and self.focused.id != "confirm":
@@ -2128,10 +2147,13 @@ class BatchMissQuotePicker(ModalScreen):
         quote = str(match.get("quote_text") or "").replace("\n", " ")
         reasons = ", ".join(str(tag) for tag in match.get("reason_tags") or [])
         variant_label = self._variant_label(match)
+        proposal = str(match.get("proposal_summary") or "").strip()
+        proposal_part = f" | would set {proposal}" if proposal else ""
         return (
             f"{marker} {match.get('target_label')} | "
             f"{match.get('source_context')} | {match.get('mention_label')} "
-            f"({match.get('distance_label')}) | {variant_label} | {reasons}\n"
+            f"({match.get('distance_label')}){proposal_part} | "
+            f"{variant_label} | {reasons}\n"
             f"    {quote}"
         )
 
@@ -3579,6 +3601,60 @@ class ForgeCuratorApp(App):
             ),
         )
 
+    def _current_chapter_roll_evidence_picker_rolls(self, cs) -> list[dict]:
+        """Rows `_Q` may attach selected quote evidence to in this chapter."""
+        include_prior = self._chapter_has_real_source_rolls(cs.meta.chapter_num)
+        return [
+            roll for roll in self._roll_evidence_picker_rolls(cs)
+            if include_prior
+            or str(roll.get("target_chapter_num") or cs.meta.chapter_num)
+            == str(cs.meta.chapter_num)
+        ]
+
+    def _chapter_has_real_source_rolls(self, chapter_num: str) -> bool:
+        for roll in self._source_roll_picker_rows(str(chapter_num)):
+            if (
+                roll.get("source_kind") != "obtained_perk"
+                and roll.get("source_ordinal") is not None
+            ):
+                return True
+        return False
+
+    def _stats_evidence_rows(self, cs) -> list[dict]:
+        """Rows whose evidence belongs in the currently loaded stats block."""
+        unified = self._unified_rolls(cs)
+        current_rows: list[dict] = []
+        seen_targets: set[tuple] = set()
+        for roll in [*self._roll_slot_rows(cs, unified), *unified]:
+            if (
+                roll.get("display_kind") == "predicted_slot"
+                and roll.get("skipped")
+            ):
+                continue
+            key = self._roll_target_key(roll)
+            if key is not None and key in seen_targets:
+                continue
+            current_rows.append(roll)
+            if key is not None:
+                seen_targets.add(key)
+        return sorted(
+            current_rows,
+            key=lambda roll: (
+                self._chapter_sort_key(str(
+                    roll.get("target_chapter_num")
+                    or roll.get("mechanical_chapter_num")
+                    or cs.meta.chapter_num
+                )),
+                int(roll.get("target_roll_index") or roll.get("index") or 0),
+                int(
+                    roll.get("source_ordinal")
+                    or roll.get("roll_ordinal")
+                    or roll.get("predicted_ordinal")
+                    or 0
+                ),
+            ),
+        )
+
     def _open_predicted_slot_rolls(self, cs) -> list[dict]:
         occupied = {
             int(roll["target_roll_index"])
@@ -4105,7 +4181,7 @@ class ForgeCuratorApp(App):
     def _evidence_block(self, cs) -> str:
         rows: list[str] = []
         selected_quote_keys = self._selected_evidence_quote_keys()
-        for roll in self._roll_evidence_picker_rolls(cs):
+        for roll in self._stats_evidence_rows(cs):
             if self._is_source_evidence_roll(roll):
                 target_chapter = roll.get("target_chapter_num") or roll.get("mechanical_chapter_num")
                 target_index = roll.get("target_roll_index") or roll.get("index") or "?"
@@ -5010,7 +5086,45 @@ class ForgeCuratorApp(App):
             self._post_curation_refresh(
                 f"roll #{idx} perks: {', '.join(names) or '(none)'}"
             )
-        self.push_screen(PerkPicker(perks=perks, on_confirm=on_confirm))
+        self.push_screen(PerkPicker(
+            perks=perks,
+            initial_selected=self._selected_roll_perk_names(
+                target_chapter,
+                idx,
+                target,
+            ),
+            on_confirm=on_confirm,
+        ))
+
+    def _selected_roll_perk_names(
+        self,
+        chapter_num: str,
+        index: int,
+        target: dict,
+    ) -> list[str]:
+        manual_chapter = (
+            self.persistence.chapter_roll_overrides
+            .get("chapter_roll_overrides", {})
+            .get(str(chapter_num), {})
+        )
+        manual_rolls = manual_chapter.get("rolls") or []
+        if 0 <= int(index) - 1 < len(manual_rolls):
+            manual_roll = manual_rolls[int(index) - 1]
+            if isinstance(manual_roll, dict) and "perks" in manual_roll:
+                return [
+                    str(perk) for perk in (manual_roll.get("perks") or [])
+                    if str(perk).strip()
+                ]
+        if "perks" in target:
+            return [
+                str(perk) for perk in (target.get("perks") or [])
+                if str(perk).strip()
+            ]
+        return [
+            _perk_display_label(perk)
+            for perk in (target.get("purchased_perks") or [])
+            if _perk_display_label(perk)
+        ]
 
     def _source_roll_picker_rows(self, chapter_num: str) -> list[dict]:
         rows = [
@@ -5083,10 +5197,19 @@ class ForgeCuratorApp(App):
             })
         return rows
 
-    def _source_assignment_target_rows(self, cs) -> list[dict]:
+    def _source_assignment_target_rows(
+        self,
+        cs,
+        *,
+        include_prior: bool = True,
+    ) -> list[dict]:
         unified = self._unified_rolls(cs)
+        prior_rows = (
+            self._prior_unassigned_roll_target_rows(cs)
+            if include_prior else []
+        )
         rows = [
-            *self._prior_unassigned_roll_target_rows(cs),
+            *prior_rows,
             *self._roll_slot_rows(cs, unified),
         ]
         out: list[dict] = []
@@ -5261,13 +5384,21 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return
-        targets = self._source_assignment_target_rows(cs)
-        if not targets:
-            self._flash("assign source: no roll slots in this chapter")
-            return
         sources = self._source_roll_picker_rows(chapter_num)
         if not sources:
             self._flash("assign source: no source rolls in this chapter")
+            return
+        include_prior_targets = any(
+            source.get("source_kind") != "obtained_perk"
+            and source.get("source_ordinal") is not None
+            for source in sources
+        )
+        targets = self._source_assignment_target_rows(
+            cs,
+            include_prior=include_prior_targets,
+        )
+        if not targets:
+            self._flash("assign source: no roll slots in this chapter")
             return
 
         def assign_source_to_target(left: dict, right: dict) -> None:
@@ -5349,13 +5480,23 @@ class ForgeCuratorApp(App):
             if not selected:
                 self._flash("match miss quotes: no matches selected")
                 return
-            self.persistence.append_roll_evidence_records([
-                match["record"] for match in selected
-            ])
+            records = [match["record"] for match in selected]
             count = len(selected)
-            self._post_curation_refresh(
-                f"matched {count} miss quote{'s' if count != 1 else ''}"
-            )
+            if any(
+                record.get("outcome") is not None
+                or record.get("perks") is not None
+                for record in records
+            ):
+                self.persistence.apply_roll_lineup_records(records)
+                self._post_curation_refresh(
+                    f"matched {count} roll lineup entr"
+                    f"{'y' if count == 1 else 'ies'}"
+                )
+            else:
+                self.persistence.append_roll_evidence_records(records)
+                self._post_curation_refresh(
+                    f"matched {count} miss quote{'s' if count != 1 else ''}"
+                )
 
         picker._on_confirm = on_confirm
         self.push_screen(picker)
@@ -5429,7 +5570,380 @@ class ForgeCuratorApp(App):
                     },
                 })
                 next_id += 1
+        matches.extend(self._source_less_lineup_matches(
+            cs,
+            next_id=next_id,
+            claimed_quotes=claimed_quotes,
+        ))
         return matches
+
+    def _source_less_lineup_matches(
+        self,
+        cs,
+        *,
+        next_id: int,
+        claimed_quotes: set[tuple[int, int]],
+    ) -> list[dict]:
+        chapter_num = str(cs.meta.chapter_num)
+        targets = [
+            roll for roll in self._roll_evidence_picker_rolls(cs)
+            if roll.get("target_roll_index") is not None
+            and str(roll.get("target_chapter_num") or chapter_num) == chapter_num
+            and not roll.get("skipped")
+            and not self._roll_evidence_quotes(roll)
+            and (
+                roll.get("source_ordinal") is None
+                or roll.get("source_kind") == "predicted_slot"
+            )
+        ]
+        if not targets:
+            return []
+        targets.sort(key=lambda roll: int(roll.get("target_roll_index") or 0))
+
+        obtained = self._obtained_perk_source_rows(chapter_num, [])
+        obtained.sort(key=lambda row: (
+            int(row.get("source_row_index") or 0),
+            str(row.get("rolled_perk_name") or ""),
+        ))
+        claimed_perks: set[str] = set()
+        claimed_targets: set[tuple] = set()
+        matches: list[dict] = []
+
+        def next_target() -> dict | None:
+            for candidate in targets:
+                key = self._roll_target_key(candidate)
+                if key is not None and key not in claimed_targets:
+                    return candidate
+            return None
+
+        for candidate in cs.evidence_candidates:
+            quote_match = self._lineup_quote_match(cs, candidate)
+            if quote_match is None:
+                continue
+            autofill, quote_variants = quote_match
+            default_variant = quote_variants[0]
+            quote_text = default_variant["text"]
+            quote_start = int(default_variant["char_start"])
+            quote_end = int(default_variant["char_end"])
+            quote_word = int(default_variant["word_index"])
+            target = next_target()
+            if target is None:
+                break
+            target_key = self._roll_target_key(target)
+            if target_key is None:
+                continue
+            perk_names = None
+            reason_tags = ["lineup_order", "evidence_paragraph"]
+            if autofill.outcome == "hit":
+                perk = self._lineup_perk_for_constellation(
+                    obtained,
+                    autofill.constellation,
+                    claimed_perks,
+                )
+                if perk is not None:
+                    perk_name = str(perk.get("rolled_perk_name") or "")
+                    perk_names = [perk_name]
+                    claimed_perks.add(perk_name.lower())
+                    reason_tags.append("footer_perk")
+            mention_word = self._cp_earning_word_offset(quote_word)
+            quote_key = (quote_start, quote_end)
+            already_claimed = quote_key in claimed_quotes
+            if not already_claimed:
+                claimed_quotes.add(quote_key)
+            record = {
+                "chapter_num": chapter_num,
+                "index": int(target["target_roll_index"]),
+                "outcome": autofill.outcome,
+                "constellation": autofill.constellation,
+                "perks": perk_names,
+                "text": quote_text,
+                "mention_chapter_num": chapter_num,
+                "mention_word_position": mention_word,
+            }
+            matches.append({
+                "id": next_id,
+                "target_label": self._roll_target_message_label(target),
+                "source_context": "narrative evidence",
+                "proposal_summary": self._lineup_proposal_summary(record),
+                "quote_text": quote_text,
+                "mention_label": f"ch {chapter_num}:{mention_word}",
+                "distance_label": (
+                    f"{mention_word - int(self._roll_action_word_position(cs, target) or 0):+} words"
+                ),
+                "reason_tags": reason_tags,
+                "default_selected": (
+                    not already_claimed
+                    and self._lineup_record_matches_existing_target(record, target)
+                ),
+                "variant_index": 0,
+                "quote_variants": [{
+                    "label": str(variant["label"]),
+                    "text": str(variant["text"]),
+                    "mention_label": (
+                        f"ch {chapter_num}:"
+                        f"{self._cp_earning_word_offset(int(variant['word_index']))}"
+                    ),
+                    "distance_label": (
+                        f"{self._cp_earning_word_offset(int(variant['word_index'])) - int(self._roll_action_word_position(cs, target) or 0):+} words"
+                    ),
+                    "record": {
+                        **record,
+                        "text": str(variant["text"]),
+                        "mention_word_position": self._cp_earning_word_offset(
+                            int(variant["word_index"])
+                        ),
+                    },
+                } for variant in quote_variants],
+                "record": record,
+            })
+            claimed_targets.add(target_key)
+            next_id += 1
+
+        for perk in obtained:
+            perk_name = str(perk.get("rolled_perk_name") or "")
+            if not perk_name or perk_name.lower() in claimed_perks:
+                continue
+            target = next_target()
+            if target is None:
+                break
+            target_key = self._roll_target_key(target)
+            if target_key is None:
+                continue
+            record = {
+                "chapter_num": chapter_num,
+                "index": int(target["target_roll_index"]),
+                "outcome": "hit",
+                "constellation": perk.get("constellation"),
+                "perks": [perk_name],
+            }
+            matches.append({
+                "id": next_id,
+                "target_label": self._roll_target_message_label(target),
+                "source_context": "footer perk",
+                "proposal_summary": self._lineup_proposal_summary(record),
+                "quote_text": "",
+                "mention_label": "footer perk",
+                "distance_label": "no quote",
+                "reason_tags": ["lineup_order", "footer_perk"],
+                "default_selected": self._lineup_record_matches_existing_target(
+                    record, target
+                ),
+                "variant_index": 0,
+                "quote_variants": [],
+                "record": record,
+            })
+            claimed_perks.add(perk_name.lower())
+            claimed_targets.add(target_key)
+            next_id += 1
+        return matches
+
+    @staticmethod
+    def _lineup_proposal_summary(record: dict) -> str:
+        parts = []
+        if record.get("outcome"):
+            parts.append(str(record["outcome"]))
+        if record.get("constellation"):
+            parts.append(str(record["constellation"]))
+        perks = [str(perk) for perk in (record.get("perks") or [])]
+        if perks:
+            parts.append(", ".join(perks))
+        return " / ".join(parts)
+
+    def _lineup_quote_match(self, cs, candidate):
+        paragraph = cs.prose.text[candidate.char_start:candidate.char_end]
+        for match in re.finditer(r"(?s)\S.*?(?:[.!?](?=\s|$)|$)", paragraph):
+            quote_text = match.group(0).strip()
+            autofill = classify_quote_autofill(quote_text)
+            if autofill is None:
+                continue
+            leading = len(match.group(0)) - len(match.group(0).lstrip())
+            char_start = candidate.char_start + match.start() + leading
+            char_end = char_start + len(quote_text)
+            word_index = self._word_index_for_char(cs.prose.word_offsets, char_start)
+            if word_index is None:
+                continue
+            variants = self._lineup_quote_variants(
+                quote_text,
+                char_start,
+                char_end,
+                word_index,
+                cs.prose.word_offsets,
+                autofill,
+            )
+            return autofill, variants
+        quote_text = paragraph.strip()
+        autofill = classify_quote_autofill(quote_text)
+        if autofill is None:
+            return None
+        leading = len(paragraph) - len(paragraph.lstrip())
+        char_start = candidate.char_start + leading
+        char_end = char_start + len(quote_text)
+        word_index = self._word_index_for_char(cs.prose.word_offsets, char_start)
+        if word_index is None:
+            return None
+        variants = self._lineup_quote_variants(
+            quote_text,
+            char_start,
+            char_end,
+            word_index,
+            cs.prose.word_offsets,
+            autofill,
+        )
+        return autofill, variants
+
+    def _lineup_quote_variants(
+        self,
+        sentence: str,
+        sentence_start: int,
+        sentence_end: int,
+        sentence_word_index: int,
+        word_offsets: list[tuple[int, int]],
+        autofill,
+    ) -> list[dict]:
+        sentence_variant = {
+            "label": "sentence",
+            "text": sentence,
+            "char_start": sentence_start,
+            "char_end": sentence_end,
+            "word_index": sentence_word_index,
+        }
+        focused = self._focused_lineup_quote_variant(
+            sentence,
+            sentence_start,
+            word_offsets,
+            autofill,
+        )
+        if focused is None:
+            return [sentence_variant]
+        if (
+            focused["char_start"] == sentence_variant["char_start"]
+            and focused["char_end"] == sentence_variant["char_end"]
+        ):
+            focused["label"] = "focused"
+            return [focused]
+        return [focused, sentence_variant]
+
+    def _focused_lineup_quote_variant(
+        self,
+        sentence: str,
+        sentence_start: int,
+        word_offsets: list[tuple[int, int]],
+        autofill,
+    ) -> dict | None:
+        constellation = re.search(
+            re.escape(str(autofill.constellation)).replace(r"\ ", r"\s+"),
+            sentence,
+            re.IGNORECASE,
+        )
+        if constellation is None:
+            return None
+        ref_start = constellation.start()
+        ref_end = constellation.end()
+        after = sentence[ref_end:]
+        after_constellation = re.match(r"(?i)\s+constellation\b", after)
+        if after_constellation is not None:
+            ref_end += after_constellation.end()
+        before = sentence[:ref_start]
+        article = re.search(r"(?i)\bthe\s+$", before)
+        start = article.start() if article is not None else ref_start
+        end = ref_end
+
+        if autofill.outcome == "miss":
+            prior = re.search(
+                r"(?i)\b(?:missed\s+(?:a\s+)?connection\s+to|"
+                r"(?:without|no)\s+a?\s*connection\s+to)\s+(?:the\s+)?$",
+                before,
+            )
+            if prior is not None:
+                start = prior.start()
+                end = ref_end
+            else:
+                tail = sentence[start:]
+                phrase = re.match(
+                    r"(?is).*?\b(?:missed\s+(?:a\s+)?connection|"
+                    r"passed\s+(?:by|past)(?:\s+without\s+a\s+connection)?|"
+                    r"without\s+a\s+connection|no\s+connection|"
+                    r"connection\s+(?:was\s+)?missed)\b",
+                    tail,
+                )
+                if phrase is not None:
+                    end = start + phrase.end()
+        elif autofill.outcome == "hit":
+            prior = re.search(
+                r"(?i)\b(?:a\s+)?connection\s+(?:being\s+made|"
+                r"formed|solidified|locked|made|completed|established)"
+                r"(?:\s+(?:with|to))?\s+(?:the\s+)?$",
+                before,
+            )
+            if prior is not None:
+                start = prior.start()
+                end = ref_end
+
+        text = sentence[start:end].strip(" ,")
+        leading = (sentence[start:end]).find(text)
+        char_start = sentence_start + start + max(leading, 0)
+        char_end = char_start + len(text)
+        word_index = self._word_index_for_char(word_offsets, char_start)
+        if not text or word_index is None:
+            return None
+        return {
+            "label": "focused",
+            "text": text,
+            "char_start": char_start,
+            "char_end": char_end,
+            "word_index": word_index,
+        }
+
+    @staticmethod
+    def _word_index_for_char(
+        word_offsets: list[tuple[int, int]], char_offset: int,
+    ) -> int | None:
+        for idx, (_start, end) in enumerate(word_offsets):
+            if char_offset < end:
+                return idx
+        return len(word_offsets) - 1 if word_offsets else None
+
+    @staticmethod
+    def _lineup_perk_for_constellation(
+        obtained: list[dict],
+        constellation: str,
+        claimed_perks: set[str],
+    ) -> dict | None:
+        for perk in obtained:
+            name = str(perk.get("rolled_perk_name") or "")
+            if not name or name.lower() in claimed_perks:
+                continue
+            if str(perk.get("constellation") or "") == str(constellation):
+                return perk
+        return None
+
+    @staticmethod
+    def _lineup_record_matches_existing_target(record: dict, target: dict) -> bool:
+        target_outcome = target.get("outcome")
+        if target_outcome not in (None, "", "open") and target_outcome != record.get("outcome"):
+            return False
+        target_constellation = target.get("constellation")
+        if (
+            target_constellation not in (None, "")
+            and record.get("constellation") not in (None, "", target_constellation)
+        ):
+            return False
+        target_perks = [
+            str(perk) for perk in (
+                target.get("perks")
+                or [
+                    perk.get("name")
+                    for perk in (target.get("purchased_perks") or [])
+                    if isinstance(perk, dict)
+                ]
+                or []
+            )
+            if str(perk).strip()
+        ]
+        record_perks = [str(perk) for perk in (record.get("perks") or [])]
+        if target_perks and record_perks and target_perks != record_perks:
+            return False
+        return True
 
     def _miss_quote_candidates_for_roll(self, cs, roll: dict):
         cp_anchor = int(self._roll_action_word_position(cs, roll) or 0)
@@ -5499,12 +6013,15 @@ class ForgeCuratorApp(App):
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
         idx = int(target["target_roll_index"])
         mention_word = self._cp_earning_word_offset(target_word or 0)
+        autofill = classify_quote_autofill(quote)
         self.persistence.append_roll_evidence_at_index(
             target_chapter,
             idx,
             text=quote,
             mention_chapter_num=chapter_num,
             mention_word_position=mention_word,
+            autofill_outcome=autofill.outcome if autofill else None,
+            autofill_constellation=autofill.constellation if autofill else None,
         )
         self._clear_prose_selection()
         self._post_curation_refresh(f"roll #{idx} quote saved ({len(quote)} chars)")
@@ -5541,7 +6058,8 @@ class ForgeCuratorApp(App):
             return
         target_word = self._selected_quote_start_word_index()
         mention_word = self._cp_earning_word_offset(target_word or 0)
-        rolls = self._roll_evidence_picker_rolls(cs)
+        autofill = classify_quote_autofill(quote)
+        rolls = self._current_chapter_roll_evidence_picker_rolls(cs)
         if not rolls:
             self._flash("save quote: no rolls in this chapter")
             return
@@ -5576,6 +6094,8 @@ class ForgeCuratorApp(App):
                     mention_chapter_num=chapter_num,
                     mention_word_position=mention_word,
                     display_position_policy=display_position_policy,
+                    autofill_outcome=autofill.outcome if autofill else None,
+                    autofill_constellation=autofill.constellation if autofill else None,
                 )
             self._post_curation_refresh(
                 f"quote saved to rolls {', '.join(target_labels)}"
@@ -6157,6 +6677,16 @@ class ForgeCuratorApp(App):
             return
         char = self.state.char_at_word_index(word_idx)
         self._jump_to_char(char)
+
+    def _jump_to_roll_target(self, target: dict) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        cp_word = self._roll_action_word_position(cs, target)
+        raw_word = self._roll_marker_word_index_from_cp(cs, cp_word)
+        if raw_word is None:
+            raw_word = int(target.get("word_position") or 0)
+        self._jump_to_word(raw_word)
 
     def _jump_to_char(self, char: int) -> None:
         cs = self.state.chapter

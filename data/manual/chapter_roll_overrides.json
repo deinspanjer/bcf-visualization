@@ -1,9 +1,9 @@
 {
   "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "association_review": {
-    "reviewed_through_chapter_num": "74.1",
-    "baseline_fingerprint": "2e302a503661e50797e097ca21fd22a70378a901427c84339932f6240c138659",
-    "baseline_roll_count": 496
+    "reviewed_through_chapter_num": "81",
+    "baseline_fingerprint": "6d276d448419d15a779d7735fd870d4501c86f40799b906e8788ec8ef066a507",
+    "baseline_roll_count": 535
   },
   "chapter_roll_overrides": {
     "67": {
@@ -11040,9 +11040,907 @@
             }
           ],
           "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Time",
+              "mention_chapter_num": "74.2",
+              "mention_word_position": 10990
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Knowledge",
+              "mention_chapter_num": "74.2",
+              "mention_word_position": 10990
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Capstone",
+              "mention_chapter_num": "74.2",
+              "mention_word_position": 10990
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Magic",
+              "mention_chapter_num": "74.2",
+              "mention_word_position": 10990
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Resources and Durability",
+              "mention_chapter_num": "74.2",
+              "mention_word_position": 10990
+            }
+          ],
+          "curator_note": null
         }
       ],
       "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+    },
+    "75": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I had felt my reach build through my conversation with Tattletale. That had been stressful enough without the added impact of another power throwing things into chaos. Tattletale's main concern was consistency of my actions, and spontaneously manifesting a serious power in front of her wouldn't do any good. I had managed to avoid that, but left the conversation teetering on the edge of a major connection.\n\nThat was an edge I was plummeting off as a blazing inferno of a mote from the Quality constellation descended upon me, flooding my mind with knowledge and experience from an unknown world.",
+              "mention_chapter_num": "75",
+              "mention_word_position": 2455
+            },
+            {
+              "text": "Teigu",
+              "mention_chapter_num": "75",
+              "mention_word_position": 2679
+            },
+            {
+              "text": "Incredibly Craftsmanship was powerful enough to modify and augment Teigu, even without considering the rest of my abilities.",
+              "mention_chapter_num": "75",
+              "mention_word_position": 5334
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Alchemy constellation missed a connection",
+              "mention_chapter_num": "75",
+              "mention_word_position": 4182
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Time constellation missed a connection",
+              "mention_chapter_num": "75",
+              "mention_word_position": 6191
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Forge missed a connection to the Resources and Durability constellation",
+              "mention_chapter_num": "75",
+              "mention_word_position": 8028
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Knowledge constellation missed a connection",
+              "mention_chapter_num": "75",
+              "mention_word_position": 10550
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt the constellations shift as my power latched onto a cluster of Personal Reality motes. One of the motes was tiny, the other was decidedly not, as evidenced by the way the entire Workshop shook like it had been struck by a California earthquake the moment it arrived.",
+              "mention_chapter_num": "75",
+              "mention_word_position": 12553
+            },
+            {
+              "text": "\"New Workshop addition.\" I explained over a public channel. \"We have a dedicated power source.\" The amusement was clear in my voice, and I could see the confusion on Aisha's face through the link.\n\n\"Yeah, I saw the outlets. But you have fusion reactors and all that other stuff. What's the big deal with getting electrical systems installed?\" She asked. Like before, other members of the team were already in the know or learning the details for themselves.\n\n\"The big deal is that we are now a level two Kardashev civilization.\" I explained.\n\nA week ago, I doubt Aisha would have understood that reference. As of now I could see the dawning mix of wonder and horror on her face. \"You mean…?\" She trailed off without phrasing her question.\n\n\"That's right.\" I said with a wide smile. \"We have a Dyson Sphere.\"",
+              "mention_chapter_num": "75",
+              "mention_word_position": 12671
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+    },
+    "76": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Capstone",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Capstone constellation passed by",
+              "mention_chapter_num": "76",
+              "mention_word_position": 1232
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magic",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt the Magic constellation pass by.",
+              "mention_chapter_num": "76",
+              "mention_word_position": 3244
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Resources and Durability",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Resources and Durability constellation moved past without a connection",
+              "mention_chapter_num": "76",
+              "mention_word_position": 5185
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Vehicles constellation missed a connection",
+              "mention_chapter_num": "76",
+              "mention_word_position": 7323
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:da900eb15e655d16"
+    },
+    "77": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The Vehicles constellation missed a connection",
+              "mention_chapter_num": "77",
+              "mention_word_position": 2055
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I noted a failed connection to the Toolkits constellation as I surveyed the room.",
+              "mention_chapter_num": "77",
+              "mention_word_position": 4160
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Gadgeteer"
+          ],
+          "outcome": "hit",
+          "constellation": "Resources and Durability",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The reach that had been building finally came to a head. The Resources and Durability constellation passed by and a glowing nova of a mote was secured from it, descending towards me and enveloping my entire being.",
+              "mention_chapter_num": "77",
+              "mention_word_position": 6600
+            },
+            {
+              "text": "My new power was called Gadgeteer, and it solved problems.",
+              "mention_chapter_num": "77",
+              "mention_word_position": 6772
+            },
+            {
+              "text": "\"There is one other matter regarding your latest ability.\" Survey said. I gave her a questioning look. \"With respect to the item of clothing that was included.\"",
+              "mention_chapter_num": "77",
+              "mention_word_position": 7757
+            },
+            {
+              "text": "The catsuit?",
+              "mention_chapter_num": "77",
+              "mention_word_position": 7802
+            },
+            {
+              "text": "\"The suit is apocyan.",
+              "mention_chapter_num": "77",
+              "mention_word_position": 7930
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": true,
+          "source_ordinal": null,
+          "evidence_quotes": [],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:da900eb15e655d16"
+    },
+    "78": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Knowledge constellation missed a connection",
+              "mention_chapter_num": "78",
+              "mention_word_position": 1770
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Additional Space"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt a connection being made to the Personal Reality constellation, followed by a significant tremor that shook the entire workshop.",
+              "mention_chapter_num": "78",
+              "mention_word_position": 4377
+            },
+            {
+              "text": "Additional Space was a repeating power.",
+              "mention_chapter_num": "78",
+              "mention_word_position": 4410
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magitech",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I noted a missed connection to the Magitech constellation",
+              "mention_chapter_num": "78",
+              "mention_word_position": 5733
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Workshop: Robotics"
+          ],
+          "outcome": "hit",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt a connection to the Toolkits constellation, and another tremor went through the Workshop.",
+              "mention_chapter_num": "78",
+              "mention_word_position": 7927
+            },
+            {
+              "text": "This was in fact the fifth version of this specific ability that I had received.",
+              "mention_chapter_num": "78",
+              "mention_word_position": 7964
+            },
+            {
+              "text": "This time it was a robotics workshop.",
+              "mention_chapter_num": "78",
+              "mention_word_position": 8032
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Size",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Size constellation missed a connection",
+              "mention_chapter_num": "78",
+              "mention_word_position": 9800
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:49ac1f51a000d7ea"
+    },
+    "79": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Vehicles constellation missed a connection",
+              "mention_chapter_num": "79",
+              "mention_word_position": 303
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Loft",
+            "Lofty Loft",
+            "Underside"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt another connection to the Personal Reality constellation. The workshop shook as new additions were made.",
+              "mention_chapter_num": "79",
+              "mention_word_position": 2401
+            },
+            {
+              "text": "The latest additions had been a clustered pair of motes called the Lofty Loft and the Underside.",
+              "mention_chapter_num": "79",
+              "mention_word_position": 2488
+            },
+            {
+              "text": "Compared to the mammoth amount of underground storage, the Lofty Loft was considerably more frivolous.",
+              "mention_chapter_num": "79",
+              "mention_word_position": 2589
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Size",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Size constellation passed by without a connection",
+              "mention_chapter_num": "79",
+              "mention_word_position": 4273
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Core Ability - Amp Core",
+            "Oi!",
+            "What's This Do?"
+          ],
+          "outcome": "hit",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "My musings were interrupted by a sudden connection to a mote from the Knowledge constellation. It was a smaller mote called 'What's This Do?'.",
+              "mention_chapter_num": "79",
+              "mention_word_position": 6392
+            },
+            {
+              "text": "Additional power called 'Oi!'.",
+              "mention_chapter_num": "79",
+              "mention_word_position": 6556
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Time",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the Time constellation passed by",
+              "mention_chapter_num": "79",
+              "mention_word_position": 7980
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:49ac1f51a000d7ea"
+    },
+    "80": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magic",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Over the course of the training, I had seen a failed connection to the Magic constellation followed by one successful connection, again to the Magic constellation, and then, much later, one more failed connection, again to the magic constellation.",
+              "mention_chapter_num": "80",
+              "mention_word_position": 2739
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Glove of the East"
+          ],
+          "outcome": "hit",
+          "constellation": "Magic",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Over the course of the training, I had seen a failed connection to the Magic constellation followed by one successful connection, again to the Magic constellation, and then, much later, one more failed connection, again to the magic constellation.",
+              "mention_chapter_num": "80",
+              "mention_word_position": 2739
+            },
+            {
+              "text": "The item I received was called the Glove of the East.",
+              "mention_chapter_num": "80",
+              "mention_word_position": 2843
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magic",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Over the course of the training, I had seen a failed connection to the Magic constellation followed by one successful connection, again to the Magic constellation, and then, much later, one more failed connection, again to the magic constellation.",
+              "mention_chapter_num": "80",
+              "mention_word_position": 2739
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Burning Bright"
+          ],
+          "outcome": "hit",
+          "constellation": "Capstone",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I smiled widely as my power secured the mote from the Capstone constellation and I felt the effect of Burning Bright settle over me.",
+              "mention_chapter_num": "80",
+              "mention_word_position": 8025
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:da900eb15e655d16"
+    },
+    "81": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Magitech",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I noted the Magitech constellation pass by without a connection",
+              "mention_chapter_num": "81",
+              "mention_word_position": 2026
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "my power failed to connect to a mote from the Knowledge constellation",
+              "mention_chapter_num": "81",
+              "mention_word_position": 4515
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt the Forge fail to connect to the Vehicles constellation",
+              "mention_chapter_num": "81",
+              "mention_word_position": 6415
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Auditorium",
+            "Costume Closet",
+            "Entertainment Room",
+            "Kit and Kaboodle",
+            "Music Collection"
+          ],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "the cluster secured from the Personal Reality constellation was called the Entertainment Room",
+              "mention_chapter_num": "81",
+              "mention_word_position": 9181
+            },
+            {
+              "text": "Another minor mote called Auditorium added exactly what you'd assume.",
+              "mention_chapter_num": "81",
+              "mention_word_position": 9422
+            },
+            {
+              "text": "An additional mote called Costume Closet provided any costume that might be needed on request",
+              "mention_chapter_num": "81",
+              "mention_word_position": 9461
+            },
+            {
+              "text": "Music Collection was paired with the music room and provided five hundred albums.",
+              "mention_chapter_num": "81",
+              "mention_word_position": 9578
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Quality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I said, briefly noting a failed connection from the Quality constellation.",
+              "mention_chapter_num": "81",
+              "mention_word_position": 10719
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Knowledge",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I noted the Forge failing to connect to a mote from the Knowledge constellation.",
+              "mention_chapter_num": "81",
+              "mention_word_position": 12890
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The fact that the Forge missed a connection to the Vehicles constellation really didn't help.",
+              "mention_chapter_num": "81",
+              "mention_word_position": 14849
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:fcf9d5f82f020eb8"
     }
   }
 }

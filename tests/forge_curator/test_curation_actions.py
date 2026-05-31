@@ -6,15 +6,18 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from textual.widgets import Button
 
 from scripts.forge_curator.app import (
     BatchMissQuotePicker,
+    PerkPicker,
     QuoteMoveSourcePicker,
     QuoteMoveTargetPicker,
     RollEvidencePicker,
     SourceLinkPicker,
 )
 from scripts.forge_curator.data_loader import _compute_word_offsets
+from scripts.forge_curator.evidence_scorer import evidence_candidates
 from tests.helpers.forge_curator_fixture import (
     _chapter_fact,
     _chapter_html,
@@ -81,7 +84,12 @@ def _add_fixture_chapter(fixture, chapter_num: str = "3") -> None:
 def _clear_first_source_assignment(fixture) -> None:
     roll_facts_path = fixture.derived / "roll_facts.json"
     roll_facts = json.loads(roll_facts_path.read_text())
-    roll_facts["rolls"][0].update({
+    _remove_real_source_roll(roll_facts["rolls"][0])
+    _write_json(roll_facts_path, roll_facts)
+
+
+def _remove_real_source_roll(roll: dict) -> None:
+    roll.update({
         "source": "roll_outcomes",
         "source_kind": "interpolated",
         "source_ordinal": None,
@@ -91,7 +99,6 @@ def _clear_first_source_assignment(fixture) -> None:
         "source_roll_label": None,
         "association_source": "none",
     })
-    _write_json(roll_facts_path, roll_facts)
 
 
 def _selected_prose(selection: tuple[int, int]) -> SimpleNamespace:
@@ -215,6 +222,76 @@ def test_save_quote_action_writes_manual_roll_evidence_and_refreshes(
     ]
 
 
+def test_save_quote_action_autofills_only_unset_roll_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    monkeypatch.setattr(
+        app,
+        "_selected_quote",
+        lambda _action_name: "the Capstone constellation passed by",
+    )
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 24)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    app._post_curation_refresh = lambda _message: None
+
+    app._action_save_quote("1")
+
+    roll = app.persistence.chapter_roll_overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    assert roll["outcome"] == "miss"
+    assert roll["constellation"] == "Capstone"
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "the Capstone constellation passed by",
+            "mention_chapter_num": "1",
+            "mention_word_position": 24,
+        }
+    ]
+
+
+def test_save_quote_action_preserves_existing_manual_roll_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("1")
+    app.persistence.update_roll_at_index(
+        "1",
+        1,
+        outcome="hit",
+        constellation="Magic",
+        perks=["Existing Perk"],
+        source_ordinal=1,
+        display_position_policy="mention",
+    )
+    monkeypatch.setattr(
+        app,
+        "_selected_quote",
+        lambda _action_name: "the Capstone constellation passed by",
+    )
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 24)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    app._post_curation_refresh = lambda _message: None
+
+    app._action_save_quote("1")
+
+    roll = app.persistence.chapter_roll_overrides["chapter_roll_overrides"]["1"]["rolls"][0]
+    assert roll["outcome"] == "hit"
+    assert roll["constellation"] == "Magic"
+    assert roll["perks"] == ["Existing Perk"]
+    assert roll["source_ordinal"] == 1
+    assert roll["display_position_policy"] == "mention"
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "the Capstone constellation passed by",
+            "mention_chapter_num": "1",
+            "mention_word_position": 24,
+        }
+    ]
+
+
 def test_save_quote_targets_selection_start_not_visual_cursor_end(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -248,17 +325,12 @@ def test_save_quote_ignores_later_prior_open_slot_when_current_roll_is_at_cursor
     _add_fixture_chapter(fixture, "3")
     roll_facts_path = fixture.derived / "roll_facts.json"
     roll_facts = json.loads(roll_facts_path.read_text())
-    prior_roll = roll_facts["rolls"][0]
-    prior_roll.update({
-        "source": "roll_outcomes",
-        "source_kind": "interpolated",
-        "source_ordinal": None,
-        "source_label": None,
-        "source_chapter_num": None,
-        "source_chapter_ordinal": None,
-        "source_roll_label": None,
-        "association_source": "none",
-    })
+    _remove_real_source_roll(roll_facts["rolls"][0])
+    current_roll = next(
+        roll for roll in roll_facts["rolls"]
+        if str(roll.get("chapter_num")) == "3"
+    )
+    _remove_real_source_roll(current_roll)
     _write_json(roll_facts_path, roll_facts)
     predicted_path = fixture.derived / "predicted_rolls.json"
     predicted = json.loads(predicted_path.read_text())
@@ -406,6 +478,173 @@ def test_batch_miss_quote_action_previews_detected_match_and_persists_checked_qu
     assert refreshes == ["matched 1 miss quote"]
 
 
+def test_batch_lineup_action_matches_source_less_predicted_slots_to_perks_and_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    (fixture.derived / "obtained_perks.json").write_text(json.dumps({
+        "perks": [
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "I Am Iron Man",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 400,
+                "free": False,
+                "constellation": "Quality",
+            }
+        ]
+    }))
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.roll_facts = []
+    cs.prose.text = (
+        "setup words before the first predicted slot. "
+        "The Forge settled as a connection formed with the Quality constellation before I moved on.\n\n"
+        "more words before the second slot. "
+        "The Magic constellation missed a connection.\n\n"
+        "ordinary prose after the evidence."
+    )
+    cs.prose.word_offsets = _compute_word_offsets(cs.prose.text)
+    cs.evidence_candidates = evidence_candidates(cs.prose.text, cs.prose.word_offsets)
+    refreshes: list[str] = []
+    pushed: list[BatchMissQuotePicker] = []
+    app._post_curation_refresh = lambda message: refreshes.append(message)
+    monkeypatch.setattr(app, "push_screen", lambda screen: pushed.append(screen))
+    monkeypatch.setattr(app, "call_after_refresh", lambda callback: callback())
+
+    app._action_batch_match_miss_quotes("2")
+
+    assert len(pushed) == 1
+    picker = pushed[0]
+    assert [
+        (
+            match["target_label"],
+            match["record"].get("outcome"),
+            match["record"].get("constellation"),
+            match["record"].get("perks"),
+        )
+        for match in picker._matches
+    ] == [
+        ("ch 2 #1", "hit", "Quality", ["I Am Iron Man"]),
+        ("ch 2 #2", "miss", "Magic", None),
+    ]
+    assert picker._selected == {1, 2}
+
+    picker._on_confirm([match["id"] for match in picker._matches])
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    rolls = overrides["chapter_roll_overrides"]["2"]["rolls"]
+    assert rolls[0]["outcome"] == "hit"
+    assert rolls[0]["constellation"] == "Quality"
+    assert rolls[0]["perks"] == ["I Am Iron Man"]
+    assert rolls[0]["source_ordinal"] is None
+    assert rolls[0]["evidence_quotes"] == [
+        {
+            "text": "a connection formed with the Quality constellation",
+            "mention_chapter_num": "2",
+            "mention_word_position": 11,
+        }
+    ]
+    assert rolls[1]["outcome"] == "miss"
+    assert rolls[1]["constellation"] == "Magic"
+    assert rolls[1]["source_ordinal"] is None
+    assert refreshes == ["matched 2 roll lineup entries"]
+
+
+def test_batch_lineup_match_keeps_focused_quote_variant_for_wide_sentence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.roll_facts = []
+    cs.prose.text = (
+        "Considering things as the Knowledge constellation missed a connection, "
+        "I decided I was fine with that kind of approach from the potential guests.\n\n"
+        "ordinary prose after the evidence."
+    )
+    cs.prose.word_offsets = _compute_word_offsets(cs.prose.text)
+    cs.evidence_candidates = evidence_candidates(cs.prose.text, cs.prose.word_offsets)
+
+    matches = app._batch_miss_quote_matches(cs)
+
+    assert matches[0]["quote_text"] == "the Knowledge constellation missed a connection"
+    assert [variant["label"] for variant in matches[0]["quote_variants"]] == [
+        "focused",
+        "sentence",
+    ]
+    assert matches[0]["quote_variants"][1]["text"] == (
+        "Considering things as the Knowledge constellation missed a connection, "
+        "I decided I was fine with that kind of approach from the potential guests."
+    )
+
+
+def test_batch_lineup_picker_widen_updates_generated_lineup_record(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.roll_facts = []
+    cs.prose.text = (
+        "Considering things as the Knowledge constellation missed a connection, "
+        "I decided I was fine with that kind of approach from the potential guests.\n\n"
+        "ordinary prose after the evidence."
+    )
+    cs.prose.word_offsets = _compute_word_offsets(cs.prose.text)
+    cs.evidence_candidates = evidence_candidates(cs.prose.text, cs.prose.word_offsets)
+    picker = BatchMissQuotePicker(matches=app._batch_miss_quote_matches(cs))
+    picker.focused = Button("match", name="1")
+
+    picker.action_widen_focused_match()
+
+    match = picker._matches[0]
+    assert match["quote_text"] == (
+        "Considering things as the Knowledge constellation missed a connection, "
+        "I decided I was fine with that kind of approach from the potential guests."
+    )
+    assert match["record"]["text"] == match["quote_text"]
+    assert match["variant_index"] == 1
+
+
+def test_batch_lineup_label_keeps_proposed_metadata_out_of_source_context(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    cs.derived.roll_facts = []
+    cs.prose.text = (
+        "Considering things as the Knowledge constellation missed a connection, "
+        "I decided I was fine with that kind of approach from the potential guests.\n\n"
+        "ordinary prose after the evidence."
+    )
+    cs.prose.word_offsets = _compute_word_offsets(cs.prose.text)
+    cs.evidence_candidates = evidence_candidates(cs.prose.text, cs.prose.word_offsets)
+    match = app._batch_miss_quote_matches(cs)[0]
+
+    label = BatchMissQuotePicker([match])._match_button_label(match)
+
+    assert match["source_context"] == "narrative evidence"
+    assert match["proposal_summary"] == "miss / Knowledge"
+    assert "lineup miss" not in label
+    assert "constellation Knowledge" not in label
+    assert "would set miss / Knowledge" in label
+
+
 def test_batch_miss_quote_persistence_uses_source_ordinal_when_index_is_occupied(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -521,6 +760,67 @@ def test_batch_miss_quote_persistence_is_one_undoable_action(
     assert undone == ("append_roll_evidence_records", "1")
     overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
     assert overrides["chapter_roll_overrides"] == {}
+
+
+def test_roll_lineup_persistence_writes_hit_miss_and_evidence_as_one_undoable_action(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+
+    app.persistence.apply_roll_lineup_records([
+        {
+            "chapter_num": "2",
+            "index": 1,
+            "outcome": "hit",
+            "constellation": "Quality",
+            "perks": ["I Am Iron Man"],
+            "text": "A connection formed with the Quality constellation.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 8,
+        },
+        {
+            "chapter_num": "2",
+            "index": 2,
+            "outcome": "miss",
+            "constellation": "Magic",
+            "text": "The Magic constellation missed a connection.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 22,
+        },
+    ])
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    rolls = overrides["chapter_roll_overrides"]["2"]["rolls"]
+    assert rolls[0]["outcome"] == "hit"
+    assert rolls[0]["constellation"] == "Quality"
+    assert rolls[0]["perks"] == ["I Am Iron Man"]
+    assert rolls[0]["source_ordinal"] is None
+    assert rolls[0]["evidence_quotes"] == [
+        {
+            "text": "A connection formed with the Quality constellation.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 8,
+        }
+    ]
+    assert rolls[1]["outcome"] == "miss"
+    assert rolls[1]["constellation"] == "Magic"
+    assert rolls[1]["perks"] == []
+    assert rolls[1]["source_ordinal"] is None
+    assert rolls[1]["evidence_quotes"] == [
+        {
+            "text": "The Magic constellation missed a connection.",
+            "mention_chapter_num": "2",
+            "mention_word_position": 22,
+        }
+    ]
+
+    journal_entries = list((fixture.manual / ".session_journals").glob("*.jsonl"))
+    assert len(journal_entries) == 1
+    assert journal_entries[0].read_text().count(
+        '"action_type": "apply_roll_lineup_records"'
+    ) == 1
 
 
 def test_first_save_quote_stamps_new_chapter_override_fingerprint(
@@ -645,7 +945,7 @@ def test_persistence_shift_roll_evidence_preserves_quote_sets_atomically(
     assert "shift_roll_evidence_for_source_assignment" in journal_entries[-1].read_text()
 
 
-def test_save_quote_multi_can_attach_to_prior_open_slot(
+def test_save_quote_multi_hides_prior_targets_without_real_source_rolls(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -653,17 +953,12 @@ def test_save_quote_multi_can_attach_to_prior_open_slot(
     _add_fixture_chapter(fixture, "3")
     roll_facts_path = fixture.derived / "roll_facts.json"
     roll_facts = json.loads(roll_facts_path.read_text())
-    prior_roll = roll_facts["rolls"][0]
-    prior_roll.update({
-        "source": "roll_outcomes",
-        "source_kind": "interpolated",
-        "source_ordinal": None,
-        "source_label": None,
-        "source_chapter_num": None,
-        "source_chapter_ordinal": None,
-        "source_roll_label": None,
-        "association_source": "none",
-    })
+    _remove_real_source_roll(roll_facts["rolls"][0])
+    current_roll = next(
+        roll for roll in roll_facts["rolls"]
+        if str(roll.get("chapter_num")) == "3"
+    )
+    _remove_real_source_roll(current_roll)
     _write_json(roll_facts_path, roll_facts)
     app = fixture.loaded_app("3")
     monkeypatch.setattr(app, "_selected_quote", lambda _action_name: "chapter three quote")
@@ -677,22 +972,58 @@ def test_save_quote_multi_can_attach_to_prior_open_slot(
     app._action_save_quote_multi("3")
 
     assert [type(screen) for screen in screens] == [RollEvidencePicker]
-    target = next(
-        roll for roll in screens[0]._rolls
-        if roll.get("target_chapter_num") == "1"
-        and roll.get("target_roll_index") == 1
+    assert {
+        roll.get("target_chapter_num") for roll in screens[0]._rolls
+    } == {"3"}
+    assert all(
+        roll.get("target_chapter_num") != "1"
+        for roll in screens[0]._rolls
     )
-    screens[0]._on_confirm([screens[0]._rolls.index(target) + 1], None)
+    assert refreshes == []
 
-    roll = app.persistence.chapter_roll_overrides["chapter_roll_overrides"]["1"]["rolls"][0]
-    assert roll["evidence_quotes"] == [
-        {
-            "text": "chapter three quote",
-            "mention_chapter_num": "3",
-            "mention_word_position": 24,
-        }
-    ]
-    assert refreshes == ["quote saved to rolls ch 1 #1"]
+
+def test_save_quote_multi_can_show_prior_targets_when_real_source_rolls_exist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _add_fixture_chapter(fixture, "3")
+    roll_facts_path = fixture.derived / "roll_facts.json"
+    roll_facts = json.loads(roll_facts_path.read_text())
+    _remove_real_source_roll(roll_facts["rolls"][0])
+    current_source = next(
+        roll for roll in roll_facts["rolls"]
+        if str(roll.get("chapter_num")) == "3"
+    )
+    current_source.update({
+        "source": "curator_rolls",
+        "source_kind": "roll",
+        "source_ordinal": 3,
+        "source_label": "S3",
+        "source_chapter_num": "3",
+        "source_chapter_ordinal": 1,
+        "source_roll_label": "Roll 3",
+    })
+    _write_json(roll_facts_path, roll_facts)
+    app = fixture.loaded_app("3")
+    monkeypatch.setattr(app, "_selected_quote", lambda _action_name: "chapter three quote")
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 24)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    screens: list[RollEvidencePicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_save_quote_multi("3")
+
+    assert [type(screen) for screen in screens] == [RollEvidencePicker]
+    assert any(
+        roll.get("target_chapter_num") == "1"
+        and roll.get("target_roll_index") == 1
+        for roll in screens[0]._rolls
+    )
+    assert any(
+        roll.get("target_chapter_num") == "3"
+        for roll in screens[0]._rolls
+    )
 
 
 def test_save_quote_multi_orders_source_linked_prior_target_before_current_slots(
@@ -753,6 +1084,154 @@ def test_save_quote_multi_orders_source_linked_prior_target_before_current_slots
     ]
     assert labels[:3] == ["ch 1 #2", "ch 2 #1", "ch 2 #2"]
     assert app._roll_reference_label(screens[0]._rolls[0]) == "R3/P3/S3"
+
+
+def test_save_quote_multi_autofills_selected_targets_without_overwriting_manual_fields(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    app = fixture.loaded_app("2")
+    app.persistence.update_roll_at_index(
+        "2",
+        1,
+        outcome="hit",
+        constellation="Capstone",
+        perks=["Existing Perk"],
+        source_ordinal=2,
+        display_position_policy="mention",
+    )
+    monkeypatch.setattr(
+        app,
+        "_selected_quote",
+        lambda _action_name: "The Magic constellation missed a connection",
+    )
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: 24)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    app._post_curation_refresh = lambda _message: None
+    screens: list[RollEvidencePicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_save_quote_multi("2")
+
+    assert [type(screen) for screen in screens] == [RollEvidencePicker]
+    target_indices = [
+        index
+        for index, roll in enumerate(screens[0]._rolls, start=1)
+        if roll.get("target_chapter_num") == "2"
+        and roll.get("target_roll_index") in {1, 2}
+    ]
+    screens[0]._on_confirm(target_indices, None)
+
+    rolls = app.persistence.chapter_roll_overrides["chapter_roll_overrides"]["2"]["rolls"]
+    assert rolls[0]["outcome"] == "hit"
+    assert rolls[0]["constellation"] == "Capstone"
+    assert rolls[0]["perks"] == ["Existing Perk"]
+    assert rolls[0]["source_ordinal"] == 2
+    assert rolls[0]["display_position_policy"] == "mention"
+    assert rolls[0]["evidence_quotes"] == [
+        {
+            "text": "The Magic constellation missed a connection",
+            "mention_chapter_num": "2",
+            "mention_word_position": 24,
+        }
+    ]
+    assert rolls[1]["outcome"] == "miss"
+    assert rolls[1]["constellation"] == "Magic"
+    assert rolls[1]["evidence_quotes"] == [
+        {
+            "text": "The Magic constellation missed a connection",
+            "mention_chapter_num": "2",
+            "mention_word_position": 24,
+        }
+    ]
+
+
+def test_pick_perks_writes_multiple_derived_perk_names_to_selected_roll(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _write_json(fixture.derived / "obtained_perks.json", {
+        "perks": [
+            {
+                "chapter_num": "2",
+                "perk_name": "Lofty Loft",
+                "cost": 100,
+                "free": False,
+                "constellation": "Personal Reality",
+            },
+            {
+                "chapter_num": "2",
+                "perk_name": "Underside",
+                "cost": 200,
+                "free": False,
+                "constellation": "Personal Reality",
+            },
+        ]
+    })
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    target = next(
+        roll for roll in app._roll_slot_rows(cs, app._unified_rolls(cs))
+        if roll.get("target_roll_index") == 2
+    )
+    app._select_roll_target(target)
+    app._post_curation_refresh = lambda _message: None
+    screens: list[PerkPicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_pick_perks("2")
+
+    assert [type(screen) for screen in screens] == [PerkPicker]
+    screens[0]._on_confirm(["Lofty Loft", "Underside"])
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    roll = overrides["chapter_roll_overrides"]["2"]["rolls"][1]
+    assert roll["perks"] == ["Lofty Loft", "Underside"]
+
+
+def test_pick_perks_reopens_with_existing_roll_perks_selected(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _write_json(fixture.derived / "obtained_perks.json", {
+        "perks": [
+            {
+                "chapter_num": "2",
+                "perk_name": "Lofty Loft",
+                "cost": 100,
+                "free": False,
+                "constellation": "Personal Reality",
+            },
+            {
+                "chapter_num": "2",
+                "perk_name": "Underside",
+                "cost": 200,
+                "free": False,
+                "constellation": "Personal Reality",
+            },
+        ]
+    })
+    app = fixture.loaded_app("2")
+    app.persistence.update_roll_at_index("2", 2, perks=["Lofty Loft"])
+    app._load_chapter("2")
+    cs = app.state.chapter
+    assert cs is not None
+    target = next(
+        roll for roll in app._roll_slot_rows(cs, app._unified_rolls(cs))
+        if roll.get("target_roll_index") == 2
+    )
+    app._select_roll_target(target)
+    screens: list[PerkPicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_pick_perks("2")
+
+    assert [type(screen) for screen in screens] == [PerkPicker]
+    assert screens[0]._selected == {"Lofty Loft"}
 
 
 def test_save_quote_multi_can_attach_to_global_roll(
@@ -1133,6 +1612,37 @@ def test_source_assignment_action_can_use_obtained_perk_source(
     assert saved["perks"] == ["I Am Iron Man"]
     assert saved["constellation"] == "Knowledge"
     assert refreshes == ["ch 2 roll #2 source = I Am Iron Man"]
+
+
+def test_source_assignment_obtained_perk_sources_only_show_current_chapter_targets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _clear_first_source_assignment(fixture)
+    (fixture.derived / "obtained_perks.json").write_text(json.dumps({
+        "perks": [
+            {
+                "chapter_num": "2",
+                "epub_sequence": 2,
+                "perk_name": "I Am Iron Man",
+                "jump": "Marvel Cinematic Universe",
+                "cost": 400,
+                "free": False,
+                "constellation": "Knowledge",
+            }
+        ]
+    }))
+    (fixture.derived / "roll_facts.json").write_text(json.dumps({"rolls": []}))
+    app = fixture.loaded_app("2")
+    screens: list[SourceLinkPicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._action_assign_source_roll("2")
+
+    assert [type(screen) for screen in screens] == [SourceLinkPicker]
+    assert {target["target_chapter_num"] for target in screens[0]._targets} == {"2"}
+    assert [target["target_roll_index"] for target in screens[0]._targets] == [1, 2]
 
 
 def test_source_assignment_action_can_target_prior_open_slot(

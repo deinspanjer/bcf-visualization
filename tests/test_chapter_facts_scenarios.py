@@ -1021,6 +1021,610 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
     ]
 
 
+def test_fallback_roll_facts_apply_index_aligned_manual_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import derive_roll_facts
+
+    project = tmp_path / "project"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = project / "data" / "raw" / "fixture.epub"
+    chapters = [
+        _fixture_chapter("1", "1 Fixture", sort_key=[1, 0]),
+        _fixture_chapter("2", "2 Fixture", sort_key=[2, 0]),
+    ]
+    _write_json(derived / "chapters.json", {"chapters": chapters})
+    _write_json(
+        derived / "chapter_sections.json",
+        {
+            "chapters": [
+                _fixture_section("1", "1 Fixture"),
+                _fixture_section("2", "2 Fixture"),
+            ]
+        },
+    )
+    _write_json(
+        manual / "section_classifications.json",
+        {
+            "classifications": {
+                "1@0": {"counts_for_cp": True},
+                "2@0": {"counts_for_cp": True},
+            }
+        },
+    )
+    _write_json(
+        derived / "predicted_rolls.json",
+        {
+            "predicted": [
+                {
+                    "chapter_num": "2",
+                    "slot_index": 1,
+                    "cp_offset": 1200,
+                    "epub_offset": 1200,
+                    "roll_number": 1,
+                    "roll_trigger_cp_threshold": 100,
+                }
+            ]
+        },
+    )
+    _write_json(
+        derived / "roll_text_evidence.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": 1,
+                    "chapter_num": "2",
+                    "slot_index": 1,
+                    "cp_offset": 1200,
+                    "epub_offset": 1200,
+                }
+            ]
+        },
+    )
+    _write_json(derived / "rolls.json", {"rolls": []})
+    _write_json(
+        derived / "roll_outcomes.json",
+        {
+            "rolls": [
+                {
+                    "chapter_num": "2",
+                    "word_position": 200,
+                    "source": "predicted",
+                    "outcome": "miss",
+                    "perk": None,
+                    "paid_perks": [],
+                    "free_perks": [],
+                    "roll_number": 1,
+                    "roll_trigger_cp_threshold": 100,
+                    "sequence_in_chapter": 1,
+                    "rolls_in_chapter": 1,
+                    "available_cp": 100,
+                    "banked_cp_after_roll": 100,
+                }
+            ]
+        },
+    )
+    _write_json(derived / "obtained_perks.json", {"perks": []})
+    _write_json(derived / "perk_directory.json", {"perks": []})
+    _write_json(
+        derived / "outstanding_perks_by_chapter.json",
+        {
+            "chapters": [
+                {
+                    "chapter_num": "2",
+                    "before_chapter": {
+                        "total_count": 1,
+                        "by_constellation": {
+                            "Capstone": [{"name": "Too Costly", "cost": 200}]
+                        },
+                    },
+                }
+            ]
+        },
+    )
+    _write_json(
+        manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "2": {
+                    "rolls": [
+                        {
+                            "outcome": "miss",
+                            "constellation": "Capstone",
+                            "mention_chapter_num": "2",
+                            "mention_word_position": 123,
+                            "display_position_policy": "mention",
+                            "evidence_quotes": [
+                                {
+                                    "text": "the Capstone constellation passed by",
+                                    "mention_chapter_num": "2",
+                                    "mention_word_position": 123,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        },
+    )
+    _write_json(manual / "roll_overrides.json", {"roll_overrides": []})
+    _patch_pipeline_paths(monkeypatch, project, epub)
+
+    derive_roll_facts.main()
+
+    roll_facts = json.loads((derived / "roll_facts.json").read_text())
+    [roll] = roll_facts["rolls"]
+    assert roll["source"] == "roll_outcomes"
+    assert roll["source_kind"] == "interpolated"
+    assert roll["roll_sequence_in_chapter"] == 1
+    assert roll["predicted_ordinal"] == 1
+    assert roll["source_ordinal"] is None
+    assert roll["outcome"] == "miss"
+    assert roll["constellation"] == "Capstone"
+    assert roll["constellation_revealed"] is True
+    assert roll["mechanical_word_position"] == 200
+    assert roll["mention_word_position"] == 123
+    assert roll["display_position_policy"] == "mention"
+    assert roll["display_word_position"] == 123
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "the Capstone constellation passed by",
+            "mention_chapter_num": "2",
+            "mention_word_position": 123,
+        }
+    ]
+
+
+def test_manual_obtained_perk_assignment_pins_hit_to_override_slot(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import derive_roll_facts
+
+    project = tmp_path / "project"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = project / "data" / "raw" / "fixture.epub"
+    chapters = [
+        _fixture_chapter("1", "1 Fixture", sort_key=[1, 0], word_count=10000),
+        _fixture_chapter("2", "2 Fixture", sort_key=[2, 0]),
+    ]
+    _write_json(derived / "chapters.json", {"chapters": chapters})
+    _write_json(
+        derived / "chapter_sections.json",
+        {
+            "chapters": [
+                _fixture_section("1", "1 Fixture", word_count=10000),
+                _fixture_section("2", "2 Fixture"),
+            ]
+        },
+    )
+    _write_json(
+        manual / "section_classifications.json",
+        {
+            "classifications": {
+                "1@0": {"counts_for_cp": True},
+                "2@0": {"counts_for_cp": True},
+            }
+        },
+    )
+    _write_json(
+        derived / "predicted_rolls.json",
+        {
+            "predicted": [
+                {
+                    "chapter_num": "2",
+                    "slot_index": idx,
+                    "cp_offset": 10000 + idx * 200,
+                    "epub_offset": 10000 + idx * 200,
+                    "roll_number": idx,
+                    "roll_trigger_cp_threshold": 100,
+                }
+                for idx in range(1, 5)
+            ]
+        },
+    )
+    _write_json(
+        derived / "roll_text_evidence.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": idx,
+                    "chapter_num": "2",
+                    "slot_index": idx,
+                    "cp_offset": 10000 + idx * 200,
+                    "epub_offset": 10000 + idx * 200,
+                }
+                for idx in range(1, 5)
+            ]
+        },
+    )
+    _write_json(derived / "rolls.json", {"rolls": []})
+    _write_json(
+        derived / "roll_outcomes.json",
+        {
+            "rolls": [
+                {
+                    "chapter_num": "2",
+                    "word_position": 10000 + idx * 200,
+                    "source": "predicted",
+                    "outcome": "miss",
+                    "perk": None,
+                    "paid_perks": [],
+                    "free_perks": [],
+                    "roll_number": idx,
+                    "roll_trigger_cp_threshold": 100,
+                    "sequence_in_chapter": idx,
+                    "rolls_in_chapter": 4,
+                    "available_cp": 1000,
+                    "banked_cp_after_roll": 1000,
+                }
+                for idx in range(1, 5)
+            ]
+        },
+    )
+    _write_json(
+        derived / "obtained_perks.json",
+        {
+            "perks": [
+                _fixture_perk(
+                    sequence=1,
+                    chapter_num="2",
+                    name="Pinned Spark",
+                    jump="Fixture Jump",
+                    constellation="Magic",
+                    cost=100,
+                ),
+                {
+                    **_fixture_perk(
+                        sequence=1,
+                        chapter_num="2",
+                        name="Free Suit",
+                        jump="Fixture Jump",
+                        constellation="Clothing",
+                        cost=0,
+                    ),
+                    "free": True,
+                    "cost_text": "Free",
+                },
+            ]
+        },
+    )
+    _write_json(
+        derived / "perk_directory.json",
+        {
+            "perks": [
+                _fixture_directory_perk(
+                    name="Pinned Spark",
+                    jump="Fixture Jump",
+                    constellation="Magic",
+                    cost=100,
+                ),
+                _fixture_directory_perk(
+                    name="Free Suit",
+                    jump="Fixture Jump",
+                    constellation="Clothing",
+                    cost=0,
+                ),
+            ]
+        },
+    )
+    _write_json(derived / "outstanding_perks_by_chapter.json", {"chapters": []})
+    _write_json(
+        manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "2": {
+                    "rolls": [
+                        {"outcome": "miss", "constellation": "Vehicles"},
+                        {"outcome": "miss", "constellation": "Toolkits"},
+                        {
+                            "outcome": "hit",
+                            "constellation": "Magic",
+                            "perks": ["Pinned Spark"],
+                            "evidence_quotes": [
+                                {
+                                    "text": "the pinned spark was secured",
+                                    "mention_chapter_num": "2",
+                                    "mention_word_position": 600,
+                                }
+                            ],
+                        },
+                    ]
+                }
+            }
+        },
+    )
+    _write_json(manual / "roll_overrides.json", {"roll_overrides": []})
+    _patch_pipeline_paths(monkeypatch, project, epub)
+    monkeypatch.setattr(
+        derive_roll_facts,
+        "_load_cp_words_per_chapter",
+        lambda: {"1 Fixture": 10000, "2 Fixture": 1000},
+    )
+
+    derive_roll_facts.main()
+
+    roll_facts = json.loads((derived / "roll_facts.json").read_text())
+    chapter_rolls = [
+        roll for roll in roll_facts["rolls"]
+        if roll["mechanical_chapter_num"] == "2"
+    ]
+    assert [roll["outcome"] for roll in chapter_rolls] == ["miss", "miss", "hit"]
+    pinned = chapter_rolls[2]
+    assert pinned["rolled_perk_name"] == "Pinned Spark"
+    assert pinned["free_perks"] == [
+        {
+            "id": "Clothing__Fixture_Jump__Free_Suit",
+            "name": "Free Suit",
+            "jump": "Fixture Jump",
+            "constellation": "Clothing",
+        }
+    ]
+    assert pinned["available_cp"] > pinned["banked_cp_after_roll"]
+
+
+def test_blank_override_slot_preserves_manual_obtained_perk_index(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import derive_roll_facts
+
+    project = tmp_path / "project"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = project / "data" / "raw" / "fixture.epub"
+    _write_json(
+        derived / "chapters.json",
+        {"chapters": [_fixture_chapter("2", "2 Fixture", sort_key=[2, 0])]},
+    )
+    _write_json(
+        derived / "chapter_sections.json",
+        {"chapters": [_fixture_section("2", "2 Fixture", word_count=1000)]},
+    )
+    _write_json(
+        manual / "section_classifications.json",
+        {"classifications": {"2@0": {"counts_for_cp": True}}},
+    )
+    _write_json(
+        derived / "predicted_rolls.json",
+        {
+            "predicted": [
+                {
+                    "chapter_num": "2",
+                    "slot_index": idx,
+                    "cp_offset": idx * 100,
+                    "epub_offset": idx * 100,
+                    "roll_number": idx,
+                    "roll_trigger_cp_threshold": 100,
+                }
+                for idx in range(1, 4)
+            ]
+        },
+    )
+    _write_json(
+        derived / "roll_text_evidence.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": idx,
+                    "chapter_num": "2",
+                    "slot_index": idx,
+                    "cp_offset": idx * 100,
+                    "epub_offset": idx * 100,
+                }
+                for idx in range(1, 4)
+            ]
+        },
+    )
+    _write_json(derived / "rolls.json", {"rolls": []})
+    _write_json(
+        derived / "roll_outcomes.json",
+        {
+            "rolls": [
+                {
+                    "chapter_num": "2",
+                    "word_position": idx * 100,
+                    "source": "predicted",
+                    "outcome": "miss",
+                    "perk": None,
+                    "paid_perks": [],
+                    "free_perks": [],
+                    "roll_number": idx,
+                    "roll_trigger_cp_threshold": 100,
+                    "sequence_in_chapter": idx,
+                    "rolls_in_chapter": 3,
+                    "available_cp": 1000,
+                    "banked_cp_after_roll": 1000,
+                }
+                for idx in range(1, 4)
+            ]
+        },
+    )
+    _write_json(
+        derived / "obtained_perks.json",
+        {
+            "perks": [
+                _fixture_perk(
+                    sequence=1,
+                    chapter_num="2",
+                    name="Pinned Spark",
+                    jump="Fixture Jump",
+                    constellation="Magic",
+                    cost=100,
+                ),
+            ]
+        },
+    )
+    _write_json(
+        derived / "perk_directory.json",
+        {
+            "perks": [
+                _fixture_directory_perk(
+                    name="Pinned Spark",
+                    jump="Fixture Jump",
+                    constellation="Magic",
+                    cost=100,
+                ),
+            ]
+        },
+    )
+    _write_json(derived / "outstanding_perks_by_chapter.json", {"chapters": []})
+    _write_json(
+        manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "2": {
+                    "rolls": [
+                        {},
+                        {
+                            "outcome": "hit",
+                            "constellation": "Magic",
+                            "perks": ["Pinned Spark"],
+                        },
+                    ]
+                }
+            }
+        },
+    )
+    _write_json(manual / "roll_overrides.json", {"roll_overrides": []})
+    _patch_pipeline_paths(monkeypatch, project, epub)
+    monkeypatch.setattr(
+        derive_roll_facts,
+        "_load_cp_words_per_chapter",
+        lambda: {"2 Fixture": 1000},
+    )
+
+    derive_roll_facts.main()
+
+    roll_facts = json.loads((derived / "roll_facts.json").read_text())
+    pinned = next(
+        roll for roll in roll_facts["rolls"]
+        if roll["rolled_perk_name"] == "Pinned Spark"
+    )
+    assert pinned["predicted_ordinal"] == 2
+    assert pinned["mechanical_word_position"] == 200
+
+
+def test_fallback_roll_facts_apply_quote_only_manual_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from scripts import derive_roll_facts
+
+    project = tmp_path / "project"
+    derived = project / "data" / "derived"
+    manual = project / "data" / "manual"
+    epub = project / "data" / "raw" / "fixture.epub"
+    _write_json(
+        derived / "chapters.json",
+        {"chapters": [_fixture_chapter("2", "2 Fixture", sort_key=[2, 0])]},
+    )
+    _write_json(
+        derived / "chapter_sections.json",
+        {"chapters": [_fixture_section("2", "2 Fixture")]},
+    )
+    _write_json(
+        manual / "section_classifications.json",
+        {"classifications": {"2@0": {"counts_for_cp": True}}},
+    )
+    _write_json(
+        derived / "predicted_rolls.json",
+        {
+            "predicted": [
+                {
+                    "chapter_num": "2",
+                    "slot_index": 1,
+                    "cp_offset": 200,
+                    "epub_offset": 200,
+                    "roll_number": 1,
+                    "roll_trigger_cp_threshold": 100,
+                }
+            ]
+        },
+    )
+    _write_json(
+        derived / "roll_text_evidence.json",
+        {
+            "rolls": [
+                {
+                    "roll_number": 1,
+                    "chapter_num": "2",
+                    "slot_index": 1,
+                    "cp_offset": 200,
+                    "epub_offset": 200,
+                }
+            ]
+        },
+    )
+    _write_json(derived / "rolls.json", {"rolls": []})
+    _write_json(
+        derived / "roll_outcomes.json",
+        {
+            "rolls": [
+                {
+                    "chapter_num": "2",
+                    "word_position": 200,
+                    "source": "predicted",
+                    "outcome": "miss",
+                    "perk": None,
+                    "paid_perks": [],
+                    "free_perks": [],
+                    "roll_number": 1,
+                    "roll_trigger_cp_threshold": 100,
+                    "sequence_in_chapter": 1,
+                    "rolls_in_chapter": 1,
+                    "available_cp": 100,
+                    "banked_cp_after_roll": 100,
+                }
+            ]
+        },
+    )
+    _write_json(derived / "obtained_perks.json", {"perks": []})
+    _write_json(derived / "perk_directory.json", {"perks": []})
+    _write_json(derived / "outstanding_perks_by_chapter.json", {"chapters": []})
+    _write_json(
+        manual / "chapter_roll_overrides.json",
+        {
+            "chapter_roll_overrides": {
+                "2": {
+                    "rolls": [
+                        {
+                            "evidence_quotes": [
+                                {
+                                    "text": "quote-only fallback evidence",
+                                    "mention_chapter_num": "2",
+                                    "mention_word_position": 123,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+    )
+    _write_json(manual / "roll_overrides.json", {"roll_overrides": []})
+    _patch_pipeline_paths(monkeypatch, project, epub)
+
+    derive_roll_facts.main()
+
+    roll_facts = json.loads((derived / "roll_facts.json").read_text())
+    [roll] = roll_facts["rolls"]
+    assert roll["source"] == "roll_outcomes"
+    assert roll["source_kind"] == "interpolated"
+    assert roll["mechanical_word_position"] == 200
+    assert roll["outcome"] == "miss"
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "quote-only fallback evidence",
+            "mention_chapter_num": "2",
+            "mention_word_position": 123,
+        }
+    ]
+
+
 def test_survey_designations_flow_into_visualization_roll_perks(
     tmp_path: Path,
     monkeypatch,
