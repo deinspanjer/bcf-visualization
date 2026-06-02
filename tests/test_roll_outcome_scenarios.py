@@ -92,7 +92,7 @@ def test_roll_outcomes_make_all_predicted_slots_misses_when_no_hits() -> None:
     assert all(slot["banked_cp_after_roll"] == slot["available_cp"] for slot in slots)
 
 
-def test_roll_outcomes_synthesize_extra_slots_when_hits_exceed_predictions() -> None:
+def test_roll_outcomes_do_not_synthesize_slots_when_hits_exceed_predictions() -> None:
     slots, _banked, _shadow = _build_chapter_slots(
         "1",
         _predicted(450),
@@ -105,11 +105,12 @@ def test_roll_outcomes_synthesize_extra_slots_when_hits_exceed_predictions() -> 
         transitions=[],
     )
 
-    assert [slot["outcome"] for slot in slots] == ["hit", "hit", "hit"]
-    assert [slot["source"] for slot in slots].count("synthetic") == 2
-    assert [slot["rolls_in_chapter"] for slot in slots] == [3, 3, 3]
-    assert [slot["sequence_in_chapter"] for slot in slots] == [1, 2, 3]
-    assert [slot["perk"]["name"] for slot in slots] == ["First", "Second", "Third"]
+    assert len(slots) == 1
+    assert slots[0]["source"] == "predicted"
+    assert slots[0]["outcome"] == "hit"
+    assert slots[0]["rolls_in_chapter"] == 1
+    assert slots[0]["sequence_in_chapter"] == 1
+    assert slots[0]["perk"]["name"] == "First"
 
 
 def test_roll_outcomes_attach_multi_grab_and_free_perks_to_one_hit_slot() -> None:

@@ -10,6 +10,7 @@ from textual.widgets import Button
 
 from scripts.forge_curator.app import (
     BatchMissQuotePicker,
+    GroupedPerkPicker,
     PerkPicker,
     QuoteMoveSourcePicker,
     QuoteMoveTargetPicker,
@@ -272,6 +273,53 @@ def test_save_quote_action_writes_manual_roll_evidence_and_refreshes(
     ]
     assert refreshes == [
         f"roll #1 quote saved ({len(cs.prose.text[start:end].strip())} chars)"
+    ]
+
+
+def test_save_quote_action_stores_raw_quote_word_position_in_excluded_span(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    chapter_facts_path = fixture.derived / "chapter_facts.json"
+    chapter_facts = json.loads(chapter_facts_path.read_text())
+    chapter = chapter_facts["chapters"][0]
+    chapter["sections"][0]["span_overrides"] = [
+        {
+            "word_offset_start": 60,
+            "word_offset_end": 80,
+            "counts_for_cp": False,
+            "reason_code": "author_note",
+            "note": "fixture author note",
+            "excerpt": "",
+        }
+    ]
+    _write_json(chapter_facts_path, chapter_facts)
+    app = fixture.loaded_app("1")
+    cs = app.state.chapter
+    assert cs is not None
+    quote_word = 70
+    assert app._cp_earning_word_offset(quote_word) == 60
+    monkeypatch.setattr(
+        app,
+        "_selected_quote",
+        lambda _action_name: "author note roll quote",
+    )
+    monkeypatch.setattr(app, "_selected_quote_start_word_index", lambda: quote_word)
+    monkeypatch.setattr(app, "_clear_prose_selection", lambda: None)
+    app._post_curation_refresh = lambda _message: None
+
+    app._action_save_quote("1")
+
+    roll = app.persistence.chapter_roll_overrides[
+        "chapter_roll_overrides"
+    ]["1"]["rolls"][0]
+    assert roll["evidence_quotes"] == [
+        {
+            "text": "author note roll quote",
+            "mention_chapter_num": "1",
+            "mention_word_position": quote_word,
+        }
     ]
 
 
@@ -1375,6 +1423,66 @@ def test_pick_perks_reopens_with_existing_roll_perks_selected(
 
     assert [type(screen) for screen in screens] == [PerkPicker]
     assert screens[0]._selected == {"Lofty Loft"}
+
+
+def test_group_footer_perks_assigns_selected_bundle_to_current_roll(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    _write_json(fixture.derived / "obtained_perks.json", {
+        "perks": [
+            {
+                "chapter_num": "2",
+                "perk_name": "Minor Blessing Apollo - Medicine",
+                "cost": 100,
+                "free": False,
+                "constellation": "Quality",
+            },
+            {
+                "chapter_num": "2",
+                "perk_name": "Unnatural Skill: Healing",
+                "cost": 0,
+                "free": True,
+                "constellation": "Quality",
+            },
+            {
+                "chapter_num": "2",
+                "perk_name": "Unrelated Later Perk",
+                "cost": 200,
+                "free": False,
+                "constellation": "Knowledge",
+            },
+        ]
+    })
+    app = fixture.loaded_app("2")
+    cs = app.state.chapter
+    assert cs is not None
+    target = next(
+        roll for roll in app._roll_slot_rows(cs, app._unified_rolls(cs))
+        if roll.get("target_roll_index") == 2
+    )
+    app._select_roll_target(target)
+    app._post_curation_refresh = lambda _message: None
+    screens: list[GroupedPerkPicker] = []
+    app.push_screen = lambda screen: screens.append(screen)
+
+    app._handle_space_chord("g")
+
+    assert [type(screen) for screen in screens] == [GroupedPerkPicker]
+    screens[0]._on_confirm([
+        "Minor Blessing Apollo - Medicine",
+        "Unnatural Skill: Healing",
+    ])
+
+    overrides = json.loads((fixture.manual / "chapter_roll_overrides.json").read_text())
+    roll = overrides["chapter_roll_overrides"]["2"]["rolls"][1]
+    assert roll["outcome"] == "hit"
+    assert roll["perks"] == [
+        "Minor Blessing Apollo - Medicine",
+        "Unnatural Skill: Healing",
+    ]
+    assert roll["constellation"] == "Quality"
 
 
 def test_save_quote_multi_can_attach_to_global_roll(

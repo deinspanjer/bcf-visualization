@@ -1366,6 +1366,31 @@ class CurationPersistence:
         )
         return marker
 
+    def restamp_chapter_alignment_fingerprint(self, chapter_num: str) -> str:
+        """Update one chapter override to the current predicted-slot fingerprint."""
+        if not self.chapter_alignment_fingerprints_path.exists():
+            raise FileNotFoundError(self.chapter_alignment_fingerprints_path)
+        doc = json.loads(self.chapter_alignment_fingerprints_path.read_text())
+        fingerprints = doc.get("chapter_alignment_fingerprints") or {}
+        cn = str(chapter_num)
+        fingerprint = fingerprints.get(cn)
+        if fingerprint is None:
+            raise KeyError(f"no alignment fingerprint for chapter {cn}")
+
+        before = deepcopy(self.chapter_roll_overrides)
+        entry = self._ensure_chapter_entry(cn)
+        entry["_fingerprint"] = str(fingerprint)
+        self._write_chapter_roll_overrides(before)
+        self._append_journal(
+            "restamp_chapter_alignment_fingerprint",
+            self.chapter_roll_overrides_path,
+            cn,
+            before,
+            deepcopy(self.chapter_roll_overrides),
+            extra={"fingerprint": str(fingerprint)},
+        )
+        return str(fingerprint)
+
     # ------------------------------------------------------------------
     # Action handlers — one per <space>X keybind.
     # ------------------------------------------------------------------

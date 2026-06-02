@@ -30,12 +30,11 @@ Edge cases
 
   * K == 0           -> all N predicted rolls are misses.
   * K == N           -> all rolls are hits.
-  * K > N            -> we synthesize (K - N) additional roll slots at
-                        evenly-spaced word positions using the chapter's
-                        `words`. Total slots become K, all hits.
-                        Synthesized slots are tagged `source: "synthetic"`.
-  * N == 0, K > 0    -> all K slots are synthesized (no predicted slots
-                        existed for this chapter).
+  * K > N            -> all predicted slots become hits; extra acquisition
+                        units remain a validation problem for the roll-facts
+                        pipeline instead of becoming invented slots.
+  * N == 0, K > 0    -> nothing emitted for that chapter; downstream
+                        validation must surface the missing predicted slots.
   * Both zero        -> nothing emitted for that chapter.
 
 Perk assignment
@@ -101,28 +100,6 @@ def _hit_slot_indices(n_slots: int, k_hits: int) -> list[int]:
     return [int((i + 0.5) * n_slots / k_hits) for i in range(k_hits)]
 
 
-def _synthetic_positions(words: int, count: int, after_real: list[int]) -> list[int]:
-    """Generate `count` synthetic word positions inside a chapter of
-    `words` words, avoiding collision with already-placed positions.
-
-    We spread synthetic slots evenly across the chapter then nudge any
-    that collide with a real position by +1. Word positions are integers
-    and uniqueness only matters for downstream sorting stability.
-    """
-    if count <= 0:
-        return []
-    # Evenly spaced fractional positions: 1/(count+1), 2/(count+1), ...
-    positions = [max(1, int(words * (i + 1) / (count + 1))) for i in range(count)]
-    used = set(after_real)
-    out: list[int] = []
-    for p in positions:
-        while p in used:
-            p += 1
-        used.add(p)
-        out.append(p)
-    return out
-
-
 def _build_acquisition_units(obtained_perks: list[dict]) -> list[dict]:
     """Group paid acquisitions into multi-grab units (with their trailing
     free perks). Each returned unit has a list of paid perks (one or more),
@@ -172,14 +149,6 @@ def _build_chapter_slots(
     # Real predicted slots (already sorted by cp_offset upstream, but
     # sort defensively).
     real = sorted(predicted, key=lambda r: r["cp_offset"])
-    real_positions = [r["cp_offset"] for r in real]
-
-    # If we need more slots than predictions, synthesize the difference.
-    extra = max(0, k - n)
-    synth_positions = _synthetic_positions(
-        words or 1000, extra, real_positions
-    )
-
     slots: list[dict] = []
     for r in real:
         slots.append({
@@ -193,19 +162,6 @@ def _build_chapter_slots(
             "roll_number": r.get("roll_number"),
             "cp_rule_regime": r.get("cp_rule_regime"),
             "roll_trigger_cp_threshold": r.get("roll_trigger_cp_threshold"),
-        })
-    for pos in synth_positions:
-        slots.append({
-            "chapter_num": chapter_num,
-            "word_position": pos,
-            "source": "synthetic",
-            "outcome": "miss",
-            "perk": None,
-            "paid_perks": [],
-            "free_perks": [],
-            "roll_number": None,
-            "cp_rule_regime": None,
-            "roll_trigger_cp_threshold": None,
         })
 
     slots.sort(key=lambda s: s["word_position"])
@@ -496,10 +452,10 @@ def main(argv: list[str] | None = None) -> None:
         ),
         "_method": (
             "Per chapter, K paid acquisition units distributed proportionally across "
-            "max(N,K) roll slots using floor((i+0.5)*M/K) for hit-slot index i. "
+            "N predicted roll slots using floor((i+0.5)*N/K) for hit-slot index i. "
             "Free perks attach to their paid hit and do not consume roll slots. "
-            "Where K > N, additional slots are synthesized at evenly-spaced "
-            "word positions using chapters.json words."
+            "Where K > N, extra acquisitions are left for roll-facts validation "
+            "instead of becoming invented roll positions."
         ),
         "_caveat": (
             "Fallback for chapters without manual Forge Curator coverage. "

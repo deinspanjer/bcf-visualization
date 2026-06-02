@@ -92,6 +92,10 @@ _CONSTELLATION_NAME_PREFIXES: dict[str, str] = {
     "toolkits": "Toolkits",
 }
 
+_CHAPTER_NUM_CORRECTIONS: dict[str, str] = {
+    "95 interlude gregor - shawn": "95.5",
+}
+
 
 _PREFIX_SEPARATORS = (":", " - ", " – ", " — ")
 
@@ -250,6 +254,9 @@ def parse_obtained_perks(wb, constellation_idx, overrides) -> list[ObtainedPerk]
         title_raw = _norm(ws.cell(r, 2).value)
         prefix = _CHAPTER_PREFIX_RE.match(title_raw)
         chapter_num = prefix.group(1) if prefix else "0"
+        chapter_num = _CHAPTER_NUM_CORRECTIONS.get(
+            title_raw.lower(), chapter_num
+        )
         cost_text = _norm(ws.cell(r, 6).value)
         cost, free, cost_unit = _parse_cost(cost_text)
         classification = _norm(ws.cell(r, 4).value) or None

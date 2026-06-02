@@ -268,6 +268,9 @@ def perk_meta(
         directory_meta["name"] if directory_meta else (raw_name or "")
     )
     instance = raw_name if raw_name and raw_name != canonical_name else None
+    raw_cost = int_or_none(raw_perk.get("cost"))
+    if raw_perk.get("cost_unit") is not None:
+        raw_cost = 0
     return {
         "id": directory_meta["id"] if directory_meta else None,
         "name": canonical_name,
@@ -280,10 +283,8 @@ def perk_meta(
             (directory_meta.get("constellation") if directory_meta else None)
             or constellation
         ),
-        "cost": (
-            int_or_none(raw_perk.get("cost"))
-            if raw_perk.get("cost") is not None
-            else (directory_meta.get("cost") if directory_meta else None)
+        "cost": raw_cost if raw_cost is not None else (
+            directory_meta.get("cost") if directory_meta else None
         ),
     }
 
@@ -300,17 +301,20 @@ def _purchased_perk_record(
     ``instance`` is the raw curator string when it differs (else null);
     ``id`` and ``jump`` come from the directory entry. ``cost_unit`` is
     propagated from the curator's parsed perk row (None for plain CP/WP
-    costs; e.g. "Customization Points" for Zoids equipment where the
-    pipeline multiplied the raw value by 100 to derive effective CP).
+    costs; e.g. "Customization Points" for Zoids equipment, which is not
+    a Forge CP debit).
     """
     raw_name = raw_perk.get("name") or raw_perk.get("perk_name") or ""
     canonical = meta["name"] or raw_name
     instance = raw_name if raw_name and raw_name != canonical else None
-    cost = (
-        int(meta["cost"])
-        if meta["cost"] is not None
-        else int(raw_perk.get("cost") or 0)
-    )
+    if raw_perk.get("cost_unit") is not None:
+        cost = 0
+    else:
+        cost = (
+            int(meta["cost"])
+            if meta["cost"] is not None
+            else int(raw_perk.get("cost") or 0)
+        )
     record = {
         "name": canonical,
         "instance": instance,
@@ -570,10 +574,9 @@ def _build_scheduler_inputs() -> dict[str, dict]:
         preds = pred_by_chapter.get(cn, [])
         preds.sort(key=lambda r: int(r["cp_offset"]))
         # Predicted slot list (chapter-local CP-word offset). This is
-        # the model truth used for validation. The generation scheduler
-        # may synthesize fallback slots below so roll_facts can still
-        # carry source-derived rows, but validation keeps these counts
-        # separate.
+        # the model truth used for validation. If hit units exceed these
+        # slots, the scheduler must report the capacity problem instead
+        # of receiving invented fallback positions.
         predicted_slots = [
             SlotInput(
                 word_position=max(0, int(r["cp_offset"]) - ws_global),
@@ -606,27 +609,6 @@ def _build_scheduler_inputs() -> dict[str, dict]:
             )
             for u in ch_units
         ]
-        # If K > N, synthesize extra slots with even spread (matching
-        # derive_roll_outcomes.py).
-        n, k = len(slots), len(hits)
-        if k > n and words > 0:
-            extra = k - n
-            # Evenly spaced at (i+1)/(extra+1) of words; collision-avoid
-            # against existing slot positions.
-            existing = {s.word_position for s in slots}
-            for i in range(extra):
-                pos = max(1, int(words * (i + 1) / (extra + 1)))
-                while pos in existing:
-                    pos += 1
-                existing.add(pos)
-                slots.append(SlotInput(
-                    word_position=pos,
-                    roll_trigger_cp_threshold=REGIMES[
-                        regime_for_chapter(cn)
-                    ]["cp_per_roll"],
-                    source="synthetic",
-                ))
-            slots.sort(key=lambda s: s.word_position)
         out[cn] = {
             "slots": slots,
             "predicted_slots": predicted_slots,
@@ -3052,11 +3034,11 @@ def main() -> None:
             "attach to the paid hit and do not consume separate roll slots. "
             "Manual roll/chapter overrides land last (slot_source='override'). "
             "After final roll ordering, hit banked-CP-after values are "
-            "normalized from available CP minus paid perk costs. Perk costs "
-            "are already normalized to effective Forge CP; cost_unit is "
-            "provenance metadata. Quote-carried CP ledger checkpoints apply "
-            "after this normalization and reset downstream derived ledger "
-            "balances without moving predicted slots."
+            "normalized from available CP minus paid Forge CP costs. Non-Forge "
+            "cost units are retained as provenance and do not debit Forge CP. "
+            "Quote-carried CP ledger checkpoints apply after this normalization "
+            "and reset downstream derived ledger balances without moving "
+            "predicted slots."
         ),
         "_caveat": (
             "Curator rows are the trusted source. Solver rows are "

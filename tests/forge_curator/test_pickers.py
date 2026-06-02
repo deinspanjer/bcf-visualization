@@ -6,12 +6,13 @@ from pathlib import Path
 import pytest
 from textual.app import App
 from textual.containers import Container
-from textual.widgets import Button, OptionList, Static
+from textual.widgets import Button, OptionList, SelectionList, Static
 
 from scripts.forge_curator.app import (
     BatchMissQuotePicker,
     ConstellationPicker,
     GlobalRollNumberPrompt,
+    GroupedPerkPicker,
     PerkPicker,
     QuoteMoveSourcePicker,
     QuoteMoveTargetPicker,
@@ -530,6 +531,53 @@ def test_perk_picker_keyboard_bindings_toggle_and_confirm() -> None:
 
     assert bindings["space"] == "toggle_focused_perk"
     assert bindings["enter"] == "confirm_selection"
+
+
+def test_grouped_perk_picker_keyboard_bindings_toggle_and_confirm() -> None:
+    bindings = {binding.key: binding.action for binding in GroupedPerkPicker.BINDINGS}
+
+    assert bindings["space"] == "select"
+    assert bindings["enter"] == "confirm_selection"
+
+
+@pytest.mark.asyncio
+async def test_grouped_perk_picker_uses_selection_list_without_dropping_footer_rows() -> None:
+    app = App()
+    perks = [
+        {
+            "perk_name": f"Personal Reality Bundle {idx}",
+            "cost": 0 if idx % 3 else 100,
+            "free": idx % 3 != 0,
+            "constellation": "Personal Reality",
+        }
+        for idx in range(1, 31)
+    ]
+    selected: list[list[str]] = []
+    picker = GroupedPerkPicker(
+        perks=perks,
+        on_confirm=selected.append,
+    )
+
+    async with app.run_test(size=(120, 40)) as pilot:
+        app.push_screen(picker)
+        await pilot.pause()
+
+        selection = app.screen.query_one("#grouped_footer_perks", SelectionList)
+
+        assert selection.option_count == len(perks)
+        assert selection.selected == []
+
+        selection.select("Personal Reality Bundle 2")
+        selection.select("Personal Reality Bundle 17")
+        selection.select("Personal Reality Bundle 30")
+        await pilot.press("enter")
+        await pilot.pause()
+
+    assert selected == [[
+        "Personal Reality Bundle 2",
+        "Personal Reality Bundle 17",
+        "Personal Reality Bundle 30",
+    ]]
 
 
 def test_perk_picker_space_action_toggles_focused_perk() -> None:

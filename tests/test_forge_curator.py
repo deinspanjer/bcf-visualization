@@ -1001,6 +1001,73 @@ def test_space_r_without_discrepancy_marks_auto_associations_reviewed(tmp_path) 
     assert flashes == []
 
 
+def test_space_f_restamps_current_chapter_fingerprint_only(tmp_path) -> None:
+    from scripts.forge_curator.persistence import CurationPersistence
+
+    chapter_num = "1"
+    manual = tmp_path / "manual"
+    derived = tmp_path / "derived"
+    overrides_path = manual / "chapter_roll_overrides.json"
+    derived.mkdir(parents=True)
+    overrides_path.parent.mkdir(parents=True)
+    overrides_path.write_text(
+        json.dumps(
+            {
+                "chapter_roll_overrides": {
+                    chapter_num: {
+                        "_fingerprint": "sha256:oldchapter1",
+                        "rolls": [],
+                    },
+                    "2": {
+                        "_fingerprint": "sha256:oldchapter2",
+                        "rolls": [],
+                    },
+                }
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    (derived / "chapter_alignment_fingerprints.json").write_text(
+        json.dumps(
+            {
+                "chapter_alignment_fingerprints": {
+                    chapter_num: "sha256:newchapter1",
+                    "2": "sha256:newchapter2",
+                }
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
+    app = _loaded_app(chapter_num, tmp_path)
+    app.persistence = CurationPersistence(
+        chapter_roll_overrides_path=overrides_path,
+        journal_dir_path=manual / ".journals",
+    )
+    refreshes: list[str] = []
+    flashes: list[str] = []
+    app._post_curation_refresh = (
+        lambda message, *, full=False: refreshes.append(message)
+    )
+    app._flash = flashes.append
+
+    app._handle_space_chord("f")
+
+    saved = json.loads(overrides_path.read_text())
+    assert (
+        saved["chapter_roll_overrides"][chapter_num]["_fingerprint"]
+        == "sha256:newchapter1"
+    )
+    assert (
+        saved["chapter_roll_overrides"]["2"]["_fingerprint"]
+        == "sha256:oldchapter2"
+    )
+    assert refreshes == ["chapter alignment fingerprint re-stamped"]
+    assert flashes == []
+
+
 def test_remove_annotations_action_clears_roll_evidence_under_cursor(
     tmp_path, monkeypatch,
 ) -> None:

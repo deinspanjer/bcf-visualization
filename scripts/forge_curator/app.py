@@ -37,7 +37,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, OptionList, Static
+from textual.widgets import Button, Input, OptionList, SelectionList, Static
 from textual.widgets.option_list import Option
 
 from scripts.forge_curator.data_loader import ForgeCuratorData
@@ -791,6 +791,7 @@ class ActionsPanel(Static):
             "  ⎵M       Move saved quote to another roll\n\n"
             "[bold]Roll metadata[/bold]\n"
             "  ⎵_  Source-only roll anchor at cursor\n"
+            "  ⎵f  Re-stamp chapter alignment fingerprint\n"
             "  ⎵r  Resolve model discrepancy\n"
             "  ⎵R  Rebuild derived data\n"
             "  ⎵s  Predicted slot = skipped\n"
@@ -799,6 +800,7 @@ class ActionsPanel(Static):
             "  ⎵m  Last roll = miss\n"
             "  ⎵v  Roll display position\n"
             "  ⎵c  Set constellation\n"
+            "  ⎵g  Group footer perks\n"
             "  ⎵p  Set perks\n\n"
             "[bold]Annotation cleanup[/bold]\n"
             "  ⎵D  Delete curation data for chapter\n\n"
@@ -951,6 +953,7 @@ class HelpScreen(ModalScreen):
             "  <space>n         detect miss quote matches\n"
             "  <space>M         move saved quote to another roll\n"
             "  <space>v         roll display position\n"
+            "  <space>f         re-stamp chapter alignment fingerprint\n"
             "  <space>r         resolve current model discrepancy\n"
             "  <space>R         rebuild derived data\n"
             "  <space>s         predicted slot = skipped\n"
@@ -958,7 +961,7 @@ class HelpScreen(ModalScreen):
             "  <space>_         source-only roll anchor at cursor\n"
             "  <space>D         delete curation data for chapter\n"
             "  <space>h / m     last roll = hit / miss\n"
-            "  <space>c / p     constellation / perks pickers\n"
+            "  <space>c / g / p constellation / group footer perks / perks pickers\n"
             "  (no insert/delete: roll positions come from simulator)\n"
             "\n"
             "  u                undo the last curation action (one step)\n"
@@ -1275,6 +1278,122 @@ class PerkPicker(ModalScreen):
     def action_confirm_selection(self) -> None:
         self.app.pop_screen()
         self._on_confirm(sorted(self._selected))
+
+    def action_dismiss_picker(self) -> None:
+        self.app.pop_screen()
+
+
+class GroupedPerkPicker(ModalScreen):
+    """Multi-select footer perk picker for assigning one bundled roll."""
+
+    DEFAULT_CSS = """
+    GroupedPerkPicker {
+        align: center middle;
+    }
+    GroupedPerkPicker > Container {
+        width: 84;
+        height: auto;
+        max-height: 88%;
+        border: thick $accent;
+        background: $surface;
+        padding: 1 2;
+    }
+    GroupedPerkPicker Static.title {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    GroupedPerkPicker SelectionList {
+        height: 20;
+        border: none;
+    }
+    GroupedPerkPicker Button {
+        width: 100%;
+    }
+    """
+
+    BINDINGS = [
+        Binding("space", "select", "toggle", show=False, priority=True),
+        Binding("enter", "confirm_selection", "confirm", show=False, priority=True),
+        Binding("escape", "dismiss_picker", "cancel"),
+        Binding("q", "dismiss_picker", "cancel"),
+    ]
+
+    def __init__(
+        self,
+        perks: list[dict],
+        on_confirm,
+        initial_selected: list[str] | None = None,
+        **kw,
+    ):
+        super().__init__(**kw)
+        self._perks = perks
+        self._on_confirm = on_confirm
+        self._initial_selected = {
+            str(name) for name in (initial_selected or []) if str(name).strip()
+        }
+
+    @staticmethod
+    def _option_label(perk: dict) -> str:
+        name = _perk_display_label(perk) or "?"
+        constellation = str(perk.get("constellation") or "").strip()
+        jump = str(perk.get("jump") or perk.get("source") or "").strip()
+        cost = perk.get("cost")
+        if perk.get("free"):
+            cost_label = "free"
+        elif cost is None:
+            cost_label = "?"
+        else:
+            cost_label = f"{int(cost)} CP"
+        detail = " / ".join(part for part in [constellation, jump] if part)
+        label = f"{name}  {cost_label}"
+        if detail:
+            label = f"{label}  {detail}"
+        return label[:78] + "..." if len(label) > 81 else label
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("Group footer perks for current roll", classes="title")
+            yield SelectionList(
+                *[
+                    (
+                        self._option_label(perk),
+                        _perk_display_label(perk) or "?",
+                        (_perk_display_label(perk) or "?") in self._initial_selected,
+                    )
+                    for perk in self._perks
+                ],
+                id="grouped_footer_perks",
+                compact=True,
+            )
+            yield Button("Group selected", id="confirm", variant="primary")
+
+    def on_mount(self) -> None:
+        self.query_one("#grouped_footer_perks", SelectionList).focus()
+
+    def action_select(self) -> None:
+        self.query_one("#grouped_footer_perks", SelectionList).action_select()
+
+    def _selected_names(self) -> list[str]:
+        selected = {
+            str(name)
+            for name in self.query_one("#grouped_footer_perks", SelectionList).selected
+        }
+        return [
+            name
+            for name in (_perk_display_label(perk) or "?" for perk in self._perks)
+            if name in selected
+        ]
+
+    @on(Button.Pressed)
+    def _on_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm":
+            self.action_confirm_selection()
+
+    def action_confirm_selection(self) -> None:
+        self.app.pop_screen()
+        self._on_confirm(self._selected_names())
 
     def action_dismiss_picker(self) -> None:
         self.app.pop_screen()
@@ -4555,6 +4674,8 @@ class ForgeCuratorApp(App):
             self._action_set_last_outcome(cn, "miss")
         elif ch == "c":
             self._action_pick_constellation(cn)
+        elif ch == "g":
+            self._action_group_footer_perks(cn)
         elif ch == "p":
             self._action_pick_perks(cn)
         elif ch == "q":
@@ -4567,6 +4688,8 @@ class ForgeCuratorApp(App):
             self._action_reassign_roll_quote(cn)
         elif ch == "v":
             self._action_pick_roll_visualization_position(cn)
+        elif ch == "f":
+            self._action_restamp_chapter_alignment_fingerprint(cn)
         elif ch == "r":
             self._action_resolve_model_discrepancy(cn)
         elif ch == "R":
@@ -5197,6 +5320,45 @@ class ForgeCuratorApp(App):
             on_confirm=on_confirm,
         ))
 
+    def _action_group_footer_perks(self, chapter_num: str) -> None:
+        cs = self.state.chapter
+        if cs is None:
+            return
+        target = self._current_roll_target()
+        if target is None or target.get("target_roll_index") is None:
+            self._flash("no predicted roll at/before cursor")
+            return
+        target_chapter = str(target.get("target_chapter_num") or chapter_num)
+        idx = int(target["target_roll_index"])
+        perks = list(cs.derived.perks)
+        if not perks:
+            self._flash("no perks recorded for this chapter")
+            return
+
+        def on_confirm(names: list[str]) -> None:
+            if not names:
+                self._flash("group perks: nothing selected")
+                return
+            self.persistence.update_roll_at_index(
+                target_chapter,
+                idx,
+                outcome="hit",
+                perks=names,
+                constellation=self._constellation_for_selected_perks(perks, names),
+            )
+            self._post_curation_refresh(
+                f"roll #{idx} grouped perks: {', '.join(names)}"
+            )
+        self.push_screen(GroupedPerkPicker(
+            perks=perks,
+            initial_selected=self._selected_roll_perk_names(
+                target_chapter,
+                idx,
+                target,
+            ),
+            on_confirm=on_confirm,
+        ))
+
     @staticmethod
     def _constellation_for_selected_perks(
         perks: list[dict],
@@ -5702,8 +5864,9 @@ class ForgeCuratorApp(App):
                 already_claimed = quote_key in claimed_quotes
                 if not already_claimed:
                     claimed_quotes.add(quote_key)
-                mention_word = self._cp_earning_word_offset(candidate.word_index)
-                distance = mention_word - int(self._roll_action_word_position(cs, roll) or 0)
+                mention_word = int(candidate.word_index)
+                mention_cp = self._cp_earning_word_offset(mention_word)
+                distance = mention_cp - int(self._roll_action_word_position(cs, roll) or 0)
                 quote_variants = self._miss_quote_match_variants(
                     cs,
                     roll,
@@ -5724,7 +5887,7 @@ class ForgeCuratorApp(App):
                     "target_label": self._roll_target_message_label(roll),
                     "source_context": self._source_context_label(roll),
                     "quote_text": candidate.text,
-                    "mention_label": f"ch {cs.meta.chapter_num}:{mention_word}",
+                    "mention_label": f"ch {cs.meta.chapter_num}:{mention_cp}",
                     "distance_label": f"{distance:+} words",
                     "reason_tags": list(candidate.reason_tags),
                     "default_selected": default_selected,
@@ -5815,7 +5978,8 @@ class ForgeCuratorApp(App):
                     perk_names = [perk_name]
                     claimed_perks.add(perk_name.lower())
                     reason_tags.append("footer_perk")
-            mention_word = self._cp_earning_word_offset(quote_word)
+            mention_word = quote_word
+            mention_cp = self._cp_earning_word_offset(quote_word)
             quote_key = (quote_start, quote_end)
             already_claimed = quote_key in claimed_quotes
             if not already_claimed:
@@ -5836,9 +6000,9 @@ class ForgeCuratorApp(App):
                 "source_context": "narrative evidence",
                 "proposal_summary": self._lineup_proposal_summary(record),
                 "quote_text": quote_text,
-                "mention_label": f"ch {chapter_num}:{mention_word}",
+                "mention_label": f"ch {chapter_num}:{mention_cp}",
                 "distance_label": (
-                    f"{mention_word - int(self._roll_action_word_position(cs, target) or 0):+} words"
+                    f"{mention_cp - int(self._roll_action_word_position(cs, target) or 0):+} words"
                 ),
                 "reason_tags": reason_tags,
                 "default_selected": (
@@ -5859,9 +6023,7 @@ class ForgeCuratorApp(App):
                     "record": {
                         **record,
                         "text": str(variant["text"]),
-                        "mention_word_position": self._cp_earning_word_offset(
-                            int(variant["word_index"])
-                        ),
+                        "mention_word_position": int(variant["word_index"]),
                     },
                 } for variant in quote_variants],
                 "record": record,
@@ -6136,12 +6298,13 @@ class ForgeCuratorApp(App):
     ) -> list[dict]:
         variants = []
         for variant in candidate.variants:
-            mention_word = self._cp_earning_word_offset(variant.word_index)
-            distance = mention_word - int(self._roll_action_word_position(cs, roll) or 0)
+            mention_word = int(variant.word_index)
+            mention_cp = self._cp_earning_word_offset(mention_word)
+            distance = mention_cp - int(self._roll_action_word_position(cs, roll) or 0)
             variants.append({
                 "label": variant.label,
                 "text": variant.text,
-                "mention_label": f"ch {cs.meta.chapter_num}:{mention_word}",
+                "mention_label": f"ch {cs.meta.chapter_num}:{mention_cp}",
                 "distance_label": f"{distance:+} words",
                 "record": {
                     "chapter_num": target_chapter,
@@ -6235,7 +6398,7 @@ class ForgeCuratorApp(App):
             return
         target_chapter = str(target.get("target_chapter_num") or chapter_num)
         idx = int(target["target_roll_index"])
-        mention_word = self._cp_earning_word_offset(target_word or 0)
+        mention_word = int(target_word or 0)
         autofill = self._quote_autofill_metadata(chapter_num, quote)
         self.persistence.append_roll_evidence_at_index(
             target_chapter,
@@ -6281,7 +6444,7 @@ class ForgeCuratorApp(App):
         if cs is None:
             return
         target_word = self._selected_quote_start_word_index()
-        mention_word = self._cp_earning_word_offset(target_word or 0)
+        mention_word = int(target_word or 0)
         autofill = self._quote_autofill_metadata(chapter_num, quote)
         rolls = self._current_chapter_roll_evidence_picker_rolls(cs)
         if not rolls:
@@ -6714,6 +6877,10 @@ class ForgeCuratorApp(App):
                 note=self._resolution_note(chapter_num, code, model),
             )
         self._post_curation_refresh("model discrepancy resolved")
+
+    def _action_restamp_chapter_alignment_fingerprint(self, chapter_num: str) -> None:
+        self.persistence.restamp_chapter_alignment_fingerprint(chapter_num)
+        self._post_curation_refresh("chapter alignment fingerprint re-stamped")
 
     def _auto_association_review_baseline(self, chapter_num: str) -> dict:
         chapter_index = {

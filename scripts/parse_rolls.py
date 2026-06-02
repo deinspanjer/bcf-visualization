@@ -104,7 +104,7 @@ _CH351_OVERLAY_ROLL_LINES = [
 # perk piece in result. The source is optional (some Personal Reality
 # perks don't list one). Cost forms:
 #   - "X-Y" (banked_before-banked_after style; Y is the actual CP cost)
-#   - "N Customization Points" (non-CP unit; the ×100 rule applies)
+#   - "N Customization Points" (non-CP unit; zero Forge CP debit)
 #   - any "Free..." variant ("Free", "Free?", "Free Soldier", ...).
 _PERK_RE = re.compile(
     r"^(?P<name>.+?)\s*"
@@ -149,7 +149,7 @@ def _parse_perk_chain(result: str) -> list[Perk]:
             free = False
         else:
             # Non-CP unit form (e.g. "3 Customization Points"). Share
-            # the same ×100 intercept logic as the catalog and obtained-
+            # the same Forge-CP translation as the catalog and obtained-
             # perks parsers via perk_name_resolver.parse_cost_text.
             cost, free, cost_unit = parse_cost_text(cost_str)
         source = m.group("source") or ""

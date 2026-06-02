@@ -148,6 +148,28 @@ def test_hit_roll_accounting_debits_forge_cp_costs() -> None:
         assert audited["source_label"] == roll["source_label"]
 
 
+def test_source_roll_ledger_uses_non_forge_cost_units_as_zero_debit() -> None:
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+    roll = next(
+        roll for roll in roll_facts
+        if roll.get("source_chapter_num") == "55.1"
+        and roll.get("source_roll_label") == "Roll 381"
+    )
+
+    assert roll["available_cp"] == 600
+    assert roll["banked_cp_after_roll"] == 200
+    assert roll["purchased_perk_cost_total"] == 400
+    assert {
+        (perk["name"], perk["cost"], perk.get("cost_unit"))
+        for perk in roll["purchased_perks"]
+    } >= {
+        ("You Became A Star", 400, None),
+        ("Accelerator Equipment", 0, "Customization Points"),
+        ("Electron Shield Generators", 0, "Customization Points"),
+        ("Doppler Field Generator", 0, "Customization Points"),
+    }
+
+
 def test_roll_facts_use_evidence_quotes_contract() -> None:
     validator = Draft202012Validator(_load_schema("roll_facts"))
     valid_quote = {

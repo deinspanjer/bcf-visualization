@@ -93,22 +93,21 @@ def _normalize(s: str | None) -> str:
 # Cost units that mean "this number IS already in CP". Personal Reality
 # "WP" is treated as-is (pure CP-equivalent) because the rest of the
 # pipeline already treats WP costs as CP. Everything else (e.g.
-# "Customization Points") is denominated in something other than CP
-# and must be multiplied by 100 to derive effective CP for visualization.
+# "Customization Points") is denominated in something other than Forge CP.
 _CP_UNITS = {"cp", "wp", ""}
 
 
 def parse_cost_text(cost_text: str) -> tuple[int, bool, str | None]:
     """Parse a raw cost-text into ``(effective_cp, is_free, cost_unit)``.
 
-    The single source of truth for the ×100 rule used across the
-    pipeline (parse_rolls catalog, parse_reference obtained perks, and
-    parse_rolls roll-line perks).
+    The single source of truth for translating raw source units into Forge CP
+    used across parse_rolls catalog, parse_reference obtained perks, and
+    parse_rolls roll-line perks.
 
     Accepted forms:
       - "Free", "Free?", "Free Soldier", ...     -> (0, True, None)
       - "100" / "100 CP" / "100 WP"               -> (100, False, None)
-      - "3 Customization Points"                  -> (300, False, "Customization Points")
+      - "3 Customization Points"                  -> (0, False, "Customization Points")
       - empty / unparseable                       -> (0, False, None)
     """
     s = (cost_text or "").strip()
@@ -124,7 +123,7 @@ def parse_cost_text(cost_text: str) -> tuple[int, bool, str | None]:
     unit = (m.group(2) or "").strip()
     if unit.lower() in _CP_UNITS:
         return value, False, None
-    return value * 100, False, unit
+    return 0, False, unit
 
 
 _PREFIX_SEPARATORS = (":", " - ", " – ", " — ")

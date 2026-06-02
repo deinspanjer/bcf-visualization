@@ -123,6 +123,34 @@ def test_chapter_six_keeps_later_source_rolls_on_mechanical_slots() -> None:
     assert by_source[21]["source_chapter_num"] == "7"
 
 
+def test_chapter_55_1_source_roll_six_borrows_first_56_prediction() -> None:
+    roll_data = _load_json("roll_facts.json")
+    by_source = {
+        roll["source_ordinal"]: roll
+        for roll in roll_data["rolls"]
+        if roll.get("source_ordinal") in {387, 388, 393}
+    }
+
+    assert by_source[387]["source_chapter_num"] == "55.1"
+    assert by_source[387]["source_chapter_ordinal"] == 6
+    assert by_source[387]["source_roll_label"] == "Roll 386"
+    assert by_source[387]["mechanical_chapter_num"] == "56"
+    assert by_source[387]["predicted_chapter_num"] == "56"
+    assert by_source[387]["predicted_ordinal"] == 413
+
+    assert by_source[388]["source_chapter_num"] == "56"
+    assert by_source[388]["source_chapter_ordinal"] == 1
+    assert by_source[388]["source_roll_label"] == "Roll 387"
+    assert by_source[388]["mechanical_chapter_num"] == "56"
+    assert by_source[388]["predicted_ordinal"] == 414
+
+    assert by_source[393]["source_chapter_num"] == "56"
+    assert by_source[393]["source_chapter_ordinal"] == 6
+    assert by_source[393]["source_roll_label"] == "Roll 392"
+    assert by_source[393]["mechanical_chapter_num"] == "56"
+    assert by_source[393]["predicted_ordinal"] == 419
+
+
 def test_cross_chapter_direct_manual_row_keeps_explicit_source_identity() -> None:
     roll_data = _load_json("roll_facts.json")
     fashion = next(
