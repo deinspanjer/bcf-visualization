@@ -765,61 +765,252 @@ def _range_prefix_len(ranges: list[tuple[int, int]], upper: int) -> int:
 # ---------- actions panel ---------------------------------------------------
 
 
+@dataclass(frozen=True)
+class BracketNavigationHelpEntry:
+    key_label: str
+    compact_label: str
+    detailed_label: str
+    semantic: str
+    commands: tuple[tuple[str, str], ...]
+
+
+BRACKET_NAVIGATION_HELP = (
+    BracketNavigationHelpEntry(
+        "]] [[",
+        "next/prev chapter edge",
+        "next/prev chapter edge",
+        "chapter",
+        (("]", "]"), ("[", "[")),
+    ),
+    BracketNavigationHelpEntry(
+        "][ []",
+        "next/prev section",
+        "next/prev section",
+        "section",
+        (("]", "["), ("[", "]")),
+    ),
+    BracketNavigationHelpEntry(
+        "]r [r",
+        "next/prev curated hit/miss",
+        "next/prev curated hit/miss",
+        "curated",
+        (("]", "r"), ("[", "r")),
+    ),
+    BracketNavigationHelpEntry(
+        "]R [R",
+        "next/prev predicted roll",
+        "next/prev predicted roll",
+        "predicted",
+        (("]", "R"), ("[", "R")),
+    ),
+    BracketNavigationHelpEntry(
+        "]q [q",
+        "next/prev curated narrator quote",
+        "next/prev curated narrator quote",
+        "quote",
+        (("]", "q"), ("[", "q")),
+    ),
+)
+
+BRACKET_NAVIGATION_BY_KEYS = {
+    command: entry
+    for entry in BRACKET_NAVIGATION_HELP
+    for command in entry.commands
+}
+
+
+@dataclass(frozen=True)
+class SpaceActionHelpEntry:
+    key: str
+    section: str
+    compact_label: str
+    detailed_label: str
+    handler_name: str
+
+
+SPACE_ACTION_HELP = (
+    SpaceActionHelpEntry(
+        "e",
+        "Chapter",
+        "Toggle section eligibility",
+        "toggle section eligibility",
+        "_action_toggle_section_eligibility",
+    ),
+    SpaceActionHelpEntry(
+        "E",
+        "Chapter",
+        "Selected passage eligibility",
+        "selected passage eligibility",
+        "_action_mark_span_eligibility",
+    ),
+    SpaceActionHelpEntry(
+        "q",
+        "Selection-based",
+        "quote = selection",
+        "roll quote = current selection",
+        "_action_save_quote",
+    ),
+    SpaceActionHelpEntry(
+        "Q",
+        "Selection-based",
+        "quote = selection, multiple rolls",
+        "roll quote = current selection, multi-roll",
+        "_action_save_quote_multi",
+    ),
+    SpaceActionHelpEntry(
+        "n",
+        "Quote metadata",
+        "Detect miss quote matches",
+        "detect miss quote matches",
+        "_action_batch_match_miss_quotes",
+    ),
+    SpaceActionHelpEntry(
+        "M",
+        "Quote metadata",
+        "Move saved quote to another roll",
+        "move saved quote to another roll",
+        "_action_reassign_roll_quote",
+    ),
+    SpaceActionHelpEntry(
+        "_",
+        "Roll metadata",
+        "Source-only roll anchor at cursor",
+        "source-only roll anchor at cursor",
+        "_action_anchor_roll_without_quote",
+    ),
+    SpaceActionHelpEntry(
+        "f",
+        "Roll metadata",
+        "Re-stamp chapter alignment fingerprint",
+        "re-stamp chapter alignment fingerprint",
+        "_action_restamp_chapter_alignment_fingerprint",
+    ),
+    SpaceActionHelpEntry(
+        "r",
+        "Roll metadata",
+        "Resolve model discrepancy",
+        "resolve current model discrepancy",
+        "_action_resolve_model_discrepancy",
+    ),
+    SpaceActionHelpEntry(
+        "R",
+        "Roll metadata",
+        "Rebuild derived data",
+        "rebuild derived data",
+        "_action_rebuild_derived_data",
+    ),
+    SpaceActionHelpEntry(
+        "s",
+        "Roll metadata",
+        "Predicted slot = skipped",
+        "predicted slot = skipped",
+        "_action_mark_predicted_roll_skipped",
+    ),
+    SpaceActionHelpEntry(
+        "S",
+        "Roll metadata",
+        "Assign source roll to selected slot",
+        "assign source roll to selected slot",
+        "_action_assign_source_roll",
+    ),
+    SpaceActionHelpEntry(
+        "h",
+        "Roll metadata",
+        "Last roll = hit",
+        "last roll = hit",
+        "_action_set_last_outcome_hit",
+    ),
+    SpaceActionHelpEntry(
+        "m",
+        "Roll metadata",
+        "Last roll = miss",
+        "last roll = miss",
+        "_action_set_last_outcome_miss",
+    ),
+    SpaceActionHelpEntry(
+        "v",
+        "Roll metadata",
+        "Roll display position",
+        "roll display position",
+        "_action_pick_roll_visualization_position",
+    ),
+    SpaceActionHelpEntry(
+        "c",
+        "Roll metadata",
+        "Set constellation",
+        "constellation picker",
+        "_action_pick_constellation",
+    ),
+    SpaceActionHelpEntry(
+        "g",
+        "Roll metadata",
+        "Group footer perks",
+        "group footer perks picker",
+        "_action_group_footer_perks",
+    ),
+    SpaceActionHelpEntry(
+        "p",
+        "Roll metadata",
+        "Set perks",
+        "perks picker",
+        "_action_pick_perks",
+    ),
+    SpaceActionHelpEntry(
+        "D",
+        "Annotation cleanup",
+        "Delete curation data for chapter",
+        "delete curation data for chapter",
+        "_action_delete_chapter_curation_data",
+    ),
+)
+
+SPACE_ACTION_BY_KEY = {entry.key: entry for entry in SPACE_ACTION_HELP}
+
+
+class ActionsHelpScroll(VerticalScroll):
+    def on_click(self, event: events.Click) -> None:
+        self.focus()
+
+
 class ActionsPanel(Static):
     DEFAULT_CSS = """
     ActionsPanel {
-        width: 32;
-        min-width: 32;
-        max-width: 38;
-        background: $panel;
-        padding: 1 1;
+        height: auto;
     }
     """
 
     def render_catalog(self) -> None:
-        body = (
-            "[bold]Actions[/bold] [dim](auto-save)[/dim]\n\n"
-            "[bold]Chapter[/bold]\n"
-            "  ⎵e  Toggle section eligibility\n"
-            "  ⎵E  Selected passage eligibility\n\n"
-            "[bold]Selection-based[/bold]\n"
-            "  v / V    select char / line\n"
-            "  ⎵q       quote = selection\n"
-            "  ⎵Q       quote = selection, multiple rolls\n\n"
-            "[bold]Quote metadata[/bold]\n"
-            "  ⎵n       Detect miss quote matches\n"
-            "  ⎵M       Move saved quote to another roll\n\n"
-            "[bold]Roll metadata[/bold]\n"
-            "  ⎵_  Source-only roll anchor at cursor\n"
-            "  ⎵f  Re-stamp chapter alignment fingerprint\n"
-            "  ⎵r  Resolve model discrepancy\n"
-            "  ⎵R  Rebuild derived data\n"
-            "  ⎵s  Predicted slot = skipped\n"
-            "  ⎵S  Assign source roll to selected slot\n"
-            "  ⎵h  Last roll = hit\n"
-            "  ⎵m  Last roll = miss\n"
-            "  ⎵v  Roll display position\n"
-            "  ⎵c  Set constellation\n"
-            "  ⎵g  Group footer perks\n"
-            "  ⎵p  Set perks\n\n"
-            "[bold]Annotation cleanup[/bold]\n"
-            "  ⎵D  Delete curation data for chapter\n\n"
-            "[bold]Navigation[/bold]\n"
-            "  ]] [[  next/prev chapter edge\n"
-            "  ][ []  next/prev section\n"
-            "  ]r [r  next/prev predicted roll\n"
-            "  ]R [R  next/prev curated quote\n"
-            "  n N    next/prev narrative evidence candidate\n"
-            "  z Z    next/prev regex * match\n"
-            "  x X    next/prev a/the\n"
-            "  c      next constellation name end\n"
-            "  *      seed/select regex *\n"
-            "  /      focus regex *\n\n"
-            "  u  undo last action\n"
-            "  ?  help / legend\n"
-            "  q  quit\n"
-        )
-        self.update(body)
+        lines = ["[bold]Actions[/bold] [dim](auto-save)[/dim]", ""]
+        for section in (
+            "Chapter",
+            "Selection-based",
+            "Quote metadata",
+            "Roll metadata",
+            "Annotation cleanup",
+        ):
+            lines.append(f"[bold]{section}[/bold]")
+            if section == "Selection-based":
+                lines.append("  v / V    select char / line")
+            for entry in SPACE_ACTION_HELP:
+                if entry.section == section:
+                    lines.append(f"  ⎵{entry.key}  {entry.compact_label}")
+            lines.append("")
+        lines.append("[bold]Navigation[/bold]")
+        for entry in BRACKET_NAVIGATION_HELP:
+            lines.append(f"  {entry.key_label:<6} {entry.compact_label}")
+        lines.extend((
+            "  n N    next/prev narrative evidence candidate",
+            "  z Z    next/prev regex * match",
+            "  x X    next/prev a/the",
+            "  c      next constellation name end",
+            "  *      seed/select regex *",
+            "  /      focus regex *",
+            "",
+            "  u  undo last action",
+            "  ?  help / legend",
+            "  q  quit",
+        ))
+        self.update("\n".join(lines) + "\n")
 
 
 # ---------- regex bar -------------------------------------------------------
@@ -880,8 +1071,18 @@ class HelpScreen(ModalScreen):
         background: $surface;
         padding: 1 2;
     }
-    HelpScreen Static.body {
+    HelpScreen Static.scroll-hint {
+        height: 1;
+        color: $text-muted;
+        margin-bottom: 1;
+    }
+    HelpScreen #help_scroll {
         height: 1fr;
+        scrollbar-size-vertical: 1;
+        scrollbar-size-horizontal: 1;
+    }
+    HelpScreen Static.body {
+        height: auto;
     }
     """
 
@@ -925,13 +1126,11 @@ class HelpScreen(ModalScreen):
             "  ip / ap   inner / around paragraph\n"
         )
         body.append("\nNavigation\n", style="bold")
+        for entry in BRACKET_NAVIGATION_HELP:
+            body.append(f"  {entry.key_label:<7} {entry.detailed_label}\n")
         body.append(
-            "  ]] [[   next/prev chapter edge\n"
-            "  ][ []   next/prev section\n"
-            "  ]r [r   next/prev curated hit/miss\n"
-            "  ]R [R   next/prev predicted roll\n"
-            "  ]q [q   next/prev curated narrator quote\n"
             "  n / N   next/prev narrative evidence candidate\n"
+            "  n (visual)  extend to next connection/constellation boundary\n"
             "  z / Z   next/prev regex * match\n"
             "  x / X   next/prev a/the\n"
             "  c       next constellation name end\n"
@@ -945,26 +1144,20 @@ class HelpScreen(ModalScreen):
             "  Enter apply regex\n"
         )
         body.append("\nAction panel keybinds\n", style="bold")
+        for entry in SPACE_ACTION_HELP:
+            body.append(f"  <space>{entry.key:<2}        {entry.detailed_label}\n")
         body.append(
-            "  <space>e         toggle section eligibility\n"
-            "  <space>E         selected passage eligibility\n"
-            "  <space>q         roll quote = current selection\n"
-            "  <space>Q         roll quote = current selection, multi-roll\n"
-            "  <space>n         detect miss quote matches\n"
-            "  <space>M         move saved quote to another roll\n"
-            "  <space>v         roll display position\n"
-            "  <space>f         re-stamp chapter alignment fingerprint\n"
-            "  <space>r         resolve current model discrepancy\n"
-            "  <space>R         rebuild derived data\n"
-            "  <space>s         predicted slot = skipped\n"
-            "  <space>S         assign source roll to selected slot\n"
-            "  <space>_         source-only roll anchor at cursor\n"
-            "  <space>D         delete curation data for chapter\n"
-            "  <space>h / m     last roll = hit / miss\n"
-            "  <space>c / g / p constellation / group footer perks / perks pickers\n"
             "  (no insert/delete: roll positions come from simulator)\n"
             "\n"
             "  u                undo the last curation action (one step)\n"
+        )
+        body.append("\nPicker shortcuts\n", style="bold")
+        body.append(
+            "  arrows           move through options\n"
+            "  Space            toggle focused option when multi-selecting\n"
+            "  Enter            confirm\n"
+            "  q / Esc          cancel\n"
+            "  w / n            widen/narrow a batch quote match\n"
         )
         body.append("\nConstellation picker shortcuts\n", style="bold")
         body.append(
@@ -972,9 +1165,17 @@ class HelpScreen(ModalScreen):
             "  0 then 0-4  select #10-14 (Resources..Vehicles)\n"
             "  arrows + Enter, or first-letter type-ahead\n"
         )
-        body.append("\nq or Esc to close\n", style="bold")
+        body.append("\n? / q / Esc to close\n", style="bold")
         with Container():
-            yield Static(body, classes="body")
+            yield Static(
+                "Scroll: ↑/↓ PgUp/PgDn Home/End or wheel  •  Close: ? q Esc",
+                classes="scroll-hint",
+            )
+            with VerticalScroll(id="help_scroll"):
+                yield Static(body, classes="body")
+
+    def on_mount(self) -> None:
+        self.query_one("#help_scroll", VerticalScroll).focus()
 
     def action_dismiss(self) -> None:  # type: ignore[override]
         self.app.pop_screen()
@@ -2615,6 +2816,16 @@ class ForgeCuratorApp(App):
     #stats {
         height: auto;
     }
+    #actions_scroll {
+        width: 32;
+        min-width: 32;
+        max-width: 38;
+        height: 1fr;
+        background: $panel;
+        padding: 1 1;
+        scrollbar-size-vertical: 1;
+        scrollbar-size-horizontal: 1;
+    }
     #prose_container {
         width: 1fr;
         height: 1fr;
@@ -2675,7 +2886,8 @@ class ForgeCuratorApp(App):
                 with VerticalScroll(id="prose_scroll"):
                     yield PassageView(id="prose")
             yield GutterPanel(id="gutter")
-            yield ActionsPanel(id="actions")
+            with ActionsHelpScroll(id="actions_scroll"):
+                yield ActionsPanel(id="actions")
         yield RegexBar(id="regex_bar")
 
     # ----- mount -----
@@ -4663,49 +4875,11 @@ class ForgeCuratorApp(App):
         cs = self.state.chapter
         if cs is None:
             return
-        cn = cs.meta.chapter_num
-        if ch == "e":
-            self._action_toggle_section_eligibility(cn)
-        elif ch == "E":
-            self._action_mark_span_eligibility(cn)
-        elif ch == "h":
-            self._action_set_last_outcome(cn, "hit")
-        elif ch == "m":
-            self._action_set_last_outcome(cn, "miss")
-        elif ch == "c":
-            self._action_pick_constellation(cn)
-        elif ch == "g":
-            self._action_group_footer_perks(cn)
-        elif ch == "p":
-            self._action_pick_perks(cn)
-        elif ch == "q":
-            self._action_save_quote(cn)
-        elif ch == "Q":
-            self._action_save_quote_multi(cn)
-        elif ch == "n":
-            self._action_batch_match_miss_quotes(cn)
-        elif ch == "M":
-            self._action_reassign_roll_quote(cn)
-        elif ch == "v":
-            self._action_pick_roll_visualization_position(cn)
-        elif ch == "f":
-            self._action_restamp_chapter_alignment_fingerprint(cn)
-        elif ch == "r":
-            self._action_resolve_model_discrepancy(cn)
-        elif ch == "R":
-            self._action_rebuild_derived_data(cn)
-        elif ch == "s":
-            self._action_mark_predicted_roll_skipped(cn)
-        elif ch == "S":
-            self._action_assign_source_roll(cn)
-        elif ch == "_":
-            self._action_anchor_roll_without_quote(cn)
-        elif ch == "D":
-            self._action_delete_chapter_curation_data(cn)
-        elif ch == "i":
-            self._action_insert_roll(cn)
-        else:
+        entry = SPACE_ACTION_BY_KEY.get(ch)
+        if entry is None:
             self._flash(f"<space>{ch}: not bound")
+            return
+        getattr(self, entry.handler_name)(cs.meta.chapter_num)
 
     # ----- Phase 2 action implementations ---------------------------------
 
@@ -5256,6 +5430,12 @@ class ForgeCuratorApp(App):
             target_chapter, idx, outcome=outcome,
         )
         self._post_curation_refresh(f"roll #{idx} = {outcome}")
+
+    def _action_set_last_outcome_hit(self, chapter_num: str) -> None:
+        self._action_set_last_outcome(chapter_num, "hit")
+
+    def _action_set_last_outcome_miss(self, chapter_num: str) -> None:
+        self._action_set_last_outcome(chapter_num, "miss")
 
     def _action_mark_predicted_roll_skipped(self, chapter_num: str) -> None:
         target = self._current_roll_target()
@@ -6973,44 +7153,30 @@ class ForgeCuratorApp(App):
             return None
         return quote
 
-    def _action_insert_roll(self, chapter_num: str) -> None:
-        # Insert/delete are no-ops in the canonical model: roll
-        # positions come from the simulator, not the curator. To change
-        # what fires, mark prose ineligible (or change regime); the
-        # simulator's prediction will adjust.
-        self._flash(
-            "insert roll: not used — predictions come from simulator. "
-            "Mark text ineligible or curate regime to influence positions."
-        )
-
-    def _action_delete_last_roll(self, chapter_num: str) -> None:
-        self._flash(
-            "delete roll: not used — predictions come from simulator. "
-            "Mark text ineligible or curate regime to influence positions."
-        )
-
     def _handle_chord(self, prefix: str, key: str | None) -> bool:
         if key is None:
             return False
         cs = self.state.chapter
         if cs is None:
             return False
-        # ]] / [[  — next/previous chapter, landing at chapter edge
-        if key == prefix:
+        entry = BRACKET_NAVIGATION_BY_KEYS.get((prefix, key))
+        if entry is None:
+            return False
+        forward = prefix == "]"
+        if entry.semantic == "chapter":
             self._jump_chapter(forward=(prefix == "]"))
             return True
-        # ][ / []  — section
-        if (prefix == "]" and key == "[") or (prefix == "[" and key == "]"):
-            self._jump_section(forward=(prefix == "]"))
+        if entry.semantic == "section":
+            self._jump_section(forward=forward)
             return True
-        if key == "r":
-            self._jump_roll_curated(forward=(prefix == "]"))
+        if entry.semantic == "curated":
+            self._jump_roll_curated(forward=forward)
             return True
-        if key == "R":
-            self._jump_roll_predicted(forward=(prefix == "]"))
+        if entry.semantic == "predicted":
+            self._jump_roll_predicted(forward=forward)
             return True
-        if key == "q":
-            self._jump_roll_quoted(forward=(prefix == "]"))
+        if entry.semantic == "quote":
+            self._jump_roll_quoted(forward=forward)
             return True
         return False
 

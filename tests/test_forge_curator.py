@@ -264,6 +264,96 @@ async def test_help_overlay_no_backslash_brackets() -> None:
             assert f"{glyph}  {description}" in body_text
 
 
+def test_help_catalog_matches_supported_curator_commands() -> None:
+    navigation = getattr(forge_app, "BRACKET_NAVIGATION_BY_KEYS", {})
+    assert {
+        keys: entry.semantic
+        for keys, entry in navigation.items()
+    } == {
+        ("]", "]"): "chapter",
+        ("[", "["): "chapter",
+        ("]", "["): "section",
+        ("[", "]"): "section",
+        ("]", "r"): "curated",
+        ("[", "r"): "curated",
+        ("]", "R"): "predicted",
+        ("[", "R"): "predicted",
+        ("]", "q"): "quote",
+        ("[", "q"): "quote",
+    }
+
+    space_actions = getattr(forge_app, "SPACE_ACTION_BY_KEY", {})
+    assert set(space_actions) == {
+        "e", "E", "h", "m", "c", "g", "p", "q", "Q",
+        "n", "M", "v", "f", "r", "R", "s", "S", "_", "D",
+    }
+    assert "i" not in space_actions
+
+
+@pytest.mark.asyncio
+async def test_actions_help_scroll_requires_focus_for_keys_and_accepts_wheel() -> None:
+    from textual import events
+    from textual.containers import VerticalScroll
+
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(140, 24)) as pilot:
+        await pilot.pause()
+        actions_scroll = app.query_one("#actions_scroll", VerticalScroll)
+        prose = app.query_one("#prose", PassageView)
+
+        assert app.focused is prose
+        assert actions_scroll.max_scroll_y > 0
+        assert actions_scroll.show_vertical_scrollbar
+
+        await pilot.press("pagedown")
+        await pilot.pause()
+        assert actions_scroll.scroll_y == 0
+
+        await pilot.click("#actions_scroll", offset=(2, 2))
+        await pilot.press("pagedown")
+        await pilot.pause()
+        assert app.focused is actions_scroll
+        assert actions_scroll.scroll_y > 0
+
+        actions_scroll.scroll_home(animate=False)
+        prose.focus()
+        await pilot.hover("#actions_scroll", offset=(2, 2))
+        actions_scroll.post_message(events.MouseScrollDown(
+            actions_scroll,
+            2,
+            2,
+            0,
+            1,
+            0,
+            False,
+            False,
+            False,
+        ))
+        await pilot.pause()
+        assert app.focused is prose
+        assert actions_scroll.scroll_y > 0
+
+
+@pytest.mark.asyncio
+async def test_help_modal_scroll_is_focused_and_keyboard_scrollable() -> None:
+    from textual.containers import VerticalScroll
+
+    app = ForgeCuratorApp(start_chapter="1")
+    async with app.run_test(size=(120, 24)) as pilot:
+        await pilot.pause()
+        await pilot.press("question_mark")
+        await pilot.pause()
+
+        help_scroll = app.screen.query_one("#help_scroll", VerticalScroll)
+        assert app.focused is help_scroll
+        assert help_scroll.max_scroll_y > 0
+        assert help_scroll.show_vertical_scrollbar
+
+        await pilot.press("pagedown")
+        await pilot.pause()
+        assert help_scroll.scroll_y > 0
+
+
 @pytest.mark.asyncio
 async def test_layout_columns_stats_width_and_regex_bar_chrome() -> None:
     """Primary columns, stats width, and bottom regex chrome render correctly."""

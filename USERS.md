@@ -61,6 +61,14 @@ Launch the curator from the repository root with:
 .venv/bin/python -m scripts.forge_curator --chapter 2
 ```
 
+The right-side Actions reference scrolls with the mouse wheel while the
+pointer is over it. Click the panel to focus it, then use the arrow keys,
+Home, End, Page Up, or Page Down; keyboard scrolling does not take over
+those keys while the prose remains focused. Press `?` for the complete
+help and legend. Its help body is focused when it opens and supports the
+same scrolling keys and mouse wheel; press `?`, `q`, or Escape to close
+it.
+
 The left stats panel's Rolls heading reports predicted slots for the
 current chapter. When a prior chapter's mechanical roll is narrated or
 listed in the current chapter, the heading adds a deferred count, for
