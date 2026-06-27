@@ -399,7 +399,7 @@ class GutterPanel(Static):
     }
     """
 
-    _CURSOR_ROW_STYLE = "on color(236)"
+    _CURSOR_ROW_STYLE = "on #005f87"
 
     def __init__(self, **kw):
         super().__init__("", **kw)

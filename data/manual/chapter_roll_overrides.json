@@ -13821,7 +13821,23 @@
           "display_position_policy": null,
           "skipped": false,
           "source_ordinal": null,
-          "evidence_quotes": [],
+          "evidence_quotes": [
+            {
+              "text": "In addition to the various Personal Reality items, over the course of the night I had received another iteration of both Minor Blessing and Unnatural Skill, and this time the blessing was granted by Zeus himself.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 9134
+            },
+            {
+              "text": "Blessing of Lightning",
+              "mention_chapter_num": "96",
+              "mention_word_position": 9208
+            },
+            {
+              "text": "Unnatural Skill in curses",
+              "mention_chapter_num": "96",
+              "mention_word_position": 9496
+            }
+          ],
           "curator_note": null
         },
         {
@@ -13839,10 +13855,225 @@
           "display_position_policy": null,
           "skipped": false,
           "source_ordinal": null,
-          "evidence_quotes": [],
+          "evidence_quotes": [
+            {
+              "text": "One of the items I'd acquired over the course of the previous night was a Personal Reality upgrade called Central Control.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 1742
+            },
+            {
+              "text": "In addition to the various Personal Reality items, over the course of the night I had received another iteration of both Minor Blessing and Unnatural Skill, and this time the blessing was granted by Zeus himself.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 9134
+            }
+          ],
           "curator_note": null
         }
-      ]
+      ],
+      "_fingerprint": "sha256:6d47f7d7c5f7803a"
+    },
+    "96": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "my power missed a connection to the oversized mote in the Toolkits constellation that had come up several times before.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 4740
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Arsenal"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": "96",
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt my power move again, connecting to a small mote from the Personal Reality constellation.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 8755
+            },
+            {
+              "text": "\"Arsenal.\"",
+              "mention_chapter_num": "96",
+              "mention_word_position": 8792
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Basic Accommodations",
+            "Seeds and Seedlings"
+          ],
+          "outcome": "hit",
+          "constellation": "Personal Reality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "I felt my power make another connection.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 13684
+            },
+            {
+              "text": "It was the Personal Reality constellation again, this time a pair of tiny motes called Basic Accommodations and Seeds and Seedlings.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 13691
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Minor Blessing Poseidon – Water",
+            "Unnatural Skill: Stoneworking"
+          ],
+          "outcome": "hit",
+          "constellation": "Quality",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The quality constellation swung forward and a connection formed to an exceptionally familiar cluster of motes. My reach had grown to greater heights than it had ever reached before, so I easily secured another set of connections to Minor Blessing and Unnatural Skill.\n\nThis blessing was from Poseidon, the Blessing of Water.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 17976
+            },
+            {
+              "text": "Unnatural Skill Stoneworking",
+              "mention_chapter_num": "96",
+              "mention_word_position": 18262
+            }
+          ],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": true,
+          "source_ordinal": null,
+          "evidence_quotes": [],
+          "curator_note": null
+        },
+        {
+          "perks": [
+            "Superweapons"
+          ],
+          "outcome": "hit",
+          "constellation": "Vehicles",
+          "word_position": null,
+          "mention_chapter_num": "96",
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "The vehicle's constellation swung towards me and the excessive amount of reach I had accumulated easily dislodged one of the major motes. The rest of the constellation swung away as I watched that burning nova of power descend upon me.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 22866
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:4e03316314ca49ca"
+    },
+    "95.6": {
+      "rolls": [
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": "Toolkits",
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": "miss",
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [],
+          "curator_note": null
+        },
+        {
+          "perks": [],
+          "outcome": null,
+          "constellation": null,
+          "word_position": null,
+          "mention_chapter_num": null,
+          "mention_word_position": null,
+          "display_position_policy": null,
+          "skipped": false,
+          "source_ordinal": null,
+          "evidence_quotes": [
+            {
+              "text": "Twenty-four Kerbals had been added to my workshop, tacked on to a power called This Is How I Want It.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 875
+            },
+            {
+              "text": "The latest power came bundled with an ability called This Is, Actually, Rocket Science",
+              "mention_chapter_num": "96",
+              "mention_word_position": 1180
+            },
+            {
+              "text": "I had received a power called 'Emblems' along with the arrival of the Kerbals.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 2411
+            },
+            {
+              "text": "I could both speak and understand it perfectly thanks to a power that was called 'Speak English, Dammit!'.",
+              "mention_chapter_num": "96",
+              "mention_word_position": 1574
+            }
+          ],
+          "curator_note": null
+        }
+      ],
+      "_fingerprint": "sha256:370b45b9a9250c92"
     }
   }
 }
