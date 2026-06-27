@@ -365,13 +365,12 @@ class DirectoryMatchIndex:
         cands = self._by_name_only.get(_normalize(name), [])
         if constellation:
             scoped = [
-                p for p in cands
-                if p.get("constellation") == constellation
+                candidate for candidate in cands
+                if candidate.get("constellation") == constellation
             ]
-            if len(scoped) == 1:
-                return scoped[0]
             if scoped:
                 return scoped[0]
+            return None
         if len(cands) == 1:
             return cands[0]
         return None

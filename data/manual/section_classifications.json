@@ -1,8 +1,8 @@
 {
   "_source": "scripts/build_section_classifications.py applied to data/derived/chapter_sections.json",
-  "_count": 508,
-  "_mc_sections": 149,
-  "_non_mc_sections": 359,
+  "_count": 513,
+  "_mc_sections": 150,
+  "_non_mc_sections": 363,
   "_note": "Per-section MC POV classifications, used by predict_rolls.py to compute CP-earning word counts. Overrides for ambiguous headers are listed in the script. Explicit curator section eligibility toggles and curated span_overrides from existing entries are preserved across regeneration.",
   "classifications": {
     "1@0": {
@@ -8516,12 +8516,87 @@
       "reason": "interlude 'accord' (non-Joe)",
       "span_overrides": [
         {
-          "word_offset_start": 6677,
-          "word_offset_end": 6679,
+          "word_offset_start": 6678,
+          "word_offset_end": 6680,
           "counts_for_cp": false,
           "reason_code": "section_header",
           "note": "generated from chapter section header",
           "excerpt": "Interlude Accord"
+        }
+      ]
+    },
+    "120.3@0": {
+      "chapter_num": "120.3",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": false,
+      "reason": "implicit + AN + tiny (141w)",
+      "span_overrides": [
+        {
+          "word_offset_start": 0,
+          "word_offset_end": 3,
+          "counts_for_cp": false,
+          "reason_code": "chapter_title_header",
+          "note": "generated from chapter section header",
+          "excerpt": ""
+        }
+      ]
+    },
+    "120.3@1": {
+      "chapter_num": "120.3",
+      "section_index": 1,
+      "header": "120.3 Interlude Brian",
+      "counts_for_cp": false,
+      "reason": "chapter-title interlude 'brian'",
+      "span_overrides": [
+        {
+          "word_offset_start": 141,
+          "word_offset_end": 144,
+          "counts_for_cp": false,
+          "reason_code": "section_header",
+          "note": "generated from chapter section header",
+          "excerpt": "120.3 Interlude Brian"
+        }
+      ]
+    },
+    "121@0": {
+      "chapter_num": "121",
+      "section_index": 0,
+      "header": null,
+      "counts_for_cp": true,
+      "reason": "implicit large MC story"
+    },
+    "121@1": {
+      "chapter_num": "121",
+      "section_index": 1,
+      "header": "Addendum Piggot",
+      "counts_for_cp": false,
+      "reason": "addendum 'piggot' (non-Joe)",
+      "span_overrides": [
+        {
+          "word_offset_start": 12621,
+          "word_offset_end": 12623,
+          "counts_for_cp": false,
+          "reason_code": "section_header",
+          "note": "generated from chapter section header",
+          "excerpt": "Addendum Piggot"
+        }
+      ]
+    },
+    "121@2": {
+      "chapter_num": "121",
+      "section_index": 2,
+      "header": "Jumpchain abilities this chapter:",
+      "counts_for_cp": false,
+      "reason": "perks footer",
+      "span_overrides": [
+        {
+          "word_offset_start": 21994,
+          "word_offset_end": 21998,
+          "counts_for_cp": false,
+          "reason_code": "section_header",
+          "note": "generated from chapter section header",
+          "excerpt": "Jumpchain abilities this chapter:"
         }
       ]
     }
