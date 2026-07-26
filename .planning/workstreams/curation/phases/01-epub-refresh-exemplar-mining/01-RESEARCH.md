@@ -384,17 +384,19 @@ regime 3:  54 chapters (ch 97 .. 120.2)   # includes the ch97 boundary chapter, 
 
 **If this table is empty:** N/A — see entries above; all three are clearly flagged as hypotheses requiring live verification during execution, not locked facts.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is Pitfall 1 (the `build_chapter_facts.py` regime duplicate) in-scope to fix in this phase, or a separate follow-up?**
    - What we know: It's a verified, currently-silent bug that directly affects the `point_calculation_regime` field D-01 designates as ground truth for the exemplar index's regime tags on ch97.
    - What's unclear: Whether fixing it (importing from `regime_simulator` instead of the local duplicate) has any downstream ripple (e.g., does any other consumer of `chapter_facts.json` implicitly rely on ch97 reading `3` rather than `2`?) — untested territory.
    - Recommendation: The plan should include a small, isolated investigation task (grep all consumers of `point_calculation_regime`, check test expectations) before deciding fix-now vs. defer; Pattern 3's recipe already works around the bug regardless of this decision, so the exemplar index's own correctness does not depend on this question being resolved.
+   - **Resolution:** Deferred out of scope for this phase — 01-03-PLAN.md Task 1's action explicitly documents the fix as "a candidate follow-up (RESEARCH.md Open Question 1), not a requirement of CINF-02, and is deliberately not undertaken in this phase," relying instead on Pattern 3's `regime_simulator.regime_for_chapter()`-based recipe so the exemplar index's ch97 tagging is correct regardless.
 
 2. **How many chapters, if any, will `chapter_alignment.py check` flag after the refresh?**
    - What we know: The guard only fires on genuine predicted-roll-shape drift for already-curated chapters; appending new chapters at the story's end should not, in principle, affect it.
    - What's unclear: Whether the specific two-months-newer epub re-export corrected any earlier chapter's text in a way that shifts word counts.
    - Recommendation: Treat as unknown until the refresh actually runs; the plan should have a `checkpoint:human-verify` task sized to "0 to a handful of chapters," using `scripts/realign_chapters.py` interactively (never `--yes`) as the resolution mechanism.
+   - **Resolution:** Handled by 01-02-PLAN.md Task 2 — a `checkpoint:human-verify` that auto-clears on zero mismatches or, for one-or-more mismatched chapters, requires Dre's explicit interactive accept/skip/abort per chapter via `scripts/realign_chapters.py` (never `--yes`).
 
 ## Environment Availability
 
