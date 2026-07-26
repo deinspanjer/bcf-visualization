@@ -125,6 +125,11 @@ const app = {
   helpSeen: readStoredBoolean(LS_HELP_SEEN, false),
   mobileTimelineZoom: Number(readStoredChoice(LS_MOBILE_TIMELINE_ZOOM, MOBILE_TIMELINE_ZOOM_CHOICES, "1")),
   mobileGestureTeardown: null,
+  // Phase 2 (D-17/D-18): portrait-only gesture teardown handles, kept separate
+  // from mobileGestureTeardown (the Phase 1 diagnostic probe's slot) so
+  // re-attaching one never drops the other's teardown.
+  mobileSkyTeardown: null,
+  mobileRailTeardown: null,
   rollFilter: "all",
   rollSort: "roll",
   raf: null,
@@ -915,16 +920,24 @@ function render() {
     root.append(renderLoading());
     return;
   }
-  root.append(renderAppShell());
+  // D-12: portrait gets its own arm; every other mode (desktop AND the
+  // interim landscape fallback) keeps appending renderAppShell() byte-
+  // identically until Phase 3 delivers renderMobileLandscape().
+  root.append(app.layoutMode === "portrait" ? renderMobilePortrait() : renderAppShell());
   cachePlaybackDomRefs();
   updatePlaybackFrame();
   if (app.layoutMode !== "desktop") {
     root.append(el("div", {
       class: "mobile-gesture-probe",
       "aria-hidden": "true",
-      style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;",
+      // z-index pinned to the max 32-bit signed int so the portrait DOM
+      // (which now renders real, stacked, pointer-events:auto content) can
+      // never steal this diagnostic probe's hit target (Phase 1 tests drive
+      // it at PHONE_PORTRAIT, F-01).
+      style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;z-index:2147483647;",
     }));
     attachMobileGestureProbes();
+    if (app.layoutMode === "portrait") attachMobilePortraitGestures();
   }
 }
 
@@ -2580,6 +2593,21 @@ function cachePlaybackDomRefs() {
     constellationBarsPanel: document.querySelector("#constellation-bars-panel"),
     rollLogPanel: document.querySelector("#detail-roll-log-panel"),
   };
+  if (app.layoutMode === "portrait") {
+    // Portrait-only refs (D-18) — appended to the same app.dom object so
+    // updateMobilePortraitFrame() can mutate text/style without rebuilding
+    // the rail's lanes every frame. Desktop refs above stay untouched.
+    app.dom.mobileSkyCameraLayer = document.querySelector(".mobile-sky-camera-layer");
+    app.dom.mobileFocalLabel = document.querySelector(".mobile-focal-label");
+    app.dom.mobileDockMeta = document.querySelector(".mobile-dock-meta");
+    app.dom.mobileDockTitle = document.querySelector(".mobile-dock-title");
+    app.dom.mobileFab = document.querySelector(".mobile-fab-play");
+    app.dom.mobileRail = document.querySelector(".mobile-rail");
+    app.dom.mobileRailInner = document.querySelector(".mobile-rail-inner");
+    app.dom.mobilePlayhead = document.querySelector(".mobile-playhead");
+    app.dom.mobileActiveDot = document.querySelector(".mobile-roll-dot.active");
+    app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
+  }
   app.carousel.visibleSlots = new Map(
     [...document.querySelectorAll(".carousel-slot[data-roll-uid]")]
       .map(slot => [slot.dataset.rollUid, slot]),
@@ -2588,6 +2616,15 @@ function cachePlaybackDomRefs() {
 
 function updatePlaybackFrame() {
   if (!app.data) return;
+  // D-18/T-02-01: portrait has no #scrubber-playhead, so this early return
+  // MUST land before the `!app.dom?.playhead` gate below — otherwise the
+  // very first portrait frame recurses into render() forever (RESEARCH
+  // Pitfall 2). Desktop and landscape (still on renderAppShell()) are
+  // byte-identical past this point.
+  if (app.layoutMode === "portrait") {
+    updateMobilePortraitFrame();
+    return;
+  }
   if (!app.dom?.playhead) {
     render();
     return;
@@ -2849,6 +2886,179 @@ function attachMobileGestureProbes() {
     onSwipeEnd: () => recordGestureEvent("swipeEnds"),
   });
   recordGestureEvent("attaches");
+}
+
+// ── Portrait C layout (Phase 2, D-12/D-13/D-17/D-18) ────────────────────────
+// Real sky + always-visible mini-rail dock. Duplicates markup over the
+// shared model (plan §7) — never edits the frozen desktop renderers it
+// calls (renderViewportFrame, renderSkyCamera, playthroughFrameState).
+
+// Verbatim port of prototype/scrubber.jsx panOffsetForPlayhead (algorithm
+// unchanged): the auto-pan transform that keeps the playhead visible once
+// the mini-rail's zoomed-in content would otherwise scroll it off-screen.
+function panOffsetForPlayhead(playheadPctRaw, zoom) {
+  if (zoom <= 1) return 0;
+  const wantedPct = playheadPctRaw * zoom - 50;
+  const maxPct = (zoom - 1) * 100;
+  return Math.max(0, Math.min(maxPct, wantedPct));
+}
+
+// Verbatim port of prototype/scrubber.jsx fractionFromPointer (algorithm
+// unchanged): resolves a fraction of the INNER (zoomed) content from a raw
+// pointer event against the rail element's bounding box.
+function fractionFromPointer(el, e, zoom, panPct) {
+  const rect = el.getBoundingClientRect();
+  if (rect.width <= 0) return 0;
+  const xFracView = (e.clientX - rect.left) / rect.width;
+  const innerFrac = (xFracView + panPct / 100) / zoom;
+  return Math.max(0, Math.min(1, innerFrac));
+}
+
+// The single viewport-fraction -> inner-content-fraction conversion shared
+// by the rail's onScrub callback (attachRailScrub already resolves the
+// viewport fraction from the pointer event) and later plans. Never
+// duplicate this math a second time (no-parallel-implementations).
+function mobileInnerFraction(viewportFraction, zoom, panPct) {
+  return Math.max(0, Math.min(1, (viewportFraction + panPct / 100) / zoom));
+}
+
+// renderMobilePortrait(): the D-12 portrait arm of render(). Root
+// `.mobile-app` holds the top chip cluster (filled in 02-02-PLAN.md Task 2),
+// the real sky (D-13 — never the prototype's procedural placeholder), and
+// the dock (transport row + mini-rail + hint row).
+function renderMobilePortrait() {
+  const frame = playthroughFrameState();
+  return el("div", { class: "mobile-app" },
+    el("div", { class: "mobile-top-cluster" }),
+    el("div", { class: "mobile-sky mobile-sky-surface" },
+      renderViewportFrame(),
+      el("div", { class: "mobile-sky-camera-layer" },
+        frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
+      ),
+    ),
+    el("div", { class: "mobile-dock" },
+      el("div", { class: "mobile-dock-transport" },
+        el("button", {
+          class: "mobile-fab-play",
+          type: "button",
+          "data-action": "toggle-playback",
+          "aria-label": app.playing ? "Pause" : "Play",
+          title: app.playing ? "Pause (space)" : "Play (space)",
+          text: app.playing ? "❚❚" : "▶",
+        }),
+        el("div", { class: "mobile-dock-now" },
+          el("div", { class: "mobile-dock-meta readout-meta", text: mobileDockMetaText() }),
+          el("div", { class: "mobile-dock-title", text: frame.chapter?.title || "—" }),
+        ),
+      ),
+      renderMobileScrubber(),
+      el("div", { class: "mobile-hint-row" }),
+    ),
+  );
+}
+
+function mobileDockMetaText() {
+  const total = app.data.story.total_words || 1;
+  return `${formatWords(app.wordPos)} / ${formatWords(total)} words · ${Math.round((app.wordPos / total) * 100)}%`;
+}
+
+// renderMobileScrubber(): the mini-rail. Cluster bins (MOBP-04) are
+// 02-03-PLAN.md's job — one dot per roll here, read from the LIVE schema
+// (word_position/outcome/word_start/word_end/chapter_num/pov), never the
+// prototype's camelCase names.
+function renderMobileScrubber() {
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  const zoom = app.mobileTimelineZoom;
+  const panPct = panOffsetForPlayhead(playheadPctRaw, zoom);
+  return el("div", { class: "mobile-rail mobile-rail-surface" },
+    el("div", {
+      class: "mobile-rail-inner",
+      style: { width: `${zoom * 100}%`, transform: `translateX(-${panPct}%)` },
+    },
+      el("div", { class: "mobile-lane mobile-lane-chapters" },
+        story.chapters.map(chapter => el("div", {
+          class: `mobile-ch-tick ${Number(chapter.chapter_num) % 10 === 0 || chapter.chapter_num === "1" ? "major" : ""}`,
+          style: { left: `${(chapter.word_start / total) * 100}%` },
+        })),
+      ),
+      el("div", { class: "mobile-lane mobile-lane-rolls" },
+        story.chapters.map(chapter => el("div", {
+          class: `mobile-pov-band ${chapter.pov === "Joe" ? "mc" : chapter.pov === "Aisha" ? "aisha" : "other"}`,
+          style: {
+            left: `${(chapter.word_start / total) * 100}%`,
+            width: `${Math.max(0.02, ((chapter.word_end - chapter.word_start) / total) * 100)}%`,
+          },
+        })),
+        story.rolls.map(roll => el("div", {
+          class: `mobile-roll-dot ${roll.outcome}`,
+          style: { left: `${(roll.word_position / total) * 100}%` },
+        })),
+      ),
+      el("div", { class: "mobile-playhead", style: { left: `${playheadPctRaw}%` } }),
+    ),
+  );
+}
+
+// updateMobilePortraitFrame(): the D-18 incremental tier for portrait,
+// mirroring updatePlaythroughFrame's key-diff shape. Mutates text/style
+// only — never rebuilds the rail's lanes here (that only happens on
+// structural render, zoom change, or rail resize — 02-03-PLAN.md).
+function updateMobilePortraitFrame() {
+  const frame = playthroughFrameState();
+  const skyCameraKey = frame.scene ? `scene:${frame.lastRoll?.uid || ""}` : "none";
+  if (app.dom.mobileSkyCameraLayer && (frame.scene || app.frameKeys.skyCamera !== skyCameraKey)) {
+    app.dom.mobileSkyCameraLayer.replaceChildren(
+      ...(frame.scene ? [renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT)] : []),
+    );
+    app.frameKeys.skyCamera = skyCameraKey;
+  }
+  if (app.dom.mobileFab) {
+    const label = app.playing ? "Pause" : "Play";
+    app.dom.mobileFab.setAttribute("aria-label", label);
+    app.dom.mobileFab.title = `${label} (space)`;
+    app.dom.mobileFab.textContent = app.playing ? "❚❚" : "▶";
+  }
+  if (app.dom.mobileDockMeta) app.dom.mobileDockMeta.textContent = mobileDockMetaText();
+  if (app.dom.mobileDockTitle) app.dom.mobileDockTitle.textContent = frame.chapter?.title || "—";
+
+  const total = app.data.story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  if (app.dom.mobilePlayhead) app.dom.mobilePlayhead.style.left = `${playheadPctRaw}%`;
+  if (app.dom.mobileRailInner) {
+    const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+    app.dom.mobileRailInner.style.transform = `translateX(-${panPct}%)`;
+  }
+}
+
+// attachMobilePortraitGestures(): mirrors attachMobileGestureProbes's
+// lifecycle exactly (teardown stored on `app`, invoked defensively before
+// re-attach, called only from inside the render pass). Uses the NEW
+// mobileRailTeardown slot — never app.mobileGestureTeardown, which the
+// Phase 1 probe owns. Attaches only the rail this task (D-17): a single
+// scrub path through attachRailScrub -> setWordPos, never a second raw
+// pointer-listener override.
+function attachMobilePortraitGestures() {
+  if (typeof app.mobileRailTeardown === "function") {
+    app.mobileRailTeardown();
+    app.mobileRailTeardown = null;
+  }
+  const railEl = document.querySelector(".mobile-rail");
+  if (!railEl || typeof window.attachRailScrub !== "function") return;
+  app.mobileRailTeardown = window.attachRailScrub(railEl, {
+    onScrub: viewportFraction => {
+      if (!app.data) return null;
+      const total = app.data.story.total_words || 1;
+      const playheadPctRaw = (app.wordPos / total) * 100;
+      const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+      const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, panPct);
+      const target = Math.round(innerFrac * total);
+      setWordPos(target);
+      return lastRollAtWord(target);
+    },
+    onScrubEnd: () => persistBookmarkNow(),
+  });
 }
 
 // Module-level click delegation keeps hot playback controls independent of

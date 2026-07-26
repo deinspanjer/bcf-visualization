@@ -284,9 +284,9 @@ def test_desktop_range_resizes_cause_zero_rerenders_while_crossings_flip_layout_
             page.set_viewport_size({"width": 1100, "height": 1300})
             page.wait_for_function("window.__bcfLayoutMode === 'portrait'")
             assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 1
-            # .portrait-banner is-visible class is always present when not
-            # dismissed; check computed visibility, not DOM presence.
-            expect(page.locator(".portrait-banner")).to_be_visible()
+            # D-12 (Phase 2, F-02): portrait now renders the real portrait
+            # surface instead of the desktop shell + banner fallback.
+            expect(page.locator(".mobile-app")).to_be_visible()
 
             # 1100x1300 -> 899x900: still portrait (899<900 width AND
             # height>width), no additional crossing. Renders stay at 1.

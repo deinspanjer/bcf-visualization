@@ -44,4 +44,165 @@
     --mobile-vh: 100svh;
     --mobile-dvh: 100dvh;
   }
+
+  /* ── Portrait C layout (Phase 2, 02-01-PLAN.md) ─────────────────────────
+     Adapted from design/mobile-ux/prototype/styles.css; new .mobile-*
+     class names only, reusing the existing --cyan/--green/--amber/--edge/
+     --panel/--ink/--muted/--void variables — never redefined here. */
+  .mobile-app {
+    position: relative;
+    height: var(--mobile-vh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .mobile-top-cluster {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 5;
+  }
+  .mobile-sky {
+    flex: 1 1 60%;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 60% 40%, rgba(92, 244, 255, 0.10), transparent 50%),
+                radial-gradient(ellipse at 20% 80%, rgba(123, 255, 189, 0.07), transparent 45%),
+                linear-gradient(180deg, var(--void) 0%, var(--void-deep) 100%);
+  }
+  .mobile-sky-camera-layer {
+    position: absolute;
+    inset: 0;
+  }
+  .mobile-dock {
+    flex: 0 0 auto;
+    position: relative;
+    background: linear-gradient(180deg, rgba(5, 29, 38, 0.0), rgba(5, 29, 38, 0.92) 18%);
+    border-top: 1px solid var(--edge-soft);
+    padding: 14px 12px max(18px, var(--safe-bottom));
+  }
+  .mobile-dock-transport {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .mobile-fab-play {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--cyan);
+    color: var(--void);
+    box-shadow: 0 0 22px rgba(92, 244, 255, 0.55), 0 6px 22px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-fab-play:active { transform: scale(0.94); }
+  .mobile-dock-now {
+    flex: 1;
+    min-width: 0;
+  }
+  .mobile-dock-meta {
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .mobile-dock-title {
+    font-family: var(--serif);
+    font-size: 13px;
+    color: var(--ink);
+    margin-top: 1px;
+  }
+  .mobile-rail {
+    position: relative;
+    height: 70px;
+    background: rgba(3, 8, 13, 0.65);
+    border: 1px solid var(--edge-soft);
+    border-radius: 8px;
+    padding: 4px 8px;
+    overflow: hidden;
+  }
+  .mobile-rail-inner {
+    position: relative;
+    height: 100%;
+    transform-origin: 0 0;
+    will-change: transform, width;
+  }
+  .mobile-lane { position: relative; width: 100%; }
+  .mobile-lane-chapters { height: 14px; }
+  .mobile-lane-rolls { height: 30px; margin-top: 2px; }
+  .mobile-ch-tick {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    width: 1px;
+    background: rgba(92, 244, 255, 0.30);
+  }
+  .mobile-ch-tick.major { background: rgba(92, 244, 255, 0.60); }
+  .mobile-pov-band {
+    position: absolute;
+    top: 22px;
+    height: 4px;
+    background: rgba(92, 244, 255, 0.22);
+  }
+  .mobile-pov-band.mc { background: rgba(92, 244, 255, 0.30); }
+  .mobile-pov-band.aisha { background: rgba(180, 148, 255, 0.40); }
+  .mobile-pov-band.other { background: rgba(123, 255, 189, 0.30); }
+  .mobile-roll-dot {
+    position: absolute;
+    top: 8px;
+    transform: translateX(-50%) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    background: var(--amber);
+    pointer-events: none;
+  }
+  .mobile-roll-dot.hit { background: var(--green); }
+  .mobile-roll-dot.miss { background: var(--rose); }
+  .mobile-roll-dot.active {
+    width: 9px;
+    height: 9px;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    z-index: 2;
+  }
+  .mobile-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    pointer-events: none;
+  }
+  .mobile-playhead::before,
+  .mobile-playhead::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+  .mobile-playhead::before { top: -2px; }
+  .mobile-playhead::after { bottom: -2px; }
+  .mobile-hint-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
 }
