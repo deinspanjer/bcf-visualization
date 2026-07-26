@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 1
 current_phase_name: Mobile State & Gesture Plumbing
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-07-26T01:57:41.655Z"
+status: executing
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-07-26T02:51:45.457Z"
 last_activity: 2026-07-25
-last_activity_desc: Roadmap created, 31/31 v1 requirements mapped across two independent tracks
+last_activity_desc: Phase 1 execution started
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 4
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** The visualization stays correct and trustworthy: the frozen desktop experience must not regress, and agent-curated data must never silently degrade the hand-curated evidence corpus.
-**Current focus:** Phase 1 — Mobile State & Gesture Plumbing (Track A entry point; Track B may start at Phase 5 in parallel)
+**Current focus:** Phase 1 — Mobile State & Gesture Plumbing
 
 ## Current Position
 
-Phase: 1 of 8 (Mobile State & Gesture Plumbing)
-Plan: 0 of TBD in current phase
-Status: Ready to discuss (interview gate blocks planning and coding)
-Last activity: 2026-07-25 — Roadmap created, 31/31 v1 requirements mapped across two independent tracks
+Phase: 1 (Mobile State & Gesture Plumbing) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-07-25 — Phase 1 execution started
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -54,6 +54,11 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 1 P01 | 10 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -66,6 +71,9 @@ Recent decisions affecting current work:
 - [Roadmap]: The Track B provenance field shape is decided at the Phase 1 interview, not at Phase 7, so this milestone needs only one interview.
 - [Roadmap]: Phase 5 (epub refresh) is a hard gate for Phases 6–8 — no verifier, schema, or agent work against a stale chapter set.
 - [Roadmap]: Track A phases map to `INTEGRATION_PLAN.md` §5 gates A–E, with D and E merged into Phase 4.
+- [Phase ?]: window.__bcfPrefs getter bridge keeps mobile-gestures.js byte-identical to the prototype (haptics stay decorative-only)
+- [Phase ?]: Layout debounce is plain rAF coalescing; iOS ~100ms re-settle re-check deferred until a real device shows the flap
+- [Phase ?]: Storage v3 bump rewrote existing web integration fixtures to seed version 3 (no-backwards-compat consumer rewrite)
 
 ### Pending Todos
 
@@ -91,6 +99,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T01:57:41.646Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-mobile-state-gesture-plumbing/01-CONTEXT.md
+Last session: 2026-07-26T02:51:45.448Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None

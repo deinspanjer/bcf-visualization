@@ -60,12 +60,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Timeline zoom, tap-to-pause, haptics, and help-seen preferences round-trip through `bcf:*` keys across reload, and `bcf:portrait-dismissed` is purged after the `STORAGE_VERSION` bump
   5. The scripted desktop smoke test runs on demand, covers the §0.5 checklist, and passes
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Tracer: verbatim gesture port, layoutMode detection, bcf:* v3 storage schema, per-render attach lifecycle, Playwright plumbing proofs
+- [x] 01-01-PLAN.md — Tracer: verbatim gesture port, layoutMode detection, bcf:* v3 storage schema, per-render attach lifecycle, Playwright plumbing proofs
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -203,7 +203,7 @@ Within Track A: 1 → 2 → 3 → 4. Within Track B: 5 → 6 → 7 → 8. Tracks
 
 | Phase | Track | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
-| 1. Mobile State & Gesture Plumbing | A | 0/4 | Not started | - |
+| 1. Mobile State & Gesture Plumbing | A | 1/4 | In Progress|  |
 | 2. Portrait Layout | A | 0/TBD | Not started | - |
 | 3. Landscape Layout | A | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | A | 0/TBD | Not started | - |

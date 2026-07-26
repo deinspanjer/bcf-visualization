@@ -10,9 +10,9 @@ Requirements for this milestone. Each maps to roadmap phases. MOB* = Workstream 
 ### Mobile Foundation
 
 - [ ] **MOBF-01**: Plan review interview resolves §9 open questions, the `user-scalable=no` vs Lighthouse-a11y conflict, `visibilitychange` behavior, and provenance field shape before any mobile code is written
-- [ ] **MOBF-02**: `app.layoutMode` (desktop/portrait/landscape) derives from `matchMedia` using the identical query string as the existing CSS breakpoint, updates on resize/orientation change, and survives rotation
-- [ ] **MOBF-03**: Gesture helpers ported to `web/mobile-gestures.js` with a per-render attach lifecycle that cannot double-bind or lose pointer capture to a mid-drag re-render
-- [ ] **MOBF-04**: New `bcf:*` storage keys (timeline-zoom, tap-to-pause, haptics, help-seen) read on init, written on change; `STORAGE_VERSION` bumped with stale-key purge (`bcf:portrait-dismissed` removed)
+- [x] **MOBF-02**: `app.layoutMode` (desktop/portrait/landscape) derives from `matchMedia` using the identical query string as the existing CSS breakpoint, updates on resize/orientation change, and survives rotation
+- [x] **MOBF-03**: Gesture helpers ported to `web/mobile-gestures.js` with a per-render attach lifecycle that cannot double-bind or lose pointer capture to a mid-drag re-render
+- [x] **MOBF-04**: New `bcf:*` storage keys (timeline-zoom, tap-to-pause, haptics, help-seen) read on init, written on change; `STORAGE_VERSION` bumped with stale-key purge (`bcf:portrait-dismissed` removed)
 - [ ] **MOBF-05**: Mobile CSS foundation uses `touch-action`/`overscroll-behavior` on gesture surfaces, small/dynamic viewport units, and `env(safe-area-inset-*)` in docks and rails
 - [ ] **MOBF-06**: A scripted desktop smoke test verifies the §0.5 checklist (desktop unchanged ≥ 1100px) and is runnable at every phase gate
 
@@ -99,9 +99,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | MOBF-01 | Phase 1 | Pending |
-| MOBF-02 | Phase 1 | Pending |
-| MOBF-03 | Phase 1 | Pending |
-| MOBF-04 | Phase 1 | Pending |
+| MOBF-02 | Phase 1 | Complete |
+| MOBF-03 | Phase 1 | Complete |
+| MOBF-04 | Phase 1 | Complete |
 | MOBF-05 | Phase 1 | Pending |
 | MOBF-06 | Phase 1 | Pending |
 | MOBP-01 | Phase 2 | Pending |
@@ -131,6 +131,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ACUR-05 | Phase 8 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 31 total
 - Mapped to phases: 31
 - Unmapped: 0 ✓
