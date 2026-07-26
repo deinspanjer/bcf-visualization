@@ -1,0 +1,47 @@
+/* ── Mobile CSS foundation ────────────────────────────────────────────────
+   Phase 1 (MOBF-05, D-08): all mobile-only CSS lives in this file, never in
+   web/style.css — desktop is frozen (freeze §0.1.5) and this file is loaded
+   AFTER style.css in web/index.html so it always wins the cascade against
+   the pre-existing narrow-viewport blocks at style.css:1564/:1607, without
+   ever editing that file. Phases 2-3 apply the classes/variables defined
+   here to real sky/rail/dock nodes; Phase 1 defines them ahead of that need
+   per CONTEXT.md so they are not retrofitted later.
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px), (orientation: portrait) and (max-width: 1100px) {
+  /* Gesture-surface touch-action policy (D-03): the sanctioned replacement
+     for the rejected zoom-disabling viewport meta attributes. Page pinch
+     zoom stays enabled globally (a11y); these classes suppress native
+     double-tap/pinch/scroll gestures only on the elements that own custom
+     pointer-event gesture handling. */
+  .mobile-sky-surface {
+    /* Sky surface: vertical page scroll may still compete; horizontal pan
+       is claimed by the custom swipe/scrub gesture. */
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+  .mobile-rail-surface {
+    /* Rail surface: full custom gesture control (scrub drag). */
+    touch-action: none;
+    overscroll-behavior: contain;
+  }
+
+  :root {
+    /* Safe-area insets (D-08) — consumed by Phase 2/3 docks and rails so
+       fixed-position chrome never sits under a notch/home-indicator. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+
+    /* Viewport-height primitives (D-08): mobile layout heights use
+       small/dynamic viewport units, never vh, to survive iOS Safari's
+       dynamic toolbar (RESEARCH PITFALLS.md Pitfall 4). --mobile-vh uses
+       svh (assumes toolbar always visible — this app has no scrollable
+       body content, so there is nothing to trigger a toolbar-hide reflow).
+       --mobile-dvh is available for any Phase 2/3 case that intentionally
+       wants dynamic (toolbar-aware) sizing instead. */
+    --mobile-vh: 100svh;
+    --mobile-dvh: 100dvh;
+  }
+}

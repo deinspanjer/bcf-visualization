@@ -296,6 +296,79 @@ def test_mobile_pref_setters_round_trip_across_reload(tmp_path):
             browser.close()
 
 
+def test_css_foundation_touch_action_and_viewport_primitives(tmp_path):
+    # web/mobile.css (MOBF-05, D-08): gesture-surface touch-action/
+    # overscroll-behavior classes and the svh/dvh + safe-area-inset
+    # primitives, all scoped behind the character-identical mobile
+    # breakpoint — inert (no element carries them) until Phase 2/3 apply
+    # them to real sky/rail/dock nodes, but computed-style-verifiable now.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    probe_script = """
+    () => {
+      const surface = document.createElement("div");
+      surface.className = "mobile-sky-surface";
+      document.body.appendChild(surface);
+      const skyStyle = getComputedStyle(surface);
+      const touchActionSky = skyStyle.touchAction;
+      const overscrollSky = skyStyle.overscrollBehavior;
+
+      surface.className = "mobile-rail-surface";
+      const touchActionRail = getComputedStyle(surface).touchAction;
+      surface.remove();
+
+      const vhProbe = document.createElement("div");
+      vhProbe.style.height = "var(--mobile-vh)";
+      document.body.appendChild(vhProbe);
+      const vhHeight = getComputedStyle(vhProbe).height;
+      vhProbe.remove();
+
+      const safeProbe = document.createElement("div");
+      safeProbe.style.paddingBottom = "var(--safe-bottom)";
+      document.body.appendChild(safeProbe);
+      const safeBottom = getComputedStyle(safeProbe).paddingBottom;
+      safeProbe.remove();
+
+      return { touchActionSky, overscrollSky, touchActionRail, vhHeight, safeBottom };
+    }
+    """
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT,
+            )
+
+            result = page.evaluate(probe_script)
+            assert result["touchActionSky"] == "pan-y"
+            assert "contain" in result["overscrollSky"]
+            assert result["touchActionRail"] == "none"
+            assert result["vhHeight"] == f"{PHONE_PORTRAIT['height']}px"
+            assert result["safeBottom"] == "0px"
+
+            # Desktop (media block not matched): surface classes fall back to
+            # browser defaults — the mobile foundation is inert above the
+            # breakpoint, proving the freeze holds.
+            page.set_viewport_size({"width": 1280, "height": 900})
+            desktop_touch_action = page.evaluate(
+                """
+                () => {
+                  const surface = document.createElement("div");
+                  surface.className = "mobile-sky-surface";
+                  document.body.appendChild(surface);
+                  const value = getComputedStyle(surface).touchAction;
+                  surface.remove();
+                  return value;
+                }
+                """
+            )
+            assert desktop_touch_action == "auto"
+            assert console_messages == []
+
+            browser.close()
+
+
 def test_out_of_set_stored_values_fall_back_to_defaults(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 

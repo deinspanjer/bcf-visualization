@@ -18,6 +18,7 @@ WEB_FILES = (
     "data-contract.js",
     "viz-model.js",
     "style.css",
+    "mobile.css",
 )
 
 CONSTELLATION_NAMES = (
