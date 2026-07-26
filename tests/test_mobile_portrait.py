@@ -409,6 +409,104 @@ def test_sky_tap_is_noop_when_tap_to_pause_off(tmp_path):
             browser.close()
 
 
+def test_dock_speed_cycle_persists_and_hint_row_context(tmp_path):
+    # MOBP-02 (Task 2): the dock speed control cycles through the four
+    # locked multiplier rungs and survives a reload; the first-run sky tap
+    # hint mounts once per session and only while tap-to-pause is on; the
+    # hint row's right span reports zoom (only above 1x) and POV correctly.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Speed cycle labels, allow-listed persisted values, and the
+            #     tap hint's once-per-session mount lifecycle. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+
+            speed_btn = page.locator('[data-action="mobile-cycle-speed"]')
+            assert speed_btn.inner_text() == "1×"
+
+            # First-run tap hint mounts once, tap-to-pause is on by default.
+            assert page.evaluate("document.querySelector('.mobile-sky-tap-hint') != null") is True
+
+            desktop_option_values = {"1000", "2500", "5000", "10000", "25000", "50000", "100000"}
+            expected_labels = ["2×", "4×", "½×"]
+            for expected in expected_labels:
+                speed_btn.click()
+                assert speed_btn.inner_text() == expected
+                written = page.evaluate("localStorage.getItem('bcf:playback:speed:v2')")
+                assert written in desktop_option_values
+
+            # Each speed-cycle click was a sanctioned structural re-render (a
+            # control change, not a gesture) — the hint must not remount
+            # after the first one.
+            assert page.evaluate("document.querySelector('.mobile-sky-tap-hint')") is None
+
+            page.reload(wait_until="networkidle")
+            assert page.evaluate("localStorage.getItem('bcf:playback:speed:v2')") == "2500"
+            assert page.locator('[data-action="mobile-cycle-speed"]').inner_text() == "½×"
+
+            # Hint row right span at the default 1x zoom: no zoom segment,
+            # POV segment always present and non-empty (this fixture's
+            # chapters carry no chapter-level pov_characters field, so this
+            # exercises the default-POV fallback).
+            # text_content() (not inner_text()) — the hint row's CSS applies
+            # text-transform: uppercase, which inner_text() would reflect.
+            hint_right = page.locator(".mobile-hint-row span").nth(1).text_content()
+            assert "zoom" not in hint_right
+            assert hint_right.endswith(" POV")
+            assert hint_right != " POV"
+
+            assert console_messages == []
+            page.close()
+
+            # --- Hint row at 4x zoom: the zoom segment is present and
+            #     ordered before the POV segment. ---
+            page, console_messages2 = _page_with_console_capture(
+                browser,
+                site,
+                storage={**DEFAULT_STORAGE, "bcf:timeline-zoom": "4"},
+                viewport=PHONE_PORTRAIT,
+            )
+            hint_right_zoomed = page.locator(".mobile-hint-row span").nth(1).text_content()
+            assert hint_right_zoomed.startswith("4× zoom · ")
+            assert hint_right_zoomed.endswith(" POV")
+            assert console_messages2 == []
+            page.close()
+
+            # --- Tap hint absent entirely with tap-to-pause off. ---
+            page, console_messages3 = _page_with_console_capture(
+                browser,
+                site,
+                storage={**DEFAULT_STORAGE, "bcf:tap-to-pause": "false"},
+                viewport=PHONE_PORTRAIT,
+            )
+            assert page.evaluate("document.querySelector('.mobile-sky-tap-hint')") is None
+            assert console_messages3 == []
+            page.close()
+
+            # --- Every dock-transport button clears the 44px tap-target
+            #     floor at 320px viewport width. ---
+            page, console_messages4 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT_SMALL, storage=DEFAULT_STORAGE,
+            )
+            boxes = page.eval_on_selector_all(
+                ".mobile-dock-transport button",
+                "els => els.map(el => { const r = el.getBoundingClientRect(); "
+                "return { width: r.width, height: r.height }; })",
+            )
+            assert len(boxes) >= 2
+            for box in boxes:
+                assert box["width"] >= 44
+                assert box["height"] >= 44
+            assert console_messages4 == []
+
+            browser.close()
+
+
 def test_portrait_empty_and_partial_states(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 

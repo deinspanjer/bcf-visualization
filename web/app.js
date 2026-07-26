@@ -130,6 +130,10 @@ const app = {
   // re-attaching one never drops the other's teardown.
   mobileSkyTeardown: null,
   mobileRailTeardown: null,
+  // Session-only (never persisted): the first-run sky tap hint mounts once
+  // per page load, tracked here rather than localStorage since it's a
+  // per-session affordance, not a durable preference.
+  mobileSkyHintShown: false,
   rollFilter: "all",
   rollSort: "roll",
   raf: null,
@@ -2877,6 +2881,50 @@ function markHelpSeen() {
 }
 window.__bcfMobile = { setTapToPause, setHaptics, setMobileTimelineZoom, markHelpSeen };
 
+// Dock speed control (MOBP-02/UI-SPEC "Settings — Speed options"). Every
+// rung's value is an existing option of the frozen desktop speed <select>
+// ([1000, 2500, 5000, 10000, 25000, 50000, 100000]), so a speed chosen on a
+// phone can never leave that control rendering blank. The rung LABEL is the
+// UI-SPEC's canonical value string ("0.5"/"1"/"2"/"4" — same convention the
+// prototype's own Settings speed radio group uses, design/mobile-ux/
+// prototype/panels.jsx), not the display glyph; mobileSpeedButtonLabel()
+// below maps "0.5" to the "½" glyph the prototype's app.jsx also renders,
+// for the dock button's text only. The 4x label maps to the 25000 rung (the
+// nearest existing rung at or above 4 x 5000) — this approximation is on
+// the Phase B gate agenda (F-04).
+const MOBILE_SPEED_RUNGS = [["0.5", 2500], ["1", 5000], ["2", 10000], ["4", 25000]];
+
+// mobileSpeedMultiplier(): the label of the rung whose value equals the
+// live app.speed, or null when the current speed came from the desktop
+// control and matches no rung.
+function mobileSpeedMultiplier() {
+  const rung = MOBILE_SPEED_RUNGS.find(([, value]) => value === app.speed);
+  return rung ? rung[0] : null;
+}
+
+// setMobileSpeedMultiplier(label): looks the label up in the allow-listed
+// rung table (ignoring anything else), assigns app.speed to that rung's
+// words-per-second value, persists through the SAME LS_SPEED path the
+// desktop <select> uses (no second persistence route), and renders — a
+// control change is a sanctioned structural render, unlike a gesture.
+function setMobileSpeedMultiplier(label) {
+  const rung = MOBILE_SPEED_RUNGS.find(([rungLabel]) => rungLabel === label);
+  if (!rung) return;
+  app.speed = rung[1];
+  store(LS_SPEED, app.speed);
+  render();
+}
+
+// Dock speed button's display text: "{glyph}×" when the current speed
+// matches a rung (the "0.5" rung reads "½", matching the prototype's own
+// speedLabel convention), else a raw words/sec readout for an
+// out-of-rung speed set from the desktop control.
+function mobileSpeedButtonLabel() {
+  const rungLabel = mobileSpeedMultiplier();
+  if (rungLabel == null) return `${formatWords(app.speed)}w/s`;
+  return `${rungLabel === "0.5" ? "½" : rungLabel}×`;
+}
+
 // Diagnostic counter mirroring recordStructuralRender(): increments only when
 // the test harness pre-injected window.__bcfGestureStats; production no-op.
 function recordGestureEvent(kind) {
@@ -2957,6 +3005,7 @@ function renderMobilePortrait() {
         frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
       ),
       renderMobileFocalLabel(frame),
+      renderMobileSkyTapHint(),
     ),
     el("div", { class: "mobile-dock" },
       el("div", { class: "mobile-dock-transport" },
@@ -2972,6 +3021,14 @@ function renderMobilePortrait() {
           el("div", { class: "mobile-dock-meta readout-meta", text: mobileDockMetaText() }),
           el("div", { class: "mobile-dock-title", text: frame.chapter?.title || "—" }),
         ),
+        el("button", {
+          class: "mobile-icon-btn compact",
+          type: "button",
+          "data-action": "mobile-cycle-speed",
+          "aria-label": "Playback speed",
+          title: "Cycle playback speed",
+          text: mobileSpeedButtonLabel(),
+        }),
       ),
       renderMobileScrubber(),
       renderMobileHintRow(),
@@ -3034,6 +3091,17 @@ function renderMobileFocalLabel(frame) {
     el("div", { class: "name", text: name }),
     el("div", { class: "sub", text: sub }),
   );
+}
+
+// First-run tap-sky-to-pause affordance (UI-SPEC Copywriting Contract).
+// Mounts at most once per page session — app.mobileSkyHintShown is set the
+// moment it mounts, so a later structural re-render (e.g. a speed-cycle
+// click) never remounts it. Absent entirely when tap-to-pause is off, since
+// there's nothing to teach the reader about tapping the sky in that case.
+function renderMobileSkyTapHint() {
+  if (!app.tapToPause || app.mobileSkyHintShown) return null;
+  app.mobileSkyHintShown = true;
+  return el("div", { class: "mobile-sky-tap-hint", "aria-hidden": "true", text: "tap sky to pause" });
 }
 
 // Hint row (locked copy, UI-SPEC Copywriting Contract). Left span is
@@ -3266,6 +3334,15 @@ document.body.addEventListener("click", event => {
       if (value === "quick" && app.focusAnim) clearFocusAnim();
       render();
     }
+    event.preventDefault();
+  } else if (action === "mobile-cycle-speed") {
+    // Advances to the next rung, wrapping from the last back to the first;
+    // starts from "1" when the current speed matches no rung (e.g. it was
+    // set from the desktop <select> to a value outside the mobile rungs).
+    const currentLabel = mobileSpeedMultiplier() ?? "1";
+    const currentIndex = MOBILE_SPEED_RUNGS.findIndex(([label]) => label === currentLabel);
+    const nextIndex = (currentIndex + 1) % MOBILE_SPEED_RUNGS.length;
+    setMobileSpeedMultiplier(MOBILE_SPEED_RUNGS[nextIndex][0]);
     event.preventDefault();
   }
 });

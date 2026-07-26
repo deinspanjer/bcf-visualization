@@ -152,6 +152,37 @@
     margin-top: 4px;
     text-transform: uppercase;
   }
+  /* First-run "tap sky to pause" affordance (ported from
+     design/mobile-ux/prototype/styles.css .sky-tap-hint — --green only,
+     per the UI-SPEC's reservation of that variable for this pill). Mounts
+     at most once per session (renderMobileSkyTapHint, web/app.js); the fade
+     keyframes are purely decorative and don't gate the mount/unmount logic. */
+  .mobile-sky-tap-hint {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(5, 29, 38, 0.78);
+    border: 1px solid rgba(123, 255, 189, 0.40);
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0;
+    animation: mobile-hint-fade 5s ease forwards;
+  }
+  @keyframes mobile-hint-fade {
+    0% { opacity: 0; transform: translate(-50%, 8px); }
+    10%, 70% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -4px); pointer-events: none; }
+  }
   .mobile-dock {
     /* grow:1/shrink:0 (MOBP-01): the dock absorbs whatever's left after the
        sky's locked 60% basis rather than the sky absorbing 100% of the
@@ -188,6 +219,38 @@
   .mobile-dock-now {
     flex: 1;
     min-width: 0;
+  }
+  /* Icon button base (UI-SPEC Locked exceptions: speed cycle, gear, ⓘ, ?).
+     Non-compact usages (Plan 02-04's gear/info/help) get the full 44x44
+     floor directly. */
+  .mobile-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    background: rgba(5, 29, 38, 0.82);
+    border: 1px solid var(--edge);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+  }
+  .mobile-icon-btn:active { background: rgba(92, 244, 255, 0.18); }
+  /* Compact variant (UI-SPEC Locked exceptions: 36x36 CSS px) reads visually
+     smaller, but MOBX-03's 44px tap-target floor still applies. box-sizing
+     is scoped to content-box on just this selector so the declared 36x36
+     figure stays the literal CONTENT size (matching the UI-SPEC glyph) while
+     padding grows the rendered — and hit-tested — box to the 44x44 floor,
+     without opting the whole file out of the project's border-box reset. */
+  .mobile-icon-btn.compact {
+    box-sizing: content-box;
+    width: 36px;
+    height: 36px;
+    padding: 4px;
   }
   .mobile-dock-meta {
     color: var(--muted);
