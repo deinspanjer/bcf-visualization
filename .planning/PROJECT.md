@@ -23,8 +23,8 @@ The visualization stays correct and trustworthy: the frozen desktop experience m
 
 **Workstream 1 — Mobile UX (per `design/mobile-ux/INTEGRATION_PLAN.md`):**
 
-- [ ] Fresh-perspective review of the integration plan, resolving its §9 open questions and any questionable decisions via interview with Dre (gate before any code)
-- [ ] Phase A: gesture + state plumbing (`web/mobile-gestures.js`, `LS_*` keys, `STORAGE_VERSION` bump, `app.layoutMode` detection)
+- [x] Fresh-perspective review of the integration plan, resolving its §9 open questions and any questionable decisions via interview with Dre — Validated in Phase 1 (interview 2026-07-25: D-01..D-05 in `01-CONTEXT.md`)
+- [x] Phase A: gesture + state plumbing (`web/mobile-gestures.js`, `LS_*` keys, `STORAGE_VERSION` bump, `app.layoutMode` detection) — Validated in Phase 1 (gate approved by Dre 2026-07-26; 12/12 must-haves verified)
 - [ ] Phase B: Portrait C layout (sky + mini-rail dock, gestures, cluster-binning, Settings/About/Help surfaces)
 - [ ] Phase C: Landscape F layout (sky + field-log rail, cinema-scrub auto-hide, flyouts)
 - [ ] Phase D: cutover (delete portrait banner, landing-page title chip + help button, desktop byte-identical above breakpoint)
@@ -93,4 +93,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-25 after initialization*
+*Last updated: 2026-07-26 after Phase 1 (Mobile State & Gesture Plumbing) completion*

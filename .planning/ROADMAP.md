@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Track A — Mobile UX**
 
-- [ ] **Phase 1: Mobile State & Gesture Plumbing** - Interview gate, layout-mode detection, gesture attach/detach contract, storage keys, desktop smoke test
+- [x] **Phase 1: Mobile State & Gesture Plumbing** - Interview gate, layout-mode detection, gesture attach/detach contract, storage keys, desktop smoke test (completed 2026-07-26)
 - [ ] **Phase 2: Portrait Layout** - Sky over mini-rail dock, sky gestures, zoom-aware rail scrub, cluster-binning, Settings/About/Help
 - [ ] **Phase 3: Landscape Layout** - Sky plus field-log rail, cinema-scrub auto-hide, rotation state preservation, flyouts
 - [ ] **Phase 4: Mobile Cutover & Accessibility** - Banner deletion, landing-page chip, aria-live, keyboard, reduced-motion, Lighthouse a11y ≥ 90
@@ -203,7 +203,7 @@ Within Track A: 1 → 2 → 3 → 4. Within Track B: 5 → 6 → 7 → 8. Tracks
 
 | Phase | Track | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
-| 1. Mobile State & Gesture Plumbing | A | 4/4 | In Progress|  |
+| 1. Mobile State & Gesture Plumbing | A | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | A | 0/TBD | Not started | - |
 | 3. Landscape Layout | A | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | A | 0/TBD | Not started | - |
