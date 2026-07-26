@@ -208,6 +208,120 @@ def _chapter(
     }
 
 
+# MOBP-01 encoding edge (02-01-PLAN.md Task 2): a purchased-perk name with a
+# long multibyte string (>= 60 chars, includes an em-dash and accented
+# letters) used to prove the top-cluster/focal-label overlap bar holds even
+# when the active roll's perk name is unusually long.
+LONG_MULTIBYTE_PERK_NAME = "AEtherial Reforged Toolkit — Ómnia Perpetuum Improvementum Ünicode"
+assert len(LONG_MULTIBYTE_PERK_NAME) >= 60
+
+
+def _dense_roll(offset: int, roll_ordinal: int, outcome: str, *, perk_name: str | None = None) -> dict:
+    common = {
+        "predicted_ordinal": roll_ordinal,
+        "predicted_label": f"P{roll_ordinal}",
+        "roll_ordinal": roll_ordinal,
+        "roll_label": f"R{roll_ordinal}",
+        "chapter_ordinal": 1,
+        "chapter_label": "C1",
+        "epub_word_offset_predicted": offset,
+        "epub_word_offset_curated": offset,
+    }
+    if outcome == "hit":
+        return {
+            **common,
+            "source_ordinal": roll_ordinal,
+            "source_label": f"S{roll_ordinal}",
+            "association_source": "auto",
+            "outcome": "hit",
+            "constellation": "Toolkits",
+            "available_cp": 100,
+            "rolled_perk_cost": 100,
+            "purchased_perk_cost_total": 100,
+            "purchased_perks": [
+                {
+                    "name": perk_name or f"Dense Perk {roll_ordinal}",
+                    "cost": 100,
+                    "constellation": "Toolkits",
+                    "free": False,
+                }
+            ],
+            "free_perks": [],
+        }
+    return {
+        **common,
+        "source_ordinal": None,
+        "source_label": None,
+        "association_source": "none",
+        "outcome": "miss",
+        "constellation": None,
+        "available_cp": 50,
+        "rolled_perk_cost": 200,
+        "miss_cost_estimate": 200,
+        "purchased_perks": [],
+        "free_perks": [],
+    }
+
+
+def _dense_chapter_facts() -> dict:
+    # 8 rolls clustered within 280 words of each other (chapter 2) — merges
+    # into one bin at 390px width and 1x zoom (MOBP-04, future 02-03-PLAN.md)
+    # — plus 4 rolls spread across chapter 3, each > 5% of total words (500
+    # of 10,000) apart from its neighbors. Mixed hit/miss throughout; the
+    # first clustered hit carries the long multibyte perk name.
+    cluster_offsets = [3100, 3140, 3180, 3220, 3260, 3300, 3340, 3380]
+    cluster_outcomes = ["hit", "miss", "hit", "miss", "hit", "miss", "hit", "miss"]
+    cluster_rolls = [
+        _dense_roll(
+            offset,
+            index + 1,
+            outcome,
+            perk_name=LONG_MULTIBYTE_PERK_NAME if index == 0 else None,
+        )
+        for index, (offset, outcome) in enumerate(zip(cluster_offsets, cluster_outcomes))
+    ]
+
+    spread_offsets = [7200, 8200, 9200, 9800]
+    spread_outcomes = ["hit", "miss", "hit", "miss"]
+    spread_rolls = [
+        _dense_roll(offset, len(cluster_rolls) + index + 1, outcome)
+        for index, (offset, outcome) in enumerate(zip(spread_offsets, spread_outcomes))
+    ]
+
+    return {
+        "schema_version": 1,
+        "shadow_periods": [],
+        "chapters": [
+            _chapter(
+                "1",
+                "1 Dense Chapter One",
+                start_words=0,
+                word_count=3000,
+                cp_words=0,
+                rolls=[],
+            ),
+            _chapter(
+                "2",
+                "2 Dense Chapter Two",
+                start_words=3000,
+                word_count=4000,
+                cp_words=3000,
+                rolls=cluster_rolls,
+                visible_toolkits=True,
+            ),
+            _chapter(
+                "3",
+                "3 Dense Chapter Three",
+                start_words=7000,
+                word_count=3000,
+                cp_words=7000,
+                rolls=spread_rolls,
+                visible_toolkits=True,
+            ),
+        ],
+    }
+
+
 def _chapter_facts() -> dict:
     return {
         "schema_version": 1,
@@ -310,8 +424,26 @@ def _wireframes() -> dict:
 
 
 def _visualization_facts(package_id: str) -> dict:
-    chapter_facts = _chapter_facts()
+    # Branch on package id rather than mutating the shared builders in
+    # place — tiny-default/tiny-alt payloads must stay byte-identical.
+    if package_id == "chapterless":
+        # UI-SPEC "unknown chapter" fallback fixture (02-01-PLAN.md Task 2):
+        # zero chapters means chapterAtWord() returns undefined, which is the
+        # only reachable path to the dock title's "—" fallback — every real
+        # chapter always resolves a non-empty title (normChapterTitle falls
+        # back to "Chapter N"), so this is the sole way to exercise it.
+        chapter_facts: dict = {"chapters": []}
+    elif package_id == "dense-rolls":
+        chapter_facts = _dense_chapter_facts()
+    else:
+        chapter_facts = _chapter_facts()
     wireframes = _wireframes()
+    predicted_rolls = [] if package_id == "chapterless" else [
+        # Use renamed field `regime`, not the upstream `cp_rule_regime`.
+        {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
+         "chapter_num": "1", "slot_index": 1, "regime": 1,
+         "roll_trigger_cp_threshold": 100},
+    ]
     return {
         "schema_version": 2,
         "_source": "tests/helpers/web_runtime_site.py",
@@ -327,15 +459,10 @@ def _visualization_facts(package_id: str) -> dict:
             "cluster_constellations": wireframes.get("cluster_constellations", []),
             "jump_constellations": wireframes.get("jump_constellations", []),
         },
-        "predicted_rolls": [
-            # Use renamed field `regime`, not the upstream `cp_rule_regime`.
-            {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
-             "chapter_num": "1", "slot_index": 1, "regime": 1,
-             "roll_trigger_cp_threshold": 100},
-        ],
+        "predicted_rolls": predicted_rolls,
         "predicted_rolls_meta": {
-            "_count": 1,
-            "_total_cp_words": 2000,
+            "_count": len(predicted_rolls),
+            "_total_cp_words": 2000 if predicted_rolls else 0,
             "_total_epub_words": 2253,
             "_regime_summary": {"1": "synthetic", "2": "synthetic", "3": "synthetic"},
         },
@@ -409,11 +536,45 @@ def staged_web_runtime_site(
                     "version_description": "story data through ch 2 / 2; curation data through ch 1 / 1",
                     "smoke_status": "passed",
                 },
+                {
+                    # MOBP-01/MOBP-04 fixture (02-01-PLAN.md Task 2): denser
+                    # roll distribution + a long multibyte perk name, used by
+                    # the portrait overlap/binning tests.
+                    "package_id": "dense-rolls",
+                    "path": "data/packages/dense-rolls",
+                    "package_date": "20260101",
+                    "build_number": 1,
+                    "story_chapter_ordinal": 3,
+                    "story_chapter_num": "3",
+                    "curation_reviewed_chapter_ordinal": 1,
+                    "curation_reviewed_chapter_num": "1",
+                    "version_label": "BCF data 20260101.dense",
+                    "version_description": "synthetic dense-roll fixture for portrait layout tests",
+                    "smoke_status": "passed",
+                },
+                {
+                    # UI-SPEC "unknown chapter" fallback fixture (02-01-PLAN.md
+                    # Task 2): zero chapters, used only by the portrait
+                    # empty/partial-state test.
+                    "package_id": "chapterless",
+                    "path": "data/packages/chapterless",
+                    "package_date": "20260101",
+                    "build_number": 1,
+                    "story_chapter_ordinal": 0,
+                    "story_chapter_num": "0",
+                    "curation_reviewed_chapter_ordinal": 0,
+                    "curation_reviewed_chapter_num": "0",
+                    "version_label": "BCF data 20260101.chapterless",
+                    "version_description": "synthetic zero-chapter fixture for portrait fallback tests",
+                    "smoke_status": "passed",
+                },
             ],
         },
     )
     _stage_package(site_root, "tiny-default")
     _stage_package(site_root, "tiny-alt")
+    _stage_package(site_root, "dense-rolls")
+    _stage_package(site_root, "chapterless")
     _stage_package(site_root, "synthetic-derived", derived=True)
 
     with _serve(site_root) as base_url:

@@ -62,9 +62,50 @@
     left: 12px;
     right: 12px;
     z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    /* The container itself never captures pointer events, so the sky's
+       gesture surface underneath stays reachable through the empty space
+       around the chips/spacer (prototype convention); the chips and the
+       reserved help-button spacer opt back in individually. */
+    pointer-events: none;
+  }
+  .mobile-top-cluster > * { pointer-events: auto; }
+  .mobile-chip-row {
+    display: flex;
+    gap: 8px;
+  }
+  .mobile-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(5, 29, 38, 0.78);
+    border: 1px solid var(--edge);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--ink);
+    backdrop-filter: blur(6px);
+  }
+  .mobile-chip.amber {
+    border-color: rgba(245, 210, 123, 0.50);
+    color: var(--amber);
+  }
+  .mobile-help-spacer {
+    width: 44px;
+    height: 44px;
   }
   .mobile-sky {
-    flex: 1 1 60%;
+    /* No grow (MOBP-01): the dock's content-driven natural height (~178px)
+       is well under the remaining 40%, so giving growth to the dock instead
+       of the sky (below) holds the sky at its locked 60% flex-basis exactly,
+       rather than letting it absorb 100% of the leftover space above a
+       compact dock. */
+    flex: 0 1 60%;
     min-height: 0;
     position: relative;
     overflow: hidden;
@@ -76,8 +117,48 @@
     position: absolute;
     inset: 0;
   }
+  /* MOBP-01: the focal label's locked top:38% anchor sits well below the
+     top-cluster's ~56px footprint (12px inset + the 44px reserved help
+     spacer) at every supported viewport height down to 320x568 — verified
+     by test_portrait_layout_proportions_and_chip_overlap's bounding-box
+     assertion, not a fixed offset guess. */
+  .mobile-focal-label {
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 0 0 12px rgba(92, 244, 255, 0.40);
+  }
+  .mobile-focal-label .kicker {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(92, 244, 255, 0.80);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+  .mobile-focal-label .name {
+    font-family: var(--serif);
+    font-size: clamp(18px, 4.5vw, 26px);
+    color: var(--ink);
+    margin-top: 5px;
+  }
+  .mobile-focal-label .sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.6px;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
   .mobile-dock {
-    flex: 0 0 auto;
+    /* grow:1/shrink:0 (MOBP-01): the dock absorbs whatever's left after the
+       sky's locked 60% basis rather than the sky absorbing 100% of the
+       leftover above a compact, content-sized dock (see .mobile-sky). Never
+       shrinks below its own content, so it always stays fully visible
+       without scrolling. */
+    flex: 1 0 auto;
     position: relative;
     background: linear-gradient(180deg, rgba(5, 29, 38, 0.0), rgba(5, 29, 38, 0.92) 18%);
     border-top: 1px solid var(--edge-soft);
@@ -113,11 +194,22 @@
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
+  /* Higher specificity than the inherited desktop `.readout-meta` type rule
+     (web/style.css, untouched) — ellipsize instead of wrapping into a
+     second line that would push the mini-rail down (UI-SPEC long-text row). */
+  .mobile-dock .readout-meta {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .mobile-dock-title {
     font-family: var(--serif);
     font-size: 13px;
     color: var(--ink);
     margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .mobile-rail {
     position: relative;

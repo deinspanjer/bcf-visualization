@@ -12,6 +12,8 @@ Protected behaviors:
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from tests.helpers.web_runtime_site import staged_web_runtime_site
@@ -39,11 +41,9 @@ def _page_with_console_capture(
     if init_script:
         page.add_init_script(init_script)
     if storage:
-        import json as _json
-
         page.add_init_script(
             "const entries = "
-            + _json.dumps(storage)
+            + json.dumps(storage)
             + "; for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);"
         )
     messages: list[str] = []
@@ -142,9 +142,7 @@ def test_portrait_cinematic_renders_sky_camera_svg(tmp_path):
 
     with staged_web_runtime_site(tmp_path) as site:
         facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
-        import json as _json
-
-        facts = _json.loads(facts_path.read_text())
+        facts = json.loads(facts_path.read_text())
         first_roll_word = None
         for chapter in facts.get("chapters", []):
             rolls = chapter.get("rolls", [])
@@ -195,5 +193,99 @@ def test_portrait_playback_has_no_recursive_renders(tmp_path):
             meta_after = page.locator(".mobile-dock-meta").inner_text()
             assert meta_after != meta_before
             assert console_messages == []
+
+            browser.close()
+
+
+def _dense_rolls_facts(site):
+    facts_path = site.root / "data/packages/dense-rolls/visualization_facts.json"
+    return json.loads(facts_path.read_text())
+
+
+def _long_perk_roll_word(facts: dict) -> int:
+    for chapter in facts.get("chapters", []):
+        for roll in chapter.get("rolls", []):
+            for perk in roll.get("purchased_perks", []):
+                if len(perk.get("name", "")) >= 60:
+                    return roll["epub_word_offset_predicted"]
+    raise AssertionError("dense-rolls fixture has no long-multibyte-perk roll")
+
+
+@pytest.mark.parametrize("viewport", [PHONE_PORTRAIT, PHONE_PORTRAIT_SMALL], ids=["390x844", "320x568"])
+def test_portrait_layout_proportions_and_chip_overlap(tmp_path, viewport):
+    # MOBP-01 acceptance bar: the sky/dock split lands in the 50-70% band at
+    # both viewport sizes, and the top chip cluster never intersects the
+    # sky's focal label — even with a long multibyte perk name as the active
+    # roll (encoding edge, dense-rolls fixture).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        target_word = _long_perk_roll_word(facts)
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=dense-rolls",
+                viewport=viewport,
+                storage={
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": str(target_word),
+                },
+            )
+
+            sky_box = page.locator(".mobile-sky").bounding_box()
+            dock_box = page.locator(".mobile-dock").bounding_box()
+            assert sky_box is not None
+            assert dock_box is not None
+            ratio = sky_box["height"] / viewport["height"]
+            assert 0.5 <= ratio <= 0.7, f"sky/viewport ratio {ratio} outside 50-70% band"
+            assert dock_box["y"] + dock_box["height"] <= viewport["height"] + 1
+
+            cluster_box = page.locator(".mobile-top-cluster").bounding_box()
+            label_box = page.locator(".mobile-focal-label").bounding_box()
+            assert cluster_box is not None
+            assert label_box is not None
+            assert cluster_box["y"] + cluster_box["height"] <= label_box["y"]
+
+            assert console_messages == []
+            browser.close()
+
+
+def test_portrait_empty_and_partial_states(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # Playhead before the first roll (word 0): no amber chip, no
+            # focal label — structurally absent, never blanked placeholders.
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            assert page.evaluate("document.querySelector('.mobile-chip.amber')") is None
+            assert page.evaluate("document.querySelector('.mobile-focal-label')") is None
+            title_text = page.locator(".mobile-dock-title").inner_text()
+            assert title_text != "undefined"
+            assert console_messages == []
+            page.close()
+
+            # A chapter-less package: chapterAtWord() has nothing to resolve,
+            # so the dock title falls back to the literal em-dash — never
+            # the string "undefined".
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=chapterless",
+                viewport=PHONE_PORTRAIT,
+                storage={"bcf:preview-port-storage-version": "3"},
+            )
+            fallback_title = page.locator(".mobile-dock-title").inner_text()
+            assert fallback_title == "—"
+            assert console_messages == []
+            page.close()
 
             browser.close()

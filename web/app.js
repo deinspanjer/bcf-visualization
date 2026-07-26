@@ -142,6 +142,8 @@ const app = {
   frameKeys: {
     narrative: null,
     skyCamera: null,
+    mobileChip: null,
+    mobileFocal: null,
     detail: {},
   },
   bookmarkPersistTimer: null,
@@ -910,7 +912,7 @@ function render() {
   clear(root);
   recordStructuralRender();
   app.dom = {};
-  app.frameKeys = { narrative: null, skyCamera: null, detail: {} };
+  app.frameKeys = { narrative: null, skyCamera: null, mobileChip: null, mobileFocal: null, detail: {} };
   app.carousel.visibleSlots = new Map();
   if (app.error) {
     root.append(renderLoadError(app.error));
@@ -2597,6 +2599,7 @@ function cachePlaybackDomRefs() {
     // Portrait-only refs (D-18) — appended to the same app.dom object so
     // updateMobilePortraitFrame() can mutate text/style without rebuilding
     // the rail's lanes every frame. Desktop refs above stay untouched.
+    app.dom.mobileSky = document.querySelector(".mobile-sky");
     app.dom.mobileSkyCameraLayer = document.querySelector(".mobile-sky-camera-layer");
     app.dom.mobileFocalLabel = document.querySelector(".mobile-focal-label");
     app.dom.mobileDockMeta = document.querySelector(".mobile-dock-meta");
@@ -2607,6 +2610,8 @@ function cachePlaybackDomRefs() {
     app.dom.mobilePlayhead = document.querySelector(".mobile-playhead");
     app.dom.mobileActiveDot = document.querySelector(".mobile-roll-dot.active");
     app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
+    app.dom.mobileChipRow = document.querySelector(".mobile-chip-row");
+    app.dom.mobileHintRow = document.querySelector(".mobile-hint-row");
   }
   app.carousel.visibleSlots = new Map(
     [...document.querySelectorAll(".carousel-slot[data-roll-uid]")]
@@ -2923,18 +2928,19 @@ function mobileInnerFraction(viewportFraction, zoom, panPct) {
 }
 
 // renderMobilePortrait(): the D-12 portrait arm of render(). Root
-// `.mobile-app` holds the top chip cluster (filled in 02-02-PLAN.md Task 2),
-// the real sky (D-13 — never the prototype's procedural placeholder), and
-// the dock (transport row + mini-rail + hint row).
+// `.mobile-app` holds the top chip cluster, the real sky (D-13 — never the
+// prototype's procedural placeholder) with its cinematic camera and focal
+// label, and the dock (transport row + mini-rail + hint row).
 function renderMobilePortrait() {
   const frame = playthroughFrameState();
   return el("div", { class: "mobile-app" },
-    el("div", { class: "mobile-top-cluster" }),
+    renderMobileTopCluster(),
     el("div", { class: "mobile-sky mobile-sky-surface" },
       renderViewportFrame(),
       el("div", { class: "mobile-sky-camera-layer" },
         frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
       ),
+      renderMobileFocalLabel(frame),
     ),
     el("div", { class: "mobile-dock" },
       el("div", { class: "mobile-dock-transport" },
@@ -2952,7 +2958,7 @@ function renderMobilePortrait() {
         ),
       ),
       renderMobileScrubber(),
-      el("div", { class: "mobile-hint-row" }),
+      renderMobileHintRow(),
     ),
   );
 }
@@ -2960,6 +2966,73 @@ function renderMobilePortrait() {
 function mobileDockMetaText() {
   const total = app.data.story.total_words || 1;
   return `${formatWords(app.wordPos)} / ${formatWords(total)} words · ${Math.round((app.wordPos / total) * 100)}%`;
+}
+
+// The top chip cluster (MOBP-01). Absolutely positioned 12px inset from the
+// sky's top/left/right (its containing block is `.mobile-app`, which the
+// prototype's `.app` equivalent gives `position: relative`). The help
+// button's 44x44 tap target is reserved as an empty spacer here — Plan
+// 02-04 fills it — so the layout never shifts when it lands.
+function renderMobileTopCluster() {
+  const roll = lastRollAtWord(app.wordPos);
+  return el("div", { class: "mobile-top-cluster" },
+    el("div", { class: "mobile-chip-row" },
+      el("div", { class: "mobile-chip", text: mobileChChipText() }),
+      roll ? el("div", { class: "mobile-chip amber", text: mobileAmberChipText(roll) }) : null,
+    ),
+    el("div", { class: "mobile-help-spacer", "aria-hidden": "true" }),
+  );
+}
+
+function mobileChChipText() {
+  // Defensive optional-chain: chapterAtWord() returns undefined when
+  // app.data.story.chapters is empty (UI-SPEC partial-data row) — never
+  // let that surface as a literal "undefined" in the chip.
+  return `CH ${chapterAtWord(app.wordPos)?.chapter_num ?? "—"} · ${formatWords(app.wordPos)}w`;
+}
+
+function mobileAmberChipText(roll) {
+  return `◢ ${roll.roll_label || "R—"}`;
+}
+
+// The sky's focal label (MOBP-01/UI-SPEC Display role). Renders only while
+// the cinematic is firing on a real roll — structurally absent otherwise,
+// never a blanked placeholder.
+function renderMobileFocalLabel(frame) {
+  if (!(frame.firing && frame.lastRoll)) return null;
+  const roll = frame.lastRoll;
+  const isHit = roll.outcome === "hit";
+  const kicker = roll.constellation || "—";
+  let name;
+  if (isHit) {
+    const principal = paidRollPerks(roll)[0] ?? (roll.free_perks || [])[0];
+    name = perkDisplayLabel(principal) || roll.rolled_perk_name || roll.constellation || "—";
+  } else {
+    name = "Miss";
+  }
+  const sub = isHit
+    ? `${rollTotalCost(roll)} CP · ch ${roll.chapter_num}`
+    : `miss ${roll.miss_cost_estimate ?? "?"} · ch ${roll.chapter_num}`;
+  return el("div", { class: "mobile-focal-label" },
+    el("div", { class: "kicker", text: kicker }),
+    el("div", { class: "name", text: name }),
+    el("div", { class: "sub", text: sub }),
+  );
+}
+
+// Hint row (locked copy, UI-SPEC Copywriting Contract). Left span is
+// static; the right span's zoom segment is omitted entirely at 1x.
+function renderMobileHintRow() {
+  const chapter = chapterAtWord(app.wordPos);
+  return el("div", { class: "mobile-hint-row" },
+    el("span", { text: "tap rail → jump · drag → scrub" }),
+    el("span", { text: mobileHintRowRightText(chapter) }),
+  );
+}
+
+function mobileHintRowRightText(chapter) {
+  const zoomPart = app.mobileTimelineZoom > 1 ? `${app.mobileTimelineZoom}× zoom · ` : "";
+  return `${zoomPart}${chapter?.pov || "Joe"} POV`;
 }
 
 // renderMobileScrubber(): the mini-rail. Cluster bins (MOBP-04) are
@@ -3023,6 +3096,10 @@ function updateMobilePortraitFrame() {
   if (app.dom.mobileDockMeta) app.dom.mobileDockMeta.textContent = mobileDockMetaText();
   if (app.dom.mobileDockTitle) app.dom.mobileDockTitle.textContent = frame.chapter?.title || "—";
 
+  updateMobileTopClusterFrame();
+  updateMobileFocalLabelFrame(frame);
+  updateMobileHintRowFrame(frame);
+
   const total = app.data.story.total_words || 1;
   const playheadPctRaw = (app.wordPos / total) * 100;
   if (app.dom.mobilePlayhead) app.dom.mobilePlayhead.style.left = `${playheadPctRaw}%`;
@@ -3030,6 +3107,51 @@ function updateMobilePortraitFrame() {
     const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
     app.dom.mobileRailInner.style.transform = `translateX(-${panPct}%)`;
   }
+}
+
+// The CH chip's word count updates every frame; the amber roll chip is a
+// structural presence change keyed on the active roll's uid (or "none") —
+// replaceChildren fires only when that key changes, never every frame.
+function updateMobileTopClusterFrame() {
+  const chipRow = app.dom.mobileChipRow;
+  if (!chipRow) return;
+  const roll = lastRollAtWord(app.wordPos);
+  const key = roll ? String(roll.uid) : "none";
+  if (app.frameKeys.mobileChip !== key) {
+    chipRow.replaceChildren(
+      el("div", { class: "mobile-chip", text: mobileChChipText() }),
+      roll ? el("div", { class: "mobile-chip amber", text: mobileAmberChipText(roll) }) : null,
+    );
+    app.frameKeys.mobileChip = key;
+  } else if (chipRow.firstElementChild) {
+    chipRow.firstElementChild.textContent = mobileChChipText();
+  }
+}
+
+// The focal label is a structural presence change keyed on firing + roll
+// uid (or "none") — appended/removed from the sky only when that key
+// changes, never rebuilt every frame.
+function updateMobileFocalLabelFrame(frame) {
+  const sky = app.dom.mobileSky;
+  if (!sky) return;
+  const active = frame.firing && frame.lastRoll;
+  const key = active ? String(frame.lastRoll.uid) : "none";
+  if (app.frameKeys.mobileFocal === key) return;
+  if (app.dom.mobileFocalLabel) app.dom.mobileFocalLabel.remove();
+  const next = active ? renderMobileFocalLabel(frame) : null;
+  if (next) sky.appendChild(next);
+  app.dom.mobileFocalLabel = next;
+  app.frameKeys.mobileFocal = key;
+}
+
+// Hint row: the left span is static; only the right span's zoom/POV text
+// depends on scrubber position, so only it needs an every-frame textContent
+// write.
+function updateMobileHintRowFrame(frame) {
+  const hintRow = app.dom.mobileHintRow;
+  if (!hintRow) return;
+  const rightSpan = hintRow.lastElementChild;
+  if (rightSpan) rightSpan.textContent = mobileHintRowRightText(frame.chapter);
 }
 
 // attachMobilePortraitGestures(): mirrors attachMobileGestureProbes's
