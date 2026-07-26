@@ -40,12 +40,12 @@ Within this workstream, phases are strictly sequential — each stage's correctn
   3. An exemplar index built from the hand-curated chapters is tagged by CP regime, and a retrieval query for a target chapter returns only same-regime exemplars
   4. The index documents the corpus's observed evidence-quote patterns, roll-shape distribution, and perk-link conventions
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Verify epub freshness (D-09), resolve the ch 95.5 hand-curated data gap via a Dre-approved checkpoint, force-regenerate the full pipeline (EPUB-01)
+- [x] 01-01-PLAN.md — Verify epub freshness (D-09), resolve the ch 95.5 hand-curated data gap via a Dre-approved checkpoint, force-regenerate the full pipeline (EPUB-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Epub Refresh & Exemplar Mining | 0/4 | Planned | - |
+| 1. Epub Refresh & Exemplar Mining | 1/4 | In Progress|  |
 | 2. Mechanical Verifier | 0/TBD | Not started | - |
 | 3. Provenance Schema & Agent Curation Pipeline | 0/TBD | Not started | - |
 | 4. Proposal Review & Full Batch Run | 0/TBD | Not started | - |

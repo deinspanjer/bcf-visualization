@@ -9,7 +9,7 @@ Requirements for this workstream. Each maps to curation-workstream phases (renum
 
 ### Epub Refresh (hard gate)
 
-- [ ] **EPUB-01**: Latest released chapters fetched via the existing private-source flow (`sync_private_source_repo.py` → `hydrate_source_epub.py`); chapter count and nav entries reflect the newest release
+- [x] **EPUB-01**: Latest released chapters fetched via the existing private-source flow (`sync_private_source_repo.py` → `hydrate_source_epub.py`); chapter count and nav entries reflect the newest release
 - [ ] **EPUB-02**: Full pipeline re-run completes green on the refreshed epub: predicted rolls extend into new chapters, existing curated chapters still validate, and `visualization_facts.json` rebuilds
 
 ### Curation Infrastructure
@@ -50,7 +50,7 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EPUB-01 | Phase 1 | Pending |
+| EPUB-01 | Phase 1 | Complete |
 | EPUB-02 | Phase 1 | Pending |
 | CINF-02 | Phase 1 | Pending |
 | CINF-03 | Phase 2 | Pending |
