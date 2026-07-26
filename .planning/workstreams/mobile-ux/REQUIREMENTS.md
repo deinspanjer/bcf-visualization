@@ -18,9 +18,9 @@ Requirements for this workstream (MOB*). Curation requirements (EPUB/CINF/ACUR) 
 
 ### Mobile Portrait
 
-- [ ] **MOBP-01**: Portrait phone shows sky (~60% viewport) over an always-visible mini-rail dock; top chips do not overlap the sky's focal label
+- [x] **MOBP-01**: Portrait phone shows sky (~60% viewport) over an always-visible mini-rail dock; top chips do not overlap the sky's focal label
 - [ ] **MOBP-02**: Sky gestures work per gesture contract: tap toggles pause within 250ms (no-op when tap-to-pause off), double-tap snaps to last roll and resumes, horizontal swipe scrubs ±1 roll per 56px with haptic per roll crossed (haptics decorative-only; no-op on iOS)
-- [ ] **MOBP-03**: Mini-rail drag scrubs word position, honoring current zoom and auto-pan offset (zoom-aware fraction ported verbatim from prototype scrubber)
+- [x] **MOBP-03**: Mini-rail drag scrubs word position, honoring current zoom and auto-pan offset (zoom-aware fraction ported verbatim from prototype scrubber)
 - [ ] **MOBP-04**: Scrubber cluster-binning collapses rolls within 5px at any zoom; multi-roll clusters show numeric count; active roll always renders as a separate cyan diamond on top
 - [ ] **MOBP-05**: Settings flyout (mode, on-roll, speed, timeline zoom 1×/2×/4×/8×, comfort), About flyout (title, author, SV/FF/AO3 links, dataset stats), and Help overlay all work in portrait; help auto-opens when `bcf:help-seen` is false; all prefs persist across reload
 
@@ -75,9 +75,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOBF-04 | Phase 1 | Complete |
 | MOBF-05 | Phase 1 | Complete |
 | MOBF-06 | Phase 1 | Complete |
-| MOBP-01 | Phase 2 | Pending |
+| MOBP-01 | Phase 2 | Complete |
 | MOBP-02 | Phase 2 | Pending |
-| MOBP-03 | Phase 2 | Pending |
+| MOBP-03 | Phase 2 | Complete |
 | MOBP-04 | Phase 2 | Pending |
 | MOBP-05 | Phase 2 | Pending |
 | MOBL-01 | Phase 3 | Pending |

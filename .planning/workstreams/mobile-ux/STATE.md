@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 2
 current_phase_name: Portrait Layout
 status: executing
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-07-26T22:18:42.532Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-07-26T22:53:45.847Z"
 last_activity: 2026-07-26
-last_activity_desc: Phase 1 complete, transitioned to Phase 2
+last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 9
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** The visualization stays correct and trustworthy: the frozen desktop experience must not regress, and agent-curated data must never silently degrade the hand-curated evidence corpus.
-**Current focus:** Phase 1 — Mobile State & Gesture Plumbing
+**Current focus:** Phase 2 — Portrait Layout
 
 ## Current Position
 
-Phase: 2 — Portrait Layout
-Plan: Not started
+Phase: 2 (Portrait Layout) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-07-26 — Phase 1 complete, transitioned to Phase 2
+Last activity: 2026-07-26 — Phase 2 execution started
 
-Progress: [██████████] 100%
+Progress: [██████░░░░] 56%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [██████████] 100%
 | Phase 01 P02 | 8min | 2 tasks | 5 files |
 | Phase 01 P03 | 1h50min (checkpoint pause) | 2 tasks | 1 files |
 | Phase 01 P04 | 25min | 2 tasks | 1 files |
+| Phase 02 P01 | 40min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase ?]: mobile-vh uses 100svh not 100dvh - no scrollable body content to trigger iOS toolbar reflow — Avoids dvh reflow-during-scroll jank per RESEARCH.md Pitfall 4; mobile-dvh still exposed for future toolbar-aware needs
 - [Phase ?]: 01-03: boundary matrix pins orientation-dependent breakpoint (1100x900 landscape stays desktop; only portrait crosses at 1100px) matching web/style.css:360 media query, not the flatter §0.5 prose reading
 - [Phase ?]: 01-04: Phase A gate approved by Dre — Milestone Gate 2 satisfied, Phase 1 closed, Track A may proceed to Phase 2
+- [Phase ?]: 02-01: sky/dock flex-grow swap (dock absorbs leftover, sky holds its locked 60% basis) to hit MOBP-01's ~60% sky truth against a compact real dock height
+- [Phase ?]: 02-01: added a dedicated zero-chapter 'chapterless' test fixture to exercise the dock title's em-dash fallback, the only reachable path since chapterAtWord() always resolves a non-empty title otherwise
 
 ### Pending Todos
 
@@ -106,6 +109,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T21:47:30.747Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/workstreams/mobile-ux/phases/02-portrait-layout/02-UI-SPEC.md
+Last session: 2026-07-26T22:53:45.837Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
