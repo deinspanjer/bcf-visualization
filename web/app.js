@@ -2909,6 +2909,11 @@ window.addEventListener("pagehide", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && app.data) persistBookmarkNow();
+  // D-02, mobile-only: hiding the page pauses playthrough with state intact;
+  // no auto-resume on return to visible. Desktop path above is unchanged.
+  if (document.visibilityState === "hidden" && app.layoutMode !== "desktop" && app.playing) {
+    stopPlayback();
+  }
 });
 
 render();

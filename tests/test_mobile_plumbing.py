@@ -369,6 +369,61 @@ def test_css_foundation_touch_action_and_viewport_primitives(tmp_path):
             browser.close()
 
 
+_FORCE_HIDDEN_SCRIPT = """
+() => {
+  Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+  document.dispatchEvent(new Event("visibilitychange"));
+}
+"""
+
+
+def test_visibilitychange_pauses_playback_on_mobile_only(tmp_path):
+    # D-02: hiding the page pauses playthrough on mobile layouts, with state
+    # intact (no auto-resume, no reset); the desktop path is unchanged —
+    # the single existing handler still only persists the bookmark there.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # Mobile (phone portrait): hidden -> paused, state intact.
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT,
+            )
+            page.click('button[aria-label="Play"]')
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+
+            page.evaluate(_FORCE_HIDDEN_SCRIPT)
+
+            # Paused (not just relabeled): the word-position readout stops
+            # advancing once hidden — state intact, no further playback tick.
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            readout_at_pause = page.locator(".readout-meta").inner_text()
+            page.wait_for_timeout(300)
+            readout_after_wait = page.locator(".readout-meta").inner_text()
+            assert readout_after_wait == readout_at_pause
+            assert console_messages == []
+            page.close()
+
+            # Desktop: same play + forced-hidden sequence leaves playback
+            # running — only the bookmark-persist branch fires.
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport={"width": 1280, "height": 900},
+            )
+            page.click('button[aria-label="Play"]')
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+
+            page.evaluate(_FORCE_HIDDEN_SCRIPT)
+
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            assert console_messages == []
+            page.close()
+
+            browser.close()
+
+
 def test_out_of_set_stored_values_fall_back_to_defaults(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
