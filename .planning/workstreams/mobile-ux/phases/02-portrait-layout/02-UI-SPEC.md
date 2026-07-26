@@ -140,23 +140,33 @@ New D-14 element (no prototype precedent — new copy, follows existing icon-btn
 
 ## UI Considerations
 
-> State coverage for the shape-rooted UI surfaces this phase touches (top chips, dock, mini-rail, flyouts). Empty/error
-> COPY is defined above in Copywriting Contract; this section covers state coverage and references those rows.
+> State coverage for the shape-rooted UI surfaces this phase touches (top chips, sky, dock, mini-rail, hint row,
+> Settings/About flyouts, Help overlay). Empty/error COPY is defined above in Copywriting Contract; this section
+> covers state coverage and references those rows. Probe run 2026-07-26 (ui-consideration-probe over 8 elements,
+> 57 applicable category cells, collapsed below by shared resolution).
 
-Applicable state considerations resolved: 6 covered, 3 backstop, 2 unresolved.
+Applicable state considerations resolved: 11 covered, 4 backstop, 3 dismissed, 0 unresolved.
 
 | Category | Element(s) | Status | Resolution / Reason |
 |----------|------------|--------|---------------------|
+| Loading (all portrait surfaces) | Whole portrait surface | ✅ covered | Before `app.data` resolves, `render()` early-returns the shared `renderLoading()` screen ahead of the desktop/portrait branch — no portrait element ever renders without data. Reused unchanged; a mobile-styled loading card is explicitly out of scope for MOBP-01..05 |
+| Error (all portrait surfaces) | Whole portrait surface | ✅ covered | Same pre-branch contract: `app.error` early-returns shared `renderLoadError()`. Reused unchanged this phase; no portrait-specific error copy/markup |
 | Empty (no active roll) | Top chip cluster | ✅ covered | Amber roll chip is structurally omitted when `activeRoll` is null — see Copywriting Contract row "Empty state (no active roll)" |
 | Empty (unknown chapter) | Dock "now" title | ✅ covered | Falls back to literal `"—"` per Copywriting Contract |
+| Empty (zero rolls in data) | Mini-rail | ✅ covered | `binRolls([])` returns `[]`; the rail renders chapter ticks + POV bands + playhead with no bins and no active diamond — no crash path (verbatim-port behavior) |
+| Empty (no POV on chapter) | Hint row | ✅ covered | POV segment renders `{pov || "Joe"} POV` (default-POV convention per project chapter naming); zoom segment omitted entirely at 1× |
+| Partial (missing roll fields) | Chips, mini-rail, flyouts | ✅ covered | Every data-driven text field has an explicit null fallback: `R{rollNumber ?? "—"}`, dock title `"—"`, About stats `{data?.rolls?.length || 0}` — no `undefined` ever renders |
 | Long-text | Dock "now" title, dock meta line | ✅ covered | `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` on both (`.dock-transport .now .meta`/`.title`, `styles.css:215-223`) — never wraps into a second line that could push the mini-rail down |
 | Zero-one-many | Mini-rail cluster bins (MOBP-04) | ✅ covered | 1 roll → plain diamond; 2+ rolls within 5px → merged `.roll-bin` with numeric `.count` badge; active roll always rendered as a separate `.roll-dot.active` on top regardless of bin state |
 | Populated (dominant outcome) | Cluster bin color | ✅ covered | `binRolls`/`finalizeBin` (verbatim port) assign the bin's dominant-outcome color (`hit`/`miss`/default-amber) per RESEARCH.md Pattern/Code-Examples section |
-| Overflow (narrow viewport) | Top chip cluster vs. sky focal label | 🧪 backstop | MOBP-01's explicit acceptance bar ("top chips never overlap the sky's focal label") must hold at 320px width per CONTEXT.md `<specifics>` — needs a Playwright bounding-box assertion at 320px AND real-device visual check (`test_portrait_layout_proportions_and_chip_overlap`, RESEARCH.md Phase Requirements → Test Map); not resolvable from static contract alone |
+| Populated (normal playback) | All surfaces | ✅ covered | The default state is the contract itself — chips/dock/rail/flyout copy and tokens locked in the sections above |
+| Overflow (narrow viewport) | Top chip cluster vs. sky focal label | 🧪 backstop | MOBP-01's explicit acceptance bar ("top chips never overlap the sky's focal label") must hold at 320px width per CONTEXT.md `<specifics>` — includes long perk names in the clamp-sized focal label. Playwright bounding-box assertion at 320px AND real-device visual check (`test_portrait_layout_proportions_and_chip_overlap`, RESEARCH.md test map) |
 | Overflow (sky letterboxing) | Sky camera at tall/narrow phone aspect | 🧪 backstop | `renderSkyCamera`'s `preserveAspectRatio="xMidYMid meet"` against a fixed 1.6:1 world-stage will letterbox at typical phone portrait aspect ratios — RESEARCH.md Assumption A1 explicitly defers "acceptable cinematic framing vs. looks broken" to the real-device Phase B gate review; do not pre-build a mobile-specific viewBox crop before that check |
+| Overflow (short viewport) | Settings flyout / Help overlay | 🧪 backstop | At short portrait viewports (e.g. 320×568), the Settings flyout (`bottom: 152px` anchor) and Help overlay content must fit or scroll internally — needs a Playwright assertion that all controls remain reachable at 320×568 (flyout gets `max-height` + `overflow-y: auto` if it doesn't fit) |
 | First-run help auto-open | Help overlay | 🧪 backstop | Trigger point ("after data load, mobile layouts only, once per session, when `helpSeen` is false") is Claude's Discretion per CONTEXT.md — needs a Playwright assertion, not just a visual check |
-| Loading state | Whole portrait surface | ⚠ unresolved | `render()` shows the existing shared `renderLoading()` markup (desktop-styled `.loading-card`, centered) **before** branching into portrait/desktop — CONTEXT.md/RESEARCH.md do not call for a portrait-specific loading screen. **Planner assumption:** reuse the shared loading UI unchanged this phase; a mobile-styled loading card is out of scope for MOBP-01..05 |
-| Error state | Whole portrait surface | ⚠ unresolved | Same reasoning as loading state — `renderLoadError()` is shared, pre-branch, and not addressed by this phase's requirements. **Planner assumption:** reuse as-is; do not build portrait-specific error copy/markup this phase |
+| Empty (static surfaces) | Settings flyout, Help overlay, About links | ✖ dismissed | Static control sets and fixed copy — no data-driven emptiness exists (the only data-driven About row, dataset stats, is covered under Partial above) |
+| Zero-one-many (static collections) | Settings segments, Help gesture rows, About source links | ✖ dismissed | Fixed-cardinality collections defined by the contract (4/3/4-option segments, 7 gesture rows, 3 links) — cardinality cannot vary at runtime |
+| Loading/error (per-flyout) | Settings/About/Help while open | ✖ dismissed | Flyouts read already-loaded in-memory state only (`app.*`, `data` stats); they are unreachable before data load (dock renders post-load) and perform no async work of their own |
 
 ---
 
@@ -173,11 +183,11 @@ Not applicable — this project has no component registry (no shadcn, no npm pac
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: FLAG (non-blocking — within-role pixel variants are intentional verbatim ports of the frozen prototype scale; confirm nothing uncaptured lurks in `styles.css`)
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-07-26 (gsd-ui-checker, 6/6 dimensions, 1 non-blocking FLAG)
