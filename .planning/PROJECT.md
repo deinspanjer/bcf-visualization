@@ -74,6 +74,7 @@ The visualization stays correct and trustworthy: the frozen desktop experience m
 | Mobile UX gates: one upfront interview (plan review + §9 questions), then review checkpoint at each phase gate A–E | Resolves design ambiguity once; keeps Dre in the loop at natural acceptance boundaries | — Pending |
 | Follow INTEGRATION_PLAN.md as source of truth for mobile scope (with fresh-perspective review first) | Plan is locked v1 with explicit desktop-freeze rules; review catches staleness (e.g., path prefix) | — Pending |
 | Epub refresh uses existing `sync_private_source_repo.py` → `hydrate_source_epub.py` → `pipeline.py` flow | Flow already exists and maintains private-repo provenance; no new download path | — Pending |
+| Split into GSD workstreams `mobile-ux` + `curation` after Phase 1 (2026-07-26) | Enables parallel sessions (worktree for mobile-ux, main checkout for curation) with independent ROADMAP/STATE/REQUIREMENTS per stream; curation phases renumbered 5–8 → 1–4 | — Pending |
 
 ## Evolution
 

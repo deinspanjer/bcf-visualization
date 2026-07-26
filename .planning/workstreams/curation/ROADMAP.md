@@ -1,0 +1,119 @@
+# Roadmap: Autonomous Curation (workstream: curation)
+
+## Overview
+
+This workstream refreshes the epub to the latest released chapters and then builds an agent-based curation pipeline that curates the remaining chapters, routing high-confidence output into the trusted overrides file with provenance and low-confidence output into a proposals sidecar for hand-curation. It is fully independent of the `mobile-ux` workstream (no shared files, no shared data) and may run in parallel with it.
+
+Within this workstream, phases are strictly sequential — each stage's correctness bar depends on the previous stage's output being trustworthy.
+
+> **Renumbering note:** These phases were Phases 5–8 of the original combined roadmap (before the workstream split on 2026-07-26). Old→new: 5→1, 6→2, 7→3, 8→4.
+
+## Workstream Gates
+
+1. **Epub hard gate (Phase 1).** Phase 1 is a HARD GATE for Phases 2–4. No curation infrastructure, verifier work, or agent run may begin until the epub is refreshed and the full pipeline re-runs green on it. Building a verifier or confidence gate against a stale chapter set means re-tuning everything after the refresh.
+2. **Provenance shape is already decided — no interview needed.** Decided by Dre at the mobile-ux Phase 1 interview (2026-07-25, recorded as D-04 in `.planning/workstreams/mobile-ux/phases/01-mobile-state-gesture-plumbing/01-CONTEXT.md`): **minimal marker** — a single `curated_by: "human" | "agent"` string on each roll-override entry, following the existing `curator_added` precedent. Run bookkeeping (model, run_id, corpus_fingerprint, confidence) lives in a **separate agent-run ledger file keyed by chapter**; that ledger anchors CINF-04's idempotency fingerprint keying. All in-repo consumers of the overrides schema are rewritten for the new field in the same change (no shims). Reversibility: costly — widening to a rich per-roll object later means another full consumer rewrite.
+
+## Phases
+
+**Phase Numbering:**
+
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+- [ ] **Phase 1: Epub Refresh & Exemplar Mining** - Latest chapters hydrated, pipeline green, regime-tagged exemplar index from the 118-chapter corpus
+- [ ] **Phase 2: Mechanical Verifier** - Deterministic quote/word-position/perk-name verification baselined at 100% on hand-curated chapters
+- [ ] **Phase 3: Provenance Schema & Agent Curation Pipeline** - Provenance field rewrite, per-chapter curation agent, confidence gate, overrides/proposals routing
+- [ ] **Phase 4: Proposal Review & Full Batch Run** - Forge Curator proposal review flow plus the full batch over remaining chapters
+
+## Phase Details
+
+### Phase 1: Epub Refresh & Exemplar Mining
+
+**Goal**: The pipeline reflects the newest released chapters, and the hand-curated corpus is characterized well enough to teach an agent
+**Mode:** mvp
+**Depends on**: Nothing (workstream entry point)
+**Requirements**: EPUB-01, EPUB-02, CINF-02
+**Success Criteria** (what must be TRUE):
+
+  1. The existing private-source flow (`sync_private_source_repo.py` → `hydrate_source_epub.py`) yields an epub whose chapter count and nav entries reflect the newest release
+  2. A full pipeline re-run completes green: predicted rolls extend into the new chapters, all previously curated chapters still validate, and `visualization_facts.json` rebuilds
+  3. An exemplar index built from the hand-curated chapters is tagged by CP regime, and a retrieval query for a target chapter returns only same-regime exemplars
+  4. The index documents the corpus's observed evidence-quote patterns, roll-shape distribution, and perk-link conventions
+
+**Plans**: TBD
+**Notes**: HARD GATE for Phases 2–4 — no verifier, schema, or agent work begins until this phase is green. Regime tagging must exist before retrieval logic is built, not be retrofitted. Exemplar mining is pure analysis over existing data; no LLM calls in this phase. This phase also clears the pre-existing Track B staleness failures documented in `.planning/workstreams/mobile-ux/phases/01-mobile-state-gesture-plumbing/deferred-items.md` (stale `perk_directory` sha256; ch 95.5 multi_grab override referencing an unobtained perk; 24 data-consistency test failures). This workstream MUST run in the main checkout — it needs the gitignored epub, `data/private-source/` clone, and `.venv`.
+
+### Phase 2: Mechanical Verifier
+
+**Goal**: Any candidate curation can be judged true or false by deterministic code, with the hand-curated corpus as its proof of correctness
+**Mode:** mvp
+**Depends on**: Phase 1
+**Requirements**: CINF-03
+**Success Criteria** (what must be TRUE):
+
+  1. Running the verifier over every hand-curated chapter passes 100% — a failure means the verifier is wrong, not the corpus
+  2. The verifier accepts only exact or whitespace-normalized quote matches and rejects paraphrase; no fuzzy matching path exists
+  3. Word positions and perk names are resolved through the pipeline's existing tokenizer and `perk_name_resolver.py` ladder, with no second implementation of either
+  4. The verifier reports per-roll pass/fail with reasons, in a form the Phase 3 confidence gate can consume
+
+**Plans**: TBD
+**Notes**: Built and validated with zero LLM in the loop, so agent output has a real bar to clear on its first run. This is the "never let the model compute a value that has a deterministic source of truth" rule made executable.
+
+### Phase 3: Provenance Schema & Agent Curation Pipeline
+
+**Goal**: Agents can curate a chapter, and their output is routed by confidence into the trusted corpus or a proposals queue — never silently degrading either
+**Mode:** mvp
+**Depends on**: Phase 2
+**Requirements**: CINF-01, CINF-04, ACUR-01, ACUR-02, ACUR-03
+**Success Criteria** (what must be TRUE):
+
+  1. Every roll-override entry carries the `curated_by` provenance marker per the decided shape (Workstream Gate 2), and every in-repo consumer (`derive_roll_facts`, Forge Curator TUI, validators) is rewritten for it in the same change — no shims, aliases, or deprecation paths
+  2. Running the agent on a chapter produces roll objects in the existing schema where word positions and roll ordinals are derived mechanically and never emitted by the model
+  3. High-confidence curations write into `chapter_roll_overrides.json` with provenance; low-confidence curations write to a proposals sidecar in the same roll-object schema
+  4. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
+  5. The confidence gate is tuned against held-out hand-curated chapters, uses mechanical verification as the hard signal with model self-report only as a tiebreaker, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
+
+**Plans**: TBD
+**Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically from a pilot batch against known chapters, with a checkpoint before running on uncurated ones. The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — the agent must respect the existing predicted-mode mapping rather than inventing one.
+
+### Phase 4: Proposal Review & Full Batch Run
+
+**Goal**: The remaining chapters are curated, and everything the agent was unsure about is sitting in the TUI waiting for Dre
+**Mode:** mvp
+**Depends on**: Phase 3
+**Requirements**: ACUR-04, ACUR-05
+**Success Criteria** (what must be TRUE):
+
+  1. The Forge Curator TUI lists agent proposals and supports reviewing, accepting, editing, and rejecting them using its existing keybind and interaction model
+  2. Accepting a proposal produces a hand-curated entry that outranks agent provenance for that chapter
+  3. A batch run over all remaining uncurated chapters completes and emits a per-chapter summary report of accepted / proposed / failed
+  4. Pipeline validation is green after the batch, and the visualization renders agent-curated chapters correctly alongside hand-curated ones
+
+**Plans**: TBD
+**Notes**: Extends the existing ~7.5K-line TUI rather than building a second review surface. Depends on the finalized proposals-file schema from Phase 3.
+
+## Progress
+
+**Execution Order:** 1 → 2 → 3 → 4 (strictly sequential; Phase 1 is a hard gate).
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Epub Refresh & Exemplar Mining | 0/TBD | Not started | - |
+| 2. Mechanical Verifier | 0/TBD | Not started | - |
+| 3. Provenance Schema & Agent Curation Pipeline | 0/TBD | Not started | - |
+| 4. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
+
+## Requirement Coverage
+
+11 of 11 v1 requirements mapped, each to exactly one phase.
+
+| Phase | Requirements | Count |
+|-------|--------------|-------|
+| 1 | EPUB-01, EPUB-02, CINF-02 | 3 |
+| 2 | CINF-03 | 1 |
+| 3 | CINF-01, CINF-04, ACUR-01, ACUR-02, ACUR-03 | 5 |
+| 4 | ACUR-04, ACUR-05 | 2 |
+| **Total** | | **11** |
+
+---
+*Roadmap created: 2026-07-25 (as Phases 5–8 of the combined roadmap); split into the curation workstream 2026-07-26*
