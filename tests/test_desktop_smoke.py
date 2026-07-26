@@ -90,6 +90,14 @@ def _first_fixture_roll_word(facts: dict) -> int:
     raise AssertionError("fixture has no rolls")
 
 
+def _settle(page):
+    """Bounded wait for the rAF-coalesced layout handler (onLayoutMaybeChanged)
+    to run to completion before reading window.__bcfLayoutMode /
+    window.__bcfRenderStats.structuralRenders. Two nested rAF ticks are
+    enough because the handler itself schedules a single requestAnimationFrame."""
+    page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+
+
 # ── §0.5 steps 1-4: static render, playback, carousel focus, details mode ──
 
 
@@ -225,4 +233,99 @@ def test_desktop_details_mode_renders_full_roll_log(tmp_path):
             expect(page.locator("#detail-roll-log-body tr")).to_have_count(expected_rows)
             assert console_messages == []
 
+            browser.close()
+
+
+# ── §0.5 steps 5-6: breakpoint boundary matrix and clean desktop restore ──
+#
+# Media-query truth (web/style.css:360, character-identical to
+# MOBILE_LAYOUT_QUERY in web/app.js): mobile iff
+#   (max-width: 900px) OR ((orientation: portrait) AND (max-width: 1100px))
+# So: 1101x900 -> desktop (neither clause matches); 1100x900 -> ALSO desktop
+# (landscape orientation — the 1100px bound only engages in portrait);
+# 1100x1300 -> portrait (second clause: portrait AND width<=1100); 899x900
+# -> portrait (first clause: width<=900; height>width so also portrait
+# orientation). The §0.5 prose ("at 1100px and below, mobile takes over") is
+# true only in portrait orientation — this matrix pins the exact contract.
+
+
+def test_desktop_range_resizes_cause_zero_rerenders_while_crossings_flip_layout_mode(tmp_path):
+    # §0.5 step 5: resizing within the desktop range causes zero structural
+    # re-renders and no layout-mode change; crossing the breakpoint flips
+    # mobile behavior on cleanly, exactly once per crossing.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            expect = playwright_api.expect
+            page, console_messages = _page_with_console_capture(
+                browser, site, init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+            assert page.evaluate("window.__bcfLayoutMode") == "desktop"
+
+            # 1920x1080 -> 1101x900: still desktop, no clause matches. Zero renders.
+            page.set_viewport_size({"width": 1101, "height": 900})
+            _settle(page)
+            assert page.evaluate("window.__bcfLayoutMode") == "desktop"
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            expect(page.locator(".app-header")).to_be_visible()
+
+            # 1101x900 -> 1100x900: the 1100px boundary itself, still desktop
+            # because orientation is landscape (width > height). Zero renders.
+            page.set_viewport_size({"width": 1100, "height": 900})
+            _settle(page)
+            assert page.evaluate("window.__bcfLayoutMode") == "desktop"
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+
+            # 1100x900 -> 1100x1300: orientation flips to portrait at the same
+            # 1100px width -> mobile takes over. Exactly one crossing, one render.
+            page.set_viewport_size({"width": 1100, "height": 1300})
+            page.wait_for_function("window.__bcfLayoutMode === 'portrait'")
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 1
+            # .portrait-banner is-visible class is always present when not
+            # dismissed; check computed visibility, not DOM presence.
+            expect(page.locator(".portrait-banner")).to_be_visible()
+
+            # 1100x1300 -> 899x900: still portrait (899<900 width AND
+            # height>width), no additional crossing. Renders stay at 1.
+            page.set_viewport_size({"width": 899, "height": 900})
+            _settle(page)
+            assert page.evaluate("window.__bcfLayoutMode") == "portrait"
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 1
+
+            assert console_messages == []
+            browser.close()
+
+
+def test_desktop_restores_cleanly_after_full_resize_round_trip(tmp_path):
+    # §0.5 step 6: resizing back up restores desktop cleanly — no flash of
+    # stale layout, no leftover portrait banner, exactly one render per
+    # crossing (down and back up).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            expect = playwright_api.expect
+            page, console_messages = _page_with_console_capture(
+                browser, site, init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+            assert page.evaluate("window.__bcfLayoutMode") == "desktop"
+
+            # 1920x1080 -> 899x900: crosses into portrait. One render.
+            page.set_viewport_size({"width": 899, "height": 900})
+            page.wait_for_function("window.__bcfLayoutMode === 'portrait'")
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 1
+
+            # 899x900 -> 1920x1080: crosses back to desktop. One more render.
+            page.set_viewport_size({"width": 1920, "height": 1080})
+            page.wait_for_function("window.__bcfLayoutMode === 'desktop'")
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 2
+
+            expect(page.locator(".app-header")).to_be_visible()
+            expect(page.locator(".portrait-banner")).to_be_hidden()
+            assert console_messages == []
             browser.close()
