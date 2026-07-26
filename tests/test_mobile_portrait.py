@@ -507,6 +507,207 @@ def test_dock_speed_cycle_persists_and_hint_row_context(tmp_path):
             browser.close()
 
 
+def test_cluster_binning_at_1x(tmp_path):
+    # MOBP-04: at 1x the mini-rail collapses tight clusters of rolls into
+    # counted bin markers instead of an unreadable smear of dots, while the
+    # active roll always renders as its own cyan diamond on top — and bins
+    # never recompute on a playback frame (D-18).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        total_rolls = sum(len(chapter.get("rolls", [])) for chapter in facts.get("chapters", []))
+        assert total_rolls == 12  # 8-roll cluster (ch2) + 4 spread rolls (ch3)
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Phase A: bin count, count badge, active diamond on top of a
+            #     bin whose span it falls inside. ---
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={
+                    "bcf:preview-port-storage-version": "3",
+                    # Word 3125 falls after the cluster's 3rd roll (word 3120,
+                    # a hit) and before its 4th (word 3130) — the active roll
+                    # (3120) sits INSIDE the merged cluster bin's span
+                    # (3100-3170), proving the active marker is never folded
+                    # into a bin even when it geometrically overlaps one.
+                    "bcf:bookmark:word_position": "3125",
+                },
+            )
+
+            bin_count = page.locator(".mobile-roll-bin").count()
+            assert bin_count < total_rolls
+
+            counts = page.locator(".mobile-roll-bin .count").all_inner_texts()
+            assert counts == ["8"]  # only the 8-roll cluster merges and clears the size>=10 badge floor
+
+            expect(page.locator(".mobile-roll-dot.active")).to_have_count(1)
+            active_z = page.evaluate(
+                "getComputedStyle(document.querySelector('.mobile-roll-dot.active')).zIndex"
+            )
+            bin_z = page.evaluate(
+                "getComputedStyle(document.querySelector('.mobile-roll-bin')).zIndex"
+            )
+            assert int(active_z) > int(bin_z)
+            assert console_messages == []
+
+            # --- Phase B: scrubbing moves the active diamond but never the
+            #     (structurally fixed) bin markers. ---
+            bins_before = page.eval_on_selector_all(".mobile-roll-bin", "els => els.map(el => el.style.left)")
+            active_left_before = page.locator(".mobile-roll-dot.active").evaluate("el => el.style.left")
+
+            rail_box = page.locator(".mobile-rail").bounding_box()
+            assert rail_box is not None
+            x = rail_box["x"] + rail_box["width"] * 0.85  # lands in the spread-roll region (~word 8500)
+            y = rail_box["y"] + rail_box["height"] / 2
+            page.mouse.move(x, y)
+            page.mouse.down()
+            page.mouse.up()
+            page.wait_for_timeout(50)
+
+            bins_after = page.eval_on_selector_all(".mobile-roll-bin", "els => els.map(el => el.style.left)")
+            active_left_after = page.locator(".mobile-roll-dot.active").evaluate("el => el.style.left")
+            assert bins_after == bins_before
+            assert active_left_after != active_left_before
+            assert console_messages == []
+            page.close()
+
+            # --- Phase C: bins never recompute during playback (D-18). ---
+            page, console_messages2 = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": "3125",
+                },
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+            bin_count_before_playback = page.locator(".mobile-roll-bin").count()
+            page.click('button[aria-label="Play"]')
+            page.wait_for_timeout(1500)
+            assert page.locator(".mobile-roll-bin").count() == bin_count_before_playback
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages2 == []
+            page.close()
+
+            # --- Phase D: with zero rolls anywhere in the story, the rail
+            #     still renders ticks/POV bands/playhead, with zero bins and
+            #     zero active diamond, and never throws (UI-SPEC
+            #     empty-zero-rolls row). tiny-default cannot exercise this —
+            #     it carries two real rolls elsewhere in the story — so this
+            #     uses the dedicated `no-rolls` fixture (see
+            #     tests/helpers/web_runtime_site.py).
+            page, console_messages3 = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=no-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={"bcf:preview-port-storage-version": "3", "bcf:bookmark:word_position": "0"},
+            )
+            assert page.locator(".mobile-ch-tick").count() > 0
+            expect(page.locator(".mobile-playhead")).to_be_visible()
+            assert page.locator(".mobile-roll-bin").count() == 0
+            assert page.locator(".mobile-roll-dot.active").count() == 0
+            assert console_messages3 == []
+            page.close()
+
+            browser.close()
+
+
+def test_bin_threshold_and_size_boundaries(tmp_path):
+    # MOBP-04 precision edges: the strict `>` split comparison, the binSize
+    # floor/cap, and the empty-input short-circuits — asserted directly
+    # against the ported pure functions via window.__bcfMobile, independent
+    # of any staged package's real roll data.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(browser, site, viewport=PHONE_PORTRAIT)
+
+            # pxWidth=1000, total=100000 -> minWords = (5/1000)*100000 = 500.
+            # binRolls splits with a STRICT `>` comparison against minWords
+            # (verbatim port of design/mobile-ux/prototype/scrubber.jsx): a
+            # gap of 501 words (one word past the threshold) separates; a
+            # gap of exactly 500 (the threshold itself) or 499 (one word
+            # under it) both merge.
+            def bin_count(gap):
+                rolls = [
+                    {"word_position": 0, "outcome": "hit"},
+                    {"word_position": gap, "outcome": "hit"},
+                ]
+                return page.evaluate(
+                    "([rolls, total, width]) => window.__bcfMobile.binRolls(rolls, total, width).length",
+                    [rolls, 100000, 1000],
+                )
+
+            assert bin_count(501) == 2
+            assert bin_count(500) == 1
+            assert bin_count(499) == 1
+
+            assert page.evaluate(
+                "([bin]) => window.__bcfMobile.binSize(bin)", [{"rolls": [{"outcome": "hit"}]}]
+            ) == 6
+            assert page.evaluate(
+                "([bin]) => window.__bcfMobile.binSize(bin)",
+                [{"rolls": [{"outcome": "hit"}] * 200}],
+            ) == 14
+
+            assert page.evaluate(
+                "([rolls, total, width]) => window.__bcfMobile.binRolls(rolls, total, width)",
+                [[], 100000, 1000],
+            ) == []
+            assert page.evaluate(
+                "([rolls, total, width]) => window.__bcfMobile.binRolls(rolls, total, width)",
+                [[{"word_position": 0, "outcome": "hit"}], 100000, 0],
+            ) == []
+
+            # Dominant-outcome tie-break: hit wins ties against miss/unknown;
+            # miss wins ties against unknown. All three rolls merge into one
+            # bin (spacing 1-2 words against a huge minWords).
+            hit_dominant = page.evaluate(
+                "([rolls, total, width]) => window.__bcfMobile.binRolls(rolls, total, width)[0].dominant",
+                [
+                    [
+                        {"word_position": 0, "outcome": "hit"},
+                        {"word_position": 1, "outcome": "hit"},
+                        {"word_position": 2, "outcome": "miss"},
+                    ],
+                    100,
+                    1,
+                ],
+            )
+            assert hit_dominant == "hit"
+
+            miss_dominant = page.evaluate(
+                "([rolls, total, width]) => window.__bcfMobile.binRolls(rolls, total, width)[0].dominant",
+                [
+                    [
+                        {"word_position": 0, "outcome": "hit"},
+                        {"word_position": 1, "outcome": "miss"},
+                        {"word_position": 2, "outcome": "miss"},
+                    ],
+                    100,
+                    1,
+                ],
+            )
+            assert miss_dominant == "miss"
+
+            assert console_messages == []
+            browser.close()
+
+
+
 def test_portrait_empty_and_partial_states(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 

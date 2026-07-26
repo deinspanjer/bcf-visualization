@@ -130,6 +130,16 @@ const app = {
   // re-attaching one never drops the other's teardown.
   mobileSkyTeardown: null,
   mobileRailTeardown: null,
+  // Phase 2 Plan 3 (MOBP-04): the rail's measured pixel width (default
+  // mirrors the prototype's useState(350) fallback before the first
+  // ResizeObserver callback fires), the cached cluster bins computed from
+  // it (app.mobileRailBins, recomputed only on structural render/zoom
+  // change/resize — never on a playback frame, D-18), and the observer
+  // handle itself (defensive-teardown discipline matching the gesture
+  // slots above).
+  mobileRailWidth: 350,
+  mobileRailBins: [],
+  mobileRailResizeObserver: null,
   // Session-only (never persisted): the first-run sky tap hint mounts once
   // per page load, tracked here rather than localStorage since it's a
   // per-session affordance, not a durable preference.
@@ -932,7 +942,7 @@ function render() {
   clear(root);
   recordStructuralRender();
   app.dom = {};
-  app.frameKeys = { narrative: null, skyCamera: null, mobileChip: null, mobileFocal: null, detail: {} };
+  app.frameKeys = { narrative: null, skyCamera: null, mobileChip: null, mobileFocal: null, mobileActiveDot: null, detail: {} };
   app.carousel.visibleSlots = new Map();
   if (app.error) {
     root.append(renderLoadError(app.error));
@@ -2627,6 +2637,7 @@ function cachePlaybackDomRefs() {
     app.dom.mobileFab = document.querySelector(".mobile-fab-play");
     app.dom.mobileRail = document.querySelector(".mobile-rail");
     app.dom.mobileRailInner = document.querySelector(".mobile-rail-inner");
+    app.dom.mobileRailRollsLane = document.querySelector(".mobile-lane-rolls");
     app.dom.mobilePlayhead = document.querySelector(".mobile-playhead");
     app.dom.mobileActiveDot = document.querySelector(".mobile-roll-dot.active");
     app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
@@ -2879,7 +2890,20 @@ function markHelpSeen() {
   app.helpSeen = true;
   store(LS_HELP_SEEN, true);
 }
-window.__bcfMobile = { setTapToPause, setHaptics, setMobileTimelineZoom, markHelpSeen };
+// binRolls/binSize/panOffsetForPlayhead/mobileInnerFraction are read-only
+// exposures of the SAME functions the rail's render/scrub paths call — this
+// is exposure of the single implementation for test assertions, never a
+// second math path (no-parallel-implementations).
+window.__bcfMobile = {
+  setTapToPause,
+  setHaptics,
+  setMobileTimelineZoom,
+  markHelpSeen,
+  binRolls,
+  binSize,
+  panOffsetForPlayhead,
+  mobileInnerFraction,
+};
 
 // Dock speed control (MOBP-02/UI-SPEC "Settings — Speed options"). Every
 // rung's value is an existing option of the frozen desktop speed <select>
@@ -2991,12 +3015,118 @@ function mobileInnerFraction(viewportFraction, zoom, panPct) {
   return Math.max(0, Math.min(1, (viewportFraction + panPct / 100) / zoom));
 }
 
+// ── Cluster binning (MOBP-04, 02-03-PLAN.md) ────────────────────────────────
+// Verbatim port of design/mobile-ux/prototype/scrubber.jsx's binRolls/
+// finalizeBin/binSize (algorithm unchanged) — the ONLY change is the field
+// accessor: the live schema is roll.word_position/roll.outcome, not the
+// prototype's camelCase wordPosition. Never invent a second cluster-merge
+// implementation alongside this one.
+const MIN_DOT_SPACING_PX = 5;
+
+function binRolls(rolls, totalWords, pxWidth, minPx = MIN_DOT_SPACING_PX) {
+  if (!rolls.length || pxWidth <= 0) return [];
+  const minWords = (minPx / pxWidth) * totalWords;
+  const bins = [];
+  let cur = null;
+  for (const r of rolls) {
+    if (!cur || r.word_position - cur.firstWord > minWords) {
+      if (cur) bins.push(finalizeBin(cur));
+      cur = { firstWord: r.word_position, rolls: [r], outcomes: {} };
+      cur.outcomes[r.outcome] = 1;
+    } else {
+      cur.rolls.push(r);
+      cur.outcomes[r.outcome] = (cur.outcomes[r.outcome] || 0) + 1;
+    }
+  }
+  if (cur) bins.push(finalizeBin(cur));
+  return bins;
+}
+
+function finalizeBin(bin) {
+  // Midpoint word for visual placement; carry the dominant outcome.
+  const last = bin.rolls[bin.rolls.length - 1];
+  bin.midWord = (bin.firstWord + last.word_position) / 2;
+  const e = bin.outcomes;
+  if ((e.hit || 0) >= (e.miss || 0) && (e.hit || 0) >= (e.unknown || 0)) bin.dominant = "hit";
+  else if ((e.miss || 0) >= (e.unknown || 0)) bin.dominant = "miss";
+  else bin.dominant = "unknown";
+  return bin;
+}
+
+function binSize(bin) {
+  if (bin.rolls.length === 1) return 6;
+  return Math.min(14, 5 + Math.round(Math.sqrt(bin.rolls.length) * 1.6));
+}
+
+// recomputeMobileRailBins(): reads the rail's current pixel width
+// (app.mobileRailWidth, kept current by the ResizeObserver installed in
+// attachMobilePortraitGestures) and caches the resulting bins on
+// app.mobileRailBins. Call ONLY from: the structural render (renderMobile-
+// Portrait), the zoom setter (setMobileTimelineZoom), and the rail's
+// ResizeObserver callback — never from updateMobilePortraitFrame() (D-18:
+// bins recompute on render/zoom/resize, never on a playback frame).
+function recomputeMobileRailBins() {
+  if (!app.data) {
+    app.mobileRailBins = [];
+    return;
+  }
+  const story = app.data.story;
+  app.mobileRailBins = binRolls(
+    story.rolls,
+    story.total_words || 1,
+    app.mobileRailWidth * app.mobileTimelineZoom,
+  );
+}
+
+// renderMobileRailBinEl(bin, total): a single `.mobile-roll-bin` marker,
+// colour-keyed on the bin's dominant outcome, with a `.count` child only
+// once the bin holds more than one roll AND is large enough to hold the
+// digits (prototype's `size >= 10` rule).
+function renderMobileRailBinEl(bin, total) {
+  const size = binSize(bin);
+  const isMulti = bin.rolls.length > 1;
+  return el("div", {
+    class: `mobile-roll-bin ${bin.dominant}`,
+    style: { left: `${(bin.midWord / total) * 100}%`, width: `${size}px`, height: `${size}px` },
+  }, isMulti && size >= 10 ? el("span", { class: "count", text: String(bin.rolls.length) }) : null);
+}
+
+// renderMobileRailRollsLaneChildren(): the rolls lane's full child set — POV
+// bands, cached cluster bins (app.mobileRailBins, never recomputed here),
+// and the active roll's own marker drawn last so it always paints above the
+// bins. Shared by the initial structural build (renderMobileScrubber) and
+// the rail ResizeObserver's partial rebuild — never a third copy of this
+// markup.
+function renderMobileRailRollsLaneChildren() {
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const bands = story.chapters.map(chapter => el("div", {
+    class: `mobile-pov-band ${chapter.pov === "Joe" ? "mc" : chapter.pov === "Aisha" ? "aisha" : "other"}`,
+    style: {
+      left: `${(chapter.word_start / total) * 100}%`,
+      width: `${Math.max(0.02, ((chapter.word_end - chapter.word_start) / total) * 100)}%`,
+    },
+  }));
+  const bins = (app.mobileRailBins || []).map(bin => renderMobileRailBinEl(bin, total));
+  const activeRoll = lastRollAtWord(app.wordPos);
+  const activeDot = activeRoll
+    ? el("div", {
+      class: "mobile-roll-dot active",
+      style: { left: `${(activeRoll.word_position / total) * 100}%` },
+    })
+    : null;
+  return [...bands, ...bins, activeDot].filter(Boolean);
+}
+
 // renderMobilePortrait(): the D-12 portrait arm of render(). Root
 // `.mobile-app` holds the top chip cluster, the real sky (D-13 — never the
 // prototype's procedural placeholder) with its cinematic camera and focal
 // label, and the dock (transport row + mini-rail + hint row).
 function renderMobilePortrait() {
   const frame = playthroughFrameState();
+  // Structural render is one of the exactly three call sites for bin
+  // recomputation (D-18) — never inside updateMobilePortraitFrame().
+  recomputeMobileRailBins();
   return el("div", { class: "mobile-app" },
     renderMobileTopCluster(),
     el("div", { class: "mobile-sky mobile-sky-surface" },
@@ -3119,10 +3249,10 @@ function mobileHintRowRightText(chapter) {
   return `${zoomPart}${chapter?.pov || "Joe"} POV`;
 }
 
-// renderMobileScrubber(): the mini-rail. Cluster bins (MOBP-04) are
-// 02-03-PLAN.md's job — one dot per roll here, read from the LIVE schema
-// (word_position/outcome/word_start/word_end/chapter_num/pov), never the
-// prototype's camelCase names.
+// renderMobileScrubber(): the mini-rail. Rolls lane is cluster-binned
+// (MOBP-04) via renderMobileRailRollsLaneChildren(), read from the LIVE
+// schema (word_position/outcome/word_start/word_end/chapter_num/pov), never
+// the prototype's camelCase names.
 function renderMobileScrubber() {
   const story = app.data.story;
   const total = story.total_words || 1;
@@ -3141,17 +3271,7 @@ function renderMobileScrubber() {
         })),
       ),
       el("div", { class: "mobile-lane mobile-lane-rolls" },
-        story.chapters.map(chapter => el("div", {
-          class: `mobile-pov-band ${chapter.pov === "Joe" ? "mc" : chapter.pov === "Aisha" ? "aisha" : "other"}`,
-          style: {
-            left: `${(chapter.word_start / total) * 100}%`,
-            width: `${Math.max(0.02, ((chapter.word_end - chapter.word_start) / total) * 100)}%`,
-          },
-        })),
-        story.rolls.map(roll => el("div", {
-          class: `mobile-roll-dot ${roll.outcome}`,
-          style: { left: `${(roll.word_position / total) * 100}%` },
-        })),
+        renderMobileRailRollsLaneChildren(),
       ),
       el("div", { class: "mobile-playhead", style: { left: `${playheadPctRaw}%` } }),
     ),
@@ -3183,6 +3303,7 @@ function updateMobilePortraitFrame() {
   updateMobileTopClusterFrame();
   updateMobileFocalLabelFrame(frame);
   updateMobileHintRowFrame(frame);
+  updateMobileActiveDotFrame();
 
   const total = app.data.story.total_words || 1;
   const playheadPctRaw = (app.wordPos / total) * 100;
@@ -3190,6 +3311,29 @@ function updateMobilePortraitFrame() {
   if (app.dom.mobileRailInner) {
     const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
     app.dom.mobileRailInner.style.transform = `translateX(-${panPct}%)`;
+  }
+}
+
+// The active roll's own marker (MOBP-04) is a style.left write keyed on the
+// active roll's uid — moving it as playback/scrub advances never rebuilds
+// the rolls lane (the bins stay untouched, D-18). A presence change (no
+// active roll yet <-> an active roll now) is the same append/remove-once
+// pattern as updateMobileFocalLabelFrame, not a lane rebuild.
+function updateMobileActiveDotFrame() {
+  const rollsLane = app.dom.mobileRailRollsLane;
+  if (!rollsLane) return;
+  const total = app.data.story.total_words || 1;
+  const activeRoll = lastRollAtWord(app.wordPos);
+  const key = activeRoll ? String(activeRoll.uid) : "none";
+  const pct = activeRoll ? (activeRoll.word_position / total) * 100 : 0;
+  if (app.frameKeys.mobileActiveDot !== key) {
+    if (app.dom.mobileActiveDot) app.dom.mobileActiveDot.remove();
+    const next = activeRoll ? el("div", { class: "mobile-roll-dot active", style: { left: `${pct}%` } }) : null;
+    if (next) rollsLane.appendChild(next);
+    app.dom.mobileActiveDot = next;
+    app.frameKeys.mobileActiveDot = key;
+  } else if (app.dom.mobileActiveDot) {
+    app.dom.mobileActiveDot.style.left = `${pct}%`;
   }
 }
 

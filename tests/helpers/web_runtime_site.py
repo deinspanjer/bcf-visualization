@@ -264,12 +264,25 @@ def _dense_roll(offset: int, roll_ordinal: int, outcome: str, *, perk_name: str 
 
 
 def _dense_chapter_facts() -> dict:
-    # 8 rolls clustered within 280 words of each other (chapter 2) — merges
-    # into one bin at 390px width and 1x zoom (MOBP-04, future 02-03-PLAN.md)
-    # — plus 4 rolls spread across chapter 3, each > 5% of total words (500
-    # of 10,000) apart from its neighbors. Mixed hit/miss throughout; the
-    # first clustered hit carries the long multibyte perk name.
-    cluster_offsets = [3100, 3140, 3180, 3220, 3260, 3300, 3340, 3380]
+    # 8 rolls clustered within 70 words of each other (chapter 2) — merges
+    # into ONE cluster bin at both 390px and 320px rail widths, 1x zoom
+    # (MOBP-04, 02-03-PLAN.md) — plus 4 rolls spread across chapter 3, each
+    # > 5% of total words (500 of 10,000) apart from its neighbors. Mixed
+    # hit/miss throughout; the first clustered hit carries the long
+    # multibyte perk name.
+    #
+    # binRolls' split test compares each roll's word_position against the
+    # CURRENTLY OPEN bin's firstWord (verbatim port of the prototype's
+    # `r.wordPosition - cur.firstWord > minWords`), not the pairwise gap to
+    # its immediate neighbor — so the bin only stays open while the roll's
+    # distance from the bin's FIRST member stays under minWords. At a real
+    # ~300-370px rail width and 10,000 total words, minWords is
+    # (5/pxWidth)*10000 ~= 135-167 words; a 70-word total cluster span (10
+    # words/roll * 7 gaps) merges with comfortable margin at every rail
+    # width this phase's viewports use, while the previous 280-word-span
+    # version of this fixture (40 words/roll) exceeded minWords partway
+    # through and split into two 4-roll bins instead of the intended one.
+    cluster_offsets = [3100, 3110, 3120, 3130, 3140, 3150, 3160, 3170]
     cluster_outcomes = ["hit", "miss", "hit", "miss", "hit", "miss", "hit", "miss"]
     cluster_rolls = [
         _dense_roll(
@@ -317,6 +330,48 @@ def _dense_chapter_facts() -> dict:
                 cp_words=7000,
                 rolls=spread_rolls,
                 visible_toolkits=True,
+            ),
+        ],
+    }
+
+
+# MOBP-04/UI-SPEC "empty-zero-rolls" fixture (02-03-PLAN.md Task 1): chapters
+# (and therefore chapter ticks + POV bands) exist, but NOT ONE roll exists
+# anywhere in the story — the only way to exercise "the rail still renders
+# ticks/bands/playhead with zero bins and zero active diamond, and does not
+# throw". tiny-default carries two real rolls elsewhere in the story (one in
+# chapter 2, one in chapter 3), so it cannot stand in for a genuinely
+# zero-roll story; this dedicated fixture is required.
+def _no_rolls_chapter_facts() -> dict:
+    return {
+        "schema_version": 1,
+        "shadow_periods": [],
+        "chapters": [
+            _chapter(
+                "1",
+                "1 No-Rolls Chapter One",
+                start_words=0,
+                word_count=3000,
+                cp_words=0,
+                rolls=[],
+            ),
+            _chapter(
+                "2",
+                "2 No-Rolls Chapter Two",
+                start_words=3000,
+                word_count=4000,
+                cp_words=3000,
+                rolls=[],
+                visible_toolkits=False,
+            ),
+            _chapter(
+                "3",
+                "3 No-Rolls Chapter Three",
+                start_words=7000,
+                word_count=3000,
+                cp_words=7000,
+                rolls=[],
+                visible_toolkits=False,
             ),
         ],
     }
@@ -435,10 +490,12 @@ def _visualization_facts(package_id: str) -> dict:
         chapter_facts: dict = {"chapters": []}
     elif package_id == "dense-rolls":
         chapter_facts = _dense_chapter_facts()
+    elif package_id == "no-rolls":
+        chapter_facts = _no_rolls_chapter_facts()
     else:
         chapter_facts = _chapter_facts()
     wireframes = _wireframes()
-    predicted_rolls = [] if package_id == "chapterless" else [
+    predicted_rolls = [] if package_id in ("chapterless", "no-rolls") else [
         # Use renamed field `regime`, not the upstream `cp_rule_regime`.
         {"roll_number": 1, "cp_offset": 2000, "epub_offset": 2253,
          "chapter_num": "1", "slot_index": 1, "regime": 1,
@@ -568,6 +625,23 @@ def staged_web_runtime_site(
                     "version_description": "synthetic zero-chapter fixture for portrait fallback tests",
                     "smoke_status": "passed",
                 },
+                {
+                    # UI-SPEC "empty-zero-rolls" fixture (02-03-PLAN.md Task 1):
+                    # real chapters (ticks + POV bands render) but zero rolls
+                    # anywhere in the story — used only by the cluster-binning
+                    # empty-data test.
+                    "package_id": "no-rolls",
+                    "path": "data/packages/no-rolls",
+                    "package_date": "20260101",
+                    "build_number": 1,
+                    "story_chapter_ordinal": 3,
+                    "story_chapter_num": "3",
+                    "curation_reviewed_chapter_ordinal": 0,
+                    "curation_reviewed_chapter_num": "0",
+                    "version_label": "BCF data 20260101.no-rolls",
+                    "version_description": "synthetic zero-roll fixture for portrait rail binning tests",
+                    "smoke_status": "passed",
+                },
             ],
         },
     )
@@ -575,6 +649,7 @@ def staged_web_runtime_site(
     _stage_package(site_root, "tiny-alt")
     _stage_package(site_root, "dense-rolls")
     _stage_package(site_root, "chapterless")
+    _stage_package(site_root, "no-rolls")
     _stage_package(site_root, "synthetic-derived", derived=True)
 
     with _serve(site_root) as base_url:

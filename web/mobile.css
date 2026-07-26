@@ -318,14 +318,38 @@
     background: var(--amber);
     pointer-events: none;
   }
-  .mobile-roll-dot.hit { background: var(--green); }
-  .mobile-roll-dot.miss { background: var(--rose); }
   .mobile-roll-dot.active {
     width: 9px;
     height: 9px;
     background: var(--cyan);
     box-shadow: 0 0 8px var(--cyan);
     z-index: 2;
+  }
+  /* Binned cluster marker (MOBP-04) — multiple rolls collapsed into one
+     diamond, coloured by dominant outcome, always painted BELOW the active
+     roll's own marker (.mobile-roll-dot.active, z-index 2 above). */
+  .mobile-roll-bin {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--amber);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .mobile-roll-bin.hit { background: var(--green); }
+  .mobile-roll-bin.miss { background: var(--rose); }
+  .mobile-roll-bin .count {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 7px;
+    color: #03080d;
+    font-weight: 700;
+    transform: rotate(-45deg);
+    pointer-events: none;
   }
   .mobile-playhead {
     position: absolute;
