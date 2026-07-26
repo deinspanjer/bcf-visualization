@@ -9,7 +9,7 @@ Requirements for this milestone. Each maps to roadmap phases. MOB* = Workstream 
 
 ### Mobile Foundation
 
-- [ ] **MOBF-01**: Plan review interview resolves §9 open questions, the `user-scalable=no` vs Lighthouse-a11y conflict, `visibilitychange` behavior, and provenance field shape before any mobile code is written
+- [x] **MOBF-01**: Plan review interview resolves §9 open questions, the `user-scalable=no` vs Lighthouse-a11y conflict, `visibilitychange` behavior, and provenance field shape before any mobile code is written
 - [x] **MOBF-02**: `app.layoutMode` (desktop/portrait/landscape) derives from `matchMedia` using the identical query string as the existing CSS breakpoint, updates on resize/orientation change, and survives rotation
 - [x] **MOBF-03**: Gesture helpers ported to `web/mobile-gestures.js` with a per-render attach lifecycle that cannot double-bind or lose pointer capture to a mid-drag re-render
 - [x] **MOBF-04**: New `bcf:*` storage keys (timeline-zoom, tap-to-pause, haptics, help-seen) read on init, written on change; `STORAGE_VERSION` bumped with stale-key purge (`bcf:portrait-dismissed` removed)
@@ -98,7 +98,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MOBF-01 | Phase 1 | Pending |
+| MOBF-01 | Phase 1 | Complete |
 | MOBF-02 | Phase 1 | Complete |
 | MOBF-03 | Phase 1 | Complete |
 | MOBF-04 | Phase 1 | Complete |

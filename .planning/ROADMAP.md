@@ -60,7 +60,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Timeline zoom, tap-to-pause, haptics, and help-seen preferences round-trip through `bcf:*` keys across reload, and `bcf:portrait-dismissed` is purged after the `STORAGE_VERSION` bump
   5. The scripted desktop smoke test runs on demand, covers the §0.5 checklist, and passes
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -74,7 +74,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-04-PLAN.md — Full verification run + §5 Phase A gate review checkpoint with Dre
+- [x] 01-04-PLAN.md — Full verification run + §5 Phase A gate review checkpoint with Dre
 
 **Notes**: Interview gate (`/gsd-discuss-phase`) is mandatory and blocks all coding in this phase. CSS foundation decisions (`touch-action`, `overscroll-behavior`, `svh`/`dvh`, `env(safe-area-inset-*)`, viewport meta) are made here, not retrofitted. Phase ends with the §5 Phase A gate review plus a desktop smoke test pass.
 
@@ -203,7 +203,7 @@ Within Track A: 1 → 2 → 3 → 4. Within Track B: 5 → 6 → 7 → 8. Tracks
 
 | Phase | Track | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
-| 1. Mobile State & Gesture Plumbing | A | 3/4 | In Progress|  |
+| 1. Mobile State & Gesture Plumbing | A | 4/4 | In Progress|  |
 | 2. Portrait Layout | A | 0/TBD | Not started | - |
 | 3. Landscape Layout | A | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | A | 0/TBD | Not started | - |
