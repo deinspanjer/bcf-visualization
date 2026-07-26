@@ -13,7 +13,7 @@ Requirements for this milestone. Each maps to roadmap phases. MOB* = Workstream 
 - [x] **MOBF-02**: `app.layoutMode` (desktop/portrait/landscape) derives from `matchMedia` using the identical query string as the existing CSS breakpoint, updates on resize/orientation change, and survives rotation
 - [x] **MOBF-03**: Gesture helpers ported to `web/mobile-gestures.js` with a per-render attach lifecycle that cannot double-bind or lose pointer capture to a mid-drag re-render
 - [x] **MOBF-04**: New `bcf:*` storage keys (timeline-zoom, tap-to-pause, haptics, help-seen) read on init, written on change; `STORAGE_VERSION` bumped with stale-key purge (`bcf:portrait-dismissed` removed)
-- [ ] **MOBF-05**: Mobile CSS foundation uses `touch-action`/`overscroll-behavior` on gesture surfaces, small/dynamic viewport units, and `env(safe-area-inset-*)` in docks and rails
+- [x] **MOBF-05**: Mobile CSS foundation uses `touch-action`/`overscroll-behavior` on gesture surfaces, small/dynamic viewport units, and `env(safe-area-inset-*)` in docks and rails
 - [ ] **MOBF-06**: A scripted desktop smoke test verifies the §0.5 checklist (desktop unchanged ≥ 1100px) and is runnable at every phase gate
 
 ### Mobile Portrait
@@ -102,7 +102,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOBF-02 | Phase 1 | Complete |
 | MOBF-03 | Phase 1 | Complete |
 | MOBF-04 | Phase 1 | Complete |
-| MOBF-05 | Phase 1 | Pending |
+| MOBF-05 | Phase 1 | Complete |
 | MOBF-06 | Phase 1 | Pending |
 | MOBP-01 | Phase 2 | Pending |
 | MOBP-02 | Phase 2 | Pending |
