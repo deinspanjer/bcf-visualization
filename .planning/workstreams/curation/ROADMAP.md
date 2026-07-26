@@ -43,9 +43,20 @@ Within this workstream, phases are strictly sequential — each stage's correctn
 **Plans**: 4 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 01-01-PLAN.md — Verify epub freshness (D-09), resolve the ch 95.5 hand-curated data gap via a Dre-approved checkpoint, force-regenerate the full pipeline (EPUB-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 01-02-PLAN.md — Refresh the manifest, resolve any chapter-alignment drift, run the full `scripts/verify.py` green gate (EPUB-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 01-03-PLAN.md — Build the regime-tagged exemplar index + deterministic same-regime retrieval, wire into the pipeline/manifest (CINF-02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 01-04-PLAN.md — Author the human-readable corpus-analysis report, final phase-closing verification (CINF-02)
 
 **Notes**: HARD GATE for Phases 2–4 — no verifier, schema, or agent work begins until this phase is green. Regime tagging must exist before retrieval logic is built, not be retrofitted. Exemplar mining is pure analysis over existing data; no LLM calls in this phase. This phase also clears the pre-existing Track B staleness failures documented in `.planning/workstreams/mobile-ux/phases/01-mobile-state-gesture-plumbing/deferred-items.md` (stale `perk_directory` sha256; ch 95.5 multi_grab override referencing an unobtained perk; 24 data-consistency test failures). This workstream MUST run in the main checkout — it needs the gitignored epub, `data/private-source/` clone, and `.venv`.
