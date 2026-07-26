@@ -40,7 +40,14 @@ Within this workstream, phases are strictly sequential — each stage's correctn
   3. An exemplar index built from the hand-curated chapters is tagged by CP regime, and a retrieval query for a target chapter returns only same-regime exemplars
   4. The index documents the corpus's observed evidence-quote patterns, roll-shape distribution, and perk-link conventions
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Verify epub freshness (D-09), resolve the ch 95.5 hand-curated data gap via a Dre-approved checkpoint, force-regenerate the full pipeline (EPUB-01)
+- [ ] 01-02-PLAN.md — Refresh the manifest, resolve any chapter-alignment drift, run the full `scripts/verify.py` green gate (EPUB-02)
+- [ ] 01-03-PLAN.md — Build the regime-tagged exemplar index + deterministic same-regime retrieval, wire into the pipeline/manifest (CINF-02)
+- [ ] 01-04-PLAN.md — Author the human-readable corpus-analysis report, final phase-closing verification (CINF-02)
+
 **Notes**: HARD GATE for Phases 2–4 — no verifier, schema, or agent work begins until this phase is green. Regime tagging must exist before retrieval logic is built, not be retrofitted. Exemplar mining is pure analysis over existing data; no LLM calls in this phase. This phase also clears the pre-existing Track B staleness failures documented in `.planning/workstreams/mobile-ux/phases/01-mobile-state-gesture-plumbing/deferred-items.md` (stale `perk_directory` sha256; ch 95.5 multi_grab override referencing an unobtained perk; 24 data-consistency test failures). This workstream MUST run in the main checkout — it needs the gitignored epub, `data/private-source/` clone, and `.venv`.
 
 ### Phase 2: Mechanical Verifier
@@ -98,7 +105,7 @@ Within this workstream, phases are strictly sequential — each stage's correctn
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Epub Refresh & Exemplar Mining | 0/TBD | Not started | - |
+| 1. Epub Refresh & Exemplar Mining | 0/4 | Planned | - |
 | 2. Mechanical Verifier | 0/TBD | Not started | - |
 | 3. Provenance Schema & Agent Curation Pipeline | 0/TBD | Not started | - |
 | 4. Proposal Review & Full Batch Run | 0/TBD | Not started | - |

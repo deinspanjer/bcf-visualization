@@ -1,0 +1,3 @@
+# API Coverage Decision — Phase 1 (Epub Refresh & Exemplar Mining)
+
+No external API integration: this phase is pure deterministic local Python over the existing derived-data pipeline (epub freshness verification, full pipeline force-regen, exemplar-index mining) with zero LLM calls and no new network integration — the only network-adjacent touch is the pre-existing, already-completed private-source git sync (`sync_private_source_repo.py` / `hydrate_source_epub.py`, run by Dre outside this workflow per D-10, tag `source-v20260726.1`), which this phase only verifies against, never re-invokes as new work.
