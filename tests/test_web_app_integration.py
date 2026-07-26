@@ -176,7 +176,7 @@ def test_web_app_field_log_uses_quotes_and_no_log_placeholder_without_synthetic_
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "0",
                 },
             )
@@ -297,7 +297,7 @@ def test_web_app_displays_canonical_epub_word_offset_for_each_roll(tmp_path):
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "10000",
                     "bcf:mode": "detail",
                 },
@@ -350,7 +350,7 @@ def test_web_app_places_rolls_without_epub_offsets_inside_their_chapter(tmp_path
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "0",
                     "bcf:mode": "detail",
                 },
@@ -379,7 +379,7 @@ def test_web_app_pause_on_roll_can_resume_without_manual_scrubbing(tmp_path):
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "1500",
                     "bcf:playback:speed:v2": "5000",
                     "bcf:on-roll-behavior": "pause",
@@ -412,7 +412,7 @@ def test_web_app_playback_updates_without_structural_render_and_keeps_markers_in
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "3000",
                     "bcf:playback:speed:v2": "1000",
                     "bcf:on-roll-behavior": "quick",
@@ -449,7 +449,7 @@ def test_web_app_detail_playback_keeps_detail_panels_in_sync(tmp_path):
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "0",
                     "bcf:mode": "detail",
                     "bcf:playback:speed:v2": "50000",
@@ -481,7 +481,7 @@ def test_web_app_detail_playback_preserves_stable_panels_until_visible_state_cha
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "3500",
                     "bcf:mode": "detail",
                     "bcf:playback:speed:v2": "1000",
@@ -521,7 +521,7 @@ def test_web_app_detail_playback_refreshes_when_chapter_or_filtered_roll_state_c
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "6200",
                     "bcf:mode": "detail",
                     "bcf:playback:speed:v2": "4000",
@@ -563,7 +563,7 @@ def test_web_app_pause_lock_can_resume_after_switching_to_cinematic(tmp_path):
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(first_roll_word),
                     "bcf:playback:speed:v2": "5000",
                     "bcf:on-roll-behavior": "pause",
@@ -595,7 +595,7 @@ def test_web_app_cinematic_focus_frames_do_not_structurally_render(tmp_path):
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(first_roll_word),
                     "bcf:playback:speed:v2": "5000",
                     "bcf:on-roll-behavior": "cinematic",
@@ -625,7 +625,7 @@ def test_web_app_diffraction_markers_share_gradient_defs_across_scrubber_and_det
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "10000",
                 },
             )
@@ -669,7 +669,7 @@ def test_web_app_cinematic_beam_renders_without_svg_blur_filters(tmp_path):
                     browser,
                     site,
                     storage={
-                        "bcf:preview-port-storage-version": "2",
+                        "bcf:preview-port-storage-version": "3",
                         "bcf:bookmark:word_position": str(word_pos),
                         "bcf:playback:speed:v2": "5000",
                         "bcf:on-roll-behavior": "cinematic",
@@ -753,7 +753,7 @@ def test_web_app_bookmark_persistence_is_throttled_and_flushes_on_lifecycle(tmp_
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "3000",
                     "bcf:playback:speed:v2": "1000",
                     "bcf:on-roll-behavior": "quick",
@@ -803,7 +803,7 @@ def test_web_app_keyboard_controls_move_clamp_and_ignore_text_input_focus(tmp_pa
                 browser,
                 site,
                 storage={
-                    "bcf:preview-port-storage-version": "2",
+                    "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "0",
                 },
             )

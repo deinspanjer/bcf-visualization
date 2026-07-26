@@ -54,14 +54,30 @@ const DATA_VERSION = "phase9-info-link";
 
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
-const LS_ZOOM = "bcf:timeline:zoom";
+const LS_ZOOM = "bcf:timeline:zoom"; // desktop continuous zoom — distinct from LS_MOBILE_TIMELINE_ZOOM ("bcf:timeline-zoom"); do not merge
 const LS_MODE = "bcf:mode";
 const LS_ON_ROLL_BEHAVIOR = "bcf:on-roll-behavior";
 const LS_ROLL_LOCATION = "bcf:roll-location";
 const LS_FIELD_LOG_HIDDEN = "bcf:field-log:hidden";
 const LS_PORTRAIT_DISMISSED = "bcf:portrait-dismissed";
+const LS_MOBILE_TIMELINE_ZOOM = "bcf:timeline-zoom"; // mobile quantized zoom (1/2/4/8) — hyphen-separated, distinct from LS_ZOOM ("bcf:timeline:zoom"); do not merge
+const LS_TAP_TO_PAUSE = "bcf:tap-to-pause";
+const LS_HAPTICS = "bcf:haptics";
+const LS_HELP_SEEN = "bcf:help-seen";
 const LS_STORAGE_VERSION = "bcf:preview-port-storage-version";
-const STORAGE_VERSION = "2";
+const STORAGE_VERSION = "3";
+const MOBILE_TIMELINE_ZOOM_CHOICES = ["1", "2", "4", "8"];
+
+// Single source of truth for the mobile breakpoint: character-identical to the
+// @media query at web/style.css:360 (D-06). Never hand-roll a second width check.
+const MOBILE_LAYOUT_QUERY = "(max-width: 900px), (orientation: portrait) and (max-width: 1100px)";
+const MOBILE_MQ = window.matchMedia(MOBILE_LAYOUT_QUERY);
+const PORTRAIT_MQ = window.matchMedia("(orientation: portrait)");
+
+function detectLayoutMode() {
+  if (!MOBILE_MQ.matches) return "desktop";
+  return PORTRAIT_MQ.matches ? "portrait" : "landscape";
+}
 const DEFAULT_WORD_POS = 450_000;
 const DEFAULT_SPEED = 5_000;
 const DEFAULT_ZOOM = 2.75;
@@ -100,6 +116,15 @@ const app = {
   rollLocation: readStoredChoice(LS_ROLL_LOCATION, ROLL_LOCATIONS, DEFAULT_ROLL_LOCATION),
   fieldLogHidden: readStoredBoolean(LS_FIELD_LOG_HIDDEN, false),
   portraitDismissed: readStoredBoolean(LS_PORTRAIT_DISMISSED, false),
+  layoutMode: detectLayoutMode(),
+  helpOpen: false,
+  settingsOpen: false,
+  chromeHidden: false,
+  tapToPause: readStoredBoolean(LS_TAP_TO_PAUSE, true),
+  haptics: readStoredBoolean(LS_HAPTICS, true),
+  helpSeen: readStoredBoolean(LS_HELP_SEEN, false),
+  mobileTimelineZoom: Number(readStoredChoice(LS_MOBILE_TIMELINE_ZOOM, MOBILE_TIMELINE_ZOOM_CHOICES, "1")),
+  mobileGestureTeardown: null,
   rollFilter: "all",
   rollSort: "roll",
   raf: null,
@@ -315,7 +340,12 @@ function persistBookmarkSoon() {
 function migratePreviewStorage() {
   try {
     if (localStorage.getItem(LS_STORAGE_VERSION) === STORAGE_VERSION) return;
-    for (const key of [LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR, LS_ROLL_LOCATION, LS_FIELD_LOG_HIDDEN]) {
+    for (const key of [
+      LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR,
+      LS_ROLL_LOCATION, LS_FIELD_LOG_HIDDEN,
+      LS_PORTRAIT_DISMISSED,
+      LS_MOBILE_TIMELINE_ZOOM, LS_TAP_TO_PAUSE, LS_HAPTICS, LS_HELP_SEEN,
+    ]) {
       localStorage.removeItem(key);
     }
     localStorage.setItem(LS_STORAGE_VERSION, STORAGE_VERSION);
@@ -888,6 +918,14 @@ function render() {
   root.append(renderAppShell());
   cachePlaybackDomRefs();
   updatePlaybackFrame();
+  if (app.layoutMode !== "desktop") {
+    root.append(el("div", {
+      class: "mobile-gesture-probe",
+      "aria-hidden": "true",
+      style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;",
+    }));
+    attachMobileGestureProbes();
+  }
 }
 
 function renderLoading() {
@@ -2719,6 +2757,98 @@ function centerScrubber() {
   const target = clamp(x - scroller.clientWidth / 2, 0, Math.max(0, stack.scrollWidth - scroller.clientWidth));
   if (Math.abs(scroller.scrollLeft - target) < 1) return;
   scroller.scrollLeft = target;
+}
+
+// ── Mobile UX ─────────────────────────────────────────────────────────────
+// Phase 1 plumbing (INTEGRATION_PLAN.md §0.4): layout-mode detection, the
+// window.__bcfPrefs bridge for the verbatim mobile-gestures.js port, the
+// bcf:* preference setters Phase 2's Settings UI will call, and the
+// per-render gesture attach lifecycle (D-06, D-07, D-09, D-11).
+
+// rAF-coalesced layout-mode recompute. A discrete layout transition is the
+// one sanctioned full-render trigger; resize/orientation event storms
+// collapse into a single check per frame. (The ~100ms iOS re-settle re-check
+// is intentionally NOT added until a real device shows the flap.)
+let layoutRaf = null;
+function onLayoutMaybeChanged() {
+  if (layoutRaf != null) return;
+  layoutRaf = requestAnimationFrame(() => {
+    layoutRaf = null;
+    const next = detectLayoutMode();
+    if (next === app.layoutMode) return;
+    app.layoutMode = next;
+    window.__bcfLayoutMode = next;
+    render();
+  });
+}
+MOBILE_MQ.addEventListener("change", onLayoutMaybeChanged);
+PORTRAIT_MQ.addEventListener("change", onLayoutMaybeChanged);
+window.addEventListener("orientationchange", onLayoutMaybeChanged);
+window.__bcfLayoutMode = app.layoutMode;
+
+// Bridge for mobile-gestures.js's haptic() guard (reads window.__bcfPrefs?.haptics)
+// and a read surface for tests. Keeps the gesture module byte-identical to the
+// prototype (D-11: haptics stay decorative-only).
+Object.defineProperty(window, "__bcfPrefs", {
+  get: () => ({
+    haptics: app.haptics,
+    tapToPause: app.tapToPause,
+    helpSeen: app.helpSeen,
+    mobileTimelineZoom: app.mobileTimelineZoom,
+  }),
+});
+
+// Preference setters — the MOBF-04 written-on-change contract Phase 2's
+// Settings UI calls. Each updates app state and persists via store().
+function setTapToPause(value) {
+  app.tapToPause = Boolean(value);
+  store(LS_TAP_TO_PAUSE, app.tapToPause);
+}
+function setHaptics(value) {
+  app.haptics = Boolean(value);
+  store(LS_HAPTICS, app.haptics);
+}
+function setMobileTimelineZoom(value) {
+  if (![1, 2, 4, 8].includes(value)) return; // allow-list; ignore anything else
+  app.mobileTimelineZoom = value;
+  store(LS_MOBILE_TIMELINE_ZOOM, value);
+}
+function markHelpSeen() {
+  app.helpSeen = true;
+  store(LS_HELP_SEEN, true);
+}
+window.__bcfMobile = { setTapToPause, setHaptics, setMobileTimelineZoom, markHelpSeen };
+
+// Diagnostic counter mirroring recordStructuralRender(): increments only when
+// the test harness pre-injected window.__bcfGestureStats; production no-op.
+function recordGestureEvent(kind) {
+  const stats = window.__bcfGestureStats;
+  if (stats && typeof stats[kind] === "number") {
+    stats[kind] += 1;
+  }
+}
+
+// Per-render gesture attach lifecycle (D-07): called only from inside the
+// render pass, after the probe element is mounted — never from the matchMedia
+// handler, and no gesture callback ever triggers a structural render. The
+// diagnostic callbacks ARE the Phase 1 attach point; Phase 2 renderers pass
+// production callbacks through this exact convention. Teardown lives on
+// `app` (NOT app.dom, which render() resets) so it survives to be invoked
+// defensively before re-attach.
+function attachMobileGestureProbes() {
+  if (typeof app.mobileGestureTeardown === "function") {
+    app.mobileGestureTeardown();
+    app.mobileGestureTeardown = null;
+  }
+  const probe = document.querySelector(".mobile-gesture-probe");
+  if (!probe || typeof window.attachSkyGestures !== "function") return;
+  app.mobileGestureTeardown = window.attachSkyGestures(probe, {
+    onTap: () => recordGestureEvent("taps"),
+    onDoubleTap: () => recordGestureEvent("doubleTaps"),
+    onSwipeStep: () => recordGestureEvent("swipeSteps"),
+    onSwipeEnd: () => recordGestureEvent("swipeEnds"),
+  });
+  recordGestureEvent("attaches");
 }
 
 // Module-level click delegation keeps hot playback controls independent of

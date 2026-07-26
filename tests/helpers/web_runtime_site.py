@@ -14,6 +14,7 @@ from typing import Iterator
 WEB_FILES = (
     "index.html",
     "app.js",
+    "mobile-gestures.js",
     "data-contract.js",
     "viz-model.js",
     "style.css",
