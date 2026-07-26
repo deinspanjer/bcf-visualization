@@ -60,7 +60,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Timeline zoom, tap-to-pause, haptics, and help-seen preferences round-trip through `bcf:*` keys across reload, and `bcf:portrait-dismissed` is purged after the `STORAGE_VERSION` bump
   5. The scripted desktop smoke test runs on demand, covers the §0.5 checklist, and passes
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -70,7 +70,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 01-02-PLAN.md — Mobile CSS foundation (web/mobile.css: touch-action surfaces, svh/dvh, safe-area insets) + visibilitychange pause (D-02, mobile-only)
-- [ ] 01-03-PLAN.md — Scripted §0.5 desktop smoke test (tests/test_desktop_smoke.py, D-10 gate artifact)
+- [x] 01-03-PLAN.md — Scripted §0.5 desktop smoke test (tests/test_desktop_smoke.py, D-10 gate artifact)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -203,7 +203,7 @@ Within Track A: 1 → 2 → 3 → 4. Within Track B: 5 → 6 → 7 → 8. Tracks
 
 | Phase | Track | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
-| 1. Mobile State & Gesture Plumbing | A | 2/4 | In Progress|  |
+| 1. Mobile State & Gesture Plumbing | A | 3/4 | In Progress|  |
 | 2. Portrait Layout | A | 0/TBD | Not started | - |
 | 3. Landscape Layout | A | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | A | 0/TBD | Not started | - |
