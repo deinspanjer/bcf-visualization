@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 2
 current_phase_name: Portrait Layout
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-26T22:53:45.847Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-07-26T23:13:05.119Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 9
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 (Portrait Layout) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 2 execution started
 
-Progress: [██████░░░░] 56%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [██████░░░░] 56%
 | Phase 01 P03 | 1h50min (checkpoint pause) | 2 tasks | 1 files |
 | Phase 01 P04 | 25min | 2 tasks | 1 files |
 | Phase 02 P01 | 40min | 2 tasks | 5 files |
+| Phase 02 P02 | 20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 01-04: Phase A gate approved by Dre — Milestone Gate 2 satisfied, Phase 1 closed, Track A may proceed to Phase 2
 - [Phase ?]: 02-01: sky/dock flex-grow swap (dock absorbs leftover, sky holds its locked 60% basis) to hit MOBP-01's ~60% sky truth against a compact real dock height
 - [Phase ?]: 02-01: added a dedicated zero-chapter 'chapterless' test fixture to exercise the dock title's em-dash fallback, the only reachable path since chapterAtWord() always resolves a non-empty title otherwise
+- [Phase ?]: 02-02: MOBILE_SPEED_RUNGS labels stay UI-SPEC canonical value strings (0.5/1/2/4); dock button display formatting maps 0.5 to the ½ glyph locally, matching the prototype's own speedLabel split
+- [Phase ?]: 02-02: .mobile-icon-btn.compact uses a scoped box-sizing:content-box override (not a ::before hit-area expander) so the button's own rendered box clears the 44px tap-target floor while staying 36x36 visually
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T22:53:45.837Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-07-26T23:13:05.108Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

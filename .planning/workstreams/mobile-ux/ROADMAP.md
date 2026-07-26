@@ -75,7 +75,7 @@ Plans:
   4. At 1× the rail shows counted cluster diamonds instead of a smear of overlapping dots, and the active roll always renders as a separate cyan diamond on top
   5. Settings, About, and Help all work in portrait; Help auto-opens on a first visit; every preference survives reload
 
-**Plans**: 1/5 plans executed
+**Plans**: 2/5 plans executed
 
 Plans:
 **Wave 1**
@@ -84,7 +84,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 02-02-PLAN.md — Sky gesture contract (tap / double-tap / swipe-step) + dock speed cycle and tap hint
+- [x] 02-02-PLAN.md — Sky gesture contract (tap / double-tap / swipe-step) + dock speed cycle and tap hint
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -143,7 +143,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
-| 2. Portrait Layout | 1/5 | In Progress|  |
+| 2. Portrait Layout | 2/5 | In Progress|  |
 | 3. Landscape Layout | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | 0/TBD | Not started | - |
 
