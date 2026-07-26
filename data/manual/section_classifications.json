@@ -8626,8 +8626,8 @@
       "chapter_num": "121.1",
       "section_index": 2,
       "header": "Interlude Jack Slash",
-      "counts_for_cp": false,
-      "reason": "interlude 'jack' (non-Joe)",
+      "counts_for_cp": true,
+      "reason": "curator toggle: WoG 2026-07-26 — points earned during Jack's section (see .planning/workstreams/curation/WOG-NOTES.md)",
       "span_overrides": [
         {
           "word_offset_start": 14,
@@ -8745,8 +8745,8 @@
       "chapter_num": "121.1",
       "section_index": 9,
       "header": "Addendum Apeiron",
-      "counts_for_cp": false,
-      "reason": "addendum 'apeiron' (non-Joe)",
+      "counts_for_cp": true,
+      "reason": "curator toggle: WoG 2026-07-26 — Apeiron is Joe; points earned during his section (see .planning/workstreams/curation/WOG-NOTES.md)",
       "span_overrides": [
         {
           "word_offset_start": 38497,
