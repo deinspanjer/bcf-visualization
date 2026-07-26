@@ -40,7 +40,14 @@ created: 2026-07-25
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| (populated by planner) | | | | | | | | | ⬜ pending |
+| 01-01/T1 | 01-01 | 1 | MOBF-02, MOBF-03, MOBF-04 (impl) | T-01-01 | allow-list readers on all 4 new bcf:* keys | syntax + integration | `node --check web/app.js web/mobile-gestures.js && diff -q design/mobile-ux/prototype/gestures.js web/mobile-gestures.js && .venv/bin/python -m pytest tests/test_web_app_integration.py -q` | ✅ existing suite | ⬜ pending |
+| 01-01/T2 | 01-01 | 1 | MOBF-02, MOBF-03, MOBF-04 (proof) | T-01-01, T-01-02 | tamper values fall back to defaults; render-count guard | integration (Playwright) | `.venv/bin/python -m pytest tests/test_mobile_plumbing.py -x -q` | ❌ Wave 0 — created by this task | ⬜ pending |
+| 01-02/T1 | 01-02 | 2 | MOBF-05 | T-01-04 | touch-action/overscroll scoped behind mobile query only | integration (computed-style) | `.venv/bin/python -m pytest tests/test_mobile_plumbing.py -k css -x -q` | extends 01-01/T2 file | ⬜ pending |
+| 01-02/T2 | 01-02 | 2 | D-02 (MOBX-05 pre-wiring) | T-01-05 | mobile-only guard on layoutMode | integration (Playwright) | `.venv/bin/python -m pytest tests/test_mobile_plumbing.py -k visibility -x -q` | extends 01-01/T2 file | ⬜ pending |
+| 01-03/T1 | 01-03 | 2 | MOBF-06 (§0.5 steps 1-4) | T-01-06 | — | integration (Playwright) | `.venv/bin/python -m pytest tests/test_desktop_smoke.py -x -q` | ❌ Wave 0 — created by this task | ⬜ pending |
+| 01-03/T2 | 01-03 | 2 | MOBF-06 (§0.5 steps 5-6) | T-01-06 | spurious-render counter guard | integration (Playwright) | `.venv/bin/python -m pytest tests/test_desktop_smoke.py -x -q` | same file as 01-03/T1 | ⬜ pending |
+| 01-04/T1 | 01-04 | 3 | MOBF-01, MOBF-06 (gate) | T-01-08 | dual gate: deterministic + human review | full gate | `.venv/bin/python scripts/verify.py` | ✅ exists | ⬜ pending |
+| 01-04/T2 | 01-04 | 3 | MOBF-01, MOBF-06 (review) | T-01-08 | — | checkpoint:human-verify | (blocking review — §5 Phase A) | n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -48,8 +55,9 @@ created: 2026-07-25
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_desktop_smoke.py` — scripted §0.5 desktop smoke test (MOBF-06); follows `tests/test_web_app_integration.py` pattern
-- [ ] `tests/helpers/web_runtime_site.py` — `WEB_FILES` must gain `"mobile-gestures.js"` so the staged site serves the new file
+- [ ] `tests/test_desktop_smoke.py` — scripted §0.5 desktop smoke test (MOBF-06); follows `tests/test_web_app_integration.py` pattern (created by plan 01-03)
+- [ ] `tests/test_mobile_plumbing.py` — layout-mode matrix, gesture single-fire, storage round-trip proofs (created by plan 01-01 Task 2, extended by plan 01-02)
+- [ ] `tests/helpers/web_runtime_site.py` — `WEB_FILES` must gain `"mobile-gestures.js"` (plan 01-01) and `"mobile.css"` (plan 01-02) so the staged site serves the new files
 
 ---
 

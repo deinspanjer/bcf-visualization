@@ -356,12 +356,14 @@ def test_desktop_smoke_resize_round_trip(tmp_path):
 
 ## Open Questions
 
-1. **Where does `ROLL_STEP_WORDS` (the word-position delta per swipe-step) come from for Phase 1's `onSwipeStep` wiring?**
+> **Naming note (post-planning):** this document's `tests/test_desktop_mobile_smoke.py` became two files in the final plans: `tests/test_mobile_plumbing.py` (layout-mode/gesture/storage proofs — plans 01-01, 01-02) and `tests/test_desktop_smoke.py` (§0.5 desktop smoke test — plan 01-03). The plans and 01-VALIDATION.md are authoritative.
+
+1. **(RESOLVED — plan 01-01 Task 1 step 6(e))** **Where does `ROLL_STEP_WORDS` (the word-position delta per swipe-step) come from for Phase 1's `onSwipeStep` wiring?** Resolution: minimal diagnostic-probe attach point in Phase 1 proves single-fire/no-double-bind; production wiring to `setWordPos` deferred to Phase 2, exactly per the recommendation below.
    - What we know: `attachSkyGestures`'s `onSwipeStep(dir)` fires once per `SCRUB_STEP_PX` (56px) of horizontal travel; the *word-position* delta per roll-step is a Phase 2 (Portrait C) concern per plan §5B ("wire the sky tap/swipe handlers using `attachSkyGestures`" is listed under Phase B, not Phase A).
    - What's unclear: Phase 1's own gate only requires that gesture *helpers* exist and `app.layoutMode` flips correctly — not that gestures are fully wired to `setWordPos`. It's a planning-scope call whether Phase 1's `web/mobile-gestures.js` port includes a stub call site (verifying the module loads and callbacks fire) or defers all wiring to Phase 2.
    - Recommendation: Given the phase's own success criterion #3 ("gestures fire exactly once, surviving mid-drag re-renders") requires *something* to be attached and observably counted, plan for a minimal attach point in Phase 1 (e.g., attached to a placeholder/no-op sky element or an existing hidden test target) sufficient to prove the no-double-binding property, with full production wiring explicitly deferred to Phase 2. Confirm this scope boundary in the plan rather than leaving it implicit.
 
-2. **Exact debounce timing for orientation/resize (explicitly Claude's Discretion per CONTEXT.md).**
+2. **(RESOLVED — plan 01-01 uses plain rAF-coalescing per the recommendation; iOS ~100ms re-settle check withheld until a real device shows the flap)** **Exact debounce timing for orientation/resize (explicitly Claude's Discretion per CONTEXT.md).**
    - What we know: `.planning/research/PITFALLS.md` Pitfall 3 recommends `requestAnimationFrame`-scheduling plus a ~100ms re-check for iOS Safari's late-settling dimensions.
    - What's unclear: No hard number is locked; CONTEXT.md explicitly leaves this to implementation discretion.
    - Recommendation: Use rAF-scheduling for the primary debounce (shown in Pattern 1 above); add the ~100ms iOS late-settle re-check only if/when real-device testing (flagged as unconfirmed in STATE.md) surfaces the flap. Don't over-engineer the re-check in Phase 1 without a device to validate against.
