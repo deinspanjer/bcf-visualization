@@ -729,6 +729,22 @@ function lastRollAtWord(wordPos) {
   return last;
 }
 
+// rollStepFrom(wordPos, dir): the sky swipe-step target, one roll at a time.
+// Derives the current index from lastRollAtWord's result rather than a
+// second binary search / roll-index lookup (no-parallel-implementations) —
+// lastRollAtWord IS the single roll-lookup semantic in the codebase. dir is
+// +1 (forward) or -1 (backward); the result clamps into [0, rolls.length-1]
+// so repeated steps past either end hold at the first/last roll instead of
+// throwing or wrapping. Returns null when the story has no rolls at all.
+function rollStepFrom(wordPos, dir) {
+  const rolls = app.data.story.rolls;
+  if (!rolls.length) return null;
+  const current = lastRollAtWord(wordPos);
+  const currentIndex = current ? rolls.indexOf(current) : -1;
+  const nextIndex = clamp(currentIndex + dir, 0, rolls.length - 1);
+  return rolls[nextIndex];
+}
+
 function recentRolls(wordPos, count = 10) {
   const rows = [];
   for (let i = app.data.story.rolls.length - 1; i >= 0 && rows.length < count; i -= 1) {
@@ -3157,30 +3173,71 @@ function updateMobileHintRowFrame(frame) {
 // attachMobilePortraitGestures(): mirrors attachMobileGestureProbes's
 // lifecycle exactly (teardown stored on `app`, invoked defensively before
 // re-attach, called only from inside the render pass). Uses the NEW
-// mobileRailTeardown slot — never app.mobileGestureTeardown, which the
-// Phase 1 probe owns. Attaches only the rail this task (D-17): a single
-// scrub path through attachRailScrub -> setWordPos, never a second raw
-// pointer-listener override.
+// mobileSkyTeardown/mobileRailTeardown slots — never app.mobileGestureTeardown,
+// which the Phase 1 probe owns. Both slots are torn down unconditionally
+// before the mobileSurface guard below so a stale listener never survives an
+// overlay opening/closing between renders (Plan 02-04 introduces
+// app.mobileSurface; treat a missing field as falsy today). Rail scrub
+// commits through the existing setWordPos path only (D-17): a single scrub
+// input, never a second raw pointer-listener override.
 function attachMobilePortraitGestures() {
+  if (typeof app.mobileSkyTeardown === "function") {
+    app.mobileSkyTeardown();
+    app.mobileSkyTeardown = null;
+  }
   if (typeof app.mobileRailTeardown === "function") {
     app.mobileRailTeardown();
     app.mobileRailTeardown = null;
   }
+  // An open overlay (Settings/About/Help, Plan 02-04) owns input while
+  // shown — a tap landing on the sky underneath it must never bubble into a
+  // pause toggle, so neither gesture surface attaches while it's open.
+  if (app.mobileSurface) return;
+
+  const skyEl = document.querySelector(".mobile-sky");
+  if (skyEl && typeof window.attachSkyGestures === "function") {
+    app.mobileSkyTeardown = window.attachSkyGestures(skyEl, {
+      // Tap is a no-op unless tap-to-pause is on — otherwise it toggles
+      // playback through the shared setter, same as the FAB/spacebar path.
+      onTap: () => {
+        if (!app.tapToPause) return;
+        togglePlayback();
+      },
+      // Snap to the last roll at or before the CURRENT playhead and resume —
+      // never app.data.story.rolls.at(-1), which would teleport the reader
+      // to the end of the story (RESEARCH Pitfall 4).
+      onDoubleTap: () => {
+        const target = lastRollAtWord(app.wordPos);
+        if (target) setWordPos(target.word_position);
+        if (!app.playing) togglePlayback();
+      },
+      // Swipe right (dir +1) is forward per INTEGRATION_PLAN.md §1's locked
+      // decision; mobile-gestures.js already resolves dir from swipe
+      // direction, so this callback only ever forwards it.
+      onSwipeStep: dir => {
+        const next = rollStepFrom(app.wordPos, dir);
+        if (next) setWordPos(next.word_position);
+      },
+      onSwipeEnd: () => persistBookmarkNow(),
+    });
+  }
+
   const railEl = document.querySelector(".mobile-rail");
-  if (!railEl || typeof window.attachRailScrub !== "function") return;
-  app.mobileRailTeardown = window.attachRailScrub(railEl, {
-    onScrub: viewportFraction => {
-      if (!app.data) return null;
-      const total = app.data.story.total_words || 1;
-      const playheadPctRaw = (app.wordPos / total) * 100;
-      const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
-      const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, panPct);
-      const target = Math.round(innerFrac * total);
-      setWordPos(target);
-      return lastRollAtWord(target);
-    },
-    onScrubEnd: () => persistBookmarkNow(),
-  });
+  if (railEl && typeof window.attachRailScrub === "function") {
+    app.mobileRailTeardown = window.attachRailScrub(railEl, {
+      onScrub: viewportFraction => {
+        if (!app.data) return null;
+        const total = app.data.story.total_words || 1;
+        const playheadPctRaw = (app.wordPos / total) * 100;
+        const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+        const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, panPct);
+        const target = Math.round(innerFrac * total);
+        setWordPos(target);
+        return lastRollAtWord(target);
+      },
+      onScrubEnd: () => persistBookmarkNow(),
+    });
+  }
 }
 
 // Module-level click delegation keeps hot playback controls independent of

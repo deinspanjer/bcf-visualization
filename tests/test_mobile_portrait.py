@@ -254,6 +254,161 @@ def test_portrait_layout_proportions_and_chip_overlap(tmp_path, viewport):
             browser.close()
 
 
+def _dense_rolls_positions_sorted(facts: dict) -> list[int]:
+    return sorted(
+        roll["epub_word_offset_predicted"]
+        for chapter in facts.get("chapters", [])
+        for roll in chapter.get("rolls", [])
+    )
+
+
+def test_sky_gesture_contract(tmp_path):
+    # MOBP-02: tap toggles playback, double-tap snaps to the last roll at or
+    # before the current playhead (never the story's final roll), and a
+    # horizontal swipe steps one roll per 56px of travel — all through the
+    # shared setters, with zero structural re-renders across the swipe.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        mid_word = 5000
+        last_at_or_before = max(w for w in roll_positions if w <= mid_word)
+        final_roll_word = roll_positions[-1]
+        idx = roll_positions.index(last_at_or_before)
+        forward_two = roll_positions[idx + 2]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # Each phase below opens its own fresh page seeded to the same
+            # starting bookmark, so a running playback tick from one phase's
+            # assertions can never drift the word position that the next
+            # phase's assertions depend on.
+            def fresh_page(extra_storage=None):
+                storage = {
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": str(mid_word),
+                }
+                if extra_storage:
+                    storage.update(extra_storage)
+                return _page_with_console_capture(
+                    browser, site, path="/web/?dataPackage=dense-rolls",
+                    viewport=PHONE_PORTRAIT, storage=storage,
+                )
+
+            # A single tap toggles playback (FAB flips Play -> Pause), and a
+            # second single tap (spaced past the double-tap window) flips it
+            # back.
+            page, console_messages = fresh_page()
+            sky = page.locator(".mobile-sky")
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            sky.click()
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(400)
+            sky.click()
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            assert console_messages == []
+            page.close()
+
+            # Double-tap snaps the playhead to the last roll at/before the
+            # pre-double-tap position and resumes — never the final roll.
+            page, console_messages = fresh_page()
+            sky = page.locator(".mobile-sky")
+            sky.dblclick()
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(50)
+            bookmark = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark == str(last_at_or_before)
+            assert int(bookmark) < final_roll_word
+            assert console_messages == []
+            page.close()
+
+            # Horizontal swipe: engagement costs SWIPE_ENGAGE (24px), then
+            # one roll per SCRUB_STEP_PX (56px) — a 140px drag yields exactly
+            # 2 roll-steps (24 + 2*56 = 136 <= 140 < 192). Structural render
+            # count must not move (D-07/T-02-05) — gestures ride the
+            # incremental tier only. The bookmark persists on release
+            # (onSwipeEnd) and equals the in-memory word position.
+            page, console_messages = fresh_page()
+            page.evaluate("window.__bcfRenderStats = { structuralRenders: 0 }")
+            sky = page.locator(".mobile-sky")
+            sky_box = sky.bounding_box()
+            assert sky_box is not None
+            x = sky_box["x"] + sky_box["width"] / 2
+            y = sky_box["y"] + sky_box["height"] / 2
+            page.mouse.move(x, y)
+            page.mouse.down()
+            for dx in range(8, 141, 8):
+                page.mouse.move(x + dx, y)
+            page.mouse.up()
+            page.wait_for_timeout(50)
+            bookmark_after_right = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark_after_right == str(forward_two)
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+
+            page.wait_for_timeout(400)
+            page.mouse.move(x, y)
+            page.mouse.down()
+            for dx in range(8, 141, 8):
+                page.mouse.move(x - dx, y)
+            page.mouse.up()
+            page.wait_for_timeout(50)
+            bookmark_after_left = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark_after_left == str(last_at_or_before)
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_sky_tap_is_noop_when_tap_to_pause_off(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        mid_word = 5000
+        last_at_or_before = max(w for w in roll_positions if w <= mid_word)
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": str(mid_word),
+                    "bcf:tap-to-pause": "false",
+                },
+            )
+
+            sky = page.locator(".mobile-sky")
+            fab_label_before = page.locator(".mobile-fab-play").get_attribute("aria-label")
+            meta_before = page.locator(".mobile-dock-meta").inner_text()
+
+            sky.click()
+            page.wait_for_timeout(100)
+            assert page.locator(".mobile-fab-play").get_attribute("aria-label") == fab_label_before
+            assert page.locator(".mobile-dock-meta").inner_text() == meta_before
+
+            # A double-tap still snaps and resumes even with tap-to-pause off
+            # — only the single-tap pause toggle is gated by the preference.
+            page.wait_for_timeout(400)
+            sky.dblclick()
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(50)
+            bookmark = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark == str(last_at_or_before)
+
+            assert console_messages == []
+            browser.close()
+
+
 def test_portrait_empty_and_partial_states(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
 
