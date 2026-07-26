@@ -98,13 +98,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmap) | | |
+| MOBF-01 | Phase 1 | Pending |
+| MOBF-02 | Phase 1 | Pending |
+| MOBF-03 | Phase 1 | Pending |
+| MOBF-04 | Phase 1 | Pending |
+| MOBF-05 | Phase 1 | Pending |
+| MOBF-06 | Phase 1 | Pending |
+| MOBP-01 | Phase 2 | Pending |
+| MOBP-02 | Phase 2 | Pending |
+| MOBP-03 | Phase 2 | Pending |
+| MOBP-04 | Phase 2 | Pending |
+| MOBP-05 | Phase 2 | Pending |
+| MOBL-01 | Phase 3 | Pending |
+| MOBL-02 | Phase 3 | Pending |
+| MOBL-03 | Phase 3 | Pending |
+| MOBL-04 | Phase 3 | Pending |
+| MOBX-01 | Phase 4 | Pending |
+| MOBX-02 | Phase 4 | Pending |
+| MOBX-03 | Phase 4 | Pending |
+| MOBX-04 | Phase 4 | Pending |
+| MOBX-05 | Phase 4 | Pending |
+| EPUB-01 | Phase 5 | Pending |
+| EPUB-02 | Phase 5 | Pending |
+| CINF-02 | Phase 5 | Pending |
+| CINF-03 | Phase 6 | Pending |
+| CINF-01 | Phase 7 | Pending |
+| CINF-04 | Phase 7 | Pending |
+| ACUR-01 | Phase 7 | Pending |
+| ACUR-02 | Phase 7 | Pending |
+| ACUR-03 | Phase 7 | Pending |
+| ACUR-04 | Phase 8 | Pending |
+| ACUR-05 | Phase 8 | Pending |
 
 **Coverage:**
-- v1 requirements: 27 total
-- Mapped to phases: 0
-- Unmapped: 27 ⚠️
+- v1 requirements: 31 total
+- Mapped to phases: 31
+- Unmapped: 0 ✓
+
+**Note:** The initial definition pass recorded 27 v1 requirements; the actual checkbox count is 31. Corrected during roadmap creation.
 
 ---
 *Requirements defined: 2026-07-25*
-*Last updated: 2026-07-25 after initial definition*
+*Last updated: 2026-07-25 after roadmap traceability mapping*
