@@ -13816,7 +13816,7 @@
           "outcome": "hit",
           "constellation": "Quality",
           "word_position": null,
-          "mention_chapter_num": null,
+          "mention_chapter_num": "95",
           "mention_word_position": null,
           "display_position_policy": null,
           "skipped": false,
