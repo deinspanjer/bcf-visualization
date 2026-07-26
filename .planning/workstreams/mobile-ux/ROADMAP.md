@@ -75,7 +75,29 @@ Plans:
   4. At 1× the rail shows counted cluster diamonds instead of a smear of overlapping dots, and the active roll always renders as a separate cyan diamond on top
   5. Settings, About, and Help all work in portrait; Help auto-opens on a first visit; every preference survives reload
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Tracer: portrait render branch, real sky primitives, dock + mini-rail scrub, MOBP-01 layout acceptance
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 02-02-PLAN.md — Sky gesture contract (tap / double-tap / swipe-step) + dock speed cycle and tap hint
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 02-03-PLAN.md — Cluster binning with counted diamonds + zoom-aware scrub at 1×/2×/4×/8×
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 02-04-PLAN.md — Settings / About / Help surfaces with focus trap, back gesture, first-run auto-open
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 02-05-PLAN.md — Full-suite sweep, freeze proof, COVERAGE.md + §5 Phase B gate review with Dre
+
 **UI hint**: yes
 **Notes**: Flyout focus-trap and back-gesture handling are built alongside the flyouts here, not deferred to Phase 4. Real-device iOS Safari verification is expected (emulation does not reproduce toolbar/`100vh` behavior). Phase ends with the §5 Phase B gate review plus a desktop smoke test pass.
 
@@ -121,7 +143,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
-| 2. Portrait Layout | 0/TBD | Not started | - |
+| 2. Portrait Layout | 0/5 | Planned | - |
 | 3. Landscape Layout | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | 0/TBD | Not started | - |
 
