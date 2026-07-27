@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 2
 current_phase_name: Portrait Layout
 status: executing
-stopped_at: "Blocked completing 02-03-PLAN.md: Task 2 commit pending (1Password SSH-signing agent wedged) — see 02-03-SUMMARY.md"
-last_updated: "2026-07-27T00:03:03.147Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-07-27T01:31:18.775Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 (Portrait Layout) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 2 execution started
 
-Progress: [████████░░] 78%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [████████░░] 78%
 | Phase 02 P01 | 40min | 2 tasks | 5 files |
 | Phase 02 P02 | 20min | 2 tasks | 3 files |
 | Phase 02 P03 | 50min | 2 tasks | 4 files |
+| Phase 02 P04 | 66min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 02-02: .mobile-icon-btn.compact uses a scoped box-sizing:content-box override (not a ::before hit-area expander) so the button's own rendered box clears the 44px tap-target floor while staying 36x36 visually
 - [Phase ?]: 02-03: dense-rolls cluster spacing tightened (280->70-word span) so the 8-roll cluster actually merges into one badge-worthy bin at real rail widths — binRolls compares each roll against the bin's first member, not its neighbor
 - [Phase ?]: 02-03: added no-rolls test fixture (chapters present, zero rolls) to exercise the UI-SPEC empty-zero-rolls truth, since tiny-default carries real rolls elsewhere
+- [Phase ?]: 02-04: D-19 Help overlay scoped to .mobile-sky only (not full-portrait) so the dock stays operable while it auto-opens on first run — carried to the Phase B gate
+- [Phase ?]: 02-04: .mobile-dock bottom-aligned its flex content and .mobile-dock-transport gained a higher z-index than the flyout/backdrop stack, fixing a real overlap between the locked Settings/About flyout position and the dock's flex-grown height — tension carried to the Phase B gate
 
 ### Pending Todos
 
@@ -116,6 +119,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-27T00:03:03.137Z
-Stopped at: Blocked completing 02-03-PLAN.md: Task 2 commit pending (1Password SSH-signing agent wedged) — see 02-03-SUMMARY.md
+Last session: 2026-07-27T01:31:18.765Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
