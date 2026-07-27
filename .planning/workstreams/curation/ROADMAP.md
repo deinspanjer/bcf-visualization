@@ -74,7 +74,18 @@ Plans:
   3. Word positions and perk names are resolved through the pipeline's existing tokenizer and `perk_name_resolver.py` ladder, with no second implementation of either
   4. The verifier reports per-roll pass/fail with reasons, in a form the Phase 3 confidence gate can consume
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Extract the CP-earning-word tokenizer (D-01/D-02) and build `verify_roll()`'s core (quote/position/perk/enum checks), tracer-proven against one real hand-curated roll (CINF-03)
+- [ ] 02-02-PLAN.md — Dre-approved checkpoint closing the 14 unresolved perk-name gaps in `data/manual/perk_aliases.json` before the corpus baseline runs (D-11, CINF-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-03-PLAN.md — `verify_chapter()` + CLI report writer, and the D-10 corpus-wide 100% baseline test (CINF-03)
+
 **Notes**: Built and validated with zero LLM in the loop, so agent output has a real bar to clear on its first run. This is the "never let the model compute a value that has a deterministic source of truth" rule made executable.
 
 ### Phase 3: Provenance Schema & Agent Curation Pipeline
@@ -117,7 +128,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
-| 2. Mechanical Verifier | 0/TBD | Not started | - |
+| 2. Mechanical Verifier | 0/3 | Not started | - |
 | 3. Provenance Schema & Agent Curation Pipeline | 0/TBD | Not started | - |
 | 4. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
 
