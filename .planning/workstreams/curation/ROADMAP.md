@@ -40,7 +40,7 @@ Within this workstream, phases are strictly sequential — each stage's correctn
   3. An exemplar index built from the hand-curated chapters is tagged by CP regime, and a retrieval query for a target chapter returns only same-regime exemplars
   4. The index documents the corpus's observed evidence-quote patterns, roll-shape distribution, and perk-link conventions
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -57,7 +57,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-04-PLAN.md — Author the human-readable corpus-analysis report, final phase-closing verification (CINF-02)
+- [x] 01-04-PLAN.md — Author the human-readable corpus-analysis report, final phase-closing verification (CINF-02)
 
 **Notes**: HARD GATE for Phases 2–4 — no verifier, schema, or agent work begins until this phase is green. Regime tagging must exist before retrieval logic is built, not be retrofitted. Exemplar mining is pure analysis over existing data; no LLM calls in this phase. This phase also clears the pre-existing Track B staleness failures documented in `.planning/workstreams/mobile-ux/phases/01-mobile-state-gesture-plumbing/deferred-items.md` (stale `perk_directory` sha256; ch 95.5 multi_grab override referencing an unobtained perk; 24 data-consistency test failures). This workstream MUST run in the main checkout — it needs the gitignored epub, `data/private-source/` clone, and `.venv`.
 
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Epub Refresh & Exemplar Mining | 3/4 | In Progress|  |
+| 1. Epub Refresh & Exemplar Mining | 4/4 | In Progress|  |
 | 2. Mechanical Verifier | 0/TBD | Not started | - |
 | 3. Provenance Schema & Agent Curation Pipeline | 0/TBD | Not started | - |
 | 4. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
