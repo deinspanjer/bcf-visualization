@@ -203,9 +203,26 @@ None. The 1Password SSH-signing agent that wedged twice during 02-03/02-04 was n
 
 None - no external service configuration required for Task 1. Task 2 requires Dre to serve the app locally and walk the checklist on real iOS Safari hardware — not an environment-configuration step, but the plan's own blocking gate.
 
+## Gate Review — Partial Rulings Received (2026-07-26)
+
+Dre reviewed the gate agenda and ruled on four of the six items. **The gate itself is NOT approved** — Dre has not yet run the real-device iOS Safari walkthrough, and items 3 and 5 are feel/visual judgments that only hardware answers. Phase 2 stays open.
+
+| # | Item | Ruling |
+|---|------|--------|
+| 1 | D-15 — no mobile details view in v1 | **Confirmed.** Extra details work is explicitly deferred; do not build a mobile details view this milestone. The deferred idea in `02-CONTEXT.md` stands as-is. |
+| 2 | F-04 — ½×/1×/2×/4× → 2500/5000/10000/25000 words-per-second | **Confirmed.** Mapping to existing desktop rungs is correct; no exact-4× (20000) rung. |
+| 3 | F-06 — rail auto-pan recomputes mid-drag at zoom > 1 | **HELD** — pending Dre's hardware testing results. Do not change the behavior until he reports. |
+| 4 | D-19 — Help overlay scoped to `.mobile-sky`, not full-bleed | **Confirmed.** |
+| 5 | Sky letterboxing at phone aspect ratios | **HELD** — pending Dre's hardware testing results. Do not pre-build a mobile-specific viewBox crop. |
+| 6 | F-01/F-02 — retained Phase-1 gesture probe; one superseded portrait-banner assertion in `test_desktop_smoke.py` | **Confirmed** (both). |
+
+**What still blocks the gate:** Dre's real-device walkthrough, plus rulings on items 3 and 5. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
+
+**On resume:** re-read this table before re-asking anything — items 1, 2, 4, and 6 are settled and must not be re-litigated. Only items 3 and 5 plus the overall approval remain open. If Dre's testing turns up changes, route them through `/gsd-plan-phase 2 --gaps` rather than editing plans in place.
+
 ## Next Phase Readiness
 
-**Not ready — Task 2 (the INTEGRATION_PLAN.md §5 Phase B gate review with Dre) is outstanding and is a blocking human gate.** This agent has executed everything up to that gate and is returning a `CHECKPOINT REACHED` with the full agenda (the six flagged rulings, the §6 evidence table above, and the real-device verification steps) for Dre. Per the plan's own `gate="blocking"` attribute and this project's execution contract, this checkpoint cannot be auto-approved by any agent under any circumstances — Track A (Phases 1-4) cannot proceed to Phase 3 until Dre rules on all six items and approves.
+**Not ready — Task 2 (the INTEGRATION_PLAN.md §5 Phase B gate review with Dre) is outstanding and is a blocking human gate.** Four of its six rulings are now recorded above; the gate remains unapproved pending hardware verification. This agent has executed everything up to that gate and is returning a `CHECKPOINT REACHED` with the full agenda (the six flagged rulings, the §6 evidence table above, and the real-device verification steps) for Dre. Per the plan's own `gate="blocking"` attribute and this project's execution contract, this checkpoint cannot be auto-approved by any agent under any circumstances — Track A (Phases 1-4) cannot proceed to Phase 3 until Dre rules on all six items and approves.
 
 Once approved, the remaining plan-closure work (STATE.md/ROADMAP.md/REQUIREMENTS.md updates, the final `docs(02-05): complete ...` metadata commit) still needs to run — that is expected to happen in the continuation agent spawned after Dre's ruling is recorded.
 
