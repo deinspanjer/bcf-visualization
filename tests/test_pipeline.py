@@ -23,6 +23,7 @@ DATA_STEP_NAMES = [
     "derive_constellation_lifecycle",
     "build_constellation_wireframes",
     "build_visualization_facts",
+    "build_exemplar_index",
 ]
 
 
@@ -54,7 +55,7 @@ def test_dry_run_on_real_derived_tree_lists_data_steps(capsys: pytest.CaptureFix
 
     assert exit_code == 0
     out = capsys.readouterr().out
-    assert "DRY-RUN data: 13 step(s)" in out
+    assert "DRY-RUN data: 14 step(s)" in out
     assert "find_text_backed_rolls" in out
     assert out.index("find_text_backed_rolls") < out.index("derive_roll_facts")
 
@@ -85,6 +86,7 @@ def test_missing_output_rebuilds_only_consumers_in_topological_order(tmp_path: P
         "derive_roll_facts",
         "build_chapter_facts",
         "build_visualization_facts",
+        "build_exemplar_index",
     ]
 
 

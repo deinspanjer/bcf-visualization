@@ -330,6 +330,16 @@ def build_steps(root: Path = ROOT) -> list[Step]:
             cmd=_py(root, "build_visualization_facts.py"),
         ),
         Step(
+            name="build_exemplar_index",
+            inputs=inputs(
+                chapter_roll_overrides,
+                derived / "chapter_facts.json",
+                manual / "regime_transitions.json",
+            ),
+            outputs=(derived / "exemplar_index.json",),
+            cmd=_py(root, "build_exemplar_index.py"),
+        ),
+        Step(
             name="package_data_release",
             inputs=inputs(
                 derived / "visualization_facts.json",
@@ -364,7 +374,7 @@ def build_steps(root: Path = ROOT) -> list[Step]:
 
 
 TARGET_FINAL_STEPS = {
-    "data": ("build_visualization_facts",),
+    "data": ("build_visualization_facts", "build_exemplar_index"),
     "package": ("package_data_release",),
     "deploy": ("smoke_pages_site",),
     "all": ("smoke_pages_site",),
