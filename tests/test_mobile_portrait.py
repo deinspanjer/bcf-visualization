@@ -62,6 +62,14 @@ PHONE_PORTRAIT_SMALL = {"width": 320, "height": 568}
 DEFAULT_STORAGE = {
     "bcf:preview-port-storage-version": "3",
     "bcf:bookmark:word_position": "0",
+    # Plan 02-04's first-run Help auto-open fires whenever bcf:help-seen is
+    # unset — pre-seed it so every pre-existing test in this file (written
+    # before the surface stack existed) keeps exercising sky/rail gestures
+    # normally instead of tripping the mobileSurface guard that disables
+    # them while a surface is open. Tests that specifically exercise the
+    # auto-open itself (test_first_run_help_auto_opens_once) seed storage
+    # WITHOUT this key on purpose.
+    "bcf:help-seen": "true",
 }
 
 
@@ -160,6 +168,7 @@ def test_portrait_cinematic_renders_sky_camera_svg(tmp_path):
                 storage={
                     "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(first_roll_word),
+                    "bcf:help-seen": "true",
                 },
             )
 
@@ -249,6 +258,7 @@ def test_portrait_layout_proportions_and_chip_overlap(tmp_path, viewport):
                 storage={
                     "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(target_word),
+                    "bcf:help-seen": "true",
                 },
             )
 
@@ -306,6 +316,7 @@ def test_sky_gesture_contract(tmp_path):
                 storage = {
                     "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(mid_word),
+                    "bcf:help-seen": "true",
                 }
                 if extra_storage:
                     storage.update(extra_storage)
@@ -400,6 +411,7 @@ def test_sky_tap_is_noop_when_tap_to_pause_off(tmp_path):
                     "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(mid_word),
                     "bcf:tap-to-pause": "false",
+                    "bcf:help-seen": "true",
                 },
             )
 
@@ -554,6 +566,7 @@ def test_cluster_binning_at_1x(tmp_path):
                     # (3100-3170), proving the active marker is never folded
                     # into a bin even when it geometrically overlaps one.
                     "bcf:bookmark:word_position": "3125",
+                    "bcf:help-seen": "true",
                 },
             )
 
@@ -603,6 +616,7 @@ def test_cluster_binning_at_1x(tmp_path):
                 storage={
                     "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": "3125",
+                    "bcf:help-seen": "true",
                 },
                 init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
             )
@@ -627,7 +641,7 @@ def test_cluster_binning_at_1x(tmp_path):
                 site,
                 path="/web/?dataPackage=no-rolls",
                 viewport=PHONE_PORTRAIT,
-                storage={"bcf:preview-port-storage-version": "3", "bcf:bookmark:word_position": "0"},
+                storage={"bcf:preview-port-storage-version": "3", "bcf:bookmark:word_position": "0", "bcf:help-seen": "true"},
             )
             assert page.locator(".mobile-ch-tick").count() > 0
             expect(page.locator(".mobile-playhead")).to_be_visible()
@@ -750,6 +764,7 @@ def test_rail_scrub_zoom_aware(tmp_path):
                     "bcf:preview-port-storage-version": "3",
                     "bcf:bookmark:word_position": str(bookmark),
                     "bcf:timeline-zoom": str(zoom),
+                    "bcf:help-seen": "true",
                 }
                 return _page_with_console_capture(browser, site, viewport=PHONE_PORTRAIT, storage=storage)
 
@@ -888,10 +903,359 @@ def test_portrait_empty_and_partial_states(tmp_path):
                 site,
                 path="/web/?dataPackage=chapterless",
                 viewport=PHONE_PORTRAIT,
-                storage={"bcf:preview-port-storage-version": "3"},
+                storage={"bcf:preview-port-storage-version": "3", "bcf:help-seen": "true"},
             )
             fallback_title = page.locator(".mobile-dock-title").inner_text()
             assert fallback_title == "—"
+            assert console_messages == []
+            page.close()
+
+            browser.close()
+
+
+def _total_rolls(facts: dict) -> int:
+    return sum(len(chapter.get("rolls", [])) for chapter in facts.get("chapters", []))
+
+
+def _format_words(n: int) -> str:
+    # Mirrors web/app.js's formatWords() exactly — used to assert the About
+    # flyout's dataset line without duplicating a second word-count format.
+    value = max(0, round(n))
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.2f}M"
+    if value >= 1000:
+        return f"{round(value / 1000)}k"
+    return str(value)
+
+
+def test_surface_stack_focus_trap_and_back_gesture(tmp_path):
+    # MOBP-05 (Task 1): the one surface stack — a backdrop tap and the
+    # phone's own back gesture both close a surface and leave the browser
+    # history length unchanged; focus is trapped inside the flyout while
+    # it's open and returns to the button that opened it on close (D-16);
+    # sky gestures are inert while a surface is open.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Backdrop close: exactly one flyout + backdrop mount, and
+            #     the sentinel is fully consumed — history.state (the CURRENT
+            #     entry) is back to whatever it was before the open, proving
+            #     history.back() actually moved off the "surface-open" entry
+            #     rather than leaving it as the current position. (Raw
+            #     window.history.length never shrinks via back() — that's
+            #     normal joint-session-history behavior — so the CURRENT
+            #     entry's state, not the stack's total length, is what
+            #     proves the sentinel was consumed.) ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            history_state_before = page.evaluate("window.history.state")
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            assert page.locator(".mobile-flyout-backdrop").count() == 1
+            assert page.evaluate("window.history.state") == {"bcfMobileSurface": "settings"}
+            page.locator(".mobile-flyout-backdrop").click(position={"x": 5, "y": 5})
+            assert page.locator(".mobile-flyout").count() == 0
+            assert page.locator(".mobile-flyout-backdrop").count() == 0
+            page.wait_for_timeout(50)
+            assert page.evaluate("window.history.state") == history_state_before
+            assert console_messages == []
+            page.close()
+
+            # --- Back gesture close: the surface closes and the page is
+            #     still on the app URL — the back gesture never leaves the
+            #     app itself. ---
+            page, console_messages2 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            page.go_back()
+            page.wait_for_timeout(50)
+            assert page.locator(".mobile-flyout").count() == 0
+            assert page.evaluate("document.querySelector('.mobile-app') != null") is True
+            assert console_messages2 == []
+            page.close()
+
+            # --- Focus trap: focus starts inside the flyout, Tab past every
+            #     focusable control keeps focus inside it (wrapped, never
+            #     escaped to the document), and closing restores focus to
+            #     the gear button that opened it. ---
+            page, console_messages3 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.evaluate(
+                "document.querySelector('.mobile-flyout').contains(document.activeElement)"
+            ) is True
+            focusable_selector = (
+                ".mobile-flyout button, .mobile-flyout [href], .mobile-flyout input, "
+                ".mobile-flyout select, .mobile-flyout textarea"
+            )
+            focusable_count = page.evaluate(
+                "(sel) => document.querySelectorAll(sel).length", focusable_selector,
+            )
+            for _ in range(focusable_count + 2):
+                page.keyboard.press("Tab")
+            assert page.evaluate(
+                "document.querySelector('.mobile-flyout').contains(document.activeElement)"
+            ) is True
+            page.locator(".mobile-flyout-backdrop").click(position={"x": 5, "y": 5})
+            assert page.evaluate(
+                "document.activeElement === document.querySelector('[data-action=\"mobile-open-settings\"]')"
+            ) is True
+            assert console_messages3 == []
+            page.close()
+
+            # --- Sky gestures are inert while a surface is open: a tap
+            #     landing on .mobile-sky never toggles playback (the
+            #     backdrop sits on top and intercepts it — a "force" click
+            #     bypasses Playwright's own obstruction check, matching what
+            #     a real tap would hit, since the backdrop is the topmost
+            #     element there by design while a surface is open). ---
+            page, console_messages4 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            fab_label_before = page.locator(".mobile-fab-play").get_attribute("aria-label")
+            page.click(".mobile-sky", force=True)
+            assert page.locator(".mobile-fab-play").get_attribute("aria-label") == fab_label_before
+            assert console_messages4 == []
+
+            browser.close()
+
+
+def test_settings_about_help_persist_across_reload(tmp_path):
+    # MOBP-05 (Tasks 1 + 2): Settings group order is locked; every control
+    # writes through the existing shared setter/delegated action and its
+    # value survives a reload; the About flyout's source links and dataset
+    # stats read the live STORY_LINKS/app.data.story; the Help overlay's
+    # seven gesture rows and CTA are verbatim; opening one surface from
+    # another (or opening Settings while About is open) leaves exactly one
+    # surface mounted at a time.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _tiny_default_facts(site)
+        total_rolls = _total_rolls(facts)
+        total_chapters = len(facts.get("chapters", []))
+        total_words = _facts_total_words(facts)
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Settings group order (MOBP-05 ordering edge). ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            # all_text_contents() (not all_inner_texts()) — .mobile-group-label
+            # is styled text-transform:uppercase, which inner_text() would
+            # reflect (same pitfall documented for .mobile-hint-row in 02-02).
+            labels = page.locator(".mobile-flyout .mobile-group-label").all_text_contents()
+            assert labels == ["View mode", "On roll", "Speed", "Timeline zoom", "Comfort"]
+
+            # --- Calling setMode with an out-of-allow-list value leaves
+            #     storage untouched (T-02-12). ---
+            mode_before = page.evaluate("localStorage.getItem('bcf:mode')")
+            page.evaluate("window.__bcfMobile.setMode('details')")  # prototype's plural spelling
+            assert page.evaluate("localStorage.getItem('bcf:mode')") == mode_before
+
+            # --- Select Details / Skip / 2x speed / 4x zoom / both Comfort
+            #     rows off, then reload and confirm every value round-trips
+            #     through an allow-listed value the app itself reads back. ---
+            groups = page.locator(".mobile-flyout .mobile-group")
+            view_mode_group = groups.nth(0)
+            on_roll_group = groups.nth(1)
+            speed_group = groups.nth(2)
+            zoom_group = groups.nth(3)
+            comfort_group = groups.nth(4)
+
+            view_mode_group.get_by_text("Details", exact=True).click()
+            on_roll_group.locator('[data-on-roll-behavior="quick"]').click()
+            speed_group.get_by_text("2×", exact=True).click()
+            zoom_group.get_by_text("4×", exact=True).click()
+            comfort_group.locator(".mobile-row-val").nth(0).click()
+            comfort_group.locator(".mobile-row-val").nth(1).click()
+
+            assert page.evaluate("localStorage.getItem('bcf:mode')") == "detail"
+            assert page.evaluate("localStorage.getItem('bcf:on-roll-behavior')") == "quick"
+            assert page.evaluate("localStorage.getItem('bcf:playback:speed:v2')") == "10000"
+            assert console_messages == []
+
+            page.reload(wait_until="networkidle")
+            assert page.evaluate("localStorage.getItem('bcf:mode')") == "detail"
+            assert page.evaluate("localStorage.getItem('bcf:on-roll-behavior')") == "quick"
+            assert page.evaluate("localStorage.getItem('bcf:playback:speed:v2')") == "10000"
+            assert page.evaluate("window.__bcfPrefs.mobileTimelineZoom") == 4
+            assert page.evaluate("window.__bcfPrefs.tapToPause") is False
+            assert page.evaluate("window.__bcfPrefs.haptics") is False
+
+            # Reopening Settings shows those same options marked active.
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout .mobile-group").nth(0)\
+                .get_by_text("Details", exact=True).get_attribute("class") == "is-active"
+            assert page.locator('.mobile-flyout [data-on-roll-behavior="quick"]').get_attribute("class") == "is-active"
+            assert page.locator(".mobile-flyout .mobile-group").nth(2)\
+                .get_by_text("2×", exact=True).get_attribute("class") == "is-active"
+            assert page.locator(".mobile-flyout .mobile-group").nth(3)\
+                .get_by_text("4×", exact=True).get_attribute("class") == "is-active"
+            comfort_after = page.locator(".mobile-flyout .mobile-group").nth(4).locator(".mobile-row-val")
+            assert comfort_after.nth(0).inner_text() == "Off"
+            assert comfort_after.nth(1).inner_text() == "Off"
+            assert console_messages == []
+            page.close()
+
+            # --- Short viewport: every .mobile-seg button stays reachable
+            #     inside the viewport, and the flyout scrolls internally
+            #     rather than clipping. ---
+            page2, console_messages2 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT_SMALL, storage=DEFAULT_STORAGE,
+            )
+            page2.click('[data-action="mobile-open-settings"]')
+            seg_boxes = page2.eval_on_selector_all(
+                ".mobile-flyout .mobile-seg button",
+                "els => els.map(el => { const r = el.getBoundingClientRect(); "
+                "return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; })",
+            )
+            assert len(seg_boxes) > 0
+            for box in seg_boxes:
+                assert box["top"] >= 0
+                assert box["bottom"] <= PHONE_PORTRAIT_SMALL["height"]
+                assert box["left"] >= 0
+                assert box["right"] <= PHONE_PORTRAIT_SMALL["width"]
+            assert page2.evaluate(
+                "getComputedStyle(document.querySelector('.mobile-flyout')).overflowY"
+            ) == "auto"
+            assert console_messages2 == []
+            page2.close()
+
+            # --- About flyout: live STORY_LINKS hrefs (never the
+            #     prototype's stale hard-coded URLs), live dataset counts,
+            #     and the Gestures & help hand-off to the Help overlay. ---
+            page3, console_messages3 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            page3.click('[data-action="mobile-open-info"]')
+            about = page3.locator('.mobile-flyout[aria-label="About"]')
+            expect = playwright_api.expect
+            expect(about).to_be_visible()
+
+            links = page3.locator('.mobile-flyout[aria-label="About"] .mobile-source-row a')
+            assert links.count() == 3
+            hrefs = links.evaluate_all("els => els.map(el => el.href)")
+            targets = links.evaluate_all("els => els.map(el => el.target)")
+            rels = links.evaluate_all("els => els.map(el => el.rel)")
+            assert set(hrefs) == {
+                "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks",
+                "https://www.fanfiction.net/s/13574944/1/Brockton-s-Celestial-Forge",
+                "https://archiveofourown.org/works/23949661/navigate",
+            }
+            assert all(t == "_blank" for t in targets)
+            assert all("noopener" in r and "noreferrer" in r for r in rels)
+
+            dataset_text = page3.locator(
+                '.mobile-flyout[aria-label="About"] .mobile-flyout-dataset'
+            ).inner_text()
+            assert f"{total_rolls} rolls" in dataset_text
+            assert f"{total_chapters} chapters" in dataset_text
+            assert f"{_format_words(total_words)} words" in dataset_text
+
+            # Opening Settings while About is open leaves exactly one
+            # surface mounted.
+            page3.click('[data-action="mobile-open-settings"]')
+            assert page3.locator(".mobile-flyout").count() == 1
+            assert page3.locator('.mobile-flyout[aria-label="Settings"]').count() == 1
+            assert page3.locator('.mobile-flyout[aria-label="About"]').count() == 0
+
+            # Reopen About, then hand off to Help — About gone, Help present.
+            page3.locator(".mobile-flyout-backdrop").click(position={"x": 5, "y": 5})
+            page3.click('[data-action="mobile-open-info"]')
+            page3.click(".mobile-full-btn")
+            assert page3.locator('.mobile-flyout[aria-label="About"]').count() == 0
+            assert page3.locator(".mobile-help-overlay").count() == 1
+
+            gesture_rows = page3.locator(".mobile-help-gestures .ico")
+            assert gesture_rows.count() == 7
+            # text_content() (not inner_text()) — .mobile-got-it is styled
+            # text-transform:uppercase (locked verbatim from the prototype),
+            # which inner_text() would reflect.
+            assert page3.locator(".mobile-got-it").text_content() == "Got it — read on"
+            assert console_messages3 == []
+
+            browser.close()
+
+
+def test_first_run_help_auto_opens_once(tmp_path):
+    # MOBP-05 (Task 2): a first visit with empty storage auto-opens the Help
+    # overlay with no extra structural render; dismissing it records
+    # help-seen so a reload never remounts it; the dock (including the Play
+    # FAB) stays fully operable throughout (D-19).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Empty storage: help auto-opens with no extra structural
+            #     render versus a load with helpSeen pre-seeded. ---
+            page_empty, console_empty = _page_with_console_capture(
+                browser,
+                site,
+                storage={"bcf:preview-port-storage-version": "3"},
+                viewport=PHONE_PORTRAIT,
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+            assert page_empty.evaluate("document.querySelector('.mobile-help-overlay') != null") is True
+            renders_empty = page_empty.evaluate("window.__bcfRenderStats.structuralRenders")
+
+            assert page_empty.evaluate("window.__bcfPrefs.tapToPause") is True
+            assert page_empty.evaluate("window.__bcfPrefs.haptics") is True
+            assert page_empty.evaluate("window.__bcfPrefs.mobileTimelineZoom") == 1
+            assert page_empty.evaluate("window.__bcfPrefs.helpSeen") is False
+
+            # The dock stays fully operable while the auto-opened overlay is
+            # present — the Play FAB is outside .mobile-sky (D-19).
+            page_empty.click('button[aria-label="Play"]')
+            expect(page_empty.locator('button[aria-label="Pause"]')).to_be_visible()
+
+            assert console_empty == []
+            page_empty.close()
+
+            page_seeded, console_seeded = _page_with_console_capture(
+                browser,
+                site,
+                storage={"bcf:preview-port-storage-version": "3", "bcf:help-seen": "true"},
+                viewport=PHONE_PORTRAIT,
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+            assert page_seeded.evaluate("document.querySelector('.mobile-help-overlay')") is None
+            renders_seeded = page_seeded.evaluate("window.__bcfRenderStats.structuralRenders")
+            assert renders_empty == renders_seeded
+            assert console_seeded == []
+            page_seeded.close()
+
+            # --- Dismiss via the CTA persists help-seen and never remounts
+            #     after a reload; a click with no data-action target nearby
+            #     is a harmless no-op once nothing is open to dismiss. ---
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                storage={"bcf:preview-port-storage-version": "3"},
+                viewport=PHONE_PORTRAIT,
+            )
+            page.click(".mobile-got-it")
+            assert page.evaluate("document.querySelector('.mobile-help-overlay')") is None
+            assert page.evaluate("localStorage.getItem('bcf:help-seen')") == "true"
+
+            page.reload(wait_until="networkidle")
+            assert page.evaluate("document.querySelector('.mobile-help-overlay')") is None
+
+            page.click(".mobile-dock-now")
             assert console_messages == []
             page.close()
 

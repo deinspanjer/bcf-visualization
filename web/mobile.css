@@ -95,10 +95,6 @@
     border-color: rgba(245, 210, 123, 0.50);
     color: var(--amber);
   }
-  .mobile-help-spacer {
-    width: 44px;
-    height: 44px;
-  }
   .mobile-sky {
     /* No grow (MOBP-01): the dock's content-driven natural height (~178px)
        is well under the remaining 40%, so giving growth to the dock instead
@@ -191,6 +187,19 @@
        without scrolling. */
     flex: 1 0 auto;
     position: relative;
+    /* Plan 02-04: the dock's own CONTENT (transport/rail/hint) is bottom-
+       aligned within its now-taller box rather than top-aligned — the
+       leftover space the grown dock absorbs collapses to sit ABOVE the
+       transport row instead of below it. Without this, the transport row
+       sits near the dock's TOP edge, which the locked Settings/About flyout
+       anchor (bottom:152px, sized to the CONTENT-height dock the UI-SPEC
+       assumed) geometrically overlaps — silently making the gear/info
+       buttons unclickable while a surface is open. This only changes
+       internal distribution; the outer .mobile-sky/.mobile-dock 60/40 split
+       Plan 02-01 proved is untouched. */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
     background: linear-gradient(180deg, rgba(5, 29, 38, 0.0), rgba(5, 29, 38, 0.92) 18%);
     border-top: 1px solid var(--edge-soft);
     padding: 14px 12px max(18px, var(--safe-bottom));
@@ -200,6 +209,14 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+    /* Plan 02-04: stays above the flyout/backdrop stack (z-index 8/9) so
+       the gear/info buttons remain tappable even where the (bottom-
+       anchored, content-grown) flyout's own box geometrically reaches down
+       far enough to overlap the transport row — this is what lets a reader
+       switch directly from About to Settings (or vice versa) by tapping the
+       other icon, without having to dismiss the open surface first. */
+    position: relative;
+    z-index: 10;
   }
   .mobile-fab-play {
     flex-shrink: 0;
@@ -240,6 +257,11 @@
     cursor: pointer;
   }
   .mobile-icon-btn:active { background: rgba(92, 244, 255, 0.18); }
+  .mobile-icon-btn.is-active {
+    background: rgba(92, 244, 255, 0.18);
+    border-color: var(--cyan);
+  }
+  .mobile-icon-btn svg { width: 18px; height: 18px; }
   /* Compact variant (UI-SPEC Locked exceptions: 36x36 CSS px) reads visually
      smaller, but MOBX-03's 44px tap-target floor still applies. box-sizing
      is scoped to content-box on just this selector so the declared 36x36
@@ -384,5 +406,267 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-top: 4px;
+  }
+
+  /* ── Surface stack: Settings / About flyouts (Plan 02-04, MOBP-05) ────
+     Adapted from design/mobile-ux/prototype/styles.css .flyout-backdrop/
+     .flyout — the portrait anchor rule (left/right:14px; bottom:152px) is
+     the only position this phase ships (the prototype's separate landscape
+     anchor is Phase 3's concern). max-height/overflow-y:auto so a short
+     viewport (320x568) scrolls internally instead of clipping controls
+     off-screen. */
+  .mobile-flyout-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    background: rgba(2, 6, 10, 0.40);
+  }
+  .mobile-flyout {
+    position: absolute;
+    z-index: 9;
+    left: 14px;
+    right: 14px;
+    bottom: 152px;
+    max-height: calc(100% - 166px);
+    overflow-y: auto;
+    background: rgba(5, 29, 38, 0.97);
+    border: 1px solid rgba(92, 244, 255, 0.45);
+    border-radius: 14px;
+    padding: 14px 16px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 18px rgba(92, 244, 255, 0.15);
+  }
+  .mobile-flyout h4 {
+    margin: 0 0 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .mobile-flyout h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 16px;
+  }
+  .mobile-flyout-credit {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .mobile-flyout-credit b { color: var(--ink); font-weight: 600; }
+  .mobile-flyout-divider {
+    height: 1px;
+    background: rgba(92, 244, 255, 0.20);
+    margin: 12px 0;
+  }
+  .mobile-group { margin-bottom: 12px; }
+  .mobile-group:last-child { margin-bottom: 0; }
+  .mobile-group-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .mobile-seg {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    background: rgba(3, 8, 13, 0.6);
+    border: 1px solid rgba(92, 244, 255, 0.22);
+    border-radius: 6px;
+  }
+  .mobile-seg button {
+    flex: 1;
+    padding: 6px 4px;
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    border-radius: 4px;
+    cursor: pointer;
+    min-height: 32px;
+  }
+  .mobile-seg button.is-active {
+    background: rgba(92, 244, 255, 0.18);
+    color: var(--cyan);
+  }
+  .mobile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .mobile-row-val {
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--cyan);
+    cursor: pointer;
+    padding: 4px;
+  }
+  .mobile-source-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .mobile-source-row a {
+    padding: 5px 9px;
+    border-radius: 4px;
+    background: rgba(92, 244, 255, 0.10);
+    border: 1px solid rgba(92, 244, 255, 0.35);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .mobile-flyout-dataset {
+    font-size: 11px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .mobile-flyout-dataset .muted { color: var(--muted); }
+  .mobile-full-btn {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(92, 244, 255, 0.12);
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* ── Help overlay (D-19: scoped to .mobile-sky, not the whole portrait
+     surface — see web/app.js renderMobilePortrait's D-19 comment). Stacks
+     above the sky camera/focal label (z-index 20 > their unset/auto
+     stacking) but is contained by .mobile-sky, so the dock below stays
+     visible and operable while it's open. ───────────────────────────── */
+  .mobile-help-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background: rgba(2, 6, 10, 0.92);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    padding: max(20px, var(--safe-top)) 20px max(20px, var(--safe-bottom));
+    overflow-y: auto;
+  }
+  .mobile-help-overlay header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .mobile-help-overlay h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 22px;
+    margin: 6px 0 0;
+  }
+  .mobile-help-overlay .label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .mobile-help-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(92, 244, 255, 0.10);
+    border: 1px solid var(--edge);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .mobile-help-overlay h3 {
+    margin: 14px 0 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--cyan);
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .mobile-help-gestures {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 8px 12px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .mobile-help-gestures .ico { font-size: 18px; text-align: center; }
+  .mobile-help-gestures b { color: var(--cyan); font-family: var(--mono); font-size: 11px; }
+  .mobile-help-headsup {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .mobile-got-it {
+    margin-top: auto;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(92, 244, 255, 0.95), rgba(92, 244, 255, 0.78));
+    color: #03080d;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-height: 48px;
+  }
+  .mobile-credit-block {
+    padding: 12px;
+    background: rgba(92, 244, 255, 0.06);
+    border: 1px solid rgba(92, 244, 255, 0.20);
+    border-radius: 8px;
+  }
+  .mobile-credit-block .title {
+    font-family: var(--serif);
+    font-size: 16px;
+  }
+  .mobile-credit-block .by {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* D-16: a visible focus ring inside a trapped surface — every button and
+     link in .mobile-flyout / .mobile-help-overlay gets the same --cyan
+     ring convention the rest of the accent-reserved list uses. */
+  .mobile-flyout button:focus-visible,
+  .mobile-flyout a:focus-visible,
+  .mobile-help-overlay button:focus-visible,
+  .mobile-help-overlay a:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
   }
 }

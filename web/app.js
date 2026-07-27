@@ -85,6 +85,15 @@ const DEFAULT_ON_ROLL_BEHAVIOR = "cinematic";
 const ON_ROLL_BEHAVIORS = ["cinematic", "pause", "quick"];
 const ROLL_LOCATIONS = ["predicted", "curated"];
 const DEFAULT_ROLL_LOCATION = "predicted";
+// The single allow-list for app.mode, shared by the init read and setMode's
+// write-side guard (T-02-12) — "detail" is singular, matching the live
+// LS_MODE storage contract; never "details" (the prototype's spelling).
+const MODE_CHOICES = ["playthrough", "detail"];
+const DEFAULT_MODE = "playthrough";
+// The one surface stack (Settings/About/Help) a portrait reader can have
+// open at a time (MOBP-05) — openMobileSurface/closeMobileSurface below are
+// the only writers of app.mobileSurface.
+const MOBILE_SURFACES = ["settings", "info", "help"];
 
 const STORY_LINKS = [
   { label: "SV", href: "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" },
@@ -107,7 +116,7 @@ const app = {
   packageIndex: null,
   selectedPackageId: null,
   selectedPackageMeta: null,
-  mode: readStoredChoice(LS_MODE, ["playthrough", "detail"], "playthrough"),
+  mode: readStoredChoice(LS_MODE, MODE_CHOICES, DEFAULT_MODE),
   wordPos: readStoredNumber(LS_BOOKMARK, DEFAULT_WORD_POS),
   playing: false,
   speed: readStoredNumber(LS_SPEED, DEFAULT_SPEED),
@@ -144,6 +153,22 @@ const app = {
   // per page load, tracked here rather than localStorage since it's a
   // per-session affordance, not a durable preference.
   mobileSkyHintShown: false,
+  // Phase 2 Plan 4 (MOBP-05): the one surface stack. mobileSurface is null
+  // or one of MOBILE_SURFACES; mobileSurfaceOpener is the data-action
+  // string of the button that opened it (NOT a node reference — render()
+  // rebuilds the whole portrait DOM on every structural render, so a raw
+  // node would already be detached by the time closeMobileSurface() needs
+  // it) — closeMobileSurface() re-resolves a live element by that selector
+  // to restore focus there (D-16). mobileSurfaceFocusTrapTeardown lives on
+  // `app` (not app.dom, which render() resets) so it survives to be invoked
+  // defensively before the next surface mounts. mobileHelpAutoOpened is
+  // session-only (never persisted) — it guards the first-run auto-open
+  // against re-firing on a later structural render within the same page
+  // load.
+  mobileSurface: null,
+  mobileSurfaceOpener: null,
+  mobileSurfaceFocusTrapTeardown: null,
+  mobileHelpAutoOpened: false,
   rollFilter: "all",
   rollSort: "roll",
   raf: null,
@@ -819,6 +844,10 @@ function setWordPos(value) {
 }
 
 function setMode(mode) {
+  // T-02-12: write-side allow-list guard mirroring setRollLocation's — an
+  // out-of-list value (e.g. the prototype's plural "details") must never
+  // reach storage, or the next reload would silently revert to the default.
+  if (!MODE_CHOICES.includes(mode)) return;
   app.mode = mode;
   store(LS_MODE, mode);
   render();
@@ -969,7 +998,17 @@ function render() {
       style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;z-index:2147483647;",
     }));
     attachMobileGestureProbes();
-    if (app.layoutMode === "portrait") attachMobilePortraitGestures();
+    if (app.layoutMode === "portrait") {
+      attachMobilePortraitGestures();
+      // D-16: the focus trap re-attaches to whichever surface node this
+      // render pass just built (or tears down if none is open) — never
+      // left pointing at a node the last clear(root) already detached.
+      if (app.mobileSurface) {
+        trapMobileSurfaceFocus(document.querySelector(".mobile-flyout, .mobile-help-overlay"));
+      } else {
+        teardownMobileSurfaceFocusTrap();
+      }
+    }
   }
 }
 
@@ -2604,6 +2643,36 @@ function closeIcon() {
   );
 }
 
+// Mobile surface-dock icons (Plan 02-04) — ported verbatim from
+// design/mobile-ux/prototype/panels.jsx's GearIcon/InfoIcon/HelpIcon
+// (same viewBox/path data), sized to the compact 18px the prototype uses.
+function mobileGearIcon() {
+  return svgEl(
+    "svg",
+    { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" },
+    svgEl("circle", { cx: "12", cy: "12", r: "3" }),
+    svgEl("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" }),
+  );
+}
+
+function mobileInfoIcon() {
+  return svgEl(
+    "svg",
+    { width: 18, height: 18, viewBox: "0 0 18 18", fill: "none", stroke: "currentColor", "stroke-width": "1.3", "aria-hidden": "true" },
+    svgEl("circle", { cx: "9", cy: "9", r: "7" }),
+    svgEl("path", { d: "M9 8v4M9 5.5v.5", "stroke-linecap": "round" }),
+  );
+}
+
+function mobileHelpIcon() {
+  return svgEl(
+    "svg",
+    { width: 18, height: 18, viewBox: "0 0 18 18", fill: "none", stroke: "currentColor", "stroke-width": "1.4", "aria-hidden": "true" },
+    svgEl("circle", { cx: "9", cy: "9", r: "7" }),
+    svgEl("path", { d: "M7 7a2 2 0 1 1 3 1.7c-.7.4-1 .8-1 1.5M9 12.5v.5", "stroke-linecap": "round" }),
+  );
+}
+
 function cachePlaybackDomRefs() {
   app.dom = {
     scrubberScroller: document.querySelector(".scrubber-scroller"),
@@ -2896,6 +2965,113 @@ function markHelpSeen() {
   app.helpSeen = true;
   store(LS_HELP_SEEN, true);
 }
+
+// ── Surface stack: Settings / About / Help (Plan 02-04, MOBP-05) ───────────
+// Exactly one of MOBILE_SURFACES (or none) is ever open. openMobileSurface
+// is the only place that pushes a history sentinel; closeMobileSurface is
+// the only place that consumes one — every close route (backdrop tap, close
+// button, back gesture) funnels through it exactly once (T-02-14).
+
+// openMobileSurface(kind, triggerEl): closes whatever's open (in memory only
+// — no history.back(), since the new sentinel below replaces it), sets both
+// fields, pushes exactly one sentinel, then renders. triggerEl is
+// remembered so closeMobileSurface() can restore focus there (D-16) — but
+// render() unconditionally clears and rebuilds the ENTIRE portrait DOM tree
+// on every structural render (no per-node diffing anywhere in this app), so
+// triggerEl itself will already be a detached node by the time a later
+// close happens. app.mobileSurfaceOpener therefore stores triggerEl's
+// data-action string (a stable identifier for "the button that opens this
+// surface"), not the node — closeMobileSurface re-resolves a live element
+// by that selector AFTER its own render() rebuild, rather than calling
+// .focus() on a stale reference that would silently do nothing.
+function openMobileSurface(kind, triggerEl) {
+  if (!MOBILE_SURFACES.includes(kind)) return;
+  app.mobileSurface = null;
+  app.mobileSurfaceOpener = null;
+  app.mobileSurface = kind;
+  app.mobileSurfaceOpener = triggerEl?.dataset?.action || null;
+  history.pushState({ bcfMobileSurface: kind }, "");
+  render();
+}
+
+// closeMobileSurface({ fromPopstate }): a no-op when nothing is open, so a
+// popstate arriving after an already-closed surface (or a stray back
+// keypress) never double-fires. Consumes the sentinel with history.back()
+// unless the close itself originated FROM a popstate (that navigation
+// already consumed it) — this is what keeps history.length unchanged across
+// every close route.
+function closeMobileSurface({ fromPopstate = false } = {}) {
+  if (!app.mobileSurface) return;
+  const openerAction = app.mobileSurfaceOpener;
+  app.mobileSurface = null;
+  app.mobileSurfaceOpener = null;
+  if (!fromPopstate) history.back();
+  render();
+  if (openerAction) {
+    const opener = document.querySelector(`[data-action="${openerAction}"]`);
+    if (opener) opener.focus();
+  }
+}
+
+// A single module-level popstate listener closes the topmost surface when
+// one is open — this is how the phone's own back gesture dismisses a
+// flyout instead of leaving the app (D-16).
+window.addEventListener("popstate", () => {
+  if (app.mobileSurface) closeMobileSurface({ fromPopstate: true });
+});
+
+// trapMobileSurfaceFocus(surfaceEl): tears down any prior trap first
+// (defensive, matching the gesture-teardown convention), then — if a
+// surface is mounted — moves focus to its first focusable element and
+// installs a focusin listener (redirects focus back in if it escapes) plus
+// a keydown listener (wraps Tab/Shift+Tab at the first/last focusable).
+// Teardown lives on `app`, not app.dom (render() resets app.dom every call).
+const MOBILE_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function mobileSurfaceFocusables(surfaceEl) {
+  return [...surfaceEl.querySelectorAll(MOBILE_FOCUSABLE_SELECTOR)]
+    .filter(node => !node.disabled && node.offsetParent !== null);
+}
+
+function teardownMobileSurfaceFocusTrap() {
+  if (typeof app.mobileSurfaceFocusTrapTeardown === "function") {
+    app.mobileSurfaceFocusTrapTeardown();
+  }
+  app.mobileSurfaceFocusTrapTeardown = null;
+}
+
+function trapMobileSurfaceFocus(surfaceEl) {
+  teardownMobileSurfaceFocusTrap();
+  if (!surfaceEl) return;
+  const initial = mobileSurfaceFocusables(surfaceEl)[0];
+  if (initial) initial.focus();
+  const onFocusIn = event => {
+    if (surfaceEl.contains(event.target)) return;
+    const first = mobileSurfaceFocusables(surfaceEl)[0];
+    if (first) first.focus();
+  };
+  const onKeyDown = event => {
+    if (event.key !== "Tab") return;
+    const items = mobileSurfaceFocusables(surfaceEl);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener("focusin", onFocusIn);
+  document.addEventListener("keydown", onKeyDown);
+  app.mobileSurfaceFocusTrapTeardown = () => {
+    document.removeEventListener("focusin", onFocusIn);
+    document.removeEventListener("keydown", onKeyDown);
+  };
+}
+
 // binRolls/binSize/panOffsetForPlayhead/mobileInnerFraction are read-only
 // exposures of the SAME functions the rail's render/scrub paths call — this
 // is exposure of the single implementation for test assertions, never a
@@ -2909,6 +3085,11 @@ window.__bcfMobile = {
   binSize,
   panOffsetForPlayhead,
   mobileInnerFraction,
+  // setMode's write-side allow-list guard (T-02-12) is otherwise only
+  // reachable through the Settings UI's own allow-listed buttons — exposed
+  // here (like the setters above) so the guard itself can be asserted
+  // directly against an out-of-allow-list value.
+  setMode,
 };
 
 // Dock speed control (MOBP-02/UI-SPEC "Settings — Speed options"). Every
@@ -3124,11 +3305,27 @@ function renderMobileRailRollsLaneChildren() {
   return [...bands, ...bins, activeDot].filter(Boolean);
 }
 
+// maybeAutoOpenHelp(): the first-run welcome (MOBP-05). Runs at the TOP of
+// renderMobilePortrait(), before any node is built, so the surface it opens
+// is reflected in THIS SAME render pass — it must never call
+// openMobileSurface() or render() itself (either would recurse into the
+// render pass currently building this exact frame, breaking both the
+// portrait-crossing render count and the attach-count assertions the
+// plumbing/desktop-smoke suites already pin down).
+function maybeAutoOpenHelp() {
+  if (!app.data || app.helpSeen || app.mobileHelpAutoOpened) return;
+  app.mobileHelpAutoOpened = true;
+  app.mobileSurface = "help";
+  app.mobileSurfaceOpener = null;
+  history.pushState({ bcfMobileSurface: "help" }, "");
+}
+
 // renderMobilePortrait(): the D-12 portrait arm of render(). Root
 // `.mobile-app` holds the top chip cluster, the real sky (D-13 — never the
 // prototype's procedural placeholder) with its cinematic camera and focal
 // label, and the dock (transport row + mini-rail + hint row).
 function renderMobilePortrait() {
+  maybeAutoOpenHelp();
   const frame = playthroughFrameState();
   // Structural render is one of the exactly three call sites for bin
   // recomputation (D-18) — never inside updateMobilePortraitFrame().
@@ -3142,6 +3339,11 @@ function renderMobilePortrait() {
       ),
       renderMobileFocalLabel(frame),
       renderMobileSkyTapHint(),
+      // D-19: the Help overlay is scoped to the sky region (not the whole
+      // portrait surface) so the dock — including the play button a
+      // first-run empty-storage load must still be able to click — stays
+      // visible and operable while it's open.
+      app.mobileSurface === "help" ? renderMobileHelpOverlay() : null,
     ),
     el("div", { class: "mobile-dock" },
       el("div", { class: "mobile-dock-transport" },
@@ -3165,10 +3367,222 @@ function renderMobilePortrait() {
           title: "Cycle playback speed",
           text: mobileSpeedButtonLabel(),
         }),
+        el("button", {
+          class: `mobile-icon-btn compact${app.mobileSurface === "settings" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-settings",
+          "aria-label": "Settings",
+          title: "Settings",
+        }, mobileGearIcon()),
+        el("button", {
+          class: `mobile-icon-btn compact${app.mobileSurface === "info" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-info",
+          "aria-label": "About",
+          title: "About this visualization",
+        }, mobileInfoIcon()),
       ),
       renderMobileScrubber(),
       renderMobileHintRow(),
     ),
+    renderMobileSurface(),
+  );
+}
+
+// renderMobileSurface(): the exclusive Settings/About stack — returns null
+// when neither is open, or the backdrop + flyout pair when one is (mounted
+// as the last child of .mobile-app so it layers above the dock). The Help
+// overlay is NOT rendered here — see the D-19 comment above; it mounts
+// inside .mobile-sky instead of getting its own backdrop.
+function renderMobileSurface() {
+  if (app.mobileSurface === "settings") {
+    return [
+      el("div", { class: "mobile-flyout-backdrop", "data-action": "mobile-close-surface" }),
+      renderMobileSettingsFlyout(),
+    ];
+  }
+  if (app.mobileSurface === "info") {
+    return [
+      el("div", { class: "mobile-flyout-backdrop", "data-action": "mobile-close-surface" }),
+      renderMobileInfoFlyout(),
+    ];
+  }
+  return null;
+}
+
+// mobileSeg(value, options, onSelect): a `.mobile-seg` segmented control —
+// options is an array of [value, label] pairs. Shared by every Settings
+// group whose options commit through a plain setter call (View mode, Speed,
+// Timeline zoom); the On-roll group instead wires its buttons through the
+// existing set-on-roll-behavior data-action delegation directly (see
+// renderMobileSettingsFlyout) so it reuses that handler's own allow-list and
+// running-cinematic-clear logic rather than a second setter path.
+function mobileSeg(value, options, onSelect) {
+  return el("div", { class: "mobile-seg", role: "group" },
+    options.map(([v, label]) => el("button", {
+      type: "button",
+      class: value === v ? "is-active" : "",
+      "aria-pressed": value === v,
+      onClick: () => onSelect(v),
+      text: label,
+    })),
+  );
+}
+
+function mobileSettingsGroup(label, ...children) {
+  return el("div", { class: "mobile-group" },
+    el("div", { class: "mobile-group-label", text: label }),
+    ...children,
+  );
+}
+
+function mobileComfortRow(label, value, onToggle) {
+  return el("div", { class: "mobile-row" },
+    el("span", { text: label }),
+    el("button", { type: "button", class: "mobile-row-val", onClick: onToggle, text: value ? "On" : "Off" }),
+  );
+}
+
+// renderMobileSettingsFlyout(): every control routes through an existing
+// shared setter/delegated action — never a direct localStorage write
+// (T-02-12). Group order is locked (MOBP-05 ordering edge): View mode, On
+// roll, Speed, Timeline zoom, Comfort.
+function renderMobileSettingsFlyout() {
+  return el("div", { class: "mobile-flyout", role: "dialog", "aria-label": "Settings" },
+    el("h4", { text: "Settings" }),
+    el("div", { class: "mobile-flyout-divider" }),
+    mobileSettingsGroup(
+      "View mode",
+      mobileSeg(
+        app.mode,
+        [["playthrough", "Playthrough"], ["detail", "Details"]],
+        setMode,
+      ),
+    ),
+    mobileSettingsGroup(
+      "On roll",
+      el("div", { class: "mobile-seg", role: "group" },
+        [["cinematic", "Cinematic"], ["quick", "Skip"], ["pause", "Pause"]].map(([v, label]) => el("button", {
+          type: "button",
+          class: app.onRollBehavior === v ? "is-active" : "",
+          "aria-pressed": app.onRollBehavior === v,
+          "data-action": "set-on-roll-behavior",
+          "data-on-roll-behavior": v,
+          text: label,
+        })),
+      ),
+    ),
+    mobileSettingsGroup(
+      "Speed",
+      mobileSeg(
+        mobileSpeedMultiplier(),
+        [["0.5", "½×"], ["1", "1×"], ["2", "2×"], ["4", "4×"]],
+        setMobileSpeedMultiplier,
+      ),
+    ),
+    mobileSettingsGroup(
+      "Timeline zoom",
+      mobileSeg(
+        String(app.mobileTimelineZoom),
+        [["1", "1×"], ["2", "2×"], ["4", "4×"], ["8", "8×"]],
+        value => window.__bcfMobile.setMobileTimelineZoom(Number(value)),
+      ),
+    ),
+    mobileSettingsGroup(
+      "Comfort",
+      mobileComfortRow("Tap sky to pause", app.tapToPause, () => { setTapToPause(!app.tapToPause); render(); }),
+      mobileComfortRow("Haptics", app.haptics, () => { setHaptics(!app.haptics); render(); }),
+    ),
+  );
+}
+
+// renderMobileInfoFlyout(): story credit, the live STORY_LINKS constant
+// (never the prototype's hard-coded URLs — T-02-13/prohibition), and live
+// dataset counts read straight off app.data.story.
+function renderMobileInfoFlyout() {
+  const story = app.data.story;
+  return el("div", { class: "mobile-flyout", role: "dialog", "aria-label": "About" },
+    el("h4", { text: "About this visualization" }),
+    el("h2", { text: "Brockton's Celestial Forge" }),
+    el("div", { class: "mobile-flyout-credit" },
+      "Worm × Jumpchain crossover by ", el("b", { text: "LordRoustabout" }),
+    ),
+    el("div", { class: "mobile-flyout-divider" }),
+    mobileSettingsGroup(
+      "Read the source",
+      el("div", { class: "mobile-source-row" },
+        STORY_LINKS.map(link => el("a", {
+          href: link.href,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          text: `${link.label} ↗`,
+        })),
+      ),
+    ),
+    mobileSettingsGroup(
+      "Dataset",
+      el("div", { class: "mobile-flyout-dataset" },
+        el("div", { text: `${story.rolls.length} rolls · ${story.chapters.length} chapters` }),
+        el("div", { class: "muted", text: `${formatWords(story.total_words)} words` }),
+      ),
+    ),
+    el("button", {
+      type: "button",
+      class: "mobile-full-btn",
+      onClick: event => openMobileSurface("help", event.currentTarget),
+    }, el("span", { text: "Gestures & help" }), el("span", { text: "↗" })),
+  );
+}
+
+// The seven locked "How to play" gesture rows (UI-SPEC Copywriting
+// Contract) — icon glyph + bold lead-in + description, verbatim.
+const MOBILE_HELP_GESTURE_ROWS = [
+  ["👆", "Tap sky", "pause / resume."],
+  ["👆👆", "Double-tap sky", "snap to live edge."],
+  ["👈👉", "Swipe sky", "scrub by roll (haptic on each)."],
+  ["↔", "Drag scrubber", "direct scrub by word."],
+  ["🔄", "Rotate", "switches portrait ↔ landscape; state persists."],
+  ["⚙", "Settings", "speed, on-roll behavior, comfort."],
+  ["ⓘ", "About", "story credits, source links, gestures."],
+];
+
+// renderMobileHelpOverlay(): mounted inside .mobile-sky (D-19), never a
+// full-portrait overlay. Both the close button and the CTA dismiss through
+// the same markHelpSeen() + closeMobileSurface() pair.
+function renderMobileHelpOverlay() {
+  const dismiss = () => { markHelpSeen(); closeMobileSurface(); };
+  return el("div", { class: "mobile-help-overlay", role: "dialog", "aria-label": "Help" },
+    el("header", {},
+      el("div", {},
+        el("div", { class: "label", text: "Help & credits" }),
+        el("h1", { text: "Reading on mobile" }),
+      ),
+      el("button", { type: "button", class: "mobile-help-close", "aria-label": "Close", onClick: dismiss, text: "×" }),
+    ),
+    el("div", { class: "mobile-credit-block" },
+      el("div", { class: "title", text: "Brockton's Celestial Forge" }),
+      el("div", { class: "by" }, "by ", el("b", { text: "LordRoustabout" }), " · Worm × Jumpchain"),
+      el("div", { class: "mobile-source-row" },
+        STORY_LINKS.map(link => el("a", {
+          href: link.href,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          text: `${link.label} ↗`,
+        })),
+      ),
+    ),
+    el("h3", { text: "How to play" }),
+    el("div", { class: "mobile-help-gestures" },
+      MOBILE_HELP_GESTURE_ROWS.map(([icon, lead, rest]) => [
+        el("span", { class: "ico", text: icon }),
+        el("span", {}, el("b", { text: lead }), ` — ${rest}`),
+      ]),
+    ),
+    el("h3", { text: "Heads-up" }),
+    el("div", { class: "mobile-help-headsup" },
+      "Your bookmark, speed, and preferences survive a refresh — pick up where you left off. Haptics and tap-to-pause can be disabled in Settings → Comfort.",
+    ),
+    el("button", { type: "button", class: "mobile-got-it", onClick: dismiss, text: "Got it — read on" }),
   );
 }
 
@@ -3179,9 +3593,10 @@ function mobileDockMetaText() {
 
 // The top chip cluster (MOBP-01). Absolutely positioned 12px inset from the
 // sky's top/left/right (its containing block is `.mobile-app`, which the
-// prototype's `.app` equivalent gives `position: relative`). The help
-// button's 44x44 tap target is reserved as an empty spacer here — Plan
-// 02-04 fills it — so the layout never shifts when it lands.
+// prototype's `.app` equivalent gives `position: relative`). The 44x44 help
+// button (Plan 02-04) fills the slot Plan 02-01 reserved as an empty
+// spacer, at the same footprint, so the layout never shifted when it
+// landed.
 function renderMobileTopCluster() {
   const roll = lastRollAtWord(app.wordPos);
   return el("div", { class: "mobile-top-cluster" },
@@ -3189,7 +3604,13 @@ function renderMobileTopCluster() {
       el("div", { class: "mobile-chip", text: mobileChChipText() }),
       roll ? el("div", { class: "mobile-chip amber", text: mobileAmberChipText(roll) }) : null,
     ),
-    el("div", { class: "mobile-help-spacer", "aria-hidden": "true" }),
+    el("button", {
+      class: `mobile-icon-btn${app.mobileSurface === "help" ? " is-active" : ""}`,
+      type: "button",
+      "data-action": "mobile-open-help",
+      "aria-label": "Help",
+      title: "Gestures & help",
+    }, mobileHelpIcon()),
   );
 }
 
@@ -3530,6 +3951,18 @@ document.body.addEventListener("click", event => {
     const currentIndex = MOBILE_SPEED_RUNGS.findIndex(([label]) => label === currentLabel);
     const nextIndex = (currentIndex + 1) % MOBILE_SPEED_RUNGS.length;
     setMobileSpeedMultiplier(MOBILE_SPEED_RUNGS[nextIndex][0]);
+    event.preventDefault();
+  } else if (action === "mobile-open-settings") {
+    openMobileSurface("settings", target);
+    event.preventDefault();
+  } else if (action === "mobile-open-info") {
+    openMobileSurface("info", target);
+    event.preventDefault();
+  } else if (action === "mobile-open-help") {
+    openMobileSurface("help", target);
+    event.preventDefault();
+  } else if (action === "mobile-close-surface") {
+    closeMobileSurface();
     event.preventDefault();
   }
 });
