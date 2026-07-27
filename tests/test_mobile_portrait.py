@@ -58,6 +58,7 @@ def _page_with_console_capture(
 
 PHONE_PORTRAIT = {"width": 390, "height": 844}
 PHONE_PORTRAIT_SMALL = {"width": 320, "height": 568}
+PHONE_LANDSCAPE = {"width": 844, "height": 390}
 
 DEFAULT_STORAGE = {
     "bcf:preview-port-storage-version": "3",
@@ -1258,5 +1259,40 @@ def test_first_run_help_auto_opens_once(tmp_path):
             page.click(".mobile-dock-now")
             assert console_messages == []
             page.close()
+
+
+def test_landscape_fallback_is_unchanged(tmp_path):
+    # 02-05 phase-close proof: D-12's interim landscape fallback (desktop
+    # shell + portrait banner + Phase-1 gesture probe) must survive this
+    # whole phase byte-for-byte — Phase 3 replaces it with
+    # renderMobileLandscape(), not this plan. The portrait surface this
+    # phase built must never mount at a landscape viewport.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+
+            assert page.evaluate("window.__bcfLayoutMode") == "landscape"
+
+            # Desktop shell root still mounts (renderAppShell(), not
+            # renderMobilePortrait()) with its portrait-banner safety net
+            # visible.
+            expect(page.locator(".app")).to_be_visible()
+            expect(page.locator(".portrait-banner")).to_be_visible()
+
+            # Phase 1's gesture probe (F-01) is still attached in every
+            # non-desktop layout mode, including the landscape fallback.
+            assert page.evaluate("document.querySelector('.mobile-gesture-probe') != null") is True
+
+            # The portrait surface this phase built must never mount here.
+            assert page.evaluate("document.querySelector('.mobile-app')") is None
+
+            assert console_messages == []
+            browser.close()
 
             browser.close()
