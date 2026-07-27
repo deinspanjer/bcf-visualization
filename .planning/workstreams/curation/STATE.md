@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 1
-current_plan: 3
+current_plan: 4
 status: executing
-stopped_at: Completed 01-02-PLAN.md — chapter-alignment drift root-caused and resolved per Dre's decision; verify.py results triaged (known-accepted gap, not forced green)
-last_updated: "2026-07-27T00:00:00Z"
+stopped_at: Completed 01-03-PLAN.md — regime-tagged exemplar index built, deterministic same-regime retrieval added, wired into pipeline DAG/manifest; full pytest confirms only the 5 pre-existing known-accepted failures (no new regressions) once a transient 1Password commit-signing wedge cleared
+last_updated: "2026-07-27T00:24:55.350Z"
 last_activity: 2026-07-27
-last_activity_desc: Plan 01-02 complete
+last_activity_desc: Plan 01-03 complete
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
 workstream: curation
 created: 2026-07-26
 ---
@@ -24,15 +24,15 @@ created: 2026-07-26
 
 **Status:** Executing Phase 1
 **Current Phase:** 1
-**Current Plan:** 3
-**Last Activity:** 2026-07-27 — Plan 01-02 complete
-**Last Activity Description:** Plan 01-02 complete
+**Current Plan:** 4
+**Last Activity:** 2026-07-27 — Plan 01-03 complete
+**Last Activity Description:** Plan 01-03 complete
 
 ## Progress
 
 **Phases Complete:** 0
-**Plans Complete:** 2 / 4
-**Current Plan:** 3
+**Plans Complete:** 3 / 4
+**Current Plan:** 4
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ created: 2026-07-26
 |------|----------|-------|-------|
 | 01-01 | 50 min | 3 tasks (1 checkpoint:decision) | 8 tracked files + 13 gitignored derived files |
 | 01-02 | 165 min | pre-task + 3 tasks (1 checkpoint, resolved after read-only investigation) | 3 tracked files + gitignored derived files regenerated twice |
+| Phase 1 P03 | 60min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -55,10 +56,13 @@ created: 2026-07-26
 - [01-02]: 5-chapter alignment-fingerprint drift (100, 104, 109, 112, 114) root-caused via an isolated, read-only experiment (reconstructed pre-refresh epub from `data/private-source` git history, compared with/without the ch95.5 fix) to the Dre-approved ch95.5 `mention_chapter_num` fix alone — not the epub refresh, not the 121.1 toggles. The problematic ch95.5 override predates the fingerprint stamps by ~1 week, meaning this is pre-existing curation drift the refresh surfaced, not introduced.
 - [01-02]: Dre reviewed each drifted chapter's diff interactively via `scripts/realign_chapters.py` (never `--yes`) and decided: accept 100, 109, 112, 114 (re-stamped); skip 104 (2 curated hits exceed the model's 1 predicted slot — needs a curator-TUI edit first, not a plain re-stamp).
 - [01-02]: `scripts/verify.py` does not exit 0 (5 pre-existing, unrelated Track B failures remain: `test_forge_curator.py` x4 unchanged, `test_roll_ordinal_contract.py` down from 9 to 1). Documented as a known-accepted gap per explicit instruction — not forced green by editing hand-curated data, not silently marked as satisfying the plan's must_have.
+- [Phase 1]: Exemplar index (data/derived/exemplar_index.json) built from the 118-chapter hand-curated corpus: regime tags sourced from chapter_facts.json's point_calculation_regime (D-01), ch97 dual-tagged {2,3} via regime_simulator.regime_for_chapter() for the boundary case (D-02), never a second regime implementation.
+- [Phase 1]: data/derived/data_package.json's runtime manifest (written by 'manifest' CLI) is scoped to a fixed webapp-runtime allowlist and does not list exemplar_index.json by design; manifest tracking for the new artifact comes from the dev-derived bundle's schema_version auto-discovery (_top_level_json_files), verified directly rather than assumed from PATTERNS.md.
 
 ### Pending Todos
 
 - Dre to manually review chapter 104's `rolls` array in the curator TUI (2 curated hit rolls vs. 1 predicted slot) before its alignment anchor can be safely re-stamped.
+- CINF-02 requirement is declared by both 01-03-PLAN.md and 01-04-PLAN.md; per the shared-ID gate it stays "Pending" in REQUIREMENTS.md until 01-04 also completes (ROADMAP success criterion 4 — corpus characterization report — is 01-04's job).
 
 ### Blockers/Concerns
 
@@ -80,6 +84,6 @@ created: 2026-07-26
 
 ## Session Continuity
 
-Last session: 2026-07-27T00:00:00Z
-Stopped at: Completed 01-02-PLAN.md — chapter-alignment drift root-caused and resolved per Dre's decision; verify.py results triaged (known-accepted gap, not forced green)
-Resume file: .planning/workstreams/curation/phases/01-epub-refresh-exemplar-mining/01-03-PLAN.md
+Last session: 2026-07-27T00:24:55.339Z
+Stopped at: Completed 01-03-PLAN.md — regime-tagged exemplar index built, deterministic same-regime retrieval added, wired into pipeline DAG/manifest; full pytest confirms only the 5 pre-existing known-accepted failures (no new regressions) once a transient 1Password commit-signing wedge cleared
+Resume file: .planning/workstreams/curation/phases/01-epub-refresh-exemplar-mining/01-04-PLAN.md
