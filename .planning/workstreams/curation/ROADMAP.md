@@ -20,7 +20,7 @@ Within this workstream, phases are strictly sequential — each stage's correctn
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Epub Refresh & Exemplar Mining** - Latest chapters hydrated, pipeline green, regime-tagged exemplar index from the 118-chapter corpus
+- [x] **Phase 1: Epub Refresh & Exemplar Mining** - Latest chapters hydrated, pipeline green, regime-tagged exemplar index from the 118-chapter corpus (completed 2026-07-26)
 - [ ] **Phase 2: Mechanical Verifier** - Deterministic quote/word-position/perk-name verification baselined at 100% on hand-curated chapters
 - [ ] **Phase 3: Provenance Schema & Agent Curation Pipeline** - Provenance field rewrite, per-chapter curation agent, confidence gate, overrides/proposals routing
 - [ ] **Phase 4: Proposal Review & Full Batch Run** - Forge Curator proposal review flow plus the full batch over remaining chapters
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Epub Refresh & Exemplar Mining | 4/4 | In Progress|  |
+| 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 0/TBD | Not started | - |
 | 3. Provenance Schema & Agent Curation Pipeline | 0/TBD | Not started | - |
 | 4. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
