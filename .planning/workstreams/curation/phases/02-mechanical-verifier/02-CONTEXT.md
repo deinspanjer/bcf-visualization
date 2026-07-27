@@ -52,6 +52,17 @@ Any candidate curation can be judged true or false by deterministic code, with t
 - **D-09:** Ship both an importable Python API (the structured per-roll result Phase 3 imports directly) and a CLI that writes a human/CI-readable JSON report. The API is the contract; the report is a convenience. **Not** wired into `scripts/pipeline.py` and **not** manifest-registered — this is a QA instrument, not a pipeline input, and coupling it to the DAG would drag verification into every data regen. This deliberately differs from Phase 1's exemplar-index decision (D-03 there), because that artifact *is* a downstream input and this one is not.
 - **D-10:** The 100% baseline is enforced by a pytest test that runs the verifier over the entire hand-curated corpus and asserts zero `fail` outcomes (`no_evidence` permitted per D-05). The test must skip with an explicit reason when the gitignored epub is absent, so the suite stays runnable without private source — but the phase gate requires a run with the epub present, and the recorded baseline numbers (pass / no_evidence / fail counts) go in the SUMMARY.
 
+### Perk-name gap resolution (Dre, 2026-07-26, post-research)
+
+- **D-11:** Research measured that only ~80.8% of the corpus's 120 perk-name mentions resolve through the ladder from a roll object alone (88.3% when `jump` is cross-referenced via `obtained_perks.json`, which stops at ch 119.5 and so will not cover Phase 3's target chapters). **14 names never resolve** — genuine gaps in `data/manual/perk_aliases.json` / the perk directory, concentrated in chapter 92's Transformers sub-instances.
+
+  **Dre's decision: fix the data first.** The missing perks/aliases are added BEFORE the verifier's baseline is established, so success criterion 1's "100%" is literally true rather than allowlisted around. Consequences the planner must honor:
+  - This is a **hand-curated data edit** (`data/manual/perk_aliases.json` is hand-curated) — therefore **curation authority applies**: Dre approves the additions, an executor never writes them autonomously. Structure this as a `checkpoint:decision` task (or a small batch of them) presenting each unresolved name with its evidence, ahead of any verifier-baseline task.
+  - The data fix is a **prerequisite wave**, not a cleanup afterthought — the verifier's corpus baseline test (D-10) is meaningless until it lands.
+  - If, after the fix, any name still fails to resolve, that is a checkpoint for Dre — **not** grounds to weaken the check or to edit `chapter_roll_overrides.json` (D-08 still governs).
+  - Derived artifacts affected by an alias change (e.g. the perk directory) are regenerated through the existing pipeline, never hand-edited.
+  — **Reversibility:** reversible — alias additions are additive data rows, removable without touching consumers.
+
 ### Claude's Discretion
 
 - Name and location of the extracted tokenizer module, and of the verifier module/CLI
