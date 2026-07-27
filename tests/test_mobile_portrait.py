@@ -202,6 +202,22 @@ def _dense_rolls_facts(site):
     return json.loads(facts_path.read_text())
 
 
+def _tiny_default_facts(site):
+    facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+    return json.loads(facts_path.read_text())
+
+
+def _facts_total_words(facts: dict) -> int:
+    # Mirrors web/app.js buildStory()'s total_words: the last chapter's
+    # cumulative_words_through_chapter. app.js itself is an ES module (loaded
+    # `<script type="module">`), so its top-level `app` binding is NOT
+    # reachable from page.evaluate() (module scope, not the global realm) —
+    # this reads the same value from the source-of-truth fixture instead of
+    # querying the page for it.
+    chapters = facts.get("chapters", [])
+    return chapters[-1]["cumulative_words_through_chapter"] if chapters else 0
+
+
 def _long_perk_roll_word(facts: dict) -> int:
     for chapter in facts.get("chapters", []):
         for roll in chapter.get("rolls", []):
@@ -706,6 +722,143 @@ def test_bin_threshold_and_size_boundaries(tmp_path):
             assert console_messages == []
             browser.close()
 
+
+def test_rail_scrub_zoom_aware(tmp_path):
+    # MOBP-03: every zoom level (1x/2x/4x/8x) lands the playhead on the word
+    # under the finger, including auto-panned positions, through the single
+    # attachRailScrub input path (D-17) — no second raw pointer listener.
+    #
+    # web/app.js is loaded `<script type="module">`, so its top-level `app`
+    # binding is module-scoped, NOT reachable from page.evaluate()'s global
+    # realm — every assertion below reads the resulting word position via
+    # the `bcf:bookmark:word_position` localStorage key (written
+    # synchronously by persistBookmarkNow() on a rail press's pointerup,
+    # i.e. attachRailScrub's onScrubEnd) rather than a bare `app.wordPos`,
+    # and reads total_words from the staged package's own JSON rather than
+    # `app.data.story.total_words`. window.__bcfMobile is a real `window`
+    # property (not module-scoped) and IS reachable directly.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        total_words = _facts_total_words(_tiny_default_facts(site))
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            def load(bookmark, zoom=1):
+                storage = {
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": str(bookmark),
+                    "bcf:timeline-zoom": str(zoom),
+                }
+                return _page_with_console_capture(browser, site, viewport=PHONE_PORTRAIT, storage=storage)
+
+            def rail_click_at_fraction(page, fraction):
+                rail_box = page.locator(".mobile-rail").bounding_box()
+                assert rail_box is not None
+                x = rail_box["x"] + rail_box["width"] * fraction
+                y = rail_box["y"] + rail_box["height"] / 2
+                page.mouse.move(x, y)
+                page.mouse.down()
+                page.mouse.up()
+                page.wait_for_timeout(50)
+                return int(page.evaluate("localStorage.getItem('bcf:bookmark:word_position')"))
+
+            for zoom in (1, 2, 4, 8):
+                # A single press at 25% of the rail from a seeded starting
+                # word (50% of the story) lands within 1 word of the
+                # independently-computed expected target.
+                page, console_messages = load(5000, zoom)
+                start_pct = (5000 / total_words) * 100
+                expected = page.evaluate(
+                    "([startPct, zoom, total]) => { "
+                    "const panPct = window.__bcfMobile.panOffsetForPlayhead(startPct, zoom); "
+                    "const innerFrac = window.__bcfMobile.mobileInnerFraction(0.25, zoom, panPct); "
+                    "return Math.round(innerFrac * total); }",
+                    [start_pct, zoom, total_words],
+                )
+                actual = rail_click_at_fraction(page, 0.25)
+                assert abs(actual - expected) <= 1
+                assert console_messages == []
+                page.close()
+
+                # Extreme left (seeded at word 0, panPct forced to 0 at every
+                # zoom since startPct=0) lands exactly on word 0.
+                page, console_messages = load(0, zoom)
+                assert rail_click_at_fraction(page, 0.0) == 0
+                assert console_messages == []
+                page.close()
+
+                # Extreme right (seeded at total_words, panPct forced to its
+                # (zoom-1)*100 ceiling) lands exactly on total_words.
+                page, console_messages = load(total_words, zoom)
+                assert rail_click_at_fraction(page, 1.0) == total_words
+                assert console_messages == []
+                page.close()
+
+            # --- Pure numeric assertions over window.__bcfMobile. ---
+            page, console_messages = load(5000, 1)
+            assert page.evaluate(
+                "[0, 25, 50, 100].every(pct => window.__bcfMobile.panOffsetForPlayhead(pct, 1) === 0)"
+            ) is True
+            assert page.evaluate("window.__bcfMobile.panOffsetForPlayhead(0, 4)") == 0
+            assert page.evaluate("window.__bcfMobile.panOffsetForPlayhead(100, 4)") == 300
+            assert page.evaluate("window.__bcfMobile.panOffsetForPlayhead(50, 4)") == 150
+
+            assert page.evaluate(
+                "() => { "
+                "const fracs = [-1, -0.5, 0, 0.25, 0.5, 1, 1.5, 2]; "
+                "const zooms = [1, 2, 4, 8]; "
+                "const pans = [0, 50, 100, 300, 700]; "
+                "for (const z of zooms) for (const p of pans) for (const f of fracs) { "
+                "const v = window.__bcfMobile.mobileInnerFraction(f, z, p); "
+                "if (v < 0 || v > 1) return false; } "
+                "return true; }"
+            ) is True
+            assert console_messages == []
+            page.close()
+
+            # --- Zoom 4x: rail inner's inline width is 400% and the hint
+            #     row's right span begins with "4× zoom · ". ---
+            page, console_messages = load(5000, 4)
+            assert page.evaluate(
+                "document.querySelector('.mobile-rail-inner').style.width"
+            ) == "400%"
+            hint_right = page.locator(".mobile-hint-row span").nth(1).text_content()
+            assert hint_right.startswith("4× zoom · ")
+            assert console_messages == []
+            page.close()
+
+            # --- Exactly one .mobile-rail element, and a forced layout-mode
+            #     round trip (desktop -> portrait) never leaves a stale
+            #     duplicate scrub listener behind: a single press after the
+            #     round trip still lands exactly on the single-press
+            #     expected target (a second, competing listener would double-
+            #     fire onScrub and desync the result). ---
+            page, console_messages = load(5000, 1)
+            assert page.evaluate("document.querySelectorAll('.mobile-rail').length") == 1
+            page.set_viewport_size({"width": 1400, "height": 900})  # desktop: tears down portrait gestures
+            page.wait_for_timeout(100)
+            page.set_viewport_size(PHONE_PORTRAIT)  # back to portrait: re-attaches exactly once
+            page.wait_for_timeout(100)
+            assert page.evaluate("document.querySelectorAll('.mobile-rail').length") == 1
+            # wordPos hasn't moved since the seeded bookmark (5000) — no
+            # scrub has happened yet on this page, and the round trip itself
+            # doesn't touch wordPos — so the seeded value is still current.
+            start_pct = (5000 / total_words) * 100
+            expected = page.evaluate(
+                "([startPct, total]) => { "
+                "const panPct = window.__bcfMobile.panOffsetForPlayhead(startPct, 1); "
+                "const innerFrac = window.__bcfMobile.mobileInnerFraction(0.25, 1, panPct); "
+                "return Math.round(innerFrac * total); }",
+                [start_pct, total_words],
+            )
+            actual = rail_click_at_fraction(page, 0.25)
+            assert abs(actual - expected) <= 1
+            assert console_messages == []
+            page.close()
+
+            browser.close()
 
 
 def test_portrait_empty_and_partial_states(tmp_path):

@@ -2885,6 +2885,12 @@ function setMobileTimelineZoom(value) {
   if (![1, 2, 4, 8].includes(value)) return; // allow-list; ignore anything else
   app.mobileTimelineZoom = value;
   store(LS_MOBILE_TIMELINE_ZOOM, value);
+  // A zoom change is a sanctioned structural render (like the dock speed
+  // cycle) — the rail's inner width AND its bins (pxWidth = railWidth *
+  // zoom) both depend on it, so recompute bins before the rebuild rather
+  // than leaving stale bins from the previous zoom on screen for one frame.
+  recomputeMobileRailBins();
+  render();
 }
 function markHelpSeen() {
   app.helpSeen = true;
@@ -3401,6 +3407,14 @@ function attachMobilePortraitGestures() {
     app.mobileRailTeardown();
     app.mobileRailTeardown = null;
   }
+  // Defensive teardown discipline (same as the two gesture slots above):
+  // disconnect any prior rail ResizeObserver before a re-attach ever
+  // installs a new one, so a stale observer from a previous render can
+  // never pile up alongside the current one.
+  if (app.mobileRailResizeObserver) {
+    app.mobileRailResizeObserver.disconnect();
+    app.mobileRailResizeObserver = null;
+  }
   // An open overlay (Settings/About/Help, Plan 02-04) owns input while
   // shown — a tap landing on the sky underneath it must never bubble into a
   // pause toggle, so neither gesture surface attaches while it's open.
@@ -3449,6 +3463,35 @@ function attachMobilePortraitGestures() {
       },
       onScrubEnd: () => persistBookmarkNow(),
     });
+  }
+
+  // Rail width observer (MOBP-04, D-18): keeps app.mobileRailWidth current
+  // and recomputes bins on resize — coalesced through a single rAF, and
+  // replacing ONLY the rolls lane's children, never calling render(). A
+  // resize is not a structural-presence change; the sky/dock/chip DOM must
+  // stay untouched.
+  if (railEl && typeof ResizeObserver === "function") {
+    let rafId = null;
+    const ro = new ResizeObserver(entries => {
+      const cr = entries[0]?.contentRect;
+      if (!cr) return;
+      app.mobileRailWidth = Math.max(50, cr.width);
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        recomputeMobileRailBins();
+        const rollsLane = app.dom.mobileRailRollsLane;
+        if (rollsLane) {
+          rollsLane.replaceChildren(...renderMobileRailRollsLaneChildren());
+          // The active dot is rebuilt along with the bins — re-cache the
+          // ref so updateMobileActiveDotFrame() never writes into a node
+          // this resize just detached from the DOM.
+          app.dom.mobileActiveDot = rollsLane.querySelector(".mobile-roll-dot.active");
+        }
+      });
+    });
+    ro.observe(railEl);
+    app.mobileRailResizeObserver = ro;
   }
 }
 

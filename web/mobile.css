@@ -288,6 +288,7 @@
     height: 100%;
     transform-origin: 0 0;
     will-change: transform, width;
+    transition: transform 220ms ease;
   }
   .mobile-lane { position: relative; width: 100%; }
   .mobile-lane-chapters { height: 14px; }
