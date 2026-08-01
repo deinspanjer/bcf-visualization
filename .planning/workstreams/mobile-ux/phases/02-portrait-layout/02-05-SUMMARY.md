@@ -266,7 +266,30 @@ Test-first: `test_rail_drag_is_monotonic_at_every_zoom` was written before the f
 
 If Dre prefers to accept the original behavior instead, revert `ed59087` — the test is the only other thing it touches.
 
-**What still blocks the gate:** the iOS Safari device pass (the Android/Chrome pass does not satisfy it — see below), Dre's confirmation of item 5, and the persistent-idle-sky ruling (now weaker, see the 88% correction).
+### iOS Safari pass — DONE (2026-08-01), 4 defects found and fixed
+
+Ran on **Daniel's iPhone, iOS 18.5 / Safari 18.5** (viewport 440×760, dpr 3) over `ios-webkit-debug-proxy` + the target-based WebKit inspector protocol. iOS 12.2+ wraps every command in `Target.sendMessageToTarget`, which is why a plain CDP client gets silence; the session is also single-client, so Safari's own Inspector window must be closed for the proxy to attach.
+
+**What iOS confirmed that Android could not:**
+
+- **`svh` is load-bearing, and D-08 was right.** On device `100vh` = **842px** but `100svh` = `100dvh` = **760px** — the delta is Safari's URL bar. Had Phase 1 used `vh`, the shell would be 82px taller than the screen.
+- **`navigator.vibrate` is `undefined`** — D-11 confirmed on real hardware. Any haptic felt during the Android pass was Android-only.
+- Sky is exactly 60% of viewport (MOBP-01); safe-area insets read 0px with toolbars visible.
+
+**Defects found and fixed on device:**
+
+| # | Defect | Fix |
+|---|--------|-----|
+| 1 | Help CTA scrolled out of sight | `bf7cedc` — scrolling body, static footer CTA. Dre confirmed visible without scrolling on device. |
+| 2 | Dock buttons painted through the About/Settings panel (14px overlap; the locked `bottom: 152px` anchor assumed the prototype's shorter dock — real dock is 304px with its transport row 112–166px from the bottom) | `763cf5f` — panel scoped to `.mobile-sky` per D-19. **UI-SPEC deviation recorded**, Dre chose this over raising the anchor. |
+| 3 | Flyouts unescapable — no close button, control didn't toggle, and (regression from `763cf5f`) the backdrop no longer spanned the dock | `727e846` — backdrop restored to `.mobile-app` while the panel stays in the sky; `openMobileSurface` now toggles and reuses its history sentinel instead of stacking one per press. |
+| 4 | Whole app scrolled 82px, pushing the top chip cluster off screen — frozen `style.css:45` sets `body { min-height: 100vh }`, the LARGE viewport on iOS | `727e846` — overridden in the mobile block (frozen rule untouched), scoped to portrait so the landscape fallback's desktop shell stays scrollable until Phase 3. |
+
+Defect 3 is worth noting for process: fixing 2 introduced it, and only a *second* device pass caught it. Emulation found neither — both depend on the real dock height and real touch dismissal.
+
+All verified on device after the fix: `overflowPx: 0`, page not scrollable, top chips on screen, flyout 0px overlap with the transport row, tap-outside dismisses, second press toggles shut. Suite 33/33, desktop freeze intact.
+
+**What still blocks the gate:** Dre's confirmation of item 5 (sky letterboxing — measured and recommended for acceptance), the persistent-idle-sky ruling (now weaker, see the 88% correction), and a final re-walk of the portrait surface on device now that four fixes have landed since his last full pass.
 
 **iOS still outstanding.** The 2026-08-01 hardware pass ran on Android/Chrome. The roadmap's Phase 2 note requires real iOS Safari verification specifically because that is where the dynamic-toolbar / `svh` behavior and safe-area insets differ, and where `navigator.vibrate` is a silent no-op (D-11) — none of which Android can evidence. Any haptic felt during the Android pass is Android-only and must not be read as iOS coverage. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
 
