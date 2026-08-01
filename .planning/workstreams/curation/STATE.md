@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2 — Mechanical Verifier
-current_plan: Not started
+current_phase: 2
+current_plan: 3
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-07-27T03:12:37.640Z"
-last_activity: 2026-07-26
-last_activity_desc: Phase 2 planning complete — 3 plans ready
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-08-01T17:42:01.421Z"
+last_activity: 2026-08-01
+last_activity_desc: 02-01 complete (tracer + unit tests); next up 02-03
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 workstream: curation
 created: 2026-07-26
 ---
@@ -22,17 +22,17 @@ created: 2026-07-26
 
 ## Current Position
 
-**Status:** Ready to execute
-**Current Phase:** 2 — Mechanical Verifier
-**Current Plan:** Not started
-**Last Activity:** 2026-07-26 — Phase 2 planning complete
-**Last Activity Description:** Phase 2 planning complete — 3 plans ready
+**Status:** Executing Phase 2
+**Current Phase:** 2
+**Current Plan:** 3 (02-03-PLAN.md, next up)
+**Last Activity:** 2026-08-01 — 02-01 complete (tracer + unit tests)
+**Last Activity Description:** 02-01 complete (tracer + unit tests); next up 02-03
 
 ## Progress
 
-**Phases Complete:** 1 / 1
-**Plans Complete:** 4 / 4
-**Current Plan:** 4 (final)
+**Phases Complete:** 1 / 2
+**Plans Complete:** 5 / 6
+**Current Plan:** 02-03 (final plan of Phase 2)
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ created: 2026-07-26
 | 01-02 | 165 min | pre-task + 3 tasks (1 checkpoint, resolved after read-only investigation) | 3 tracked files + gitignored derived files regenerated twice |
 | Phase 1 P03 | 60min | 3 tasks | 6 files |
 | Phase 1 P04 | 20min | 2 tasks | 1 files |
+| Phase 2 P01 | 25 min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,7 @@ created: 2026-07-26
 - [Phase 1]: data/derived/data_package.json's runtime manifest (written by 'manifest' CLI) is scoped to a fixed webapp-runtime allowlist and does not list exemplar_index.json by design; manifest tracking for the new artifact comes from the dev-derived bundle's schema_version auto-discovery (_top_level_json_files), verified directly rather than assumed from PATTERNS.md.
 - [01-04]: corpus-analysis-report.md authored from exemplar_index.json statistics only (no epub prose); multi-grab hits are 57.6% of all hits (34/59), the load-bearing fact for Phase 3 prompt design.
 - [01-04]: Task 2's manifest-registration check was corrected to the dev-derived bundle manifest (exemplar_index schema_version:1 confirmed there), not data_package.json's pages-runtime manifest — consistent with Plan 01-03's already-made architectural decision to exclude it from the runtime bundle.
+- [02-01]: Tier-2 tolerant-regex builder implemented as a character-walk over quote_text (not a re.escape()-then-.replace() chain), avoiding self-referential replacement collisions where a confusable's replacement text contains other confusable characters.
 
 ### Pending Todos
 
@@ -86,6 +88,6 @@ created: 2026-07-26
 
 ## Session Continuity
 
-Last session: 2026-07-27T01:33:33.699Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/workstreams/curation/phases/02-mechanical-verifier/02-CONTEXT.md
+Last session: 2026-08-01T17:42:01.412Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
