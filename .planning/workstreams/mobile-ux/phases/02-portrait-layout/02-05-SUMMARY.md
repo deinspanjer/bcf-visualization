@@ -236,7 +236,29 @@ Consequence: portrait's largest region (~60% of the screen) is empty except duri
 
 An earlier finding in this review that portrait playback and rail scrubbing were frozen was **an artifact of the automation environment and is withdrawn.** The Claude Browser pane runs its tab with `document.visibilityState === "hidden"`, so `requestAnimationFrame` never fires (measured: 0 frames in 1500ms). Playback advancement, cinematic completion, and the focus-animation lock release all ride that rAF tier. Nothing in the app was implicated. Recorded here so a later reader does not resurrect it as a real defect. **Corollary for future review sessions: the Browser pane cannot verify any animated or time-dependent behavior in this app — those need real hardware or a headed Playwright run.**
 
-**What still blocks the gate:** Dre's real-device walkthrough of items 3 and 5, plus a ruling on the empty-sky finding above. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
+### Third pass (2026-08-01) — measured on real hardware over USB/CDP
+
+Dre connected a **Pixel 10 Pro XL** (Android/Chrome 151) via USB debugging; measurements below were taken against the live tab through an `adb forward` CDP bridge (viewport 443×864, dpr 2.44, `layoutMode: portrait`, rAF confirmed at 59fps). Helper scripts are session-scratch only, not committed.
+
+**⚠ Correction to the "empty sky" finding above.** Measured over 30s of *real playback*: the sky camera is populated **88% of the time**, empty ~13%, with 17 cinematic transitions. The earlier "empty most of the time" characterization was an artifact of measuring while playback was frozen — a *paused* playhead sitting between rolls shows an empty sky, but during playback rolls arrive densely enough to keep it occupied. The accurate statement is narrower: portrait shows **transient per-roll cinematics only, with no persistent constellation context** — which is what Dre actually observed versus desktop's always-present carousel. Duty cycle is position-dependent (sampled around word 450–540k, a roll-dense stretch); sparser regions will read emptier. Dre's ruling on whether to add a persistent idle sky still stands open, but the case is weaker than first stated.
+
+**Item 5 — sky letterboxing: measured, looks intentional.** At 443×518 the sky SVG fills the region, and its 1.6:1 viewBox under `xMidYMid meet` draws content 443×277, leaving **121px of empty backdrop above and below** (~47% of the region combined). There is no seam or bar — the backdrop is uniform — and a phone screenshot during a Miss cinematic reads as deliberate cinematic framing, the beam descending into empty space as depth. Recommend confirming as-is; no mobile-specific viewBox crop.
+
+**Item 3 — rail auto-pan at zoom > 1: this is a DEFECT, not a taste question.** Driving a real trusted touch drag (`Input.dispatchTouchEvent`) monotonically left-to-right across the rail, sampling pan offset and word position at each step:
+
+| finger | zoom 4× pan | zoom 4× word | zoom 1× pan | zoom 1× word |
+|--------|-------------|--------------|-------------|--------------|
+| 30% | −8.58 | 398k | 0 | 815k |
+| 40% | 0 | **330k** ⬅ backward | 0 | 1.09M |
+| 50% | −3.68 | 340k | 0 | 1.36M |
+| 60% | −10 | 407k | 0 | 1.63M |
+| 70% | −29.9 | 543k | 0 | 1.90M |
+
+At 1× the mapping is exactly linear (each 10% of rail = 272k words = 10% of 2.72M). At 4× the first rightward move drives the playhead **68k words backward**, because each move recomputes auto-pan from the just-committed position, which shifts the content, which changes what the next finger position maps to — a feedback loop that makes the drag non-monotonic.
+
+This contradicts MOBP-03's literal wording ("scrubs word position **accurately** at every zoom level, **including auto-panned positions**"). `test_rail_scrub_zoom_aware` passes because it asserts **single discrete presses**, which are deterministic — the loop only manifests across successive moves within one drag. Likely fix: freeze the pan offset for the duration of a drag (capture at `pointerdown`, release at `pointerup`), which preserves auto-pan for playback and taps while making drags monotonic. **Recommend routing to gap closure (`/gsd-plan-phase 2 --gaps`) rather than treating as a gate ruling.**
+
+**What still blocks the gate:** Dre's ruling on the item-3 defect (fix now vs. accept), on the persistent-idle-sky question, and confirmation of item 5. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
 
 **On resume:** re-read this table before re-asking anything — items 1, 2, 4, and 6 are settled and must not be re-litigated. Only items 3 and 5 plus the overall approval remain open. If Dre's testing turns up changes, route them through `/gsd-plan-phase 2 --gaps` rather than editing plans in place.
 
