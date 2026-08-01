@@ -3348,6 +3348,16 @@ function renderMobilePortrait() {
       // first-run empty-storage load must still be able to click — stays
       // visible and operable while it's open.
       app.mobileSurface === "help" ? renderMobileHelpOverlay() : null,
+      // Settings/About mount here too, under the same D-19 rationale as Help.
+      // They previously mounted as the last child of .mobile-app with a fixed
+      // `bottom: 152px`, which assumed the prototype's shorter dock: on a real
+      // iPhone (440x760) the dock is 304px tall and its transport row sits
+      // 112-166px from the bottom, so a 152px anchor landed inside that band
+      // and the buttons — z-index 10 against the flyout's 9 — painted through
+      // the panel. Scoping the surfaces to the sky removes the collision
+      // structurally instead of re-tuning the constant, and keeps the dock
+      // operable while a surface is open (the backdrop no longer covers it).
+      renderMobileSurface(),
     ),
     el("div", { class: "mobile-dock" },
       el("div", { class: "mobile-dock-transport" },
@@ -3389,15 +3399,14 @@ function renderMobilePortrait() {
       renderMobileScrubber(),
       renderMobileHintRow(),
     ),
-    renderMobileSurface(),
   );
 }
 
 // renderMobileSurface(): the exclusive Settings/About stack — returns null
-// when neither is open, or the backdrop + flyout pair when one is (mounted
-// as the last child of .mobile-app so it layers above the dock). The Help
-// overlay is NOT rendered here — see the D-19 comment above; it mounts
-// inside .mobile-sky instead of getting its own backdrop.
+// when neither is open, or the backdrop + flyout pair when one is. Mounted
+// inside .mobile-sky (D-19), the same containing block as the Help overlay,
+// so a flyout can never geometrically collide with the dock and the backdrop
+// never covers the transport controls.
 function renderMobileSurface() {
   if (app.mobileSurface === "settings") {
     return [

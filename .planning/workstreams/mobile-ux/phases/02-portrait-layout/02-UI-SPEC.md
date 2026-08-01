@@ -61,8 +61,10 @@ The prototype's approved visual design was authored as pixel-precise HUD chrome,
 | Cluster-bin merge threshold | `5px` (MOBP-04) | `MIN_DOT_SPACING_PX` in `scrubber.jsx` |
 | Rail scrub step | `56px` per roll (gesture contract, MOBP-02/03) | `gesture-contract.html` `G.SCRUB_STEP_PX` |
 | Flyout padding | `14px 16px` | `.flyout` |
-| Flyout position (portrait) | `left/right: 14px`, `bottom: 152px` | `.flyout` portrait media rule |
+| Flyout position (portrait) | `left/right: 14px`, ~~`bottom: 152px`~~ → **`bottom: 14px` within `.mobile-sky`** | `.flyout` portrait media rule — **superseded 2026-08-01, see note below** |
 | Help overlay padding | `max(20px, env(safe-area-inset-top))` top, `20px` sides, `max(20px, env(safe-area-inset-bottom))` bottom | `.help-overlay` |
+
+> **Deviation (2026-08-01, approved by Dre during the iOS gate pass).** The locked `bottom: 152px` flyout anchor was measured against the full portrait surface and assumed the prototype's shorter dock. On a real iPhone (Safari 18.5, 440×760) the dock renders 304px tall with its transport row 112–166px from the bottom, so the 152px anchor landed *inside* that band: the flyout ended at y=608 against a transport row at y=594–648, and because the row carries `z-index: 10` to the flyout's `9`, all four dock buttons painted through the panel (14px overlap, confirmed by hit-test on device). Settings and About are now mounted inside `.mobile-sky` under the same D-19 rationale as the Help overlay and anchored `bottom: 14px` within it, which removes the collision structurally rather than re-tuning a constant, keeps the dock operable while a surface is open, and makes all three surfaces consistent. Dre chose this over raising the anchor.
 
 **Sky/dock split:** `.sky { flex: 1 1 60%; min-height: 0; }` over `.dock { flex: 0 0 auto; }` inside a `.mobile-app` root using `flex-direction: column` — this is the MOBP-01 acceptance ratio, expressed via `flex-basis`, not a fixed height, so the dock's actual height is content-driven and the sky absorbs remaining space.
 
