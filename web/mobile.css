@@ -571,7 +571,15 @@
     display: flex;
     flex-direction: column;
     padding: max(20px, var(--safe-top)) 20px max(20px, var(--safe-bottom));
+    /* The overlay itself does not scroll — .mobile-help-body does, so the
+       header and the CTA stay put and the CTA reserves its own space instead
+       of floating over the content. */
+    overflow: hidden;
+  }
+  .mobile-help-body {
+    flex: 1 1 auto;
     overflow-y: auto;
+    min-height: 0;
   }
   .mobile-help-overlay header {
     display: flex;
@@ -635,7 +643,10 @@
     line-height: 1.5;
   }
   .mobile-got-it {
-    margin-top: auto;
+    /* Static footer outside the scroll container — always visible, never
+       overlapping the body text above it. */
+    flex: 0 0 auto;
+    margin-top: 12px;
     padding: 12px;
     background: linear-gradient(180deg, rgba(92, 244, 255, 0.95), rgba(92, 244, 255, 0.78));
     color: #03080d;

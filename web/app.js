@@ -3559,6 +3559,11 @@ function renderMobileHelpOverlay() {
       ),
       el("button", { type: "button", class: "mobile-help-close", "aria-label": "Close", onClick: dismiss, text: "×" }),
     ),
+    // The body scrolls; the header and the CTA below it do not. Scoped to the
+    // sky region (D-19), the content is taller than the available height on
+    // every phone-sized viewport, so a CTA in normal flow scrolls out of sight
+    // and first-run users cannot see how to dismiss.
+    el("div", { class: "mobile-help-body" },
     el("div", { class: "mobile-credit-block" },
       el("div", { class: "title", text: "Brockton's Celestial Forge" }),
       el("div", { class: "by" }, "by ", el("b", { text: "LordRoustabout" }), " · Worm × Jumpchain"),
@@ -3581,6 +3586,7 @@ function renderMobileHelpOverlay() {
     el("h3", { text: "Heads-up" }),
     el("div", { class: "mobile-help-headsup" },
       "Your bookmark, speed, and preferences survive a refresh — pick up where you left off. Haptics and tap-to-pause can be disabled in Settings → Comfort.",
+    ),
     ),
     el("button", { type: "button", class: "mobile-got-it", onClick: dismiss, text: "Got it — read on" }),
   );
