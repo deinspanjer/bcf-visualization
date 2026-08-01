@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Landscape Layout
 status: executing
-stopped_at: Phase 3 context gathered — D-20..D-36 recorded
-last_updated: "2026-08-01T21:25:28.132Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-08-01T23:59:16.975Z"
 last_activity: 2026-08-01
-last_activity_desc: Phase 2 complete, transitioned to Phase 3
+last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** The visualization stays correct and trustworthy: the frozen desktop experience must not regress, and agent-curated data must never silently degrade the hand-curated evidence corpus.
-**Current focus:** Phase 2 — Portrait Layout
+**Current focus:** Phase 3 — Landscape Layout
 
 ## Current Position
 
-Phase: 3 — Landscape Layout
-Plan: Not started
+Phase: 3 (Landscape Layout) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-01 — Phase 2 complete, transitioned to Phase 3
+Last activity: 2026-08-01 — Phase 3 execution started
 
-Progress: [█████████░] 89%
+Progress: [████████░░] 77%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [█████████░] 89%
 | Phase 02 P02 | 20min | 2 tasks | 3 files |
 | Phase 02 P03 | 50min | 2 tasks | 4 files |
 | Phase 02 P04 | 66min | 2 tasks | 3 files |
+| Phase 3 P1 | 40min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 02-03: added no-rolls test fixture (chapters present, zero rolls) to exercise the UI-SPEC empty-zero-rolls truth, since tiny-default carries real rolls elsewhere
 - [Phase ?]: 02-04: D-19 Help overlay scoped to .mobile-sky only (not full-portrait) so the dock stays operable while it auto-opens on first run — carried to the Phase B gate
 - [Phase ?]: 02-04: .mobile-dock bottom-aligned its flex content and .mobile-dock-transport gained a higher z-index than the flyout/backdrop stack, fixing a real overlap between the locked Settings/About flyout position and the dock's flex-grown height — tension carried to the Phase B gate
+- [Phase ?]: 03-01: mobileFieldLogPrincipalName generalizes the focal-label perk expression to every outcome (not just hit) instead of special-casing Miss text
+- [Phase ?]: 03-01: updateMobileFieldLogFrame writes the header's left constellation label and the cinema-scrub count span every frame (not only the header count span) so neither goes stale between list-rebuild keys
+- [Phase ?]: 03-01: app.mobileRailWidthLayout is added but not written to yet — Plan 02's ResizeObserver sets it; until then every structural render uses the layout-appropriate default
 
 ### Pending Todos
 
@@ -120,6 +124,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-01T20:31:47.340Z
-Stopped at: Phase 3 context gathered — D-20..D-36 recorded
-Resume file: .planning/workstreams/mobile-ux/phases/03-landscape-layout/03-CONTEXT.md
+Last session: 2026-08-01T23:59:16.964Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None
