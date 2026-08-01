@@ -1296,3 +1296,87 @@ def test_landscape_fallback_is_unchanged(tmp_path):
             browser.close()
 
             browser.close()
+
+
+def test_rail_drag_is_monotonic_at_every_zoom(tmp_path):
+    # MOBP-03 regression: a CONTINUOUS drag (one pointerdown, several
+    # pointermoves) must move the playhead in the direction of the finger at
+    # every zoom level.
+    #
+    # test_rail_scrub_zoom_aware above only exercises single discrete presses,
+    # which are deterministic — each press captures its own auto-pan and
+    # commits once. The defect this test pins lives strictly BETWEEN moves of
+    # one drag: recomputing auto-pan per move feeds the position just
+    # committed back into the mapping, shifting the rail content under a
+    # finger that has not moved, so the next move lands somewhere unrelated.
+    # Measured on a Pixel 10 Pro XL at 4x before the fix, a monotonic
+    # rightward drag drove the playhead 68k words BACKWARD (398k -> 330k)
+    # before recovering.
+    #
+    # Mid-drag the bookmark key is not yet written (persistBookmarkNow runs on
+    # onScrubEnd), so this reads the live playhead marker's left% instead,
+    # which tracks wordPos through the incremental update tier.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        total_words = _facts_total_words(_tiny_default_facts(site))
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            for zoom in (1, 2, 4, 8):
+                page, console_messages = _page_with_console_capture(
+                    browser,
+                    site,
+                    viewport=PHONE_PORTRAIT,
+                    storage={
+                        "bcf:preview-port-storage-version": "3",
+                        "bcf:bookmark:word_position": str(total_words // 2),
+                        "bcf:timeline-zoom": str(zoom),
+                        "bcf:help-seen": "true",
+                    },
+                )
+
+                rail_box = page.locator(".mobile-rail").bounding_box()
+                assert rail_box is not None
+                y = rail_box["y"] + rail_box["height"] / 2
+
+                def playhead_pct():
+                    raw = page.evaluate(
+                        "() => document.querySelector('.mobile-playhead')?.style.left ?? null"
+                    )
+                    assert raw is not None, "portrait playhead marker not found"
+                    return float(raw.rstrip("%"))
+
+                def x_at(fraction):
+                    return rail_box["x"] + rail_box["width"] * fraction
+
+                # One drag: press at 30%, then sweep right without lifting.
+                page.mouse.move(x_at(0.30), y)
+                page.mouse.down()
+                page.wait_for_timeout(60)
+                observed = [playhead_pct()]
+                for fraction in (0.40, 0.50, 0.60, 0.70):
+                    page.mouse.move(x_at(fraction), y)
+                    page.wait_for_timeout(60)
+                    observed.append(playhead_pct())
+                page.mouse.up()
+
+                # Rightward drag => playhead never goes backward. Tolerance
+                # absorbs sub-pixel rounding in the percentage readback only.
+                for earlier, later in zip(observed, observed[1:]):
+                    assert later >= earlier - 0.01, (
+                        f"zoom {zoom}x: rightward drag moved the playhead backward "
+                        f"({earlier:.3f}% -> {later:.3f}%) across the full sweep {observed}"
+                    )
+
+                # And it must actually travel — a frozen mapping would be
+                # monotonic too, but useless.
+                assert observed[-1] > observed[0] + 1.0, (
+                    f"zoom {zoom}x: drag barely moved the playhead: {observed}"
+                )
+
+                assert console_messages == []
+                page.close()
+
+            browser.close()

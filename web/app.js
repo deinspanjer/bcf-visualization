@@ -149,6 +149,10 @@ const app = {
   mobileRailWidth: 350,
   mobileRailBins: [],
   mobileRailResizeObserver: null,
+  // Auto-pan offset frozen for the duration of one rail drag (null when no
+  // drag is in flight). See the onScrub callback for why it must not be
+  // recomputed per move.
+  mobileScrubPanPct: null,
   // Session-only (never persisted): the first-run sky tap hint mounts once
   // per page load, tracked here rather than localStorage since it's a
   // per-session affordance, not a durable preference.
@@ -3834,6 +3838,10 @@ function attachMobilePortraitGestures() {
     app.mobileRailTeardown();
     app.mobileRailTeardown = null;
   }
+  // A structural render tears the rail listeners down mid-drag without ever
+  // firing onScrubEnd, so drop any frozen pan here too — otherwise the next
+  // drag would inherit a stale offset from the abandoned one.
+  app.mobileScrubPanPct = null;
   // Defensive teardown discipline (same as the two gesture slots above):
   // disconnect any prior rail ResizeObserver before a re-attach ever
   // installs a new one, so a stale observer from a previous render can
@@ -3881,14 +3889,27 @@ function attachMobilePortraitGestures() {
       onScrub: viewportFraction => {
         if (!app.data) return null;
         const total = app.data.story.total_words || 1;
-        const playheadPctRaw = (app.wordPos / total) * 100;
-        const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
-        const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, panPct);
+        // Freeze the auto-pan offset for the whole drag, capturing it on the
+        // first callback (pointerdown) and clearing it in onScrubEnd.
+        // Recomputing per move feeds the position this drag just committed
+        // back into the mapping: the content shifts under the stationary
+        // finger, so the next move lands somewhere unrelated. Measured at 4x
+        // on a Pixel 10 Pro XL, a monotonic rightward drag drove the playhead
+        // 68k words BACKWARD before recovering. Auto-pan still applies to
+        // playback and to taps — each tap is its own drag and re-captures.
+        if (app.mobileScrubPanPct == null) {
+          const playheadPctRaw = (app.wordPos / total) * 100;
+          app.mobileScrubPanPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+        }
+        const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, app.mobileScrubPanPct);
         const target = Math.round(innerFrac * total);
         setWordPos(target);
         return lastRollAtWord(target);
       },
-      onScrubEnd: () => persistBookmarkNow(),
+      onScrubEnd: () => {
+        app.mobileScrubPanPct = null;
+        persistBookmarkNow();
+      },
     });
   }
 
