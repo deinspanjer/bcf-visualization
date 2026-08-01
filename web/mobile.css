@@ -616,12 +616,18 @@
   }
   .mobile-help-gestures {
     display: grid;
-    grid-template-columns: 32px 1fr;
+    /* 44px, not 32px: the two-glyph rows ("double-tap", "swipe") are a single
+       span, and at 18px a pair overflows a 32px track and wraps to two lines. */
+    grid-template-columns: 44px 1fr;
     gap: 8px 12px;
     font-size: 12px;
     line-height: 1.45;
   }
-  .mobile-help-gestures .ico { font-size: 18px; text-align: center; }
+  .mobile-help-gestures .ico {
+    font-size: 18px;
+    text-align: center;
+    white-space: nowrap;
+  }
   .mobile-help-gestures b { color: var(--cyan); font-family: var(--mono); font-size: 11px; }
   .mobile-help-headsup {
     font-size: 12px;
