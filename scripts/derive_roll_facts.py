@@ -2410,7 +2410,12 @@ def main() -> None:
                     )
                 ov_origin = row.get("_override_origin") if isinstance(row, dict) else None
                 if ov_origin is not None:
-                    roll_key = f"curator:{source_idx:04d}.{ov_origin}"
+                    # Chapter-scoped: source_idx alone collides across chapters
+                    # once the curator roll log is exhausted (source_idx==0 for
+                    # every chapter past the log's coverage). Chapter numbers
+                    # can themselves contain dots (e.g. "95.5"), so the
+                    # chapter/index separator must not be ".".
+                    roll_key = f"override:{chapter_num}:{source_idx:04d}.{ov_origin}"
                 else:
                     roll_key = f"curator:{source_idx:04d}"
 
