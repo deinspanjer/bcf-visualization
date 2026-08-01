@@ -64,6 +64,19 @@ No shadcn gate applies — same `Tool: none` by-design contract as Phase 2 (`web
 - Cinema-scrub play FAB is `40×40` (`.fab-play.sm`) — below the 44px floor by prototype design. **Flagged, not silently accepted:** this is identical in kind to Phase 2's `.icon-btn.compact` (36×36) exception, which the Phase 2 UI-SPEC already priced in as a locked deviation for a small HUD control. Keep as 40×40 per the locked visual reference; if the Phase 4 accessibility pass (MOBX-03, Lighthouse ≥ 90) flags it, that is Phase 4's remediation, not this phase's — do not pre-emptively enlarge it and drift from the approved prototype.
 - Dock quick-action buttons (`.dock-btn`) are `min-height: 48px` — already clears the 44px floor (their width, driven by the 2-col grid at 224px rail width minus padding/gap, is ≈96px — also clears).
 
+### Safe-area insets (landscape puts the notch on a SHORT edge)
+
+**Added after UI-checker review flagged its absence.** Portrait only ever had to clear the notch at the top and the home indicator at the bottom, so Phase 2 used `--safe-top` / `--safe-bottom`. Landscape rotates the notch onto a *side* edge, and which side depends on rotation direction — so both must be handled, not just one. Phase 1 already defined the variables for exactly this (`web/mobile.css:53-56`, commented "consumed by Phase 2/3 docks and rails"); they are currently unused and Phase 3 is their intended first consumer. Use the variables, never raw `env()` calls, so the fallbacks stay centralized.
+
+| Surface | Inset contract | Why |
+|---|---|---|
+| `.mobile-app` landscape root | `padding-left: var(--safe-left); padding-right: var(--safe-right)` | Handles **both** rotation directions with one rule — whichever edge carries the notch gets a non-zero value and the other resolves to `0px`. Applying it at the root means the sky and rail inherit correct bounds without either needing its own rule. |
+| Right rail (`.control-dock` bottom edge) | `padding-bottom: max(<locked dock padding>, var(--safe-bottom))` | The home indicator sits on the bottom edge in both landscape directions, same `max()` idiom Phase 2 used for the portrait dock (`mobile.css:226`). |
+| Top chip cluster | `padding-top: max(<locked inset>, var(--safe-top))` | Small in landscape but non-zero on some devices; cheap insurance and consistent with portrait. |
+| Cinema-scrub pill | none of its own | It is positioned inside the sky, which already sits inside the root's inset padding. Adding a second inset here would double-count. |
+
+🧪 **backstop** — the inset values are `0px` in the simulator and in Chrome/Android, so this contract can only be confirmed on a real notched iPhone, in **both** rotation directions (notch-left and notch-right). Verify the rail is never clipped and the sky's focal label never slides under the notch.
+
 ---
 
 ## Typography
@@ -131,6 +144,16 @@ All copy below is locked verbatim from `design/mobile-ux/prototype/panels.jsx` (
 | Error state | **Not modified this phase.** Landscape reuses the same shared `renderLoadError()`/`renderLoading()` pre-branch contract as portrait (`render()` early-returns before the layout-mode branch) — no landscape-specific error/loading copy |
 | Destructive confirmation | **Not applicable this phase.** No destructive actions in landscape (same as Phase 2) |
 
+**Accessible names for icon-only controls** (added after UI-checker review). Every control whose visible content is an icon or glyph carries an explicit `aria-label`, matching the portrait convention:
+
+| Control | `aria-label` |
+|---|---|
+| Cinema-scrub play/pause FAB (`.fab-play.sm`) | `"Play"` / `"Pause"`, toggled with state — same string pair the portrait dock FAB already uses, so screen-reader output is consistent across layouts |
+| Top-cluster help button | `"Help"` |
+| Dock quick-actions | `"Settings"` / `"About"` — these also carry visible text labels, so the `aria-label` is belt-and-braces rather than the only name |
+
+This matters beyond hygiene: the cinema-scrub FAB is the only play/pause control visible in landscape once chrome is revealed, and Phase 4's MOBX-03 gate requires Lighthouse Accessibility ≥ 90.
+
 ---
 
 ## UI Considerations
@@ -179,11 +202,11 @@ Not applicable — no component registry (no shadcn, no npm packages in `web/`).
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: FLAG → **both findings resolved before planning.** The missing landscape safe-area contract is now specified (Spacing Scale § "Safe-area insets", covering both rotation directions via `--safe-left`/`--safe-right`), and accessible names for icon-only controls are now specified (Copywriting Contract § "Accessible names").
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: FLAG (non-blocking) — many within-role pixel sizes, identical in kind to Phase 2's already-accepted verbatim-port precedent. Exactly 2 weights preserved; the prototype's stray `600` is concretely mapped to `700`.
+- [x] Dimension 5 Spacing: FLAG (non-blocking) — several non-4-multiple landscape values, each individually sourced to the approved prototype CSS through the same "locked exceptions" mechanism Phase 2 used.
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-08-01 (gsd-ui-checker, 6/6 dimensions, 3 FLAGs). The two actionable Dimension-2 findings were fixed before planning; the Typography and Spacing flags are accepted precedent carried forward from Phase 2.
