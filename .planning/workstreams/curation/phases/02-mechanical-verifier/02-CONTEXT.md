@@ -43,7 +43,11 @@ Any candidate curation can be judged true or false by deterministic code, with t
 
 ### Verifier scope (auto-resolved 2026-07-26)
 
-- **D-06:** Per roll, the verifier checks exactly: (a) every evidence quote against prose per D-03/D-04; (b) `word_position` resolves through the shared tokenizer and falls within the chapter's CP-earning word range; (c) every perk name resolves through the `perk_name_resolver.py` ladder (`load_perk_aliases` → `build_alias_lookup` → `resolve_canonical`, with `DirectoryMatchIndex` for directory matching); (d) enum/structural sanity — `outcome` in `hit|miss`, `display_position_policy` in the documented set (`mention`, `mechanical`, `section_start`, `source_marker`, `section_end`).
+- **D-06:** Per roll, the verifier checks exactly: (a) every evidence quote against prose per D-03/D-04; (b) `word_position` resolves through the shared tokenizer and falls within the chapter's CP-earning word range; (c) every perk name resolves — **paid and free perks resolve against different sources, see the D-06(c) correction below**; (d) enum/structural sanity — `outcome` and `display_position_policy` within their documented sets.
+
+  **D-06(d) AMENDMENT (2026-07-26, planning-time measurement):** both fields are **null-tolerant**. Live measurement of the real corpus found `outcome: null` on 541 of 681 rolls (79.4%; only 48 explicit `hit`, 92 explicit `miss`, no other values) and `display_position_policy: null` on 598 of 681 (already flagged in Phase 1's corpus-analysis report). So the check is "`None` **or** a member of the documented set" — not membership alone. Writing it as strict membership would have made ROADMAP success criterion 1 unreachable for reasons that say nothing about curation truthfulness, which is precisely the failure mode criterion 1's own wording ("a failure means the verifier is wrong, not the corpus") exists to prevent. Documented set for `display_position_policy`: `mention`, `mechanical`, `section_start`, `source_marker`, `section_end`.
+
+  Related measurement, same pass: **8% of evidence quotes (69 of 864) carry a `mention_chapter_num` pointing at a different chapter than the roll that contains them** (e.g. ch 67 roll 4 → ch 68). The verifier resolves prose per-quote and must never assume the containing chapter.
 - **D-07 (explicitly OUT of scope):** roll-scheduling and slot-capacity validation. That is `roll_scheduler.py` / `multi_grab.py` territory and is exactly where chapter 104 currently fails (2 curated hits vs 1 predicted slot, Phase 1 deferred item). Including it would make the 100% baseline unreachable for reasons that have nothing to do with quote/position/name verification. The verifier answers "is this curation internally truthful about the prose?", not "does it fit the roll schedule?".
 - **D-08 (the anti-corruption rule):** If the verifier fails a hand-curated chapter, the response is to fix the verifier — **never** to edit `data/manual/chapter_roll_overrides.json` to make it pass. ROADMAP success criterion 1 states this outright ("a failure means the verifier is wrong, not the corpus"). Any hand-curated chapter that appears genuinely wrong is a checkpoint for Dre, not an autonomous edit.
 
@@ -52,16 +56,72 @@ Any candidate curation can be judged true or false by deterministic code, with t
 - **D-09:** Ship both an importable Python API (the structured per-roll result Phase 3 imports directly) and a CLI that writes a human/CI-readable JSON report. The API is the contract; the report is a convenience. **Not** wired into `scripts/pipeline.py` and **not** manifest-registered — this is a QA instrument, not a pipeline input, and coupling it to the DAG would drag verification into every data regen. This deliberately differs from Phase 1's exemplar-index decision (D-03 there), because that artifact *is* a downstream input and this one is not.
 - **D-10:** The 100% baseline is enforced by a pytest test that runs the verifier over the entire hand-curated corpus and asserts zero `fail` outcomes (`no_evidence` permitted per D-05). The test must skip with an explicit reason when the gitignored epub is absent, so the suite stays runnable without private source — but the phase gate requires a run with the epub present, and the recorded baseline numbers (pass / no_evidence / fail counts) go in the SUMMARY.
 
-### Perk-name gap resolution (Dre, 2026-07-26, post-research)
+### D-06(c) CORRECTION — paid vs. free perk resolution (Dre, 2026-08-01)
 
-- **D-11:** Research measured that only ~80.8% of the corpus's 120 perk-name mentions resolve through the ladder from a roll object alone (88.3% when `jump` is cross-referenced via `obtained_perks.json`, which stops at ch 119.5 and so will not cover Phase 3's target chapters). **14 names never resolve** — genuine gaps in `data/manual/perk_aliases.json` / the perk directory, concentrated in chapter 92's Transformers sub-instances.
+> **~~D-11 (2026-07-26, "fix the data first")~~ is VOID.** It rested on a false premise and
+> its implementing plan (`02-02-PLAN.md`) has been removed. Recorded here rather than
+> deleted so the reasoning error stays visible.
 
-  **Dre's decision: fix the data first.** The missing perks/aliases are added BEFORE the verifier's baseline is established, so success criterion 1's "100%" is literally true rather than allowlisted around. Consequences the planner must honor:
-  - This is a **hand-curated data edit** (`data/manual/perk_aliases.json` is hand-curated) — therefore **curation authority applies**: Dre approves the additions, an executor never writes them autonomously. Structure this as a `checkpoint:decision` task (or a small batch of them) presenting each unresolved name with its evidence, ahead of any verifier-baseline task.
-  - The data fix is a **prerequisite wave**, not a cleanup afterthought — the verifier's corpus baseline test (D-10) is meaningless until it lands.
-  - If, after the fix, any name still fails to resolve, that is a checkpoint for Dre — **not** grounds to weaken the check or to edit `chapter_roll_overrides.json` (D-08 still governs).
-  - Derived artifacts affected by an alias change (e.g. the perk directory) are regenerated through the existing pipeline, never hand-edited.
-  — **Reversibility:** reversible — alias additions are additive data rows, removable without touching consumers.
+- **D-11 (superseded — what went wrong):** research reported that only ~80.8% of perk-name
+  mentions resolved and that 14 names were "genuine `perk_directory.json`/`perk_aliases.json`
+  coverage gaps." Dre approved fixing the data. **Both the finding and the follow-up diagnosis
+  were wrong.** The 14 names are all `cost: 0` **free ride-alongs** — perks granted alongside a
+  paid acquisition. They are absent from the rollable roster *by design*, because they are not
+  rollable. The measurement demanded they resolve through a ladder built for rollable perks,
+  which by construction they never can. A subsequent orchestrator proposal to "extend the
+  directory build to supplement cost-0 acquisitions" was the same error one level down — it
+  would have polluted the rollable roster with non-rollable items.
+
+- **D-11 (corrected): the perk check is paid/free-aware, and NO data changes are required.**
+  Measured against the real corpus 2026-08-01:
+
+  | Category | Resolves | Rate |
+  |---|---|---|
+  | Paid perk mentions, via `perk_name_resolver.py` ladder against `perk_directory.json` | 99 / 99 | **100%** |
+  | Cost-0 ride-alongs, resolved against `obtained_perks.json` | 15 / 15 | **100%** |
+
+  Rules the verifier must implement:
+  1. A roll's `perks` array is a **bundle**: the paid perk first, then its cost-0 ride-alongs.
+     `obtained_perks.json` lists them in exactly that order (ch 92: `Cybertronian Forge` 600,
+     then six cost-0 Transformers items; the hand-curated roll groups all seven).
+  2. **Paid** names (cost > 0) resolve through the existing `perk_name_resolver.py` ladder —
+     unchanged, still no second implementation.
+  3. **Free** names (cost == 0) resolve against `obtained_perks.json`. They must NOT be added to
+     `perk_directory.json` and a resolution failure there must NOT be treated as a data gap.
+  4. Attribution may sit one chapter off (roll in ch 81, grant recorded at ch 82 — the sole
+     remaining case). Do not hard-key on the mechanical chapter; fall back to a name lookup
+     across the adjacent/mention chapter, consistent with how evidence quotes already carry
+     their own `mention_chapter_num`.
+  — **Reversibility:** reversible — a resolution-source branch in new code, no data or schema change.
+
+### Evidence spread — never bound quotes to the roll position (measured 2026-08-01)
+
+- **D-12:** A roll's evidence quotes may be spread across most of a chapter. The author has the MC
+  dwell on an acquisition, so **free perk names frequently appear verbatim several paragraphs after
+  the connection moment** — Dre's manual practice is to search the chapter for each free perk's name
+  or a substring and attach the *first* mention as an additional quote. Measured: mean 1.46
+  quotes/roll but **max 22**; intra-roll quote span median 128 words, p90 1,232, **max 7,392**.
+  Ch 92's hit roll spans 8241 → 9858 (1,617 words) across five quotes.
+
+  Therefore: **nothing may constrain a quote's distance from the roll's `word_position`.** D-04's
+  tolerance applies to each quote against its OWN `mention_word_position` only. (Verified: the
+  current plans already do this correctly — the check is per-quote nearest-occurrence, not
+  roll-relative. No change needed, but it must not regress.)
+
+  Corollary for evidence expectations: only 8 of 15 cost-0 perks are named verbatim in their roll's
+  quotes; others appear in variant form (`Altmode` → prose "alt-mode") or only descriptively
+  ("facilities, items, and memories"). A rule requiring per-perk name evidence would systematically
+  fail correct curations.
+
+### Search posture — stage-1 liberal vs. verifier strict (architectural rule)
+
+- **D-13:** Candidate *discovery* and candidate *validation* are tuned in opposite directions and must
+  never be conflated. `scripts/find_roll_locations.py` is explicitly "Stage 1: deliberately liberal —
+  false positives are acceptable because a later Stage-2 LLM pass will filter them." Free-perk name
+  search (D-12) belongs to that liberal tier: match variants and substrings, over-produce. **This
+  verifier is the opposite tier**: exact-or-reject, no fuzzy path in existence (success criterion 2).
+  Loosening the verifier to accommodate discovery, or tightening discovery to the verifier's bar,
+  are both regressions.
 
 ### Claude's Discretion
 

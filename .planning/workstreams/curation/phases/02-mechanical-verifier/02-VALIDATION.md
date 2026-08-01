@@ -3,7 +3,7 @@ phase: 2
 slug: mechanical-verifier
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-26
 ---
@@ -48,9 +48,19 @@ Documented in `.planning/workstreams/curation/phases/01-epub-refresh-exemplar-mi
 
 *Filled by planner — every task maps to a requirement and an automated command.*
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | Status |
-|---------|------|------|-------------|-----------|-------------------|--------|
-| TBD | — | — | CINF-03 | unit / integration | see plan tasks | ⬜ pending |
+Confirmed by `gsd-plan-checker` (2026-07-26): every non-checkpoint task across 02-01/02-03 carries an
+`<automated>` block, no watch-mode flags, no unresolved Wave-0 `MISSING` references. (02-02-PLAN.md was removed
+2026-08-01 per the D-06(c) CORRECTION — the ~80.8%/"14 unresolvable perk names" finding it existed to remediate
+was measured wrong; all 14 names are cost-0 free ride-alongs that resolve against `data/derived/obtained_perks.json`,
+and no data fix, alias addition, or Dre-approval checkpoint was ever required.)
+
+| Task | Plan | Wave | Requirement | Test Type | Automated Command (abbrev.) | Status |
+|------|------|------|-------------|-----------|------------------------------|--------|
+| Tracer: extract + verify_roll core (paid/free perk check) | 02-01 | 1 | CINF-03 | integration | `pytest tests/test_mechanical_verifier.py -k "tracer or ch92"` | ⬜ pending |
+| Unit expansion (tiers, tolerance, outcomes, perk resolution) | 02-01 | 1 | CINF-03 | unit | `pytest tests/test_cp_word_index.py tests/test_mechanical_verifier.py` | ⬜ pending |
+| `verify_chapter()` + CLI report | 02-03 | 2 | CINF-03 | integration | snapshot diff of `roll_text_evidence.json` | ⬜ pending |
+| D-10 corpus baseline (100%, zero fail, zero exceptions) | 02-03 | 2 | CINF-03 | integration | `pytest tests/test_mechanical_verifier.py -k corpus_baseline` | ⬜ pending |
+| Full-suite regression (no NEW failures) | 02-03 | 2 | CINF-03 | regression | `pytest -q` diffed against the 5-failure baseline | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -66,10 +76,13 @@ Documented in `.planning/workstreams/curation/phases/01-epub-refresh-exemplar-mi
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| The 14 unresolved perk-name additions (D-11) | CINF-03 | Hand-curated data — curation authority; Dre approves each addition | Executor presents each unresolved name with evidence at a checkpoint; Dre approves/edits/rejects |
-| Any residual unresolvable name after the D-11 fix | CINF-03 | Must not be worked around by weakening the check (D-08) | Executor surfaces at a checkpoint; Dre decides |
+**None.** The D-06(c) CORRECTION (2026-08-01) found the original D-11 perk-resolution measurement
+(~80.8% resolution, "14 unresolvable perk-name" gaps) was wrong: all 14 names are `cost: 0` free
+ride-alongs, absent from the rollable roster by design, and resolve cleanly against
+`data/derived/obtained_perks.json` (measured 15/15, alongside 99/99 for paid perk mentions via the
+existing ladder). The Dre-approval checkpoint and the data fix that would have motivated a
+manual-verification entry here (`02-02-PLAN.md`) have both been removed as void. This phase has no
+remaining manual-only verification.
 
 ---
 

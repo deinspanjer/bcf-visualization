@@ -74,13 +74,12 @@ Plans:
   3. Word positions and perk names are resolved through the pipeline's existing tokenizer and `perk_name_resolver.py` ladder, with no second implementation of either
   4. The verifier reports per-roll pass/fail with reasons, in a form the Phase 3 confidence gate can consume
 
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Extract the CP-earning-word tokenizer (D-01/D-02) and build `verify_roll()`'s core (quote/position/perk/enum checks), tracer-proven against one real hand-curated roll (CINF-03)
-- [ ] 02-02-PLAN.md — Dre-approved checkpoint closing the 14 unresolved perk-name gaps in `data/manual/perk_aliases.json` before the corpus baseline runs (D-11, CINF-03)
+- [ ] 02-01-PLAN.md — Extract the CP-earning-word tokenizer (D-01/D-02) and build `verify_roll()`'s core (quote/position/perk/enum checks), tracer-proven against two real hand-curated rolls including paid/free perk resolution (D-06c, CINF-03)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

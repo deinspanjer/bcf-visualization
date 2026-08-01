@@ -261,6 +261,25 @@ Tier-2 quotes (n=30 of 31 measured via a flexible-whitespace regex probe; the 31
 
 ## Perk Resolution Reality Check (D-06c) — the phase's central planning risk
 
+> ## ⚠ SUPERSEDED 2026-08-01 — THIS SECTION'S CONCLUSION IS WRONG. DO NOT PLAN AGAINST IT.
+>
+> This section reports ~80.8% resolution and "14 permanently-unresolved perk names" framed as
+> `perk_directory.json` / `perk_aliases.json` coverage gaps. **That framing is incorrect.** All 14
+> are `cost: 0` **free ride-alongs** — granted alongside a paid acquisition and absent from the
+> rollable roster *by design*, because they are not rollable. The measurement demanded they resolve
+> through a ladder built for rollable perks, which they never can.
+>
+> Re-measured against the real corpus: **paid perk mentions resolve 99/99 (100%)** through the
+> existing ladder, and **cost-0 ride-alongs resolve 15/15 (100%)** when checked against
+> `obtained_perks.json`. One name (`ARM SLAVE M6 Bushnell`) needs only chapter-adjacent tolerance
+> (roll in ch 81, grant recorded at ch 82). **There is no data gap and no data fix is required.**
+>
+> The corrected rule is `02-CONTEXT.md` → "D-06(c) CORRECTION — paid vs. free perk resolution".
+> The remedies proposed below (exception allowlist / prerequisite data fix / scope narrowing) are
+> all answers to a non-existent problem; `02-02-PLAN.md`, which implemented the data fix, has been
+> removed. The rest of this file — tokenizer blast radius, quote verification, position tolerance —
+> was independently re-verified and remains sound.
+
 Ran `perk_name_resolver.build_directory_match_index()` (real `data/derived/perk_directory.json` + real `data/manual/perk_aliases.json`, unmodified) against **all 120 perk-name strings** appearing in `chapter_roll_overrides.json`'s `rolls[].perks[]` arrays across the corpus, calling `.lookup(name, jump=?, constellation=roll.constellation)` — the same call shape `derive_roll_facts.py::lookup_perk` uses.
 
 **Critical mechanism finding:** `DirectoryMatchIndex.lookup()`'s Steps 1-3 (exact match, alias-exact match, normalized-(name,jump) match) all iterate over a `jumps_to_try` list that is **only populated `if jump:`** — passing `jump=None` (the only value available directly from an override roll object, which has no `jump` field) causes Steps 1-3 to execute as no-ops, leaving only Step 4 (name-only, constellation-scoped fallback) active.
