@@ -63,12 +63,16 @@ created: 2026-08-01
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Rotation hand-off on real hardware | MOBL-03 | D-23 mandates both proofs; the roadmap notes the `resize`/`orientationchange` race does not reproduce in emulation | Rotate mid-playback on a real device and confirm word position, play state, speed, zoom and toggles all survive |
-| iOS Safari layout + safe areas in landscape | MOBL-01 | Phase 2 found four defects on hardware that a green suite missed; landscape adds a notch-side rail, which is new safe-area territory | Run the pass on iOS specifically (see `reference_device_debugging`); check the right rail clears the notch in both rotation directions |
-| Auto-hide feel | MOBL-02 | 4000ms idle and the reveal-vs-pause double-tap are timing judgments a test can assert but not evaluate | Watch chrome hide during playback, confirm first tap reveals without pausing |
-| iOS swipe-back vs. history sentinel | MOBL-04 | Research Pitfall 5 (WebKit bug 248303) is WebSearch-sourced and not independently reproduced | Open a flyout, use the iOS edge swipe-back gesture, confirm it closes the surface rather than leaving the app |
+**Scoping directive from Dre (2026-08-01):** *"I don't want to spend time testing anything that cannot be proved by showing screenshots or performing playwright testing."* Every item below therefore produces an **objective artifact** — a CDP measurement or a screenshot. Subjective "does it feel right" evaluation is **cut from the gate**; anything a Playwright assertion can settle is automated instead and never reaches this table. Dre's physical involvement is four actions (rotate, rotate, edge-swipe, rotate) — all measurement and capture is done over the ios-webkit-debug-proxy CDP bridge.
+
+| # | Behavior | Requirement | Why not Playwright | Objective artifact |
+|---|----------|-------------|--------------------|--------------------|
+| 1 | Landscape safe-area insets, **both** rotation directions | MOBL-01 | `env(safe-area-inset-left/right)` resolve to `0px` in every simulator and headless browser — only a real notched device produces non-zero values | CDP read of computed `--safe-left`/`--safe-right` plus `getBoundingClientRect()` on rail and sky, showing no clipping; screenshot per direction |
+| 2 | iOS toolbar vs. `svh` in landscape | MOBL-01 | Playwright cannot reproduce Safari's URL bar; this is the exact class that produced Phase 2's 82px scroll bug | CDP read of `innerHeight` vs `100vh`/`100svh`/`100dvh` and `body.scrollHeight`; pass = zero overflow |
+| 3 | Rotation hand-off on real hardware | MOBL-03 | D-23 mandates both proofs; a Playwright viewport swap does not reproduce the real `resize`/`orientationchange` ordering | CDP snapshot of word position, play state, speed, zoom and toggles taken before and after a physical rotation — a field-by-field diff, not a judgment |
+| 4 | iOS edge swipe-back vs. the history sentinel | MOBL-04 | Playwright cannot perform the OS-level edge-swipe gesture; Research Pitfall 5 (WebKit bug 248303) is WebSearch-sourced and unreproduced | CDP read of `app.mobileSurface` and `history.length` after the swipe; pass = surface closed, app still loaded |
+
+**Cut from the device pass** (recorded so the gate does not re-ask): auto-hide *feel* — the 4000ms boundary, the reset-on-touch rule and the reveal-vs-pause branch are all Playwright-assertable and belong in `test_mobile_landscape.py`. Sky letterboxing framing — already accepted at the Phase 2 gate. Haptics absence — already proven on hardware in Phase 2 (`navigator.vibrate === undefined`); no re-test.
 
 ---
 
