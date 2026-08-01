@@ -258,7 +258,17 @@ At 1× the mapping is exactly linear (each 10% of rail = 272k words = 10% of 2.7
 
 This contradicts MOBP-03's literal wording ("scrubs word position **accurately** at every zoom level, **including auto-panned positions**"). `test_rail_scrub_zoom_aware` passes because it asserts **single discrete presses**, which are deterministic — the loop only manifests across successive moves within one drag. Likely fix: freeze the pan offset for the duration of a drag (capture at `pointerdown`, release at `pointerup`), which preserves auto-pan for playback and taps while making drags monotonic. **Recommend routing to gap closure (`/gsd-plan-phase 2 --gaps`) rather than treating as a gate ruling.**
 
-**What still blocks the gate:** Dre's ruling on the item-3 defect (fix now vs. accept), on the persistent-idle-sky question, and confirmation of item 5. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
+### Item 3 defect — FIXED (`ed59087`)
+
+Fixed while awaiting the iOS pass, on Dre's "do any additional work you can" instruction. `onScrub` now captures the auto-pan offset on the first callback of a drag (pointerdown), reuses it for every move, and clears it in `onScrubEnd` and in `attachMobilePortraitGestures` (a structural render tears listeners down mid-drag without firing `onScrubEnd`). Auto-pan still applies to playback and to taps — each tap is its own drag and re-captures. `web/mobile-gestures.js` untouched (D-17), still a single scrub input path.
+
+Test-first: `test_rail_drag_is_monotonic_at_every_zoom` was written before the fix and **verified failing against the pre-fix code** (zoom 2×: `40.000% → 35.000%` on a rightward drag), then passing after. It reads the live playhead marker rather than the bookmark key, since `persistBookmarkNow()` only runs at `onScrubEnd` and the defect lives strictly mid-drag. Suite: 33/33.
+
+If Dre prefers to accept the original behavior instead, revert `ed59087` — the test is the only other thing it touches.
+
+**What still blocks the gate:** the iOS Safari device pass (the Android/Chrome pass does not satisfy it — see below), Dre's confirmation of item 5, and the persistent-idle-sky ruling (now weaker, see the 88% correction).
+
+**iOS still outstanding.** The 2026-08-01 hardware pass ran on Android/Chrome. The roadmap's Phase 2 note requires real iOS Safari verification specifically because that is where the dynamic-toolbar / `svh` behavior and safe-area insets differ, and where `navigator.vibrate` is a silent no-op (D-11) — none of which Android can evidence. Any haptic felt during the Android pass is Android-only and must not be read as iOS coverage. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
 
 **On resume:** re-read this table before re-asking anything — items 1, 2, 4, and 6 are settled and must not be re-litigated. Only items 3 and 5 plus the overall approval remain open. If Dre's testing turns up changes, route them through `/gsd-plan-phase 2 --gaps` rather than editing plans in place.
 
