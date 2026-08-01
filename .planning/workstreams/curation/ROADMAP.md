@@ -89,20 +89,30 @@ Plans:
 
 ### Phase 3: Provenance Schema & Agent Curation Pipeline
 
-**Goal**: Agents can curate a chapter, and their output is routed by confidence into the trusted corpus or a proposals queue — never silently degrading either
+**Goal**: A deterministic pass proposes candidate curations from prose the pipeline already indexes, an inference pass grades and extends them, and output is routed by confidence into the trusted corpus or a proposals queue — never silently degrading either
 **Mode:** mvp
 **Depends on**: Phase 2
 **Requirements**: CINF-01, CINF-04, ACUR-01, ACUR-02, ACUR-03
+
+**Two-pass architecture (Dre, 2026-08-01).** This phase is explicitly two sequenced stages, not one LLM extraction step. Stage 1 is deterministic and reuses machinery that already exists; Stage 2 applies inference *on top of* Stage 1's output rather than starting from raw prose. The stage boundary is a gate: Stage 1 is baselined against the hand-curated corpus (like Phase 2's verifier) before any inference spend.
+
+- **Stage 1 — deterministic candidate assembly (zero LLM).** Consumes `data/derived/roll_text_evidence.json` (per predicted roll: prose window, matched regex anchors, and an evidence grade of `direct`/`general_only`/`forward_ref`/`no_evidence`) produced by the existing `find_roll_locations.py` → `find_text_backed_rolls.py` Stage-1 chain, plus the `obtained_perks.json` bundle structure (paid perk first, then its cost-0 ride-alongs). Assembles candidate roll objects: bind the constellation named at the head of a connection passage, bind the paid perk that follows, group the bundle, and search the chapter forward for each free perk's name or substring — attaching the first mention as an additional quote, per the observed curation convention (see Phase 2 `02-CONTEXT.md` D-12).
+- **Stage 2 — inference refinement and grading.** Grades Stage 1's candidates into a confidence signal and teases out what deterministic heuristics cannot reach — principally the `forward_ref` and `no_evidence` classes, retrospective phrasing, and misses whose constellation is named only obliquely.
+
+**Search posture** (`02-CONTEXT.md` D-13): Stage 1 is deliberately liberal — over-produce candidates, tolerate false positives, match name variants and substrings. Phase 2's verifier is the opposite tier — exact-or-reject with no fuzzy path in existence. Never conflate the two tunings.
+
 **Success Criteria** (what must be TRUE):
 
   1. Every roll-override entry carries the `curated_by` provenance marker per the decided shape (Workstream Gate 2), and every in-repo consumer (`derive_roll_facts`, Forge Curator TUI, validators) is rewritten for it in the same change — no shims, aliases, or deprecation paths
-  2. Running the agent on a chapter produces roll objects in the existing schema where word positions and roll ordinals are derived mechanically and never emitted by the model
-  3. High-confidence curations write into `chapter_roll_overrides.json` with provenance; low-confidence curations write to a proposals sidecar in the same roll-object schema
-  4. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
-  5. The confidence gate is tuned against held-out hand-curated chapters, uses mechanical verification as the hard signal with model self-report only as a tiebreaker, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
+  2. Stage 1 produces candidate roll objects from `roll_text_evidence.json` + `obtained_perks.json` with **no LLM in the loop**, and reuses the existing anchor/prose-window machinery rather than reimplementing prose scanning — a second regex-anchor or prose-window implementation is a phase failure
+  3. Stage 1 is baselined against hand-curated chapters before Stage 2 is built, and its measured recall/precision against that corpus is recorded — the gate for spending on inference
+  4. Word positions and roll ordinals are derived mechanically and never emitted by the model; Stage 2 may adjust structure and confidence but never invents a position
+  5. High-confidence curations write into `chapter_roll_overrides.json` with provenance; low-confidence curations write to a proposals sidecar in the same roll-object schema
+  6. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
+  7. The confidence gate is tuned against held-out hand-curated chapters, uses Phase 2's mechanical verification as the hard signal with model self-report only as a tiebreaker, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
 
 **Plans**: TBD
-**Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically from a pilot batch against known chapters, with a checkpoint before running on uncurated ones. The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — the agent must respect the existing predicted-mode mapping rather than inventing one.
+**Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically from a pilot batch against known chapters, with a checkpoint before running on uncurated ones. The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — the agent must respect the existing predicted-mode mapping rather than inventing one. If Stage 1 + Stage 2 exceed one phase's planning budget, split at the stage gate (Stage 1 becomes its own phase) rather than thinning either stage — the deterministic pass is independently valuable and independently verifiable.
 
 ### Phase 4: Proposal Review & Full Batch Run
 
