@@ -236,9 +236,15 @@
             "Entrance Hall – Tybalt"
           ],
           "outcome": "hit",
-          "constellation": "Toolkits",
-          "word_position": null,
-          "evidence_quotes": []
+          "constellation": "Personal Reality",
+          "word_position": 2860,
+          "evidence_quotes": [
+            {
+              "text": "I paused as I felt my power connect to a cluster of motes from the Personal Reality Constellation.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 2861
+            }
+          ]
         },
         {
           "perks": [
@@ -246,8 +252,19 @@
           ],
           "outcome": "hit",
           "constellation": "Resources and Durability",
-          "word_position": null,
-          "evidence_quotes": []
+          "word_position": 8439,
+          "evidence_quotes": [
+            {
+              "text": "I felt my power shift again, bringing forth a massive mote from the Resources and Durability constellation, which was also the final mote from the Resources and Durability constellation.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 8440
+            },
+            {
+              "text": "The power was called Firestorm.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 8613
+            }
+          ]
         }
       ],
       "_fingerprint": "sha256:161e5abc1b8f878c"
