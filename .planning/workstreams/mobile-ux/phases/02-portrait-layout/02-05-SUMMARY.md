@@ -289,7 +289,24 @@ Defect 3 is worth noting for process: fixing 2 introduced it, and only a *second
 
 All verified on device after the fix: `overflowPx: 0`, page not scrollable, top chips on screen, flyout 0px overlap with the transport row, tap-outside dismisses, second press toggles shut. Suite 33/33, desktop freeze intact.
 
-**What still blocks the gate:** Dre's confirmation of item 5 (sky letterboxing — measured and recommended for acceptance), the persistent-idle-sky ruling (now weaker, see the 88% correction), and a final re-walk of the portrait surface on device now that four fixes have landed since his last full pass.
+## ✅ PHASE B GATE APPROVED — 2026-08-01
+
+Dre, after the four device-found fixes landed: *"I'm happy with everything (for now) after the four fixes."* Gate closed. Nothing outstanding blocks Phase 2.
+
+Final disposition of all gate items:
+
+| Item | Disposition |
+|------|-------------|
+| 1 — D-15, no mobile details view in v1 | Confirmed. Extra details work deferred. |
+| 2 — F-04, speed multipliers → 2500/5000/10000/25000 rungs | Confirmed. |
+| 3 — F-06, rail auto-pan mid-drag | Was a real MOBP-03 defect (rightward drag ran backward at zoom > 1); **fixed** in `ed59087` with a test-first regression proof. |
+| 4 — D-19, Help overlay scoped to the sky | Confirmed, and extended: Settings/About panels now scope the same way. |
+| 5 — sky letterboxing | Accepted as-is. Measured 121px of uniform backdrop above/below the artwork on device, no seam, reads as intentional cinematic framing. No mobile-specific viewBox crop. |
+| 6 — F-01/F-02, retained gesture probe + one superseded desktop-smoke assertion | Confirmed (both). |
+| Persistent idle sky | **Not pursued.** The original "sky is empty most of the time" claim was wrong — measured 88% populated during real playback. Portrait shows transient per-roll cinematics with no persistent constellation context, which Dre accepted. |
+| Desktop-view fallback from mobile | Requested by Dre, conditional on not compromising the mobile design. **Not in Phase 2.** Carried to Phase 4 (Mobile Cutover), which already reworks the landing page and deletes the rotate banner — an escape hatch belongs with that work. |
+
+**Carried into Phase 3 and beyond:** the desktop-view fallback above; the Phase 3 landscape layout must reuse the D-19 sky-scoping convention for its own flyouts rather than reinventing an anchor (defects 2 and 3 above are exactly what that costs); and iOS remains the platform that finds layout defects Android and emulation cannot — budget a real-device pass into every remaining Track A phase gate.
 
 **iOS still outstanding.** The 2026-08-01 hardware pass ran on Android/Chrome. The roadmap's Phase 2 note requires real iOS Safari verification specifically because that is where the dynamic-toolbar / `svh` behavior and safe-area insets differ, and where `navigator.vibrate` is a silent no-op (D-11) — none of which Android can evidence. Any haptic felt during the Android pass is Android-only and must not be read as iOS coverage. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
 

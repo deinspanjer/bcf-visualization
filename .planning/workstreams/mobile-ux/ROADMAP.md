@@ -75,7 +75,7 @@ Plans:
   4. At 1× the rail shows counted cluster diamonds instead of a smear of overlapping dots, and the active roll always renders as a separate cyan diamond on top
   5. Settings, About, and Help all work in portrait; Help auto-opens on a first visit; every preference survives reload
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -96,7 +96,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 02-05-PLAN.md — Full-suite sweep, freeze proof, COVERAGE.md + §5 Phase B gate review with Dre
+- [x] 02-05-PLAN.md — Full-suite sweep, freeze proof, COVERAGE.md + §5 Phase B gate review with Dre
 
 **UI hint**: yes
 **Notes**: Flyout focus-trap and back-gesture handling are built alongside the flyouts here, not deferred to Phase 4. Real-device iOS Safari verification is expected (emulation does not reproduce toolbar/`100vh` behavior). Phase ends with the §5 Phase B gate review plus a desktop smoke test pass.
@@ -143,7 +143,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
-| 2. Portrait Layout | 4/5 | In Progress|  |
+| 2. Portrait Layout | 5/5 | In Progress|  |
 | 3. Landscape Layout | 0/TBD | Not started | - |
 | 4. Mobile Cutover & Accessibility | 0/TBD | Not started | - |
 
