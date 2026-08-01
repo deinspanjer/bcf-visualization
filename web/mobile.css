@@ -14,6 +14,27 @@
      zoom stays enabled globally (a11y); these classes suppress native
      double-tap/pinch/scroll gestures only on the elements that own custom
      pointer-event gesture handling. */
+  /* style.css:45 (frozen) sets `body { min-height: 100vh }`. On iOS `100vh`
+     is the LARGE viewport — it excludes Safari's URL bar — so on an iPhone
+     16 Pro (Safari 18.5) body resolves to 842px inside a 760px visible area
+     while the portrait shell is correctly 100svh = 760px. The 82px surplus
+     made the whole app scrollable, and scrolling it pushed the top chip
+     cluster (chapter chip, roll chip, help button) off the top of the
+     screen. Overriding the inherited min-height here — a new rule in the
+     mobile block, never an edit to the frozen desktop rule — pins the
+     document to the visible area so the shell cannot scroll at all.
+     Deliberately scoped to portrait: the landscape fallback still renders
+     the full desktop shell, which MUST stay scrollable until Phase 3
+     replaces it. */
+  @media (orientation: portrait) {
+    body {
+      min-height: 100svh;
+      height: 100svh;
+      overflow-y: hidden;
+      overscroll-behavior-y: none;
+    }
+  }
+
   .mobile-sky-surface {
     /* Sky surface: vertical page scroll may still compete; horizontal pan
        is claimed by the custom swipe/scrub gesture. */
@@ -418,11 +439,19 @@
   .mobile-flyout-backdrop {
     position: absolute;
     inset: 0;
+    /* Spans the whole app surface geometrically, but sits BELOW
+       .mobile-dock-transport's z-index: 10 on purpose: everything else — sky,
+       rail, hint row — dismisses on tap, while the transport buttons stay
+       live so you can toggle a surface shut or switch Settings <-> About
+       without a dismiss round-trip (Plan 02-04's intent). */
     z-index: 8;
     background: rgba(2, 6, 10, 0.40);
   }
   .mobile-flyout {
     position: absolute;
+    /* Above the backdrop's 8. .mobile-sky sets no z-index of its own, so it
+       creates no stacking context and this competes directly with the
+       backdrop even though the two now live in different parents. */
     z-index: 9;
     left: 14px;
     right: 14px;

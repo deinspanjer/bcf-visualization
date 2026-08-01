@@ -2990,11 +2990,20 @@ function markHelpSeen() {
 // .focus() on a stale reference that would silently do nothing.
 function openMobileSurface(kind, triggerEl) {
   if (!MOBILE_SURFACES.includes(kind)) return;
-  app.mobileSurface = null;
-  app.mobileSurfaceOpener = null;
+  // Pressing the control that opened a surface closes it again. Without this
+  // the second press re-opened the same surface AND pushed a second history
+  // sentinel, so escaping by back-gesture took as many presses as taps.
+  if (app.mobileSurface === kind) {
+    closeMobileSurface();
+    return;
+  }
+  // Swapping Settings <-> About reuses the sentinel already on the stack, so
+  // exactly one is outstanding while any surface is open — one back press
+  // always closes, whatever route got you here.
+  const alreadyOpen = app.mobileSurface !== null;
   app.mobileSurface = kind;
   app.mobileSurfaceOpener = triggerEl?.dataset?.action || null;
-  history.pushState({ bcfMobileSurface: kind }, "");
+  if (!alreadyOpen) history.pushState({ bcfMobileSurface: kind }, "");
   render();
 }
 
@@ -3399,6 +3408,7 @@ function renderMobilePortrait() {
       renderMobileScrubber(),
       renderMobileHintRow(),
     ),
+    renderMobileSurfaceBackdrop(),
   );
 }
 
@@ -3408,19 +3418,20 @@ function renderMobilePortrait() {
 // so a flyout can never geometrically collide with the dock and the backdrop
 // never covers the transport controls.
 function renderMobileSurface() {
-  if (app.mobileSurface === "settings") {
-    return [
-      el("div", { class: "mobile-flyout-backdrop", "data-action": "mobile-close-surface" }),
-      renderMobileSettingsFlyout(),
-    ];
-  }
-  if (app.mobileSurface === "info") {
-    return [
-      el("div", { class: "mobile-flyout-backdrop", "data-action": "mobile-close-surface" }),
-      renderMobileInfoFlyout(),
-    ];
-  }
+  if (app.mobileSurface === "settings") return renderMobileSettingsFlyout();
+  if (app.mobileSurface === "info") return renderMobileInfoFlyout();
   return null;
+}
+
+// The dismiss backdrop stays a child of .mobile-app, NOT of .mobile-sky. It
+// has to span the whole surface: scoping it to the sky shrank the
+// tap-outside-to-close target to a thin strip and left the dock — the
+// natural place to tap next, right where the opening button is — with no
+// backdrop at all, so a flyout became impossible to dismiss by tapping out.
+// Only the panel itself needs to live in the sky (to avoid the dock overlap).
+function renderMobileSurfaceBackdrop() {
+  if (!app.mobileSurface || app.mobileSurface === "help") return null;
+  return el("div", { class: "mobile-flyout-backdrop", "data-action": "mobile-close-surface" });
 }
 
 // mobileSeg(value, options, onSelect): a `.mobile-seg` segmented control —
