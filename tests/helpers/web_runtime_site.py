@@ -216,7 +216,29 @@ LONG_MULTIBYTE_PERK_NAME = "AEtherial Reforged Toolkit — Ómnia Perpetuum Impr
 assert len(LONG_MULTIBYTE_PERK_NAME) >= 60
 
 
-def _dense_roll(offset: int, roll_ordinal: int, outcome: str, *, perk_name: str | None = None) -> dict:
+# Phase 3 Task 2 (03-01-PLAN.md): a >100-char evidence quote containing
+# literal angle-bracket characters, added to exactly ONE dense-rolls roll
+# (see _dense_chapter_facts) so the landscape field log's D-27 truncation
+# and T-03-01 markup-escaping ("renders as literal characters, never parsed
+# HTML") assertions have a real subject. tiny-default/tiny-alt payloads stay
+# byte-identical (see the branch note in _visualization_facts below).
+LANDSCAPE_EVIDENCE_QUOTE_TEXT = (
+    "The forge hummed <awakening> as Joe reached for the battered toolkit, "
+    "each rivet catching pale light in a way that made the whole workshop "
+    "feel briefly, impossibly alive with promise."
+)
+assert len(LANDSCAPE_EVIDENCE_QUOTE_TEXT) > 100
+assert "<" in LANDSCAPE_EVIDENCE_QUOTE_TEXT and ">" in LANDSCAPE_EVIDENCE_QUOTE_TEXT
+
+
+def _dense_roll(
+    offset: int,
+    roll_ordinal: int,
+    outcome: str,
+    *,
+    perk_name: str | None = None,
+    evidence_quotes: list[dict] | None = None,
+) -> dict:
     common = {
         "predicted_ordinal": roll_ordinal,
         "predicted_label": f"P{roll_ordinal}",
@@ -247,6 +269,7 @@ def _dense_roll(offset: int, roll_ordinal: int, outcome: str, *, perk_name: str 
                 }
             ],
             "free_perks": [],
+            "evidence_quotes": evidence_quotes or [],
         }
     return {
         **common,
@@ -297,7 +320,20 @@ def _dense_chapter_facts() -> dict:
     spread_offsets = [7200, 8200, 9200, 9800]
     spread_outcomes = ["hit", "miss", "hit", "miss"]
     spread_rolls = [
-        _dense_roll(offset, len(cluster_rolls) + index + 1, outcome)
+        _dense_roll(
+            offset,
+            len(cluster_rolls) + index + 1,
+            outcome,
+            # The first spread roll (chapter 3, word 7200) carries the sole
+            # landscape evidence-quote fixture — kept separate from the
+            # cluster's long-multibyte-perk-name roll above so the two edge
+            # cases stay independently seekable/bookmarkable in tests.
+            evidence_quotes=[{
+                "text": LANDSCAPE_EVIDENCE_QUOTE_TEXT,
+                "mention_chapter_num": "3",
+                "mention_word_position": offset,
+            }] if index == 0 else None,
+        )
         for index, (offset, outcome) in enumerate(zip(spread_offsets, spread_outcomes))
     ]
 

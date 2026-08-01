@@ -23,16 +23,17 @@
      screen. Overriding the inherited min-height here — a new rule in the
      mobile block, never an edit to the frozen desktop rule — pins the
      document to the visible area so the shell cannot scroll at all.
-     Deliberately scoped to portrait: the landscape fallback still renders
-     the full desktop shell, which MUST stay scrollable until Phase 3
-     replaces it. */
-  @media (orientation: portrait) {
-    body {
-      min-height: 100svh;
-      height: 100svh;
-      overflow-y: hidden;
-      overscroll-behavior-y: none;
-    }
+     D-32 (Phase 3): this used to be scoped to `@media (orientation:
+     portrait)` only, because the landscape fallback still rendered the
+     scrollable desktop shell. Phase 3 retires that fallback (renderMobile-
+     Landscape() now owns landscape), so the lock now applies to the whole
+     outer mobile block — leaving it portrait-only would reintroduce this
+     exact 82px scroll defect in landscape only. */
+  body {
+    min-height: 100svh;
+    height: 100svh;
+    overflow-y: hidden;
+    overscroll-behavior-y: none;
   }
 
   .mobile-sky-surface {
@@ -42,7 +43,11 @@
     overscroll-behavior: contain;
   }
   .mobile-rail-surface {
-    /* Rail surface: full custom gesture control (scrub drag). */
+    /* Rail surface: full custom gesture control (scrub drag). Consumers:
+       the portrait mini-rail (.mobile-rail) and the landscape cinema-scrub
+       track (.mobile-cinema-scrub-track, Phase 3) — both get attachRailScrub
+       (D-17's single scrub input path), so both claim the same touch-action
+       policy from this one utility rather than each writing its own rule. */
     touch-action: none;
     overscroll-behavior: contain;
   }
@@ -428,6 +433,312 @@
     letter-spacing: 0.5px;
     margin-top: 4px;
   }
+
+  /* ── Landscape layout (Phase 3, 03-01-PLAN.md) ──────────────────────────
+     Adapted from design/mobile-ux/prototype/styles.css's
+     @media (orientation: landscape) block; new .mobile-* class names only,
+     reusing the existing --cyan/--green/--amber/--rose/--edge/--dim/--muted/
+     --ink/--void variables — never redefined here. The sky/rail split
+     genuinely differs by orientation (nested below — the same discipline as
+     the D-32 body lock above, the file's only other orientation-scoped
+     rule); the field-log/dock/cinema-scrub component internals do not (their
+     class names only ever mount inside renderMobileLandscape()'s DOM), so
+     they sit unscoped by orientation, mirroring how the prototype's own
+     component blocks sit after its landscape media query's closing brace. */
+  @media (orientation: landscape) {
+    .mobile-app-landscape {
+      flex-direction: row;
+      /* UI-SPEC safe-area table: handles BOTH rotation directions with one
+         rule — whichever edge carries the notch gets a non-zero value, the
+         other resolves to 0px. The sky/rail inherit correct bounds without
+         either needing its own inset rule. */
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
+    }
+    .mobile-landscape-stage {
+      /* Replaces .mobile-app in the "containing block for absolutely-
+         positioned children" role, for landscape only — the top-cluster
+         chips and the cinema-scrub pill anchor to this, not to the root. */
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+    }
+    .mobile-sky-landscape {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .mobile-landscape-stage .mobile-top-cluster {
+      padding-top: max(0px, var(--safe-top));
+    }
+    .mobile-sidebar {
+      width: 224px;
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(270deg, rgba(5, 29, 38, 0.96), rgba(5, 29, 38, 0.55));
+      border-left: 1px solid rgba(92, 244, 255, 0.22);
+    }
+  }
+
+  /* ── Field log (landscape) ─────────────────────────────────────────── */
+  .mobile-field-log {
+    flex: 1 1 67%;
+    padding: 12px 12px 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mobile-field-log-header {
+    margin: 0 0 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--cyan);
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    /* UI-SPEC Typography table: the prototype sets 600 here, a third weight
+       value not present in the locked 2-weight (400/700) contract — mapped
+       to 700 (bold) instead of introducing a new weight. */
+    font-weight: 700;
+  }
+  .mobile-field-log-header .count {
+    color: var(--dim);
+    font-weight: 400;
+  }
+  .mobile-field-log-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    touch-action: pan-y;
+  }
+  .mobile-field-log-list::-webkit-scrollbar { width: 3px; }
+  .mobile-field-log-list::-webkit-scrollbar-thumb { background: rgba(92, 244, 255, 0.30); }
+  .mobile-field-log-live {
+    padding: 8px 10px;
+    background: rgba(123, 255, 189, 0.10);
+    border: 1px solid rgba(123, 255, 189, 0.45);
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .mobile-field-log-live .row1 {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--green);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .mobile-field-log-live .name {
+    font-family: var(--serif);
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1.25;
+  }
+  /* D-27 hard clamp: defense-in-depth alongside the ~100-char truncation
+     already applied at the data layer (web/app.js mobileTruncate) — even a
+     pathological quote (unusual line-wrapping) cannot push the recent
+     entries out of the visible rail. -webkit-line-clamp with a matching
+     max-height as the non-WebKit fallback. */
+  .mobile-field-log-live .sub {
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-style: italic;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    max-height: calc(1.3em * 3);
+  }
+  .mobile-field-log-entry {
+    padding: 5px 8px;
+    border-left: 2px solid rgba(92, 244, 255, 0.30);
+  }
+  .mobile-field-log-entry .row1 {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--dim);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .mobile-field-log-entry .name {
+    font-family: var(--serif);
+    font-size: 11px;
+    margin-top: 1px;
+    /* Long-text row (UI-SPEC): a long perk name ellipsizes on one line and
+       never wraps or widens the 224px rail. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Control dock (landscape) ────────────────────────────────────────
+     Adapted from design/mobile-ux/prototype/styles.css .control-dock/
+     .dock-grid/.dock-btn/.dock-status. */
+  .mobile-control-dock {
+    flex: 0 0 33%;
+    min-height: 138px;
+    border-top: 1px solid rgba(92, 244, 255, 0.20);
+    background: rgba(3, 8, 13, 0.55);
+    padding: 10px 12px;
+    padding-bottom: max(10px, var(--safe-bottom));
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .mobile-dock-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mobile-dock-btn {
+    padding: 9px 6px;
+    background: rgba(5, 29, 38, 0.7);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-height: 48px;
+  }
+  .mobile-dock-btn.is-active {
+    background: rgba(92, 244, 255, 0.18);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  .mobile-dock-btn svg { width: 18px; height: 18px; }
+  .mobile-dock-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 8px;
+    color: rgba(154, 215, 223, 0.55);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .mobile-dock-status .val { color: var(--ink); }
+
+  /* ── Cinema-scrub pill (landscape) ───────────────────────────────────
+     Adapted from design/mobile-ux/prototype/styles.css .cinema-scrub and
+     its .scrub-track/.scrub-rail/.scrub-progress/.scrub-thumb/.scrub-roll
+     children. Floats over the sky (positioned against .mobile-landscape-
+     stage), auto-hides while playing (Plan 02 — the `.is-hidden` variant is
+     defined now so the visual and behavioral halves never drift apart). */
+  .mobile-cinema-scrub {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(5, 29, 38, 0.85);
+    border: 1px solid rgba(92, 244, 255, 0.35);
+    border-radius: 999px;
+    padding: 5px 8px 5px 5px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+    transition: opacity 220ms ease, transform 220ms ease;
+    z-index: 4;
+  }
+  .mobile-cinema-scrub.is-hidden {
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+  }
+  .mobile-cinema-scrub-fab {
+    /* UI-SPEC's locked, flagged sub-44px exception carried from the
+       approved prototype (.fab-play.sm) — identical in kind to Phase 2's
+       .mobile-icon-btn.compact (36x36) exception. Remediated in Phase 4 if
+       the Lighthouse accessibility pass flags it; not silently enlarged
+       here to avoid drifting from the approved visual reference. */
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--cyan);
+    color: var(--void);
+    box-shadow: 0 0 22px rgba(92, 244, 255, 0.55), 0 6px 22px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-cinema-scrub-fab:active { transform: scale(0.94); }
+  .mobile-cinema-scrub-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(154, 215, 223, 0.85);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .mobile-cinema-scrub-track {
+    position: relative;
+    flex: 1;
+    height: 14px;
+  }
+  .mobile-cinema-scrub-inner {
+    position: relative;
+    height: 100%;
+    transform-origin: 0 0;
+  }
+  .mobile-cinema-scrub-rail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: rgba(92, 244, 255, 0.18);
+  }
+  .mobile-cinema-scrub-progress {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+  }
+  .mobile-cinema-scrub-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 12px var(--cyan);
+  }
+  .mobile-cinema-scrub-roll {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 4px;
+    height: 4px;
+    background: var(--amber);
+  }
+  .mobile-cinema-scrub-roll.hit { background: var(--green); }
+  .mobile-cinema-scrub-roll.miss { background: var(--rose); }
 
   /* ── Surface stack: Settings / About flyouts (Plan 02-04, MOBP-05) ────
      Adapted from design/mobile-ux/prototype/styles.css .flyout-backdrop/

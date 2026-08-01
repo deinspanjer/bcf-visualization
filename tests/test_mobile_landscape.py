@@ -174,9 +174,174 @@ def test_landscape_field_log_zero_and_empty_states(tmp_path):
                 storage=DEFAULT_STORAGE,
             )
             assert page2.evaluate("document.querySelector('.mobile-field-log-live')") is None
-            count_text = page2.locator(".mobile-field-log-header .count").inner_text()
+            # Read raw textContent, not inner_text(): the header carries
+            # text-transform:uppercase (Task 2 CSS), which inner_text()
+            # honors visually ("0 OF 2") but the DOM text itself stays
+            # "0 of 2" — this asserts the underlying string, not the render.
+            count_text = page2.locator(".mobile-field-log-header .count").evaluate("el => el.textContent")
             assert count_text.startswith("0 of ")
             assert console_messages2 == []
             page2.close()
 
+            browser.close()
+
+
+def _contained(inner: dict, outer: dict, *, tolerance: float = 1.0) -> bool:
+    return (
+        inner["x"] >= outer["x"] - tolerance
+        and inner["y"] >= outer["y"] - tolerance
+        and inner["x"] + inner["width"] <= outer["x"] + outer["width"] + tolerance
+        and inner["y"] + inner["height"] <= outer["y"] + outer["height"] + tolerance
+    )
+
+
+def _intersects(a: dict, b: dict) -> bool:
+    return not (
+        a["x"] + a["width"] <= b["x"]
+        or b["x"] + b["width"] <= a["x"]
+        or a["y"] + a["height"] <= b["y"]
+        or b["y"] + b["height"] <= a["y"]
+    )
+
+
+@pytest.mark.parametrize("viewport", [PHONE_LANDSCAPE, PHONE_LANDSCAPE_SMALL], ids=["844x390", "568x320"])
+def test_landscape_layout_proportions(tmp_path, viewport):
+    # MOBL-01 acceptance bar: the 224px fixed rail against a fluid sky, the
+    # rail's 2/3 field log over 1/3 control dock never overlapping or
+    # spilling past the viewport, and the top-cluster chips never
+    # intersecting the floating cinema-scrub pill — at both the standard and
+    # smallest in-scope landscape viewports (UI-SPEC backstop rows: rail
+    # overflow, chip-vs-scrub collision).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=viewport, storage=DEFAULT_STORAGE,
+            )
+
+            sidebar_box = page.locator(".mobile-sidebar").bounding_box()
+            stage_box = page.locator(".mobile-landscape-stage").bounding_box()
+            assert sidebar_box is not None
+            assert stage_box is not None
+            assert sidebar_box["width"] == pytest.approx(224, abs=1)
+
+            # The "stage is at least 70% of the viewport" acceptance bar is
+            # scoped to PHONE_LANDSCAPE (844px wide) per 03-01-PLAN.md's
+            # acceptance criteria — the 224px FIXED rail eats a much larger
+            # proportion of the narrower PHONE_LANDSCAPE_SMALL (568px), so
+            # that viewport is not held to the same ratio.
+            if viewport["width"] == PHONE_LANDSCAPE["width"]:
+                assert stage_box["width"] >= 0.70 * viewport["width"]
+
+            field_log_box = page.locator(".mobile-field-log").bounding_box()
+            dock_box = page.locator(".mobile-control-dock").bounding_box()
+            assert field_log_box is not None
+            assert dock_box is not None
+            assert _contained(field_log_box, sidebar_box)
+            assert _contained(dock_box, sidebar_box)
+            # Field log sits above the dock — their vertical ranges must not
+            # intersect.
+            assert field_log_box["y"] + field_log_box["height"] <= dock_box["y"] + 1
+            # The control dock never spills past the bottom of the viewport.
+            assert dock_box["y"] + dock_box["height"] <= viewport["height"] + 1
+
+            cluster_box = page.locator(".mobile-top-cluster").bounding_box()
+            scrub_box = page.locator(".mobile-cinema-scrub").bounding_box()
+            assert cluster_box is not None
+            assert scrub_box is not None
+            assert not _intersects(cluster_box, scrub_box)
+
+            # D-32: the body scroll-lock now covers landscape too (previously
+            # scoped to `@media (orientation: portrait)` only, since the
+            # landscape fallback used to render the scrollable desktop shell).
+            assert page.evaluate("getComputedStyle(document.body).overflowY") == "hidden"
+
+            assert console_messages == []
+            browser.close()
+
+
+def test_landscape_body_scroll_lock_still_covers_portrait(tmp_path):
+    # D-32 regression companion to test_landscape_layout_proportions above:
+    # un-nesting the body lock must not accidentally stop applying it to
+    # portrait.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    portrait_viewport = {"width": 390, "height": 844}
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=portrait_viewport, storage=DEFAULT_STORAGE,
+            )
+            assert page.evaluate("getComputedStyle(document.body).overflowY") == "hidden"
+            assert console_messages == []
+            browser.close()
+
+
+def test_landscape_field_log_text_containment(tmp_path):
+    # D-27: the live-roll evidence quote is truncated to ~100 chars at the
+    # data layer AND hard-clamped in CSS (defense-in-depth); T-03-01: a quote
+    # containing tag-looking characters renders as literal text, never
+    # parsed markup. Long perk names in the recent list ellipsize rather
+    # than widening the 224px rail.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            # Bookmark to word 7200 — the single dense-rolls roll carrying
+            # the landscape evidence-quote fixture (see
+            # tests/helpers/web_runtime_site.py's LANDSCAPE_EVIDENCE_QUOTE_TEXT)
+            # — so it is the LIVE roll (recentRolls' element 0) at load.
+            page, console_messages = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_LANDSCAPE,
+                storage={
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": "7200",
+                    "bcf:help-seen": "true",
+                },
+            )
+
+            live_sub = page.locator(".mobile-field-log-live .sub")
+            expect(live_sub).to_be_visible()
+            sub_text = live_sub.inner_text()
+            # Truncated to <=100 chars at the data layer plus the two
+            # surrounding straight-quote characters mobileFieldLogSubChildren
+            # wraps the quote in.
+            assert len(sub_text) <= 102
+
+            # T-03-01: zero element children other than the `em` wrapper —
+            # specifically no `b` (or any other) tag ever appears — while the
+            # literal angle-bracket characters from the fixture quote survive
+            # as plain text.
+            assert page.locator(".mobile-field-log-live .sub b").count() == 0
+            assert "<" in sub_text and ">" in sub_text
+
+            # D-27 hard clamp: the rendered box stays within ~3 line-heights
+            # (9.5px font, 1.3 line-height => ~12.35px/line) even though the
+            # untruncated source quote is far longer.
+            sub_box = live_sub.bounding_box()
+            assert sub_box is not None
+            assert sub_box["height"] <= (3 * 9.5 * 1.3) + 6
+
+            # Long perk names in the recent list never widen the rail.
+            list_client_width = page.locator(".mobile-field-log-list").evaluate("el => el.clientWidth")
+            for name_locator in page.locator(".mobile-field-log-entry .name").all():
+                name_box = name_locator.bounding_box()
+                assert name_box is not None
+                assert name_box["width"] <= list_client_width + 1
+
+            # The list can scroll internally without pushing the control dock
+            # off-screen.
+            dock_box = page.locator(".mobile-control-dock").bounding_box()
+            assert dock_box is not None
+            assert dock_box["y"] + dock_box["height"] <= PHONE_LANDSCAPE["height"] + 1
+
+            assert console_messages == []
             browser.close()
