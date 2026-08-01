@@ -308,13 +308,15 @@ Final disposition of all gate items:
 
 **Carried into Phase 3 and beyond:** the desktop-view fallback above; the Phase 3 landscape layout must reuse the D-19 sky-scoping convention for its own flyouts rather than reinventing an anchor (defects 2 and 3 above are exactly what that costs); and iOS remains the platform that finds layout defects Android and emulation cannot — budget a real-device pass into every remaining Track A phase gate.
 
-**iOS still outstanding.** The 2026-08-01 hardware pass ran on Android/Chrome. The roadmap's Phase 2 note requires real iOS Safari verification specifically because that is where the dynamic-toolbar / `svh` behavior and safe-area insets differ, and where `navigator.vibrate` is a silent no-op (D-11) — none of which Android can evidence. Any haptic felt during the Android pass is Android-only and must not be read as iOS coverage. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
+**iOS coverage — resolved later the same day.** At the time this section was written the 2026-08-01 hardware pass had only run on Android/Chrome, which cannot evidence the dynamic-toolbar / `svh` behavior, safe-area insets, or `navigator.vibrate`'s absence (D-11). An iOS Safari 18.5 pass was subsequently completed — see "iOS Safari pass — DONE" below, which supersedes this note.
 
 **On resume:** re-read this table before re-asking anything — items 1, 2, 4, and 6 are settled and must not be re-litigated. Only items 3 and 5 plus the overall approval remain open. If Dre's testing turns up changes, route them through `/gsd-plan-phase 2 --gaps` rather than editing plans in place.
 
 ## Next Phase Readiness
 
-**Not ready — Task 2 (the INTEGRATION_PLAN.md §5 Phase B gate review with Dre) is outstanding and is a blocking human gate.** Four of its six rulings are now recorded above; the gate remains unapproved pending hardware verification. This agent has executed everything up to that gate and is returning a `CHECKPOINT REACHED` with the full agenda (the six flagged rulings, the §6 evidence table above, and the real-device verification steps) for Dre. Per the plan's own `gate="blocking"` attribute and this project's execution contract, this checkpoint cannot be auto-approved by any agent under any circumstances — Track A (Phases 1-4) cannot proceed to Phase 3 until Dre rules on all six items and approves.
+**Ready.** Task 2 (the `INTEGRATION_PLAN.md` §5 Phase B gate review) was a blocking human gate that no agent could auto-approve. It was held open across three device passes and resolved by Dre on 2026-08-01 — see "PHASE B GATE APPROVED" below for the final disposition of all six rulings. Track A may proceed to Phase 3.
+
+> *Historical note:* while this gate was open, this section read "Not ready" and the plan returned `CHECKPOINT REACHED` to the orchestrator on each pass. That was the correct behavior at the time; the text above was updated only once Dre actually approved.
 
 Once approved, the remaining plan-closure work (STATE.md/ROADMAP.md/REQUIREMENTS.md updates, the final `docs(02-05): complete ...` metadata commit) still needs to run — that is expected to happen in the continuation agent spawned after Dre's ruling is recorded.
 
