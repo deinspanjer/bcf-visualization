@@ -253,6 +253,9 @@ def test_private_source_commit_is_recorded_when_available(tmp_path: Path) -> Non
     subprocess.run(["git", "init"], cwd=private_dir, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=private_dir, check=True)
     subprocess.run(["git", "config", "user.name", "Test"], cwd=private_dir, check=True)
+    # Keep the fixture repo hermetic: without this it inherits the developer's
+    # global commit.gpgsign and fails when their signing agent is unavailable.
+    subprocess.run(["git", "config", "commit.gpgsign", "false"], cwd=private_dir, check=True)
     subprocess.run(["git", "add", "Brocktons_Celestial_Forge.epub"], cwd=private_dir, check=True)
     subprocess.run(["git", "commit", "-m", "source"], cwd=private_dir, check=True, capture_output=True)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=private_dir, text=True).strip()

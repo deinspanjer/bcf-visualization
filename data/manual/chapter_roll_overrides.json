@@ -1,5 +1,5 @@
 {
-  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list — grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. evidence_quotes may optionally carry cp_ledger_checkpoint metadata when the quote itself attests a banked-CP reset. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
+  "_purpose": "Hand-curated per-chapter paid roll structure and metadata. Entries are keyed by the mechanical/predicted-roll chapter. When a chapter has an entry here, it FULLY determines that chapter's paid roll list \u2014 grouping (multi-grab) AND order. Each entry in 'rolls' is one roll object: {perks: [name, ...], outcome: 'hit'|'miss', constellation, word_position, mention_chapter_num, mention_word_position, display_position_policy, evidence_quotes}. mention_chapter_num is where the author narrates/lists the result and defaults to the mechanical chapter. display_position_policy is 'mention', 'mechanical', 'section_start', 'source_marker', or 'section_end'. evidence_quotes may optionally carry cp_ledger_checkpoint metadata when the quote itself attests a banked-CP reset. Without an entry, default behaviour: each paid obtained_perks row is its own roll, in obtained_perks order.",
   "association_review": {
     "reviewed_through_chapter_num": "94.1",
     "baseline_fingerprint": "31a18c0d1c37f489ee73af7171167c31dce2477c020249cb26686e76c930c52e",
@@ -124,7 +124,7 @@
         {
           "perks": [
             "Additional Space - Starting Area",
-            "Additional Space – Lofty Loft"
+            "Additional Space \u2013 Lofty Loft"
           ],
           "outcome": "hit",
           "constellation": "Personal Reality",
@@ -230,10 +230,10 @@
             "Entrance Hall - Fleet",
             "Entrance Hall - Some Old Friends",
             "Entrance Hall - The Matrix",
-            "Entrance Hall – Aisha",
-            "Entrance Hall – Survey",
-            "Entrance Hall – Tetra",
-            "Entrance Hall – Tybalt"
+            "Entrance Hall \u2013 Aisha",
+            "Entrance Hall \u2013 Survey",
+            "Entrance Hall \u2013 Tetra",
+            "Entrance Hall \u2013 Tybalt"
           ],
           "outcome": "hit",
           "constellation": "Personal Reality",
@@ -280,7 +280,17 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:161e5abc1b8f878c"
+      "_fingerprint": "sha256:5a2fe49d8482f0ea",
+      "model_validation_resolution": {
+        "status": "resolved",
+        "resolved_issue_codes": [
+          "paid_rolls_exceed_predicted_slots",
+          "known_attempts_exceed_predicted_slots",
+          "cost_schedule_infeasible"
+        ],
+        "reason_code": "curator_confirmed_extra_attempt",
+        "note": "Curator confirmed chapter 104 has 2 roll events despite 1 predicted model slot. Both are directly evidenced in prose and cannot be one roll, since they name different constellations: Personal Reality at word 2861 ('I paused as I felt my power connect to a cluster of motes from the Personal Reality Constellation', an 8-mote multi-grab of Entrance Hall at 50 CP each) and Resources and Durability at word 8440 ('bringing forth a massive mote from the Resources and Durability constellation, which was also the final mote', Firestorm at 600 CP). The stored alignment anchor predates the ch 95.5 mention_chapter_num correction, which reattributed 600 CP upstream and shifted this chapter's roll boundary out; the model is short a slot here, the curation is not wrong."
+      }
     },
     "106": {
       "rolls": [
@@ -5958,7 +5968,7 @@
           "skipped": false,
           "evidence_quotes": [
             {
-              "text": "As I was considering my approach the Knowledge constellation made a connection to the final mote from the same cluster that had given me memory manipulation, giant robot construction, and horrific biological experiments. The final mote of that strange cluster gave me… more giant robots.\n\nBigs.",
+              "text": "As I was considering my approach the Knowledge constellation made a connection to the final mote from the same cluster that had given me memory manipulation, giant robot construction, and horrific biological experiments. The final mote of that strange cluster gave me\u2026 more giant robots.\n\nBigs.",
               "mention_chapter_num": "41",
               "mention_word_position": 3259
             }
@@ -6246,7 +6256,7 @@
           "skipped": false,
           "evidence_quotes": [
             {
-              "text": "Oh, and a connection to the Toolkits constellation. Prismatic Laboratory, a workshop addition specializing in exotic light and colors. Very exotic. Also, some additions. A candle that could actually hold off death for ten minutes, but only once every ten years. And two sets of 'connections', relationships with groups of people who would send small gifts and tokens of affections. And the groups I got were squid monsters and… demons?",
+              "text": "Oh, and a connection to the Toolkits constellation. Prismatic Laboratory, a workshop addition specializing in exotic light and colors. Very exotic. Also, some additions. A candle that could actually hold off death for ten minutes, but only once every ten years. And two sets of 'connections', relationships with groups of people who would send small gifts and tokens of affections. And the groups I got were squid monsters and\u2026 demons?",
               "mention_chapter_num": "41",
               "mention_word_position": 35434
             }
@@ -10174,7 +10184,7 @@
               "mention_word_position": 6224
             },
             {
-              "text": "Titan Chassis – Medium",
+              "text": "Titan Chassis \u2013 Medium",
               "mention_chapter_num": "66",
               "mention_word_position": 6248
             }
@@ -11293,7 +11303,7 @@
               "mention_word_position": 12553
             },
             {
-              "text": "\"New Workshop addition.\" I explained over a public channel. \"We have a dedicated power source.\" The amusement was clear in my voice, and I could see the confusion on Aisha's face through the link.\n\n\"Yeah, I saw the outlets. But you have fusion reactors and all that other stuff. What's the big deal with getting electrical systems installed?\" She asked. Like before, other members of the team were already in the know or learning the details for themselves.\n\n\"The big deal is that we are now a level two Kardashev civilization.\" I explained.\n\nA week ago, I doubt Aisha would have understood that reference. As of now I could see the dawning mix of wonder and horror on her face. \"You mean…?\" She trailed off without phrasing her question.\n\n\"That's right.\" I said with a wide smile. \"We have a Dyson Sphere.\"",
+              "text": "\"New Workshop addition.\" I explained over a public channel. \"We have a dedicated power source.\" The amusement was clear in my voice, and I could see the confusion on Aisha's face through the link.\n\n\"Yeah, I saw the outlets. But you have fusion reactors and all that other stuff. What's the big deal with getting electrical systems installed?\" She asked. Like before, other members of the team were already in the know or learning the details for themselves.\n\n\"The big deal is that we are now a level two Kardashev civilization.\" I explained.\n\nA week ago, I doubt Aisha would have understood that reference. As of now I could see the dawning mix of wonder and horror on her face. \"You mean\u2026?\" She trailed off without phrasing her question.\n\n\"That's right.\" I said with a wide smile. \"We have a Dyson Sphere.\"",
               "mention_chapter_num": "75",
               "mention_word_position": 12671
             }
@@ -12716,7 +12726,7 @@
         {
           "perks": [
             "Additional Space - Starting Area",
-            "Additional Space – Lofty Loft"
+            "Additional Space \u2013 Lofty Loft"
           ],
           "outcome": null,
           "constellation": "Personal Reality",
@@ -13659,7 +13669,7 @@
         },
         {
           "perks": [
-            "Minor Blessing Ares – Armaments",
+            "Minor Blessing Ares \u2013 Armaments",
             "Unnatural Skill: Ritual"
           ],
           "outcome": "hit",
@@ -13840,7 +13850,7 @@
       "rolls": [
         {
           "perks": [
-            "Minor Blessing Zeus – Lightning",
+            "Minor Blessing Zeus \u2013 Lightning",
             "Unnatural Skill: Curses"
           ],
           "outcome": "hit",
@@ -13978,7 +13988,7 @@
         },
         {
           "perks": [
-            "Minor Blessing Poseidon – Water",
+            "Minor Blessing Poseidon \u2013 Water",
             "Unnatural Skill: Stoneworking"
           ],
           "outcome": "hit",

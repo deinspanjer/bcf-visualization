@@ -23,6 +23,13 @@ def _write_minimal_site(
 ) -> None:
     (site / "web").mkdir(parents=True)
     (site / "web" / "index.html").write_text("<!doctype html><div id='app'></div>\n")
+    # The smoke derives the localStorage schema version from the served
+    # app.js rather than hardcoding a copy, so the fixture needs the same
+    # two constants a real site always carries.
+    (site / "web" / "app.js").write_text(
+        'const LS_STORAGE_VERSION = "bcf:preview-port-storage-version";\n'
+        'const STORAGE_VERSION = "3";\n'
+    )
     package_id = "pkg-smoke"
     _write_json(
         site / "data" / "packages.json",
