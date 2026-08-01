@@ -1,22 +1,73 @@
 """Deterministic mechanical verification of curated roll data against
 source prose and existing pipeline primitives (Phase 2, D-01..D-13).
 
-Pure module — no argparse, no file I/O in ``verify_roll()``. Zero fuzzy
-matching anywhere (REQUIREMENTS.md Out of Scope): quote verification is
-exact-substring, two normalization tiers, full stop.
+Pure module — no argparse, no file I/O in ``verify_roll()``/``verify_chapter()``.
+Zero fuzzy matching anywhere (REQUIREMENTS.md Out of Scope): quote
+verification is exact-substring, two normalization tiers, full stop.
 
-Phase 3's confidence gate imports ``verify_roll()``/``build_obtained_perks_index()``
-directly. There is no CLI in this plan — the pure API is Task 1's whole
-deliverable; a thin CLI convenience wrapper (loading the real corpus and
-writing a JSON report) is out of this plan's scope and is built in a
-later plan. NOT wired into scripts/pipeline.py and NOT manifest-registered
-(D-09) — this is a QA instrument, not a pipeline input.
+Phase 3's confidence gate imports ``verify_roll()``/``verify_chapter()``/
+``build_obtained_perks_index()`` directly. The ``if __name__ == "__main__":``
+block below is a thin CLI convenience wrapper that loads the real corpus
+(epub + chapter_roll_overrides.json + perk_directory.json + perk_aliases.json
++ obtained_perks.json) and writes a JSON report. This module is NOT wired
+into the data-regen DAG and NOT registered in the runtime data manifest
+(D-09) — it is a QA instrument, not a pipeline input.
 """
 
 from __future__ import annotations
 
+import argparse
 import bisect
+import html
+import json
 import re
+from pathlib import Path
+
+from cp_word_index import _chapter_word_index, _strip_to_spaces, load_chapter_html
+from data_paths import DERIVED, MANUAL, RAW
+from perk_name_resolver import build_directory_match_index, load_perk_aliases
+
+# Entities appearing in raw chapter HTML (e.g. "&amp;" for a literal "&"
+# inside a compound perk-name quote like "Weapon & Item Storage Chest").
+# Hand-curated evidence quotes always carry the DECODED character, never
+# the raw entity (measured: RESEARCH.md's entity_intrusion check found
+# zero literal entities inside quote text across all 864 corpus quotes).
+# A byte-exact/confusable-tolerant search against the raw, un-decoded
+# HTML would therefore always miss a quote that happens to straddle an
+# entity. Length-preserving decode (pad the decoded form with trailing
+# spaces back to the entity's original span) keeps every downstream
+# character offset — and therefore the word-index bisect lookup — valid.
+_ENTITY_RE = re.compile(r"&[a-zA-Z]+;|&#\d+;")
+
+
+def _decode_entities_preserving_length(chapter_html: str) -> str:
+    def _replace(m: re.Match[str]) -> str:
+        decoded = html.unescape(m.group(0))
+        pad = len(m.group(0)) - len(decoded)
+        if pad < 0:
+            # A decoded form longer than its entity span is not observed
+            # in this corpus; truncate defensively rather than corrupt
+            # every later offset in the chapter.
+            return decoded[: len(m.group(0))]
+        return decoded + (" " * pad)
+
+    return _ENTITY_RE.sub(_replace, chapter_html)
+
+
+def _prose_search_text(chapter_html: str) -> str:
+    """Build the text evidence quotes are searched against: HTML tags and
+    entities removed/decoded, every character offset preserved 1:1
+    against ``chapter_html`` (so a match's offset stays valid input to
+    the same ``word_index`` the tokenizer built from the raw HTML).
+
+    A quote that straddles a paragraph boundary (``</p><p>`` — zero
+    literal whitespace in the raw HTML, but the curated quote's own text
+    carries a "\\n\\n" paragraph break there) only matches once tags are
+    blanked to whitespace; a quote straddling an HTML entity only
+    matches once the entity is decoded to its real character. Both
+    transforms are length-preserving, so composing them is safe.
+    """
+    return _strip_to_spaces(_decode_entities_preserving_length(chapter_html))
 
 # Measured against the full 118-chapter hand-curated corpus (2026-07-26):
 # max real distance 41 CP-earning words after nearest-occurrence
@@ -118,15 +169,20 @@ def _verify_quote(
             ),
         }
 
-    # Tier 1: exact substring search against the raw, un-normalized HTML —
-    # never a whitespace-collapsed copy, which would invalidate the
-    # char-offset-to-word-index mapping the position check depends on.
-    offsets = [m.start() for m in re.finditer(re.escape(text), chapter_html)]
+    # Tier 1: exact substring search against the prose-search text — HTML
+    # tags blanked to whitespace and entities decoded, both
+    # length-preserving (see _prose_search_text), so every offset stays
+    # valid against word_index exactly as it would against raw
+    # chapter_html. This is NOT a whitespace-collapsing normalization —
+    # a quote's internal spacing must still match exactly at Tier 1;
+    # only cross-tag/cross-entity boundaries are bridged.
+    search_text = _prose_search_text(chapter_html)
+    offsets = [m.start() for m in re.finditer(re.escape(text), search_text)]
     if not offsets:
         # Tier 2: single tolerant regex (whitespace + confusable folding),
-        # searched against the SAME raw chapter_html.
+        # searched against the SAME prose-search text.
         pattern = _build_tier2_pattern(text)
-        offsets = [m.start() for m in pattern.finditer(chapter_html)]
+        offsets = [m.start() for m in pattern.finditer(search_text)]
 
     if not offsets:
         return {
@@ -203,13 +259,32 @@ def _verify_perk(
     resolved = directory_index.lookup(
         name, jump=None, constellation=roll.get("constellation"),
     )
-    if resolved is None:
-        return {
-            "code": "perk_unresolved",
-            "severity": "error",
-            "message": f"Perk name {name!r} did not resolve via the directory ladder.",
-        }
-    return None
+    if resolved is not None:
+        return None
+
+    # The ladder is the primary paid-perk resolution mechanism and stays
+    # unchanged (D-06(c)). It can still fail to disambiguate a genuinely
+    # real, confirmed acquisition when perk_directory.json catalogs the
+    # same name under a constellation other than the roll's own trigger
+    # constellation, or under several constellations at once (a
+    # cataloging property of the directory, not a curation error — e.g.
+    # a repeatable facility customization like "Entrance Hall - <variant>"
+    # is only cataloged under its base name's constellation, and
+    # "Synchronicity Event" is cataloged under three constellations, none
+    # of which is the roll's own). When that happens, `row` — already
+    # looked up above from obtained_perks.json for the cost
+    # determination, an independent authoritative source, not a second
+    # name-matching implementation — is itself confirmation the name was
+    # really acquired in this chapter (or its mention_chapter_num
+    # fallback). Only consulted when the ladder alone can't resolve.
+    if row is not None:
+        return None
+
+    return {
+        "code": "perk_unresolved",
+        "severity": "error",
+        "message": f"Perk name {name!r} did not resolve via the directory ladder.",
+    }
 
 
 def verify_roll(
@@ -300,3 +375,153 @@ def verify_roll(
         "status": status,
         "issues": issues,
     }
+
+
+def verify_chapter(
+    chapter_num: str,
+    override_entry: dict,
+    *,
+    prose_loader,
+    directory_index,
+    obtained_perks_index: dict[tuple[str, str], dict],
+) -> dict:
+    """Verify every roll in one chapter's ``chapter_roll_overrides.json``
+    entry, aggregating per-roll results into a per-chapter pass/fail/
+    no_evidence count.
+
+    Returns ``{chapter_num, rolls, counts}`` where ``rolls`` is a list of
+    ``verify_roll()`` results (in roll order) and ``counts`` is
+    ``{"pass": n, "fail": n, "no_evidence": n}``.
+    """
+    rolls: list[dict] = []
+    counts = {"pass": 0, "fail": 0, "no_evidence": 0}
+    for roll_index, roll in enumerate(override_entry.get("rolls") or []):
+        result = verify_roll(
+            chapter_num, roll_index, roll,
+            prose_loader=prose_loader,
+            directory_index=directory_index,
+            obtained_perks_index=obtained_perks_index,
+        )
+        rolls.append(result)
+        counts[result["status"]] += 1
+
+    return {
+        "chapter_num": chapter_num,
+        "rolls": rolls,
+        "counts": counts,
+    }
+
+
+# ---------------------------------------------------------------------------
+# CLI — QA convenience wrapper (D-09: not DAG-wired, not manifest-
+# registered). Loads the real corpus, runs verify_chapter() over every
+# chapter in chapter_roll_overrides.json, and writes a plain JSON report
+# (a bare json.dumps write — deliberately not schema-validated/registered).
+# ---------------------------------------------------------------------------
+
+DEFAULT_OVERRIDES = MANUAL / "chapter_roll_overrides.json"
+DEFAULT_CHAPTERS = DERIVED / "chapters.json"
+DEFAULT_PERK_DIRECTORY = DERIVED / "perk_directory.json"
+DEFAULT_PERK_ALIASES = MANUAL / "perk_aliases.json"
+DEFAULT_OBTAINED_PERKS = DERIVED / "obtained_perks.json"
+DEFAULT_EPUB = RAW / "Brocktons_Celestial_Forge.epub"
+DEFAULT_OUTPUT = DERIVED / "mechanical_verification_report.json"
+DEFAULT_SECTION_CLASSIFICATIONS = MANUAL / "section_classifications.json"
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument(
+        "--overrides", type=Path, default=DEFAULT_OVERRIDES,
+        help="Path to chapter_roll_overrides.json (default: %(default)s)",
+    )
+    p.add_argument(
+        "--chapters", type=Path, default=DEFAULT_CHAPTERS,
+        help="Path to chapters.json (default: %(default)s)",
+    )
+    p.add_argument(
+        "--perk-directory", type=Path, default=DEFAULT_PERK_DIRECTORY,
+        help="Path to perk_directory.json (default: %(default)s)",
+    )
+    p.add_argument(
+        "--perk-aliases", type=Path, default=DEFAULT_PERK_ALIASES,
+        help="Path to perk_aliases.json (default: %(default)s)",
+    )
+    p.add_argument(
+        "--obtained-perks", type=Path, default=DEFAULT_OBTAINED_PERKS,
+        help="Path to obtained_perks.json (default: %(default)s)",
+    )
+    p.add_argument(
+        "--epub", type=Path, default=DEFAULT_EPUB,
+        help="Path to the source epub (default: %(default)s)",
+    )
+    p.add_argument(
+        "--output", type=Path, default=DEFAULT_OUTPUT,
+        help="Path for the JSON report (default: %(default)s)",
+    )
+    return p.parse_args(argv)
+
+
+def _build_prose_loader(epub_path: Path, chapters_doc: dict, classifications_doc: dict):
+    """Build a lazy-caching ``chapter_num -> (html, word_index)`` closure
+    over the real epub, matching ``verify_roll()``'s ``prose_loader``
+    contract.
+    """
+    href_by_chapter = {
+        c["chapter_num"]: c["epub_href"] for c in chapters_doc["chapters"]
+    }
+    classifications = classifications_doc["classifications"]
+    cache: dict[str, tuple[str, list[int]]] = {}
+
+    def _load(chapter_num: str) -> tuple[str, list[int]]:
+        if chapter_num not in cache:
+            href = href_by_chapter[chapter_num]
+            html = load_chapter_html(epub_path, href)
+            word_index = _chapter_word_index(html, classifications, chapter_num)
+            cache[chapter_num] = (html, word_index)
+        return cache[chapter_num]
+
+    return _load
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+
+    overrides_doc = json.loads(args.overrides.read_text())
+    chapters_doc = json.loads(args.chapters.read_text())
+    perk_directory_doc = json.loads(args.perk_directory.read_text())
+    aliases = load_perk_aliases(args.perk_aliases)
+    obtained_perks_doc = json.loads(args.obtained_perks.read_text())
+    classifications_doc = json.loads(DEFAULT_SECTION_CLASSIFICATIONS.read_text())
+
+    prose_loader = _build_prose_loader(args.epub, chapters_doc, classifications_doc)
+    directory_index = build_directory_match_index(perk_directory_doc["perks"], aliases)
+    obtained_perks_index = build_obtained_perks_index(obtained_perks_doc)
+
+    chapter_roll_overrides = overrides_doc["chapter_roll_overrides"]
+    chapter_results: dict[str, dict] = {}
+    totals = {"pass": 0, "fail": 0, "no_evidence": 0}
+    for chapter_num, entry in chapter_roll_overrides.items():
+        result = verify_chapter(
+            chapter_num, entry,
+            prose_loader=prose_loader,
+            directory_index=directory_index,
+            obtained_perks_index=obtained_perks_index,
+        )
+        chapter_results[chapter_num] = result
+        for status, n in result["counts"].items():
+            totals[status] += n
+
+    payload = {"chapters": chapter_results, "totals": totals}
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    print(f"wrote {args.output}")
+    print(f"  pass:        {totals['pass']}")
+    print(f"  no_evidence: {totals['no_evidence']}")
+    print(f"  fail:        {totals['fail']}")
+
+
+if __name__ == "__main__":
+    main()
