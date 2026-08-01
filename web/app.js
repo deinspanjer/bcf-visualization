@@ -147,6 +147,12 @@ const app = {
   // handle itself (defensive-teardown discipline matching the gesture
   // slots above).
   mobileRailWidth: 350,
+  // Phase 3 (D-36/RESEARCH Pitfall 6): which layout's ResizeObserver last
+  // measured mobileRailWidth, so a stale portrait/landscape measurement is
+  // never used to bin the OTHER layout's differently-sized scrub track for
+  // one frame after a rotation. null until a measurement lands (Plan 02's
+  // ResizeObserver writes it); see mobileScrubWidthDefaultForLayout().
+  mobileRailWidthLayout: null,
   mobileRailBins: [],
   mobileRailResizeObserver: null,
   // Auto-pan offset frozen for the duration of one rail drag (null when no
@@ -975,7 +981,7 @@ function render() {
   clear(root);
   recordStructuralRender();
   app.dom = {};
-  app.frameKeys = { narrative: null, skyCamera: null, mobileChip: null, mobileFocal: null, mobileActiveDot: null, detail: {} };
+  app.frameKeys = { narrative: null, skyCamera: null, mobileChip: null, mobileFocal: null, mobileActiveDot: null, mobileFieldLog: null, mobileCinemaScrub: null, detail: {} };
   app.carousel.visibleSlots = new Map();
   if (app.error) {
     root.append(renderLoadError(app.error));
@@ -985,10 +991,15 @@ function render() {
     root.append(renderLoading());
     return;
   }
-  // D-12: portrait gets its own arm; every other mode (desktop AND the
-  // interim landscape fallback) keeps appending renderAppShell() byte-
-  // identically until Phase 3 delivers renderMobileLandscape().
-  root.append(app.layoutMode === "portrait" ? renderMobilePortrait() : renderAppShell());
+  // Phase 3: the D-12 interim landscape fallback (renderAppShell() for
+  // layoutMode === "landscape") is retired — landscape gets its own arm,
+  // renderMobileLandscape(), exactly like portrait's D-12 arm. Only
+  // layoutMode === "desktop" still appends renderAppShell().
+  root.append(
+    app.layoutMode === "portrait" ? renderMobilePortrait()
+    : app.layoutMode === "landscape" ? renderMobileLandscape()
+    : renderAppShell(),
+  );
   cachePlaybackDomRefs();
   updatePlaybackFrame();
   if (app.layoutMode !== "desktop") {
@@ -2716,6 +2727,30 @@ function cachePlaybackDomRefs() {
     app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
     app.dom.mobileChipRow = document.querySelector(".mobile-chip-row");
     app.dom.mobileHintRow = document.querySelector(".mobile-hint-row");
+  } else if (app.layoutMode === "landscape") {
+    // Landscape-only refs (D-18/D-26) — a distinct branch from portrait's
+    // above (never collapsed into one `!== "desktop"` block: the ref sets
+    // genuinely differ). mobileSky/mobileSkyCameraLayer/mobileFocalLabel/
+    // mobileTopCluster/mobileChipRow use the SAME selectors as portrait
+    // (D-35's shared sky helper) — safe because only one layout is ever
+    // mounted, so exactly one of these two branches ever queries the DOM.
+    app.dom.mobileSky = document.querySelector(".mobile-sky");
+    app.dom.mobileSkyCameraLayer = document.querySelector(".mobile-sky-camera-layer");
+    app.dom.mobileFocalLabel = document.querySelector(".mobile-focal-label");
+    app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
+    app.dom.mobileChipRow = document.querySelector(".mobile-chip-row");
+    app.dom.mobileFieldLog = document.querySelector(".mobile-field-log");
+    app.dom.mobileFieldLogHeader = document.querySelector(".mobile-field-log-header");
+    app.dom.mobileFieldLogHeaderCount = document.querySelector(".mobile-field-log-header .count");
+    app.dom.mobileFieldLogList = document.querySelector(".mobile-field-log-list");
+    app.dom.mobileCinemaScrub = document.querySelector(".mobile-cinema-scrub");
+    app.dom.mobileCinemaScrubTrack = document.querySelector(".mobile-cinema-scrub-track");
+    app.dom.mobileCinemaScrubInner = document.querySelector(".mobile-cinema-scrub-inner");
+    app.dom.mobileCinemaScrubProgress = document.querySelector(".mobile-cinema-scrub-progress");
+    app.dom.mobileCinemaScrubThumb = document.querySelector(".mobile-cinema-scrub-thumb");
+    app.dom.mobileCinemaScrubFab = document.querySelector(".mobile-cinema-scrub-fab");
+    app.dom.mobileCinemaScrubCount = document.querySelector(".mobile-cinema-scrub-count");
+    app.dom.mobileDockStatus = document.querySelector(".mobile-dock-status");
   }
   app.carousel.visibleSlots = new Map(
     [...document.querySelectorAll(".carousel-slot[data-roll-uid]")]
@@ -2728,10 +2763,15 @@ function updatePlaybackFrame() {
   // D-18/T-02-01: portrait has no #scrubber-playhead, so this early return
   // MUST land before the `!app.dom?.playhead` gate below — otherwise the
   // very first portrait frame recurses into render() forever (RESEARCH
-  // Pitfall 2). Desktop and landscape (still on renderAppShell()) are
-  // byte-identical past this point.
+  // Pitfall 2). Landscape has no #scrubber-playhead either (Phase 3), so its
+  // early return needs the same ordering. Desktop is byte-identical past
+  // this point.
   if (app.layoutMode === "portrait") {
     updateMobilePortraitFrame();
+    return;
+  }
+  if (app.layoutMode === "landscape") {
+    updateMobileLandscapeFrame();
     return;
   }
   if (!app.dom?.playhead) {
@@ -3262,9 +3302,11 @@ function binSize(bin) {
 // (app.mobileRailWidth, kept current by the ResizeObserver installed in
 // attachMobilePortraitGestures) and caches the resulting bins on
 // app.mobileRailBins. Call ONLY from: the structural render (renderMobile-
-// Portrait), the zoom setter (setMobileTimelineZoom), and the rail's
-// ResizeObserver callback — never from updateMobilePortraitFrame() (D-18:
-// bins recompute on render/zoom/resize, never on a playback frame).
+// Portrait), renderMobileLandscape() (Phase 3 — the fourth sanctioned call
+// site, same discipline), the zoom setter (setMobileTimelineZoom), and the
+// rail's ResizeObserver callback — never from updateMobilePortraitFrame() or
+// updateMobileLandscapeFrame() (D-18: bins recompute on render/zoom/resize,
+// never on a playback frame).
 function recomputeMobileRailBins() {
   if (!app.data) {
     app.mobileRailBins = [];
@@ -3276,6 +3318,25 @@ function recomputeMobileRailBins() {
     story.total_words || 1,
     app.mobileRailWidth * app.mobileTimelineZoom,
   );
+}
+
+// mobileScrubWidthDefaultForLayout() (Phase 3, RESEARCH Pitfall 6/CONTEXT
+// A2): app.mobileRailWidth and app.mobileRailBins stay SHARED across both
+// mobile layouts — exactly one layout is ever mounted, so a second pair of
+// fields would just be dead weight. But a stale portrait measurement (the
+// 350 default, or a prior real measurement) must never mis-bin the
+// narrower, floating landscape cinema-scrub track for one frame right after
+// a rotation, and vice versa. app.mobileRailWidthLayout records which
+// layout's ResizeObserver last wrote a real measurement; when it doesn't
+// match the CURRENT layout, this returns a layout-appropriate default
+// instead of the other layout's stale number (200 for landscape — the
+// prototype's own cinema-scrub fallback; 350 for portrait, unchanged from
+// Phase 2). Once a layout's ResizeObserver measures and writes
+// app.mobileRailWidthLayout = app.layoutMode, this returns the live
+// measurement unchanged until the layout changes again.
+function mobileScrubWidthDefaultForLayout() {
+  if (app.mobileRailWidthLayout === app.layoutMode) return app.mobileRailWidth;
+  return app.layoutMode === "landscape" ? 200 : 350;
 }
 
 // renderMobileRailBinEl(bin, total): a single `.mobile-roll-bin` marker,
@@ -3333,6 +3394,43 @@ function maybeAutoOpenHelp() {
   history.pushState({ bcfMobileSurface: "help" }, "");
 }
 
+// renderMobileSkyRegion(frame) (Phase 3, D-35): the sky markup common to
+// BOTH mobile layouts — viewport frame corners, the cinematic camera layer,
+// the focal label, the tap hint, and the Settings/About/Help mount points.
+// Extracted verbatim from renderMobilePortrait()'s former inline sky block
+// so it exists in exactly ONE place; each caller wraps the returned array in
+// its own `.mobile-sky mobile-sky-surface` container with layout-specific
+// sizing (portrait: 60% height stack; landscape: ~75% width flex sibling of
+// the rail). Never duplicate this block a second time — D-35's justification
+// is that duplicating would mean fixing the tap hint, focal label and camera
+// layer twice.
+function renderMobileSkyRegion(frame) {
+  return [
+    renderViewportFrame(),
+    el("div", { class: "mobile-sky-camera-layer" },
+      frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
+    ),
+    renderMobileFocalLabel(frame),
+    renderMobileSkyTapHint(),
+    // D-19: the Help overlay is scoped to the sky region (not the whole
+    // mobile surface) so the dock/rail — including the play button a
+    // first-run empty-storage load must still be able to click — stays
+    // visible and operable while it's open.
+    app.mobileSurface === "help" ? renderMobileHelpOverlay() : null,
+    // Settings/About mount here too, under the same D-19 rationale as Help.
+    // They previously mounted as the last child of .mobile-app with a fixed
+    // `bottom: 152px`, which assumed the prototype's shorter dock: on a real
+    // iPhone (440x760) the dock is 304px tall and its transport row sits
+    // 112-166px from the bottom, so a 152px anchor landed inside that band
+    // and the buttons — z-index 10 against the flyout's 9 — painted through
+    // the panel. Scoping the surfaces to the sky removes the collision
+    // structurally instead of re-tuning the constant, and keeps the dock
+    // operable while a surface is open (the backdrop no longer covers it).
+    // D-33 reuses this same scoping for landscape's Settings/About.
+    renderMobileSurface(),
+  ];
+}
+
 // renderMobilePortrait(): the D-12 portrait arm of render(). Root
 // `.mobile-app` holds the top chip cluster, the real sky (D-13 — never the
 // prototype's procedural placeholder) with its cinematic camera and focal
@@ -3340,33 +3438,18 @@ function maybeAutoOpenHelp() {
 function renderMobilePortrait() {
   maybeAutoOpenHelp();
   const frame = playthroughFrameState();
-  // Structural render is one of the exactly three call sites for bin
+  // Phase 3/RESEARCH Pitfall 6: guard against a stale landscape measurement
+  // (or the other layout's default) surviving a rotation into portrait — see
+  // mobileScrubWidthDefaultForLayout(). A no-op once a portrait
+  // ResizeObserver measurement has already landed this session.
+  app.mobileRailWidth = mobileScrubWidthDefaultForLayout();
+  // Structural render is one of the four sanctioned call sites for bin
   // recomputation (D-18) — never inside updateMobilePortraitFrame().
   recomputeMobileRailBins();
   return el("div", { class: "mobile-app" },
     renderMobileTopCluster(),
     el("div", { class: "mobile-sky mobile-sky-surface" },
-      renderViewportFrame(),
-      el("div", { class: "mobile-sky-camera-layer" },
-        frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
-      ),
-      renderMobileFocalLabel(frame),
-      renderMobileSkyTapHint(),
-      // D-19: the Help overlay is scoped to the sky region (not the whole
-      // portrait surface) so the dock — including the play button a
-      // first-run empty-storage load must still be able to click — stays
-      // visible and operable while it's open.
-      app.mobileSurface === "help" ? renderMobileHelpOverlay() : null,
-      // Settings/About mount here too, under the same D-19 rationale as Help.
-      // They previously mounted as the last child of .mobile-app with a fixed
-      // `bottom: 152px`, which assumed the prototype's shorter dock: on a real
-      // iPhone (440x760) the dock is 304px tall and its transport row sits
-      // 112-166px from the bottom, so a 152px anchor landed inside that band
-      // and the buttons — z-index 10 against the flyout's 9 — painted through
-      // the panel. Scoping the surfaces to the sky removes the collision
-      // structurally instead of re-tuning the constant, and keeps the dock
-      // operable while a surface is open (the backdrop no longer covers it).
-      renderMobileSurface(),
+      ...renderMobileSkyRegion(frame),
     ),
     el("div", { class: "mobile-dock" },
       el("div", { class: "mobile-dock-transport" },
@@ -3648,7 +3731,15 @@ function mobileChChipText() {
   // Defensive optional-chain: chapterAtWord() returns undefined when
   // app.data.story.chapters is empty (UI-SPEC partial-data row) — never
   // let that surface as a literal "undefined" in the chip.
-  return `CH ${chapterAtWord(app.wordPos)?.chapter_num ?? "—"} · ${formatWords(app.wordPos)}w`;
+  const chNum = chapterAtWord(app.wordPos)?.chapter_num ?? "—";
+  // Phase 3 UI-SPEC Typography table: landscape's top chip omits the word
+  // count segment (a real, intentional content difference from portrait's
+  // `CH {num} · {words}w`, not a truncation bug — prototype layouts.jsx:69).
+  // Branching inside this shared helper (rather than a flag passed from
+  // renderMobileTopCluster()) means updateMobileTopClusterFrame() picks the
+  // correct variant up for free in both layouts.
+  if (app.layoutMode === "landscape") return `CH ${chNum}`;
+  return `CH ${chNum} · ${formatWords(app.wordPos)}w`;
 }
 
 function mobileAmberChipText(roll) {
@@ -3735,12 +3826,12 @@ function renderMobileScrubber() {
   );
 }
 
-// updateMobilePortraitFrame(): the D-18 incremental tier for portrait,
-// mirroring updatePlaythroughFrame's key-diff shape. Mutates text/style
-// only — never rebuilds the rail's lanes here (that only happens on
-// structural render, zoom change, or rail resize — 02-03-PLAN.md).
-function updateMobilePortraitFrame() {
-  const frame = playthroughFrameState();
+// updateMobileSkyCameraFrame(frame) (Phase 3): the sky camera key-diff
+// shared by BOTH mobile layouts' incremental tiers (D-35 — the shared sky
+// region means the shared sky-camera update logic lives once too, never
+// pasted twice). Identical logic, identical app.frameKeys.skyCamera field,
+// previously inlined in updateMobilePortraitFrame() only.
+function updateMobileSkyCameraFrame(frame) {
   const skyCameraKey = frame.scene ? `scene:${frame.lastRoll?.uid || ""}` : "none";
   if (app.dom.mobileSkyCameraLayer && (frame.scene || app.frameKeys.skyCamera !== skyCameraKey)) {
     app.dom.mobileSkyCameraLayer.replaceChildren(
@@ -3748,6 +3839,15 @@ function updateMobilePortraitFrame() {
     );
     app.frameKeys.skyCamera = skyCameraKey;
   }
+}
+
+// updateMobilePortraitFrame(): the D-18 incremental tier for portrait,
+// mirroring updatePlaythroughFrame's key-diff shape. Mutates text/style
+// only — never rebuilds the rail's lanes here (that only happens on
+// structural render, zoom change, or rail resize — 02-03-PLAN.md).
+function updateMobilePortraitFrame() {
+  const frame = playthroughFrameState();
+  updateMobileSkyCameraFrame(frame);
   if (app.dom.mobileFab) {
     const label = app.playing ? "Pause" : "Play";
     app.dom.mobileFab.setAttribute("aria-label", label);
@@ -3837,6 +3937,282 @@ function updateMobileHintRowFrame(frame) {
   if (!hintRow) return;
   const rightSpan = hintRow.lastElementChild;
   if (rightSpan) rightSpan.textContent = mobileHintRowRightText(frame.chapter);
+}
+
+// ── Landscape layout (Phase 3, D-20..D-36) ──────────────────────────────
+// Retires the D-12 interim landscape fallback (renderAppShell()). Sky at
+// ~75% width (renderMobileSkyRegion, D-35 — shared with portrait) beside a
+// 224px right rail (field log over a Settings/About control dock), wired
+// through the SAME render -> cache-refs -> incremental-update tier portrait
+// uses (D-18). The field log's ONLY data call is recentRolls(wordPos, count)
+// (D-24) — never renderNarrativeReadout/renderRecentRolls, which are §0.2
+// frozen and carry desktop sizing/scroll assumptions.
+
+// mobileFieldLogRows(): the D-24 model seam, read once per structural/
+// incremental pass. recentRolls() returns NEWEST-FIRST, so `live` (the most
+// recent roll at or before the playhead) is element 0; `recent` slices it
+// off the head (the prototype's own de-dup — the live roll never appears
+// twice) so the field-log list holds only the OLDER of the up-to-6 rows.
+function mobileFieldLogRows() {
+  const rows = recentRolls(app.wordPos, 6);
+  const live = rows.length ? rows[0] : null;
+  const recent = rows.slice(live ? 1 : 0);
+  const total = app.data.story.rolls.length;
+  const idx = live ? app.data.story.rolls.indexOf(live) : -1;
+  return { live, recent, idx, total };
+}
+
+// mobileFieldLogPrincipalName(roll): the SAME principal-perk expression
+// renderMobileFocalLabel() uses for a hit roll, generalized with the same
+// fallback chain for a miss/unknown roll (whose purchased_perks/free_perks
+// are empty, so this falls straight through to roll.constellation, then an
+// em-dash) — never a second perk-name-resolution implementation.
+function mobileFieldLogPrincipalName(roll) {
+  const principal = paidRollPerks(roll)[0] ?? (roll.free_perks || [])[0];
+  return perkDisplayLabel(principal) || roll.rolled_perk_name || roll.constellation || "—";
+}
+
+// mobileFieldLogQuoteText(roll)/mobileTruncate(s, n) (D-27): the live-roll
+// card's truncated evidence quote. mobileFieldLogQuoteText reads the first
+// evidence quote's `text` field (confirmed against derive_roll_facts.py's
+// _evidence_quotes payload shape) or "" when absent; mobileTruncate mirrors
+// the prototype's own truncate(s, n) helper verbatim.
+function mobileFieldLogQuoteText(roll) {
+  return roll.evidence_quotes?.[0]?.text || "";
+}
+
+function mobileTruncate(s, n) {
+  if (s.length <= n) return s;
+  return `${s.slice(0, n - 1).trim()}…`;
+}
+
+// mobileFieldLogSubChildren(roll): the live card's `.sub` node children —
+// jump, a middle-dot separator only when BOTH a jump and a quote exist, and
+// the truncated quote wrapped in straight double quotes inside an `em` node.
+// Every text fragment flows through el()'s `text` prop (textContent), never
+// string-concatenated markup (T-03-01) — a quote containing tag-looking
+// characters renders as literal characters, never parsed HTML.
+function mobileFieldLogSubChildren(roll) {
+  const quote = mobileFieldLogQuoteText(roll);
+  const truncated = quote ? mobileTruncate(quote, 100) : "";
+  const children = [];
+  if (roll.jump) children.push(roll.jump);
+  if (roll.jump && truncated) children.push(" · ");
+  if (truncated) children.push(el("em", { text: `"${truncated}"` }));
+  return children;
+}
+
+// renderMobileFieldLogChildren(rows): the field-log list's full child set —
+// the live-roll card first (structurally ABSENT, never a blanked
+// placeholder, when no roll has fired at or before the playhead), then one
+// `.mobile-field-log-entry` per row in `recent`. Shared by the initial
+// structural build (renderMobileFieldLog) and the incremental update
+// (updateMobileFieldLogFrame) — never a third copy of this markup.
+function renderMobileFieldLogChildren(rows) {
+  const { live, recent } = rows;
+  const liveCard = live ? el("div", { class: "mobile-field-log-live" },
+    el("div", { class: "row1" },
+      el("span", { text: `◢ ROLL ${live.roll_label || "R—"} · ${live.outcome}` }),
+      el("span", { text: live.outcome === "hit" ? `${rollTotalCost(live)} CP` : "—" }),
+    ),
+    el("div", { class: "name", text: mobileFieldLogPrincipalName(live) }),
+    el("div", { class: "sub" }, ...mobileFieldLogSubChildren(live)),
+  ) : null;
+  const entries = recent.map(r => el("div", { class: "mobile-field-log-entry" },
+    el("div", { class: "row1" },
+      el("span", { text: `Ch ${r.chapter_num}` }),
+      el("span", { text: r.outcome === "hit" ? `${rollTotalCost(r)} CP` : r.outcome }),
+    ),
+    el("div", { class: "name", text: mobileFieldLogPrincipalName(r) }),
+  ));
+  return [liveCard, ...entries].filter(Boolean);
+}
+
+// renderMobileFieldLog(): `.mobile-field-log` — header (`Field Log ·
+// {constellation}` left, `{idx+1} of {total}` right, both em-dash/0-safe for
+// an unknown constellation or a zero-roll story) over the list.
+function renderMobileFieldLog() {
+  const rows = mobileFieldLogRows();
+  return el("div", { class: "mobile-field-log" },
+    el("h3", { class: "mobile-field-log-header" },
+      el("span", { text: `Field Log · ${rows.live?.constellation || "—"}` }),
+      el("span", { class: "count", text: `${rows.idx + 1} of ${rows.total}` }),
+    ),
+    el("div", { class: "mobile-field-log-list" }, renderMobileFieldLogChildren(rows)),
+  );
+}
+
+// renderMobileLandscapeSidebar(frame): `.mobile-sidebar` — the field log
+// (top 2/3) over the control dock (bottom 1/3: Settings/About quick actions
+// + a speed/mode/POV status row). Settings/About commit through the SAME
+// module-level data-action delegation portrait's dock buttons use — no new
+// click handler.
+function renderMobileLandscapeSidebar(frame) {
+  const controlDock = el("div", { class: "mobile-control-dock" },
+    el("div", { class: "mobile-dock-quick-actions" },
+      el("div", { class: "mobile-group-label", text: "Quick actions" }),
+      el("div", { class: "mobile-dock-grid" },
+        el("button", {
+          class: `mobile-dock-btn${app.mobileSurface === "settings" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-settings",
+          "aria-label": "Settings",
+        }, mobileGearIcon(), el("span", { text: "Settings" })),
+        el("button", {
+          class: `mobile-dock-btn${app.mobileSurface === "info" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-info",
+          "aria-label": "About",
+        }, mobileInfoIcon(), el("span", { text: "About" })),
+      ),
+    ),
+    el("div", { class: "mobile-dock-status" },
+      el("span", { text: `${mobileSpeedMultiplier() ?? "—"}× · ${app.mode}` }),
+      el("span", { class: "val", text: `${frame.chapter?.pov || "Joe"} POV` }),
+    ),
+  );
+  return el("div", { class: "mobile-sidebar" }, renderMobileFieldLog(), controlDock);
+}
+
+// renderMobileCinemaScrubTrackChildren(): the baseline rail, the raw-
+// playhead-percentage progress bar, one `.mobile-cinema-scrub-roll` marker
+// per CACHED bin in app.mobileRailBins (never a second binning call — reuses
+// the exact bins renderMobileLandscape()/the ResizeObserver already
+// computed), and the thumb last so it always paints above the markers.
+function renderMobileCinemaScrubTrackChildren() {
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  const rail = el("div", { class: "mobile-cinema-scrub-rail" });
+  const progress = el("div", { class: "mobile-cinema-scrub-progress", style: { width: `${playheadPctRaw}%` } });
+  const rolls = (app.mobileRailBins || []).map(bin => el("div", {
+    class: `mobile-cinema-scrub-roll ${bin.dominant}`,
+    style: { left: `${(bin.midWord / total) * 100}%` },
+  }));
+  const thumb = el("div", { class: "mobile-cinema-scrub-thumb", style: { left: `${playheadPctRaw}%` } });
+  return [rail, progress, ...rolls, thumb];
+}
+
+// renderMobileCinemaScrub(): `.mobile-cinema-scrub` — the floating play/
+// pause FAB, the roll-count readout, and the scrub track. Structure only —
+// Plan 02 attaches the drag (attachRailScrub, D-17's single scrub input
+// path) and the auto-hide chrome behavior; the play button commits through
+// the SAME module-level `data-action="toggle-playback"` delegation the
+// portrait FAB uses, no new click handler. `.mobile-rail-surface` (the
+// existing touch-action:none gesture-surface utility) is applied directly
+// to the track so Plan 02 never needs to write a second touch-action rule.
+function renderMobileCinemaScrub() {
+  const rows = mobileFieldLogRows();
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  const zoom = app.mobileTimelineZoom;
+  const panPct = panOffsetForPlayhead(playheadPctRaw, zoom);
+  return el("div", { class: "mobile-cinema-scrub" },
+    el("button", {
+      class: "mobile-cinema-scrub-fab",
+      type: "button",
+      "data-action": "toggle-playback",
+      "aria-label": app.playing ? "Pause" : "Play",
+      text: app.playing ? "❚❚" : "▶",
+    }),
+    el("span", { class: "mobile-cinema-scrub-count", text: `${rows.idx + 1} / ${rows.total}` }),
+    el("div", { class: "mobile-cinema-scrub-track mobile-rail-surface" },
+      el("div", {
+        class: "mobile-cinema-scrub-inner",
+        style: { width: `${zoom * 100}%`, transform: `translateX(-${panPct}%)` },
+      },
+        renderMobileCinemaScrubTrackChildren(),
+      ),
+    ),
+  );
+}
+
+// renderMobileLandscape(): the Phase 3 landscape arm of render(), structural
+// sibling of renderMobilePortrait() in the same order (maybeAutoOpenHelp ->
+// frame state -> rail-width guard -> bin recompute -> root el()). Root
+// `.mobile-app mobile-app-landscape` holds the landscape stage (shared sky +
+// top chips + cinema-scrub, the containing block for their absolutely-
+// positioned children) beside the sidebar, with the surface backdrop as the
+// LAST child spanning the whole root — same D-19-derived shape Phase 2
+// arrived at, so a backdrop tap dismisses over the whole surface including
+// the rail.
+function renderMobileLandscape() {
+  maybeAutoOpenHelp();
+  const frame = playthroughFrameState();
+  // RESEARCH Pitfall 6/CONTEXT A2: guard against a stale portrait
+  // measurement (or the shared default) mis-binning the narrower landscape
+  // cinema-scrub track for one frame right after a rotation.
+  app.mobileRailWidth = mobileScrubWidthDefaultForLayout();
+  // Structural render is one of the four sanctioned call sites for bin
+  // recomputation (D-18) — never inside updateMobileLandscapeFrame().
+  recomputeMobileRailBins();
+  return el("div", { class: "mobile-app mobile-app-landscape" },
+    el("div", { class: "mobile-landscape-stage" },
+      el("div", { class: "mobile-sky mobile-sky-surface mobile-sky-landscape" },
+        ...renderMobileSkyRegion(frame),
+      ),
+      renderMobileTopCluster(),
+      renderMobileCinemaScrub(),
+    ),
+    renderMobileLandscapeSidebar(frame),
+    renderMobileSurfaceBackdrop(),
+  );
+}
+
+// updateMobileFieldLogFrame() (D-18/D-26): the field log's incremental
+// update, the memoized-key idiom desktop's updatePlaythroughFrame() already
+// uses for its own field log (app.frameKeys.narrative). The key joins the
+// live roll's uid (or a "none" sentinel) with the recent rolls' uids — only
+// when it changes does replaceChildren() rebuild the list; the header's
+// count/label spans and the cinema-scrub's count span get a plain
+// textContent write every frame regardless (cheap, and correctness-critical:
+// they must never show a stale constellation/count while the list itself
+// hasn't changed key).
+function updateMobileFieldLogFrame() {
+  const rows = mobileFieldLogRows();
+  const key = `${rows.live ? rows.live.uid : "none"}|${rows.recent.map(r => r.uid).join(",")}`;
+  if (app.dom.mobileFieldLogList && app.frameKeys.mobileFieldLog !== key) {
+    app.dom.mobileFieldLogList.replaceChildren(...renderMobileFieldLogChildren(rows));
+    app.frameKeys.mobileFieldLog = key;
+  }
+  if (app.dom.mobileFieldLogHeader?.firstElementChild) {
+    app.dom.mobileFieldLogHeader.firstElementChild.textContent = `Field Log · ${rows.live?.constellation || "—"}`;
+  }
+  if (app.dom.mobileFieldLogHeaderCount) {
+    app.dom.mobileFieldLogHeaderCount.textContent = `${rows.idx + 1} of ${rows.total}`;
+  }
+  if (app.dom.mobileCinemaScrubCount) {
+    app.dom.mobileCinemaScrubCount.textContent = `${rows.idx + 1} / ${rows.total}`;
+  }
+}
+
+// updateMobileLandscapeFrame() (D-18/D-26): the landscape incremental tier,
+// mirroring updateMobilePortraitFrame()'s shape. Mutates text/style only —
+// never rebuilds the cinema-scrub track's markers here (bins only recompute
+// on structural render/zoom change/resize, D-18).
+function updateMobileLandscapeFrame() {
+  const frame = playthroughFrameState();
+  updateMobileSkyCameraFrame(frame);
+  updateMobileTopClusterFrame();
+  updateMobileFocalLabelFrame(frame);
+  if (app.dom.mobileCinemaScrubFab) {
+    const label = app.playing ? "Pause" : "Play";
+    app.dom.mobileCinemaScrubFab.setAttribute("aria-label", label);
+    app.dom.mobileCinemaScrubFab.textContent = app.playing ? "❚❚" : "▶";
+  }
+  if (app.dom.mobileDockStatus?.lastElementChild) {
+    app.dom.mobileDockStatus.lastElementChild.textContent = `${frame.chapter?.pov || "Joe"} POV`;
+  }
+  const total = app.data.story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  if (app.dom.mobileCinemaScrubThumb) app.dom.mobileCinemaScrubThumb.style.left = `${playheadPctRaw}%`;
+  if (app.dom.mobileCinemaScrubProgress) app.dom.mobileCinemaScrubProgress.style.width = `${playheadPctRaw}%`;
+  if (app.dom.mobileCinemaScrubInner) {
+    const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+    app.dom.mobileCinemaScrubInner.style.transform = `translateX(-${panPct}%)`;
+  }
+  updateMobileFieldLogFrame();
 }
 
 // attachMobilePortraitGestures(): mirrors attachMobileGestureProbes's

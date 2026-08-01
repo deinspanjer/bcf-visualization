@@ -1261,12 +1261,15 @@ def test_first_run_help_auto_opens_once(tmp_path):
             page.close()
 
 
-def test_landscape_fallback_is_unchanged(tmp_path):
-    # 02-05 phase-close proof: D-12's interim landscape fallback (desktop
-    # shell + portrait banner + Phase-1 gesture probe) must survive this
-    # whole phase byte-for-byte — Phase 3 replaces it with
-    # renderMobileLandscape(), not this plan. The portrait surface this
-    # phase built must never mount at a landscape viewport.
+def test_landscape_no_longer_falls_back_to_desktop_shell(tmp_path):
+    # 03-01 phase-open proof: D-12's interim landscape fallback (desktop
+    # shell + portrait banner) is RETIRED ON PURPOSE — Phase 3 replaces it
+    # with renderMobileLandscape(), which is exactly what this test now
+    # asserts. This is the inverse of the pre-Phase-3 contract this test used
+    # to assert (see git history for the old body); it is a deliberate,
+    # recorded change Phase 4 needs before it deletes the portrait banner
+    # globally, not a regression. Renamed from
+    # test_landscape_fallback_is_unchanged.
     playwright_api = pytest.importorskip("playwright.sync_api")
     expect = playwright_api.expect
 
@@ -1279,22 +1282,20 @@ def test_landscape_fallback_is_unchanged(tmp_path):
 
             assert page.evaluate("window.__bcfLayoutMode") == "landscape"
 
-            # Desktop shell root still mounts (renderAppShell(), not
-            # renderMobilePortrait()) with its portrait-banner safety net
-            # visible.
-            expect(page.locator(".app")).to_be_visible()
-            expect(page.locator(".portrait-banner")).to_be_visible()
+            # The desktop shell and its portrait-banner safety net must NEVER
+            # mount at a landscape viewport now that renderMobileLandscape()
+            # exists.
+            assert page.evaluate("document.querySelector('.app')") is None
+            assert page.evaluate("document.querySelector('.portrait-banner')") is None
+
+            # renderMobileLandscape()'s own root mounts instead.
+            expect(page.locator(".mobile-app")).to_be_visible()
 
             # Phase 1's gesture probe (F-01) is still attached in every
-            # non-desktop layout mode, including the landscape fallback.
+            # non-desktop layout mode, including landscape.
             assert page.evaluate("document.querySelector('.mobile-gesture-probe') != null") is True
 
-            # The portrait surface this phase built must never mount here.
-            assert page.evaluate("document.querySelector('.mobile-app')") is None
-
             assert console_messages == []
-            browser.close()
-
             browser.close()
 
 
