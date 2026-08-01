@@ -238,6 +238,9 @@
           "outcome": "hit",
           "constellation": "Personal Reality",
           "word_position": 2860,
+          "mention_chapter_num": "104",
+          "mention_word_position": 2861,
+          "display_position_policy": "mention",
           "evidence_quotes": [
             {
               "text": "I paused as I felt my power connect to a cluster of motes from the Personal Reality Constellation.",
