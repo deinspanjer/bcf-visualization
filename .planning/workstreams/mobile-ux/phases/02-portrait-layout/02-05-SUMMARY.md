@@ -216,7 +216,27 @@ Dre reviewed the gate agenda and ruled on four of the six items. **The gate itse
 | 5 | Sky letterboxing at phone aspect ratios | **HELD** — pending Dre's hardware testing results. Do not pre-build a mobile-specific viewBox crop. |
 | 6 | F-01/F-02 — retained Phase-1 gesture probe; one superseded portrait-banner assertion in `test_desktop_smoke.py` | **Confirmed** (both). |
 
-**What still blocks the gate:** Dre's real-device walkthrough, plus rulings on items 3 and 5. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
+### Second review pass (2026-08-01, after Dre's hardware walkthrough)
+
+Dre ran the phone pass and reported: overall good; help glyph pairs stacked vertically; portrait shows no constellations between roll animations while landscape did.
+
+| Item | Outcome |
+|------|---------|
+| Help gesture glyph pairs wrapping | **Fixed** (`e314ea1`) — icon grid track was 32px, a pair of 18px glyphs overflowed it. Now 44px + `white-space: nowrap`. Affected the swipe row too. |
+| Help CTA scrolled out of sight | **Fixed** (`bf7cedc`) — Dre asked for it visible if it reasonably fits. It does not (655px of content into a 506px sky region at 390×844), so the body now scrolls inside `.mobile-help-body` and the CTA is a static footer outside it. A sticky CTA was tried first and rejected: it covered the Heads-up paragraph mid-sentence at scroll-top. |
+| D-05 carousel | Dre: "okay with portrait being like it is" — **but** requests a **fallback to the desktop view** from mobile if D-05 does not already cover one, conditional on it not compromising the mobile design. D-05 contains no such escape hatch. NOT yet built or planned — see New Finding below, which may reopen the underlying question. |
+
+### New finding — portrait's sky is empty between rolls (not merely "no carousel")
+
+Verified structurally, independent of any timing: `app.js:1519` sets `scene = cinematicActive ? focusScene(...) : null`, and portrait renders `frame.scene ? renderSkyCamera(...) : null` (`app.js:3335-3338`). Desktop's playthrough calls `renderCarousel(...)` **unconditionally** alongside the same sky camera (`app.js:1528`). So outside a roll cinematic the desktop always shows constellation cards, while portrait's sky-camera layer has **zero children** — measured in-browser at a non-roll position.
+
+Consequence: portrait's largest region (~60% of the screen) is empty except during roll animations. This is what Dre observed. It follows from D-05 (no carousel) combined with D-13 (use the real sky camera, do not port the prototype's persistent procedural-diamond placeholder) — neither decision anticipated that the two together leave the region blank. **Dre's ruling needed:** accept as-is, render some persistent idle sky (the scene model already carries `ambientStars`), or revisit D-05.
+
+### ⚠ Retracted mid-review: "portrait playback is stalled"
+
+An earlier finding in this review that portrait playback and rail scrubbing were frozen was **an artifact of the automation environment and is withdrawn.** The Claude Browser pane runs its tab with `document.visibilityState === "hidden"`, so `requestAnimationFrame` never fires (measured: 0 frames in 1500ms). Playback advancement, cinematic completion, and the focus-animation lock release all ride that rAF tier. Nothing in the app was implicated. Recorded here so a later reader does not resurrect it as a real defect. **Corollary for future review sessions: the Browser pane cannot verify any animated or time-dependent behavior in this app — those need real hardware or a headed Playwright run.**
+
+**What still blocks the gate:** Dre's real-device walkthrough of items 3 and 5, plus a ruling on the empty-sky finding above. Serve for hardware testing with `python3 -m http.server 8001` from the worktree root, then open `http://<mac-lan-ip>:8001/web/` on the phone.
 
 **On resume:** re-read this table before re-asking anything — items 1, 2, 4, and 6 are settled and must not be re-litigated. Only items 3 and 5 plus the overall approval remain open. If Dre's testing turns up changes, route them through `/gsd-plan-phase 2 --gaps` rather than editing plans in place.
 
