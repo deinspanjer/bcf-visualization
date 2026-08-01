@@ -13,13 +13,20 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from scripts.cp_word_index import EPUB, _chapter_word_index, load_chapter_html  # noqa: E402
-from scripts.data_paths import DERIVED, MANUAL  # noqa: E402
+from scripts.data_paths import DERIVED, MANUAL, RAW  # noqa: E402
 from scripts.mechanical_verifier import (  # noqa: E402
     POSITION_TOLERANCE_WORDS,
     build_obtained_perks_index,
+    verify_chapter,
     verify_roll,
 )
 from scripts.perk_name_resolver import build_directory_match_index  # noqa: E402
+
+# Task 2 (D-10): the corpus-wide baseline test skips cleanly, with an
+# explicit reason, when the gitignored epub is absent locally — the suite
+# stays runnable without private source, but the phase-gate run requires
+# this to execute for real (epub present).
+EPUB_AVAILABLE = (RAW / "Brocktons_Celestial_Forge.epub").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -530,3 +537,60 @@ def test_fail_status_when_quotes_empty_but_perk_unresolved() -> None:
     # Absence of quotes never masks an independent perk/enum/position failure.
     assert result["status"] == "fail"
     assert [i["code"] for i in result["issues"]] == ["perk_unresolved"]
+
+
+# ===========================================================================
+# Task 2: the D-10 corpus-wide baseline — the phase's headline measurement.
+# Loops verify_chapter() over every one of the 118 hand-curated chapters in
+# data/manual/chapter_roll_overrides.json against the real epub and asserts
+# ZERO `fail` outcomes (`no_evidence` permitted per D-05), with NO allowlist
+# or exclusion of any kind — D-06(c) CORRECTION found no data gap exists, so
+# this is a clean, unconditional assertion. Reuses the same real-data
+# fixtures the Task 1 tracer tests use (module-scoped, so no repeat I/O).
+# ===========================================================================
+
+def _chapter_sort_key(chapter_num: str) -> tuple[int, int]:
+    parts = str(chapter_num).split(".")
+    return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+
+
+@pytest.mark.skipif(
+    not EPUB_AVAILABLE,
+    reason="epub is gitignored; corpus baseline needs local source",
+)
+def test_corpus_baseline_verifier_passes_full_hand_curated_corpus(
+    real_overrides, real_prose_loader, real_directory_index, real_obtained_perks_index,
+) -> None:
+    """D-10: run the real verifier over the real 118-chapter hand-curated
+    corpus and assert a clean zero-fail baseline. If this ever fails, the
+    fix is in the verifier (D-08) — never in
+    data/manual/chapter_roll_overrides.json, and never via a new allowlist
+    or exception mechanism (T-02-09).
+    """
+    counts = {"pass": 0, "fail": 0, "no_evidence": 0}
+    failing_rolls: list[dict] = []
+
+    for chapter_num in sorted(real_overrides, key=_chapter_sort_key):
+        chapter_result = verify_chapter(
+            chapter_num, real_overrides[chapter_num],
+            prose_loader=real_prose_loader,
+            directory_index=real_directory_index,
+            obtained_perks_index=real_obtained_perks_index,
+        )
+        for status, n in chapter_result["counts"].items():
+            counts[status] += n
+        failing_rolls.extend(
+            roll for roll in chapter_result["rolls"] if roll["status"] == "fail"
+        )
+
+    print(
+        f"\nD-10 corpus baseline ({len(real_overrides)} hand-curated "
+        f"chapters): pass={counts['pass']} no_evidence={counts['no_evidence']} "
+        f"fail={counts['fail']}"
+    )
+
+    assert counts["fail"] == 0, (
+        f"{counts['fail']} roll(s) failed mechanical verification against "
+        f"the real hand-curated corpus (zero allowed, no exceptions — "
+        f"D-08 / D-06(c) CORRECTION): {failing_rolls}"
+    )
