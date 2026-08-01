@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 2
-current_plan: 3
+current_plan: 02-03 (complete — Phase 2's final plan)
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-08-01T17:42:01.421Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-08-01T18:22:52.477Z"
 last_activity: 2026-08-01
-last_activity_desc: 02-01 complete (tracer + unit tests); next up 02-03
+last_activity_desc: "Phase 2 (Mechanical Verifier) done. D-10 corpus baseline: pass=591, no_evidence=90, fail=0 across all 118 hand-curated chapters. Ready for Phase 3 planning (Provenance Schema & Agent Curation Pipeline)."
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 workstream: curation
 created: 2026-07-26
 ---
@@ -22,17 +22,17 @@ created: 2026-07-26
 
 ## Current Position
 
-**Status:** Executing Phase 2
+**Status:** Phase 2 complete
 **Current Phase:** 2
-**Current Plan:** 3 (02-03-PLAN.md, next up)
-**Last Activity:** 2026-08-01 — 02-01 complete (tracer + unit tests)
-**Last Activity Description:** 02-01 complete (tracer + unit tests); next up 02-03
+**Current Plan:** 02-03 (complete — Phase 2's final plan)
+**Last Activity:** 2026-08-01 — 02-03 complete (verify_chapter() + CLI + D-10 corpus baseline)
+**Last Activity Description:** Phase 2 (Mechanical Verifier) done. D-10 corpus baseline: pass=591, no_evidence=90, fail=0 across all 118 hand-curated chapters. Ready for Phase 3 planning (Provenance Schema & Agent Curation Pipeline).
 
 ## Progress
 
-**Phases Complete:** 1 / 2
-**Plans Complete:** 5 / 6
-**Current Plan:** 02-03 (final plan of Phase 2)
+**Phases Complete:** 2 / 2
+**Plans Complete:** 6 / 6
+**Current Plan:** None — Phase 2 complete, Phase 3 not yet planned
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ created: 2026-07-26
 | Phase 1 P03 | 60min | 3 tasks | 6 files |
 | Phase 1 P04 | 20min | 2 tasks | 1 files |
 | Phase 2 P01 | 25 min | 2 tasks | 6 files |
+| Phase 2 P03 | 55min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,8 @@ created: 2026-07-26
 - [01-04]: corpus-analysis-report.md authored from exemplar_index.json statistics only (no epub prose); multi-grab hits are 57.6% of all hits (34/59), the load-bearing fact for Phase 3 prompt design.
 - [01-04]: Task 2's manifest-registration check was corrected to the dev-derived bundle manifest (exemplar_index schema_version:1 confirmed there), not data_package.json's pages-runtime manifest — consistent with Plan 01-03's already-made architectural decision to exclude it from the runtime bundle.
 - [02-01]: Tier-2 tolerant-regex builder implemented as a character-walk over quote_text (not a re.escape()-then-.replace() chain), avoiding self-referential replacement collisions where a confusable's replacement text contains other confusable characters.
+- [02-03]: Fixed two real mechanical-verifier bugs (paragraph/entity-spanning quote search; multi-constellation-cataloged paid perk resolution) discovered running the D-10 corpus-wide baseline for the first time, per D-08 (fix the verifier, never the corpus) — no allowlist, no data edits.
+- [02-03]: D-10 corpus-wide baseline achieved: pass=591, no_evidence=90, fail=0 across all 681 rolls in the 118 hand-curated chapters — Phase 2 complete, agent output (Phase 3) now has a real, proven bar to clear.
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ created: 2026-07-26
 
 ## Session Continuity
 
-Last session: 2026-08-01T17:42:01.412Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-08-01T18:21:39.605Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

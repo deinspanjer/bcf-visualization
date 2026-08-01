@@ -16,7 +16,7 @@ Requirements for this workstream. Each maps to curation-workstream phases (renum
 
 - [ ] **CINF-01**: Roll-override schema gains the `curated_by: "human" | "agent"` provenance marker (shape decided at the mobile-ux Phase 1 interview, D-04), with every in-repo consumer rewritten in the same change (derive_roll_facts, TUI, validators) — no shims
 - [x] **CINF-02**: Exemplar corpus mined from the hand-curated chapters, tagged by CP regime, with retrieval constrained to same-regime chapters
-- [ ] **CINF-03**: Mechanical verifier validates agent output using existing primitives only (exact/whitespace-normalized quote match, pipeline tokenizer word positions, perk-name resolver ladder) and is baselined against known-good hand-curated chapters before any LLM output touches it
+- [x] **CINF-03**: Mechanical verifier validates agent output using existing primitives only (exact/whitespace-normalized quote match, pipeline tokenizer word positions, perk-name resolver ladder) and is baselined against known-good hand-curated chapters before any LLM output touches it
 - [ ] **CINF-04**: Agent runs are idempotent (keyed by chapter + corpus fingerprint via the agent-run ledger) and never overwrite an existing hand-curated chapter entry
 
 ### Agent Curation
@@ -53,7 +53,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | EPUB-01 | Phase 1 | Complete |
 | EPUB-02 | Phase 1 | Complete (with documented gap — see 01-02-SUMMARY.md) |
 | CINF-02 | Phase 1 | Complete |
-| CINF-03 | Phase 2 | Pending |
+| CINF-03 | Phase 2 | Complete |
 | CINF-01 | Phase 3 | Pending |
 | CINF-04 | Phase 3 | Pending |
 | ACUR-01 | Phase 3 | Pending |
