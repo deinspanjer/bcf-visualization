@@ -170,6 +170,26 @@ Announcement fires **only** when `setWordPos()` is called from one of these four
 
 **Live region update mechanism (technical note, not visual, but load-bearing for correctness):** screen readers only announce on a DOM text *mutation* — an identical string written twice in a row (e.g., scrubbing away from and back onto the same roll) produces no second announcement unless the node is actually changed. Clear `textContent` to `""` and then set the new message (two synchronous writes, same tick) so a repeat-landing still re-announces.
 
+#### Locked hiding technique — `.mobile-live-region`
+
+**Added after UI-checker review flagged its absence, and it is the single most failure-prone value in this phase.** The live region has no visual appearance, but *how* it is hidden decides whether the feature works at all: `display: none` and `visibility: hidden` both remove the node from the **accessibility tree**, so the element would exist in the DOM, satisfy every presence assertion, and announce nothing. That is a silent failure that passes CI — precisely the class of defect this milestone has been bitten by three times on hardware.
+
+Use the standard accessible-hiding ("visually hidden" / "sr-only") pattern, as a locked value, not executor inference:
+
+| Property | Value | Why |
+|---|---|---|
+| `position` | `absolute` | Removes it from layout so it can never affect the sky/dock geometry |
+| `width` / `height` | `1px` / `1px` | Non-zero: a 0×0 box is dropped from the accessibility tree by some engines |
+| `overflow` | `hidden` | Clips the content that overflows the 1px box |
+| `clip-path` | `inset(50%)` | The modern clipping primitive |
+| `white-space` | `nowrap` | Stops long announcements wrapping and reflowing the 1px box |
+| `margin` | `-1px` | Removes the 1px from flow entirely |
+| `border` / `padding` | `0` | Prevents inherited box additions re-introducing a visible sliver |
+
+**Prohibited on this element:** `display: none`, `visibility: hidden`, `hidden` attribute, `aria-hidden="true"`, `content-visibility: hidden`, or zero width/height — every one of them silences the announcement while leaving the node present.
+
+🧪 **backstop** — DOM presence and computed style are assertable in Playwright, but *whether a screen reader actually speaks it* is not: no headless browser runs VoiceOver. Confirmed at the device pass (04-VALIDATION.md Manual-Only item 3), where Dre enables VoiceOver, performs one gesture, and reports whether the announcement is spoken and whether it stays silent through playback.
+
 ### Keyboard equivalents (D-46/D-47/D-48) — behavioral, no new visual copy
 
 No new visible copy. `?` toggles the existing Help overlay (identical `openMobileSurface("help")` call the on-screen `?` button already makes) — closes on a second press, matching every other surface's toggle convention.
@@ -214,11 +234,11 @@ Not applicable — no component registry (no shadcn, no npm packages in `web/` o
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: pending
-- [ ] Dimension 2 Visuals: pending
-- [ ] Dimension 3 Color: pending
-- [ ] Dimension 4 Typography: pending
-- [ ] Dimension 5 Spacing: pending
-- [ ] Dimension 6 Registry Safety: pending
+- [x] Dimension 1 Copywriting: pending
+- [x] Dimension 2 Visuals: pending
+- [x] Dimension 3 Color: pending
+- [x] Dimension 4 Typography: pending
+- [x] Dimension 5 Spacing: pending
+- [x] Dimension 6 Registry Safety: pending
 
-**Approval:** pending — awaiting gsd-ui-checker review.
+**Approval:** approved 2026-08-02 (gsd-ui-checker, 6/6 dimensions). One BLOCKER was raised and fixed before approval: the live region had no declared hiding technique, which would have shipped an element that passes every DOM assertion while announcing nothing. Re-verified after the fix. — awaiting gsd-ui-checker review.
