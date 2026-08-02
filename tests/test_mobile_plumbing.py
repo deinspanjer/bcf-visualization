@@ -7,8 +7,11 @@ Protected behaviors (see .planning/phases/01-mobile-state-gesture-plumbing/):
   a re-render landing mid-drag — no double-binding, no stale listeners, and the
   gesture path never triggers a structural render (D-07, MOBF-03).
 - The bcf:* preference keys round-trip through localStorage via allow-list
-  readers, and the STORAGE_VERSION 2->3 bump purges stale keys including
-  bcf:portrait-dismissed (D-09, MOBF-04).
+  readers, and the STORAGE_VERSION 2->3 bump purges stale keys (D-09,
+  MOBF-04). bcf:portrait-dismissed was removed from the clear-list in
+  Phase 4 (MOBX-01/D-37) when the banner it gated was deleted — it is now
+  orphaned dead data, left un-purged by design (RESEARCH Pitfall 5), and
+  the version-bump test below asserts it survives untouched.
 """
 
 from __future__ import annotations
@@ -264,7 +267,14 @@ def test_storage_version_bump_purges_stale_keys(tmp_path):
             assert page.evaluate(
                 "localStorage.getItem('bcf:preview-port-storage-version')"
             ) == "3"
-            assert page.evaluate("localStorage.getItem('bcf:portrait-dismissed')") is None
+            # bcf:portrait-dismissed is now orphaned dead data (Phase 4 deleted
+            # the rotate-to-landscape banner it gated, MOBX-01/D-37; RESEARCH
+            # Pitfall 5). Nothing reads it anymore, and it is deliberately NOT
+            # in migratePreviewStorage()'s clear-list — a STORAGE_VERSION bump
+            # for its own sake would purge every bcf:* key across 34 seeded
+            # test-fixture sites for zero functional gain. It survives the
+            # version-bump migration untouched.
+            assert page.evaluate("localStorage.getItem('bcf:portrait-dismissed')") == "true"
             assert page.evaluate("localStorage.getItem('bcf:tap-to-pause')") is None
             assert console_messages == []
 

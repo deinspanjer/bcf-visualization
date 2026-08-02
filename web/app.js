@@ -59,7 +59,6 @@ const LS_MODE = "bcf:mode";
 const LS_ON_ROLL_BEHAVIOR = "bcf:on-roll-behavior";
 const LS_ROLL_LOCATION = "bcf:roll-location";
 const LS_FIELD_LOG_HIDDEN = "bcf:field-log:hidden";
-const LS_PORTRAIT_DISMISSED = "bcf:portrait-dismissed";
 const LS_MOBILE_TIMELINE_ZOOM = "bcf:timeline-zoom"; // mobile quantized zoom (1/2/4/8) — hyphen-separated, distinct from LS_ZOOM ("bcf:timeline:zoom"); do not merge
 const LS_TAP_TO_PAUSE = "bcf:tap-to-pause";
 const LS_HAPTICS = "bcf:haptics";
@@ -142,7 +141,6 @@ const app = {
   onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ON_ROLL_BEHAVIORS, DEFAULT_ON_ROLL_BEHAVIOR),
   rollLocation: readStoredChoice(LS_ROLL_LOCATION, ROLL_LOCATIONS, DEFAULT_ROLL_LOCATION),
   fieldLogHidden: readStoredBoolean(LS_FIELD_LOG_HIDDEN, false),
-  portraitDismissed: readStoredBoolean(LS_PORTRAIT_DISMISSED, false),
   layoutMode: detectLayoutMode(),
   helpOpen: false,
   settingsOpen: false,
@@ -425,7 +423,6 @@ function migratePreviewStorage() {
     for (const key of [
       LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR,
       LS_ROLL_LOCATION, LS_FIELD_LOG_HIDDEN,
-      LS_PORTRAIT_DISMISSED,
       LS_MOBILE_TIMELINE_ZOOM, LS_TAP_TO_PAUSE, LS_HAPTICS, LS_HELP_SEEN,
     ]) {
       localStorage.removeItem(key);
@@ -1095,7 +1092,6 @@ function renderLoadError(error) {
 function renderAppShell() {
   return el("div", { class: "app" },
     renderHeader(),
-    app.portraitDismissed ? null : renderPortraitBanner(),
     el("main", { class: "app-main" },
       app.mode === "playthrough"
         ? [
@@ -1222,13 +1218,6 @@ function renderInfoPopover() {
       el("span", { text: dataVersionDescription(app.data.packageMeta || app.data.pkg, app.selectedPackageId === (app.packageIndex?.default_package_id || app.selectedPackageId)) }),
       renderPackageSelector(),
     ),
-  );
-}
-
-function renderPortraitBanner() {
-  return el("div", { class: "portrait-banner is-visible", role: "status" },
-    el("span", {}, el("strong", { text: "Best in landscape." }), " The Forge timeline reaches across millions of words - rotating gives the scrubber room to breathe."),
-    el("button", { type: "button", onClick: () => { app.portraitDismissed = true; store(LS_PORTRAIT_DISMISSED, true); render(); }, text: "got it" }),
   );
 }
 

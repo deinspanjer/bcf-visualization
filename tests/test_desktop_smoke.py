@@ -116,11 +116,11 @@ def test_desktop_static_shell_renders_full_shell_with_no_portrait_banner(tmp_pat
             expect(page.locator(".scrubber")).to_be_visible()
             expect(page.locator(".stat-strip")).to_be_visible()
             expect(page.locator("#field-log-panel")).to_be_visible()
-            # .portrait-banner always carries the "is-visible" class when not
-            # dismissed (web/app.js:1084) — actual visibility is CSS-driven
-            # (display:none outside the mobile media query, style.css:326/360).
-            # Check computed visibility, not DOM presence.
-            expect(page.locator(".portrait-banner")).to_be_hidden()
+            # The rotate-to-landscape banner was deleted end-to-end in Phase 4
+            # (MOBX-01/D-37): renderPortraitBanner(), its call site, and the
+            # .portrait-banner CSS rules are all gone. Assert absence from the
+            # DOM directly rather than checking CSS-driven visibility.
+            assert page.evaluate("document.querySelector('.portrait-banner')") is None
             assert console_messages == []
 
             browser.close()
@@ -301,8 +301,8 @@ def test_desktop_range_resizes_cause_zero_rerenders_while_crossings_flip_layout_
 
 def test_desktop_restores_cleanly_after_full_resize_round_trip(tmp_path):
     # §0.5 step 6: resizing back up restores desktop cleanly — no flash of
-    # stale layout, no leftover portrait banner, exactly one render per
-    # crossing (down and back up).
+    # stale layout, no leftover rotate-to-landscape banner (deleted in Phase
+    # 4, MOBX-01/D-37), exactly one render per crossing (down and back up).
     playwright_api = pytest.importorskip("playwright.sync_api")
 
     with staged_web_runtime_site(tmp_path) as site:
@@ -326,6 +326,6 @@ def test_desktop_restores_cleanly_after_full_resize_round_trip(tmp_path):
             assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 2
 
             expect(page.locator(".app-header")).to_be_visible()
-            expect(page.locator(".portrait-banner")).to_be_hidden()
+            assert page.evaluate("document.querySelector('.portrait-banner')") is None
             assert console_messages == []
             browser.close()
