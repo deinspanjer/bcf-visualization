@@ -1,6 +1,6 @@
 {
   "_source": "Stage 1 candidate-assembly accuracy measured against the hand-curated corpus (ACUR-01), per evidence class (D-08). Compares data/derived/candidate_rolls.json (Plan 03-02) against data/manual/chapter_roll_overrides.json (Plan 03-01's schema-validated loader), excluding stub chapters (D-09).",
-  "_method": "Per chapter present in both the non-stub curated corpus and candidate_rolls.json (the candidate/curated intersection): each curated roll gets a chapter-local position (its own word_position when non-null, else its 0-based ordinal rank in the curator's own rolls[] list) and is compared against every candidate in the chapter on the SAME scale (the candidate's real word_position when the curated side used a real word_position, else the candidate's own ordinal rank within its slot_index-sorted list). Pairs are scored by (position distance ascending, perk-name-overlap descending) -- position proximity is the PRIMARY signal, perk overlap only a tiebreaker -- and greedily assigned 1:1, most-certain pair first. This never compares roll_number/source_ordinal -- those predictor/curator sequences diverge by construction and are never used as a join key. A claimed pair whose candidate carries any _derivation.unfilled_fields is 'partial', not 'matched'. A curated roll left unclaimed is 'missed' (bucketed, for reporting only, under its single nearest candidate's evidence_kind, ignoring the claim constraint). A candidate left unclaimed is 'unmatched_candidates', bucketed under its own evidence_kind.",
+  "_method": "Per chapter present in both the non-stub curated corpus and candidate_rolls.json (the candidate/curated intersection): each curated roll gets a chapter-local position via a three-tier ladder -- (a) its own word_position when non-null; else (b) the MINIMUM mention_word_position across its evidence_quotes whose mention_chapter_num matches the roll's own chapter (cross-chapter quotes excluded -- different coordinate space); else (c) its 0-based ordinal rank in the curator's own rolls[] list -- and is compared against every candidate in the chapter on the SAME scale (the candidate's real word_position when the curated side used word_position or quote_position, else the candidate's own ordinal rank within its slot_index-sorted list). Which tier each curated roll used is recorded (_position_tier_counts) so the reader can see how much of the result rests on real positions vs ordinal fallback. Pairs are scored by (position distance ascending, perk-name-overlap descending) -- position proximity is the PRIMARY signal, perk overlap only a tiebreaker -- and greedily assigned 1:1, most-certain pair first. This never compares roll_number/source_ordinal -- those predictor/curator sequences diverge by construction and are never used as a join key. A claimed pair whose candidate carries any _derivation.unfilled_fields is 'partial', not 'matched'. A curated roll left unclaimed is 'missed' (bucketed, for reporting only, under its single nearest candidate's evidence_kind, ignoring the claim constraint). A candidate left unclaimed is 'unmatched_candidates', bucketed under its own evidence_kind.",
   "_stub_chapters_excluded": [
     "35.1",
     "55.1",
@@ -29,19 +29,24 @@
       "unmatched_candidates": 0
     },
     "forward_ref": {
-      "curated_rolls": 461,
+      "curated_rolls": 463,
       "matched": 0,
       "partial": 446,
-      "missed": 15,
+      "missed": 17,
       "unmatched_candidates": 0
     },
     "no_evidence": {
-      "curated_rolls": 45,
+      "curated_rolls": 43,
       "matched": 0,
       "partial": 42,
-      "missed": 3,
+      "missed": 1,
       "unmatched_candidates": 1
     }
+  },
+  "_position_tier_counts": {
+    "word_position": 2,
+    "quote_position": 542,
+    "ordinal": 119
   },
   "_generated_from": {
     "candidates_path": "data/derived/candidate_rolls.json",
