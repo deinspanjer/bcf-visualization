@@ -23,6 +23,7 @@ def test_roll_entries_must_use_dict_shape(tmp_path: Path) -> None:
     path.write_text(json.dumps({
         "chapter_roll_overrides": {
             "1": {
+                "curated_by": "human",
                 "rolls": [
                     ["Old Bare List"],
                 ],

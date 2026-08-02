@@ -176,6 +176,7 @@ def test_evidence_block_names_source_assigned_hit_bundle(
     _write_json(overrides_path, {
         "chapter_roll_overrides": {
             "1": {
+                "curated_by": "human",
                 "rolls": [
                     {
                         "perks": ["I Am Iron Man", "Free Armor"],
@@ -1941,6 +1942,7 @@ def test_prior_predicted_slot_with_manual_curation_is_not_open_action_target(
     _write_json(overrides_path, {
         "chapter_roll_overrides": {
             "1": {
+                "curated_by": "human",
                 "rolls": [
                     {
                         "perks": [],

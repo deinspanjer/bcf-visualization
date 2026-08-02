@@ -50,6 +50,7 @@ def test_override_loader_defaults_cross_chapter_roll_fields(tmp_path: Path) -> N
     path.write_text(json.dumps({
         "chapter_roll_overrides": {
             "5": {
+                "curated_by": "human",
                 "rolls": [
                     {"perks": ["Same Chapter"], "outcome": "hit"},
                     {
@@ -78,6 +79,7 @@ def test_override_loader_preserves_skipped_roll_slots(tmp_path: Path) -> None:
     path.write_text(json.dumps({
         "chapter_roll_overrides": {
             "8.1": {
+                "curated_by": "human",
                 "rolls": [
                     {"skipped": True},
                 ],
@@ -135,6 +137,7 @@ def test_merge_paid_units_moves_deferred_hit_to_mechanical_chapter() -> None:
     overrides = {
         "chapter_roll_overrides": {
             "1": {
+                "curated_by": "human",
                 "rolls": [
                     {
                         "perks": [],
@@ -840,6 +843,7 @@ def test_merge_paid_units_ignores_unassigned_zero_cost_paid_perks() -> None:
     overrides = {
         "chapter_roll_overrides": {
             "1": {
+                "curated_by": "human",
                 "rolls": [
                     {
                         "perks": ["Narrative Hit"],

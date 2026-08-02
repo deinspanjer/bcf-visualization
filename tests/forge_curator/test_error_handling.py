@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from scripts.forge_curator.persistence import CurationPersistence
 from tests.helpers.forge_curator_fixture import forge_curator_fixture
 
 
-def test_malformed_manual_roll_overrides_load_as_empty_document(
+def test_malformed_manual_roll_overrides_raises_on_load(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -18,16 +19,18 @@ def test_malformed_manual_roll_overrides_load_as_empty_document(
     overrides_path = fixture.manual / "chapter_roll_overrides.json"
     overrides_path.write_text("{not valid json")
 
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=overrides_path,
-        section_classifications_path=fixture.manual / "section_classifications.json",
-        journal_dir_path=fixture.manual / ".session_journals",
-    )
-
-    assert persistence.chapter_roll_overrides == {
-        "_purpose": "Per-chapter paid roll structure + curated metadata.",
-        "chapter_roll_overrides": {},
-    }
+    # A malformed *existing* file must raise, never silently collapse to
+    # an empty document — the old behaviour here let CurationPersistence
+    # swallow the parse error and treat the file as empty, which the
+    # next auto-save would then write back over the real 118-chapter
+    # hand-curated corpus (T-03-02, the data-destruction bug this
+    # phase fixes). Only a genuinely absent file is allowed to default.
+    with pytest.raises((ValueError, json.JSONDecodeError)):
+        CurationPersistence(
+            chapter_roll_overrides_path=overrides_path,
+            section_classifications_path=fixture.manual / "section_classifications.json",
+            journal_dir_path=fixture.manual / ".session_journals",
+        )
 
 
 def test_roll_override_write_failure_rolls_back_memory_and_disk(

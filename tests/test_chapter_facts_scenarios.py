@@ -552,7 +552,7 @@ def test_chapter_facts_projects_roll_facts_onto_story_axis(
     )
     _write_json(
         manual / "chapter_roll_overrides.json",
-        {"chapter_roll_overrides": {"2": {"rolls": [{"skipped": True}]}}},
+        {"chapter_roll_overrides": {"2": {"curated_by": "human", "rolls": [{"skipped": True}]}}},
     )
     _write_json(derived / "obtained_perks.json", {"perks": []})
     _write_json(derived / "perk_directory.json", {"perks": []})
@@ -1019,6 +1019,7 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
         {
             "chapter_roll_overrides": {
                 "1": {
+                    "curated_by": "human",
                     "rolls": [
                         {
                             "display_position_policy": "mention",
@@ -1034,6 +1035,7 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
                     ]
                 },
                 "2": {
+                    "curated_by": "human",
                     "rolls": [
                         {
                             "perks": ["Deferred Spark"],
@@ -1064,6 +1066,7 @@ def test_roll_facts_derivation_feeds_chapter_facts_cross_chapter_contract(
                     ]
                 },
                     "3": {
+                        "curated_by": "human",
                         "rolls": [
                             {"outcome": "miss", "source_ordinal": 3},
                             {"skipped": True},
@@ -1278,6 +1281,7 @@ def test_fallback_roll_facts_apply_index_aligned_manual_metadata(
         {
             "chapter_roll_overrides": {
                 "2": {
+                    "curated_by": "human",
                     "rolls": [
                         {
                             "outcome": "miss",
@@ -1573,6 +1577,7 @@ def test_quote_carried_cp_checkpoint_resets_downstream_roll_ledger(
         {
             "chapter_roll_overrides": {
                 "2": {
+                    "curated_by": "human",
                     "rolls": [
                         {
                             "evidence_quotes": [
@@ -1778,6 +1783,7 @@ def test_manual_obtained_perk_assignment_pins_hit_to_override_slot(
         {
             "chapter_roll_overrides": {
                 "2": {
+                    "curated_by": "human",
                     "rolls": [
                         {"outcome": "miss", "constellation": "Vehicles"},
                         {"outcome": "miss", "constellation": "Toolkits"},
@@ -1938,6 +1944,7 @@ def test_blank_override_slot_preserves_manual_obtained_perk_index(
         {
             "chapter_roll_overrides": {
                 "2": {
+                    "curated_by": "human",
                     "rolls": [
                         {},
                         {
@@ -2051,6 +2058,7 @@ def test_fallback_roll_facts_apply_quote_only_manual_metadata(
         {
             "chapter_roll_overrides": {
                 "2": {
+                    "curated_by": "human",
                     "rolls": [
                         {
                             "evidence_quotes": [
