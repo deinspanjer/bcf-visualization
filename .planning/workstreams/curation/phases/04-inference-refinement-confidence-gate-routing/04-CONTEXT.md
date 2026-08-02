@@ -13,6 +13,18 @@ Stage 2: an inference pass that consumes Stage 1's candidates, recovers what det
 **In scope:** ACUR-01 Stage 2, ACUR-02 (confidence gate), ACUR-03 (routing), CINF-04 (ledger idempotency).
 **Not in scope (Phase 5):** the Forge Curator proposal-review flow (ACUR-04) and the full batch over the 80 uncurated chapters (ACUR-05). Phase 4 calibrates and proves on curated chapters; Phase 5 runs at scale.
 
+### The value function (Dre, 2026-08-02) — read this before optimizing anything
+
+**Success is measured in Dre's saved effort, not in autonomous-write percentage.** In his words: the win is not having to spend days manually highlighting obvious quotes and attaching them to rolls. Scanning a few dozen chapters for low-confidence or not-found items is a fine outcome.
+
+Three consequences that override the natural instinct to maximize the high-confidence share:
+
+1. **The expensive human act is locating and attaching a quote, not deciding.** A proposal arriving with the quote already found, positioned, and attached — even flagged low-confidence — captures most of the value. A blank chapter captures none. So **proposal richness matters more than proposal routing.**
+2. **Therefore: never trade pre-fill quality for a cleaner confidence split.** The gate decides *where* output lands (corpus vs. proposals); it must not decide *how much effort goes into filling it in*. Both destinations get maximally pre-filled output.
+3. **Therefore: spending more tokens to pre-fill something Dre would otherwise hand-fill is a good trade.** The comparison is tokens against days of his time, not tokens against a coverage metric. This does not license unbounded spend — D-23/D-24's ceiling, pilot, and pre-uncurated checkpoint still hold — but it does mean "cheaper" is not automatically "better" when the cheaper option ships emptier proposals.
+
+A run that auto-writes little but hands back 80 densely pre-filled chapters is a **success**. A run that auto-writes a proud fraction and leaves the rest blank is a failure, however good its precision looks.
+
 </domain>
 
 <decisions>
@@ -71,20 +83,22 @@ Measured over all 869 curated evidence quotes and 198 chapters (2026-08-02):
 - **D-14:** Regime-boundary sensitivity (ACUR-02): chapters carrying the `is_boundary` flag from Phase 1's exemplar index must route to low confidence more often — verify this empirically rather than asserting it.
 - **D-15:** Proposals sidecar uses the **same roll-object schema** as the corpus (Phase 3 D-05 precedent), so Phase 5's TUI review needs no translation layer. Location and file shape are Claude's discretion; a `data/derived/` artifact or a `data/manual/`-adjacent proposals file both defensible — but it is NOT the trusted corpus and must never be loaded as such.
 - **D-16 (do not lower the bar to raise the count):** per STACK.md, a large proposals volume is a legitimate outcome. If high-confidence yield is low, that is a finding for Dre's review queue — never a reason to relax verification.
+- **D-17 (proposals carry everything the model found, not a stripped remainder):** a proposal is the primary deliverable for most chapters, not a consolation prize. It carries the located quote text with its mechanically-derived position, the constellation, the bundle grouping, and a per-field record of what is evidenced versus evidence-not-found — so review is *confirm-or-correct*, never *start from blank*. Deliberately emitting less into proposals than into corpus writes would invert the value function: the quote-locating work is exactly what Dre is paying tokens to avoid doing by hand.
+- **D-18 (report the metric that reflects the value function):** alongside the high/low confidence split, report **fields pre-filled per chapter** and **chapters requiring no manual quote-hunting**. A run's worth is how much hand-work it removed, not what fraction it auto-wrote. Success criterion 1's comparison against Phase 3's baseline stays as-is; this is an additional reported measure, not a replacement.
 
 ### Idempotency & the ledger (auto-resolved 2026-08-02)
 
-- **D-17:** Agent-run ledger is a separate file keyed by chapter (Workstream Gate 2), holding run bookkeeping: model, run_id, corpus fingerprint, confidence, timestamps. It is NOT part of the overrides schema.
-- **D-18:** Re-running a chapter with unchanged inputs produces **no diff**. The fingerprint must cover everything that could change the output — at minimum the chapter's prose, its Stage 1 candidates, the conventions/prompt version, and the model id. A prompt or model change must invalidate the fingerprint, or "no diff" silently becomes "stale output preserved."
+- **D-19:** Agent-run ledger is a separate file keyed by chapter (Workstream Gate 2), holding run bookkeeping: model, run_id, corpus fingerprint, confidence, timestamps. It is NOT part of the overrides schema.
+- **D-20:** Re-running a chapter with unchanged inputs produces **no diff**. The fingerprint must cover everything that could change the output — at minimum the chapter's prose, its Stage 1 candidates, the conventions/prompt version, and the model id. A prompt or model change must invalidate the fingerprint, or "no diff" silently becomes "stale output preserved."
 
 ### Calibration & cost control (auto-resolved 2026-08-02)
 
 Measured pool: **108 genuinely curated chapters** (10 stubs excluded), **80 uncurated** targets for Phase 5.
 
-- **D-19:** Split the 108 curated chapters into a calibration set and a **held-out** set. Tune the rubric on calibration only; report final numbers on held-out. Tuning against the set you report on produces a number that cannot be trusted — and Phase 3 just demonstrated how easily a measurement can mislead.
-- **D-20:** Report Stage 2's improvement **per evidence class against Phase 3's recorded Stage 1 baseline** (`candidate-accuracy-report.md`), using the same three-tier position ladder so the comparison is like-for-like. Success criterion 1 is comparative; a standalone Stage 2 number does not satisfy it.
-- **D-21 (spend discipline):** before any batch, emit a **dry-run token estimate** (request count, cached-prefix size, per-request input, projected cost) and gate the run on an explicit ceiling. Start with a small pilot batch, verify the whole pipeline end-to-end, then scale. This phase must not be able to spend unbounded budget by accident.
-- **D-22:** A `checkpoint:decision` before the first run against **uncurated** chapters (roadmap note). Calibration on curated chapters is self-checking because ground truth exists; uncurated output has none, so Dre sees the calibration numbers before that boundary is crossed.
+- **D-21:** Split the 108 curated chapters into a calibration set and a **held-out** set. Tune the rubric on calibration only; report final numbers on held-out. Tuning against the set you report on produces a number that cannot be trusted — and Phase 3 just demonstrated how easily a measurement can mislead.
+- **D-22:** Report Stage 2's improvement **per evidence class against Phase 3's recorded Stage 1 baseline** (`candidate-accuracy-report.md`), using the same three-tier position ladder so the comparison is like-for-like. Success criterion 1 is comparative; a standalone Stage 2 number does not satisfy it.
+- **D-23 (spend discipline):** before any batch, emit a **dry-run token estimate** (request count, cached-prefix size, per-request input, projected cost) and gate the run on an explicit ceiling. Start with a small pilot batch, verify the whole pipeline end-to-end, then scale. This phase must not be able to spend unbounded budget by accident.
+- **D-24:** A `checkpoint:decision` before the first run against **uncurated** chapters (roadmap note). Calibration on curated chapters is self-checking because ground truth exists; uncurated output has none, so Dre sees the calibration numbers before that boundary is crossed.
 
 ### Claude's Discretion
 
@@ -103,7 +117,7 @@ Measured pool: **108 genuinely curated chapters** (10 stubs excluded), **80 uncu
 
 An earlier draft of this context flagged that `/gsd-ai-integration-phase` should fire here since Phase 4 "builds an AI system." **Dre pushed back and is right.** This is a targeted prompt to a pre-existing available agent, asking for an inference over heuristically-collected evidence — not an AI system. The capability produces framework selection, evaluation strategy, guardrails, and production monitoring; applying it to a single call site inside a data pipeline generates ceremony around one prompt.
 
-**Skip the `ai-integration` hook, consistent with Phases 1–3.** The evaluation this phase actually needs is already specified concretely and quantitatively below (D-17/D-18: calibration/held-out split, per-evidence-class comparison against Phase 3's recorded baseline) — that is the real eval plan, and it is better grounded than a generated one because it is measured against this corpus.
+**Skip the `ai-integration` hook, consistent with Phases 1–3.** The evaluation this phase actually needs is already specified concretely and quantitatively below (D-21/D-22: calibration/held-out split, per-evidence-class comparison against Phase 3's recorded baseline) — that is the real eval plan, and it is better grounded than a generated one because it is measured against this corpus.
 
 </decisions>
 
