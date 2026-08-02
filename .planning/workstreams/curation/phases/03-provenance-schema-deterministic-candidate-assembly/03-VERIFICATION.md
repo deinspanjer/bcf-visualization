@@ -1,0 +1,115 @@
+---
+phase: 03-provenance-schema-deterministic-candidate-assembly
+verified: 2026-08-02T21:04:56Z
+status: passed
+score: 5/5 must-haves verified
+behavior_unverified: 0
+overrides_applied: 0
+re_verification:
+  previous_status: gaps_found
+  previous_score: 4/5
+  gaps_closed:
+    - "scripts/forge_curator/persistence.py::CurationPersistence._write_chapter_roll_overrides (the TUI auto-save, ~24 call sites) and the undo_last overrides-restore branch now route through chapter_roll_overrides_io.write_chapter_roll_overrides_doc instead of the bare _atomic_write_json/json.dumps path (commit 9509fb9)."
+    - "_common.write_validated_json (the shared writer every schema-validated writer in scripts/*.py funnels through, including the TUI's now-rewired write path) is now atomic — tmp-file-then-os.replace, not a plain write_text (commit 8bcb329)."
+    - "scripts/stamp_curator_provenance.py — a seventh path found during the sweep — now routes through write_chapter_roll_overrides_doc instead of calling _common.write_validated_json directly (commit 645cdc6)."
+    - "tests/test_chapter_roll_overrides_io.py's no-bare-write regression guard rewritten as an AST-based recursive scan (scripts_dir.rglob) that also detects indirect writes through a helper taking the destination path as a parameter — closing both blind spots identified in the prior pass (commit 6c8ab15)."
+  gaps_remaining: []
+  regressions: []
+---
+
+# Phase 3: Provenance Schema & Deterministic Candidate Assembly Verification Report
+
+**Phase Goal:** Every override entry declares who curated it, and a deterministic pass proposes candidate curations from prose the pipeline already indexes — measured against the hand-curated corpus before any inference is bought
+**Verified:** 2026-08-02T21:04:56Z
+**Status:** passed
+**Re-verification:** Yes — third pass, after a second round of gap closure (4 commits: 8bcb329, 9509fb9, 645cdc6, 6c8ab15)
+
+## Goal Achievement
+
+### Observable Truths
+
+| # | Truth (ROADMAP Success Criterion) | Status | Evidence |
+|---|---|---|---|
+| 1 | Every override entry carries `curated_by`; every in-repo consumer rewritten, no shims (CINF-01) | ✓ VERIFIED | All 9 known consumers (4 original + 5 first-sweep + the TUI write path found in the second sweep) are correctly rewired to `load_/write_chapter_roll_overrides_doc`. A seventh path (`stamp_curator_provenance.py`, calling `_common.write_validated_json` directly rather than the canonical wrapper) was found and fixed during this round's own regression-guard-widening work. My own independent full-repo sweep (below) found no eighth path. See Reproduced Checks. |
+| 2 | Stage 1 produces candidates from `roll_text_evidence.json` + `obtained_perks.json`, zero LLM, reuses existing anchor/prose-window machinery — no second regex-anchor/prose-window implementation | ✓ VERIFIED (unchanged) | None of the 4 gap-closure commits this round touched `build_candidate_rolls.py`, `find_roll_locations.py`, or `multi_grab.py`. `pytest tests/test_build_candidate_rolls.py` re-run, passes. |
+| 3 | Stage 1's accuracy against the hand-curated corpus is measured and recorded per evidence class — the measurement sizes Phase 4's inference spend | ✓ VERIFIED (unchanged) | `candidate-accuracy-report.json`/`.md` last touched by `212797e`, before this round's commits (`git log -1` confirms). `pytest tests/test_measure_candidate_accuracy.py` re-run, passes. |
+| 4 | Word positions/ordinals mechanically derived; Stage 1 emits candidates only, never writes to `chapter_roll_overrides.json` | ✓ VERIFIED (unchanged) | `git log -1 -- data/manual/chapter_roll_overrides.json` still shows `2f5cfb0` (03-01's provenance stamp) as the last write — this round's 4 commits touched consumer/writer *code*, never the corpus data file itself. |
+| 5 | A candidate Stage 1 cannot support with evidence is emitted as evidence-not-found, never guessed (D-06) | ✓ VERIFIED (unchanged) | `build_candidate_rolls.py` untouched by this round; no regression. |
+
+**Score:** 5/5 truths verified (0 present-but-behavior-unverified)
+
+### Required Artifacts (delta from prior pass — items relevant to this round's gap-closure only)
+
+| Artifact | Expected | Status | Details |
+|---|---|---|---|
+| `scripts/_common.py::write_validated_json` | Atomic write (tmp-file → `os.replace`), validation still gates before any disk write | ✓ VERIFIED | Read directly. Confirmed the write sequence is: serialize → `_validate` (raises `ValueError` before touching disk) → `tmp_path.write_text` → `os.replace(tmp_path, out_path)`. Independently reproduced the corpus round-trip through this exact path (via `write_chapter_roll_overrides_doc`) and confirmed no `.tmp` file is left behind afterward. |
+| `scripts/forge_curator/persistence.py::_write_chapter_roll_overrides` | Routed through `write_chapter_roll_overrides_doc`, rolls back in-memory doc and re-raises on any exception | ✓ VERIFIED | Read directly (lines 145–169). Confirmed: calls `write_chapter_roll_overrides_doc(self.chapter_roll_overrides, self.chapter_roll_overrides_path)` inside a `try/except Exception: self.chapter_roll_overrides = deepcopy(before); raise`. `_atomic_write_json` (module-local, bare) is retained *only* for `section_classifications.json` (`_write_section_classifications`) and `undo_last`'s non-overrides fallback branch — confirmed by direct read, neither of those two call sites was touched by this round's commits. |
+| `scripts/forge_curator/persistence.py::undo_last` | The chapter-roll-overrides restore branch routes through `write_chapter_roll_overrides_doc`, not the bare writer | ✓ VERIFIED | Lines 1717–1735: `is_chapter_roll_overrides_target` check (`target_abs == self.chapter_roll_overrides_path or target_abs.name == "chapter_roll_overrides.json"`) selects `write_chapter_roll_overrides_doc(before_state, target_abs)`; the `else` branch (`_atomic_write_json`) is reached only for `section_classifications.json` and other non-overrides journal targets. |
+| `scripts/stamp_curator_provenance.py` (7th path, found+fixed this round) | Routed through `write_chapter_roll_overrides_doc` rather than calling `_common.write_validated_json` directly | ✓ VERIFIED | Read directly; `stamp()` now calls `write_chapter_roll_overrides_doc(doc, p)`. Commit message states the idempotent no-op was verified against the real corpus (byte-identical, 0 newly stamped / 118 already had it) — not independently re-run this pass since it's a one-time bulk-stamp script with no live corpus state left to change, but the code path and its unit test both pass. |
+| `tests/test_chapter_roll_overrides_io.py::test_no_bare_write_path_to_overrides_file` (widened) | Recursive scan (`scripts_dir.rglob`), detects indirect writes through a path-taking helper, in addition to direct `<var>.write_text()` | ✓ VERIFIED, and genuinely proven to fail on the bug it targets (see Reproduced Checks) | Read the full AST-scan implementation (`_find_overrides_write_offenders`). Confirmed it: (a) uses `rglob("*.py")`, recursively including `scripts/forge_curator/`; (b) tracks per-function "write-sink" parameters (parameters passed to `.write_text`/`.write_bytes` or as the destination of `os.replace`/`shutil.move`) and flags call sites where such a helper receives a path bound to `chapter_roll_overrides.json`. |
+| `tests/test_chapter_roll_overrides_io.py::test_scan_detects_synthetic_indirect_write_helper` | Fixture-based proof the indirect-write detection actually fires on the bug shape it targets | ✓ VERIFIED, independently re-confirmed against real pre-fix source (not just the synthetic fixture) | See Reproduced Checks — I built a scratch copy of `scripts/`, restored the pre-fix `persistence.py` and `stamp_curator_provenance.py` (via `git show 8bcb329~1:...`), and ran the scan against it directly. It flagged both files. |
+
+### Behavioral Spot-Checks
+
+| Behavior | Command | Result | Status |
+|---|---|---|---|
+| Writer rejects a doc missing `curated_by` (does not silently write) | `pytest tests/test_chapter_roll_overrides_io.py::test_writer_rejects_missing_curated_by -v` | 1 passed | ✓ PASS |
+| Round-trip proof (load real corpus → write via new writer, atomic path) is genuine | Independently re-ran: loaded live `data/manual/chapter_roll_overrides.json`, wrote it back via `write_chapter_roll_overrides_doc` to a scratch path, `read_bytes()` compared to original | Byte-identical; no leftover `.tmp` file | ✓ PASS (independently reproduced, not re-asserted from a commit message) |
+| The widened AST regression guard genuinely fails on the pre-fix code it was written to catch | Built a scratch `scripts/` tree with `persistence.py` and `stamp_curator_provenance.py` restored to their state immediately before commit `8bcb329` (`git show 8bcb329~1:...`), then called `_find_overrides_write_offenders` directly against it (not through pytest, to avoid depending on the checked-in fixture-only proof) | 2 offenders found: `.../forge_curator/persistence.py:144: indirect via _atomic_write_json(...) arg='self.chapter_roll_overrides_path'` and `.../stamp_curator_provenance.py:52: indirect via write_validated_json(...) arg='p'` | ✓ PASS — this is the single most important claim in the orchestrator's brief, and it is now independently verified against real historical source, not merely the executor's checked-in synthetic fixture test |
+| TUI failure-mode claim: no try/except added or removed around persistence call sites in `app.py` | `git diff 8bcb329~1 6c8ab15 --stat -- scripts/forge_curator/app.py` | Empty output — `app.py` was not touched by any of the 4 commits this round | ✓ PASS |
+| TUI failure-mode claim: an unhandled exception from a persistence write does end the Textual session | Read `~24` call sites (e.g. `app.py:5429`, `5925`, `7002`) — none wrapped in try/except; `_post_curation_refresh`'s try/except (which does exist) only wraps the *post-write derivation subprocess calls*, not the preceding `self.persistence.*` write call. Confirmed Textual's own `App._handle_exception` source: `inspect.getsource` shows "Always results in the app exiting." | Matches the orchestrator's characterization exactly — genuinely pre-existing (an `OSError` from the old `_atomic_write_json` would have produced the identical uncaught-exception/app-exit outcome before this change; only the exception *type* changed, from `OSError` to `ValueError` on a validation failure) | ✓ PASS (honest reporting confirmed, see Gaps Summary for the recommendation) |
+| Schema-violation-on-write raises `ValueError` and rolls back memory+disk, proven by a real test (not just claimed) | `pytest tests/forge_curator/test_error_handling.py -v` | 8 passed, including `test_roll_override_schema_violation_raises_value_error_and_rolls_back` (new) and the updated `test_roll_override_write_failure_rolls_back_memory_and_disk` (re-pointed to monkeypatch the new call site) | ✓ PASS |
+| `mechanical_verifier.py`, `build_exemplar_index.py`, `_common.py` (all named as modified-since-first-verification in the orchestrator's brief) still behave identically | `PYTHONPATH=scripts .venv/bin/python scripts/mechanical_verifier.py`; `pytest tests/test_build_exemplar_index.py tests/test_build_candidate_rolls.py tests/test_measure_candidate_accuracy.py -q` | `pass: 593, no_evidence: 88, fail: 0` (byte-identical to all prior baselines); 31 passed | ✓ PASS |
+| Full workspace suite, run once, matches the stated 5-known-failure baseline | `.venv/bin/python -m pytest -q` (single full run) | Exactly 5 failures: 4× `tests/test_forge_curator.py` (stats-click/perk-picker — confirmed pre-existing content-mismatch failures, unrelated to persistence/write-path code, `git log` shows the affected test file last touched by `3b8e5a0`, before this round's commits), 1× `tests/test_roll_ordinal_contract.py::test_chapter_55_1_source_roll_six_borrows_first_56_prediction` | ✓ PASS — no new failures; `scripts/verify.py` (also re-run, exits 1) fails for this same pre-existing, accepted reason, not a Phase 3 gap |
+| An eighth reader/writer sweep across the whole repo (mandated — enumeration has been wrong three times) | `grep -rn "chapter_roll_overrides\.json\|CHAPTER_ROLL_OVERRIDES\b" --include="*.py" .` (whole repo, not just scripts/tests) + manual read of every non-test hit; separately, `grep -rn "write_text\|json\.dump\|write_bytes\|os\.replace\|shutil\.move" scripts/` to catch any write call this pattern-based search might miss | Every write-capable hit outside `tests/`, `chapter_roll_overrides_io.py`, and the two already-verified persistence.py call sites targets a *different* file (`SNAPSHOT_PATH`, `.session_journals/*.jsonl`, `section_classifications.json`, various `args.output` destinations in other scripts, `pipeline.py`'s build-dependency path reference, `data_loader.py`'s read-only property). `scripts/data_release.py::_curation_review_freshness` remains a defensive try/except-wrapped **read**, unchanged, low-risk (as noted in the prior pass). | ✓ NO NINTH PATH FOUND |
+
+### Requirements Coverage
+
+| Requirement | Source Plan | Description | Status | Evidence |
+|---|---|---|---|---|
+| CINF-01 | 03-01 (+ two rounds of gap-closure) | `curated_by` provenance marker, no shims, every in-repo consumer rewritten (REQUIREMENTS.md explicitly names "TUI" as a required consumer) | ✓ SATISFIED | All known read/write paths (4 original + 5 first-sweep + TUI write path + `stamp_curator_provenance.py`, 9 total) are correctly routed through `load_/write_chapter_roll_overrides_doc`. My own independent sweep this round found no further gaps. REQUIREMENTS.md's `[x] Complete` marking is now accurate. |
+| ACUR-01 (Stage 1 half) | 03-02, 03-03 | Deterministic candidate assembly + per-class accuracy measurement | ✓ SATISFIED (unchanged) | Untouched by this round's gap-closure; re-confirmed no regression via test re-run. |
+
+### Anti-Patterns Found
+
+- No `TBD`/`FIXME`/`XXX`/`TODO`/`HACK`/`PLACEHOLDER` markers found in any of this round's 5 modified files (`scripts/_common.py`, `scripts/forge_curator/persistence.py`, `scripts/stamp_curator_provenance.py`, `tests/forge_curator/test_error_handling.py`, `tests/test_chapter_roll_overrides_io.py`). The one `XXXX` grep hit is inside the literal string `\\uXXXX` (unicode-escape notation in a docstring), not a debt marker.
+- No stub implementations. `write_validated_json`'s new atomicity, `_write_chapter_roll_overrides`'s rewire, and the widened AST scan are all real, substantive changes — independently confirmed to do what their commit messages and docstrings claim, including the scan's fail-on-the-actual-bug property (the claim most likely to have been merely asserted rather than true).
+- **Non-blocking observation, carried forward as a recommendation, not a gap:** the TUI has no exception handling around any of its ~24 `self.persistence.*` write call sites. A validation failure (or any other exception) from a write now surfaces as a `ValueError` that propagates uncaught, and Textual's `App._handle_exception` unconditionally exits the app on any unhandled exception (confirmed by reading the installed Textual 8.2.5 source). This is **not a regression** — the prior `_atomic_write_json` path could raise `OSError` (e.g. disk full) through the exact same unguarded call sites with the identical exit-the-app outcome, and `app.py` was not touched by any commit in either gap-closure round. It is also **not in scope for CINF-01**, which is about provenance-schema validation coverage, not TUI crash resilience. Given `_ensure_chapter_entry` always stamps a valid `curated_by` on newly created entries, the probability of hitting this path in normal use is low, but the `undo_last` rollback of an arbitrary journaled `before_state` (line 1730) has no independent validation of its own beyond the same writer's gate. **Recommendation:** track a lightweight follow-up (not blocking this phase) to wrap the ~24 persistence call sites — or at minimum the `undo_last` restore path — in a try/except that surfaces a flash message instead of exiting the session, mirroring the pattern already used in `_post_curation_refresh` for derivation-subprocess failures.
+- A separate, unrelated, genuinely pre-existing (predates this entire phase — introduced in `b6c3038`, confirmed via `git log -L`) latent bug was surfaced by the executor's own commit message: `undo_last`'s target-file matching fails to recognize the combined `{chapter_roll_overrides, section_classifications}` snapshot journaled by `delete_chapter_curation_items`/`remove_annotations_at_word` under `target_file=MANUAL` (the directory), so undoing either of those two specific actions was already broken before this phase and remains so. Out of scope for CINF-01; noted for completeness only.
+
+### Reproduced Checks (independent re-runs this pass, not taken from SUMMARY or the orchestrator's pre-verification claims)
+
+- Read `scripts/_common.py::write_validated_json` directly — confirmed atomic tmp-file → `os.replace` sequence, validation gating before any disk write.
+- Read `scripts/forge_curator/persistence.py` in full (all 1762 lines) — confirmed `_write_chapter_roll_overrides` routes through `write_chapter_roll_overrides_doc` with rollback-and-reraise; confirmed `undo_last`'s branch selection; confirmed `_atomic_write_json` survives only for `section_classifications.json` and undo's non-overrides fallback.
+- Read `scripts/stamp_curator_provenance.py` directly — confirmed it now calls `write_chapter_roll_overrides_doc`.
+- `git diff 8bcb329~1 6c8ab15 --stat` — confirmed the diff touches exactly `scripts/_common.py`, `scripts/forge_curator/persistence.py`, `scripts/stamp_curator_provenance.py`, `tests/forge_curator/test_error_handling.py`, `tests/test_chapter_roll_overrides_io.py` — no unexplained scope, and (critically) confirmed `scripts/forge_curator/app.py` is untouched.
+- Independently rebuilt a scratch `scripts/` tree, restored `persistence.py` and `stamp_curator_provenance.py` to their pre-`8bcb329` state via `git show 8bcb329~1:...`, and called the test module's own `_find_overrides_write_offenders` function directly (not via pytest) against that scratch tree — it correctly flagged both files (`persistence.py:144` indirect via `_atomic_write_json`; `stamp_curator_provenance.py:52` indirect via `write_validated_json`). This is the strongest form of the orchestrator's requested proof: the guard fails on the actual historical bug, not just a synthetic fixture.
+- `.venv/bin/python -c "..."` — independently ran `load_chapter_roll_overrides_doc` → `write_chapter_roll_overrides_doc` round-trip on the real, live 118-chapter corpus into a scratch file; byte-identical, and confirmed no leftover `.tmp` file.
+- `git status --porcelain data/manual/chapter_roll_overrides.json` → clean (this verification pass made no accidental writes to the trusted corpus).
+- `PYTHONPATH=scripts .venv/bin/python scripts/mechanical_verifier.py` → `pass: 593, no_evidence: 88, fail: 0`, identical to every prior baseline.
+- `pytest tests/test_chapter_roll_overrides_io.py -v` → 10 passed (all tests, individually).
+- `pytest tests/forge_curator/test_error_handling.py -v` → 8 passed.
+- `pytest tests/forge_curator/ -q` → all passed (no failures in this subdirectory; the 4 known-accepted `test_forge_curator.py` failures live directly under `tests/`, not `tests/forge_curator/`).
+- `pytest tests/test_build_exemplar_index.py tests/test_build_candidate_rolls.py tests/test_measure_candidate_accuracy.py -q` → 31 passed.
+- `.venv/bin/python -m pytest -q` (single full run) → exactly the 5 known-accepted failures, matching every prior baseline exactly.
+- `.venv/bin/python scripts/verify.py` → exits non-zero for the same 5 pre-existing failures (654 passed / 5 failed), confirming the orchestrator's characterization that this exit code is not a Phase 3 gap.
+- `git log --oneline -1 -- data/manual/chapter_roll_overrides.json` → `2f5cfb0` (unchanged since 03-01's original stamp).
+- `git log --oneline -1 -- .planning/workstreams/curation/phases/.../candidate-accuracy-report.json` → `212797e` (unchanged, predates this round).
+- `grep -rn "chapter_roll_overrides\.json\|CHAPTER_ROLL_OVERRIDES\b" --include="*.py" .` (whole repo) and `grep -rn "write_text\|json\.dump\|write_bytes\|os\.replace\|shutil\.move" scripts/` (all write-capable calls in `scripts/`, both non-test) → manually read every non-test hit; no ninth/undiscovered write path to `chapter_roll_overrides.json` found.
+- `inspect.getsource(App._handle_exception)` on the installed `textual==8.2.5` → confirmed "Always results in the app exiting" is accurate current behavior, not an outdated assumption.
+- `git log --oneline -3 -L 682,700:scripts/forge_curator/persistence.py` → confirmed the `delete_chapter_curation_items`/`undo_last` MANUAL-directory journal-target mismatch predates this phase (`b6c3038`), corroborating the executor's "pre-existing, out of scope" characterization.
+
+### Gaps Summary
+
+No gaps remain. Two full rounds of gap-closure (12 commits total across both rounds) have closed every previously-identified must-have failure for CINF-01, and this pass's own mandated independent sweep — run against the whole repository, not just the previously-implicated files — found no further unvalidated write path. The one claim in this task that most needed independent, not merely re-asserted, proof — that the widened AST regression test genuinely fails against the pre-fix code, not just a synthetic fixture — has now been reproduced directly: restoring the historical pre-fix `persistence.py` and `stamp_curator_provenance.py` into a scratch tree and calling the scan function directly (bypassing the checked-in pytest fixture entirely) correctly flags both.
+
+The TUI failure-mode finding is reported honestly by the executor: `app.py` is genuinely untouched by either gap-closure round, none of the ~24 persistence call sites are wrapped in a try/except, and Textual's own source confirms an unhandled exception unconditionally exits the app. This is pre-existing behavior (the prior bare-`OSError` path had the identical failure mode) and is outside CINF-01's scope, so it is not treated as a phase gap — it is recorded above as a non-blocking recommendation for a follow-up, per the orchestrator's request to judge and report rather than silently accept or silently block on it.
+
+All four previously-verified truths (Stage 1 candidate assembly, per-class accuracy measurement, mechanically-derived positions with Stage 1 never writing to the corpus, and evidence-not-found-never-guessed) were re-confirmed unaffected by this round's changes to `_common.py`, `mechanical_verifier.py`, and `build_exemplar_index.py` — via direct test re-runs and `git log` confirmation that the corpus data file and the accuracy report were not touched.
+
+**Phase 3's goal is achieved: every override entry declares who curated it (schema-enforced, all identified consumers rewired, no shims), and Stage 1's deterministic candidate-assembly-plus-accuracy-measurement machinery correctly sizes Phase 4's inference spend.**
+
+---
+
+_Verified: 2026-08-02T21:04:56Z_
+_Verifier: Claude (gsd-verifier)_

@@ -22,7 +22,7 @@ Within this workstream, phases are strictly sequential — each stage's correctn
 
 - [x] **Phase 1: Epub Refresh & Exemplar Mining** - Latest chapters hydrated, pipeline green, regime-tagged exemplar index from the 118-chapter corpus (completed 2026-07-26)
 - [x] **Phase 2: Mechanical Verifier** - Deterministic quote/word-position/perk-name verification baselined at 100% on hand-curated chapters (completed 2026-08-01)
-- [ ] **Phase 3: Provenance Schema & Deterministic Candidate Assembly** - `curated_by` field rewrite, plus Stage 1: deterministic roll-candidate assembly from existing anchor/prose-window machinery, baselined against the hand-curated corpus. Zero LLM.
+- [x] **Phase 3: Provenance Schema & Deterministic Candidate Assembly** - `curated_by` field rewrite, plus Stage 1: deterministic roll-candidate assembly from existing anchor/prose-window machinery, baselined against the hand-curated corpus. Zero LLM. (completed 2026-08-02)
 - [ ] **Phase 4: Inference Refinement, Confidence Gate & Routing** - Stage 2: inference pass that grades Stage 1 candidates and recovers what heuristics cannot; confidence gate, overrides/proposals routing, agent-run ledger idempotency
 - [ ] **Phase 5: Proposal Review & Full Batch Run** - Forge Curator proposal review flow plus the full batch over remaining chapters
 
