@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_plan: 3
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-08-02T18:47:53.000Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-08-02T19:10:55.000Z"
 last_activity: 2026-08-02
-last_activity_desc: 03-02 complete — deterministic Stage 1 candidate assembler, positional binding, 718 candidates
+last_activity_desc: 03-03 complete — Stage 1 candidate accuracy measured per evidence class, committed report; Phase 3 complete
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
 workstream: curation
 created: 2026-07-26
 ---
@@ -22,17 +22,17 @@ created: 2026-07-26
 
 ## Current Position
 
-**Status:** Executing Phase 3
+**Status:** Phase 3 complete
 **Current Phase:** 3
 **Current Plan:** 3
-**Last Activity:** 2026-08-02 — 03-02 complete — deterministic Stage 1 candidate assembler, positional binding, 718 candidates
-**Last Activity Description:** 03-02 complete — deterministic Stage 1 candidate assembler, positional binding, 718 candidates
+**Last Activity:** 2026-08-02 — 03-03 complete — Stage 1 candidate accuracy measured per evidence class, committed report; Phase 3 complete
+**Last Activity Description:** 03-03 complete — Stage 1 candidate accuracy measured per evidence class, committed report; Phase 3 complete
 
 ## Progress
 
-**Phases Complete:** 2 / 3
-**Plans Complete:** 8 / 9
-**Current Plan:** 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus
+**Phases Complete:** 3 / 3
+**Plans Complete:** 9 / 9
+**Current Plan:** 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus (complete)
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ created: 2026-07-26
 | Phase 2 P03 | 55min | 3 tasks | 2 files |
 | 03-01 | 20 min | 3 tasks (1 tdd) | 4 created + 13 modified |
 | 03-02 | 19 min | 3 tasks (1 tdd) | 3 created |
+| 03-03 | 25 min | 3 tasks (1 tdd) | 4 created |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ created: 2026-07-26
 - [03-01]: `chapter_roll_overrides_io.py`'s sibling imports (`_common`, `data_paths`) use a try/except fallback to `scripts._common`/`scripts.data_paths` — discovered during Task 2 that the bare-import convention used by top-level scripts/*.py breaks when the module is imported package-qualified from the forge_curator TUI package (`python -m scripts.forge_curator` puts only the repo root, not `scripts/`, on `sys.path`).
 - [03-02]: Corrected the Stage 1 binding rule from anchor-gated (only 36/718 rolls could ever bind) to chapter-local POSITIONAL cursor advance through `multi_grab.merge_paid_units(overrides=None)`'s default bundle units — `"miss"` is the only anchor tag that still gates (skips) consumption; `"acquisition"` presence/absence only controls the `evidence_for:outcome` honesty marker. Live corpus: 718 candidates — 318 hit (6 anchor-confirmed, 312 positional-only), 24 miss, 376 fully unfilled.
 - [03-02]: Free-perk forward search's Tier 2 fallback uses a per-character (not per-token) hyphen/space-tolerant connector — the token-level join tried first could not match the plan's own cited example ("Altmode" vs. prose "alt-mode", a separator inserted where the perk name has none at all).
+- [03-03]: Measured Stage 1 accuracy per evidence class (D-08) against 663 non-stub curated rolls: 96.5% get some candidate proposed (matched+partial), but only 4 (0.6%) are fully anchor-confirmed — all 4 in the `direct` class, none in `general_only`/`forward_ref`/`no_evidence`. Real but numerically thin support for D-07's expectation that Stage 1 performs best on `direct`.
+- [03-03]: Deterministic candidate-to-curated matching never joins on `roll_number`/`source_ordinal`: chapter-local position proximity (word_position when curated side has one — only 2/681 corpus-wide — else both sides fall back to their own ordinal rank) is the primary signal, perk-name overlap a tiebreaker only. A curated roll left unclaimed ("missed") is still bucketed by evidence class via its single nearest candidate, computed ignoring the claim constraint, so all 5 D-08 counters are well-defined per class.
+- [03-03]: `derive_stub_chapters` treats a zero-roll chapter entry (55.1) as a stub via vacuous truth (`all()` over an empty list) rather than requiring at least one roll — needed to exactly reproduce D-09's originally-flagged 11-chapter list (minus 104, genuinely curated 2026-08-01).
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ created: 2026-07-26
 
 ## Session Continuity
 
-Last session: 2026-08-02T18:47:53.000Z
-Stopped at: Completed 03-02-PLAN.md
-Resume file: .planning/workstreams/curation/phases/03-provenance-schema-deterministic-candidate-assembly/03-03-PLAN.md
+Last session: 2026-08-02T19:10:55.000Z
+Stopped at: Completed 03-03-PLAN.md — Phase 3 complete (all 3 plans)
+Resume file: None — next step is planning Phase 4 (Inference Refinement, Confidence Gate & Routing)

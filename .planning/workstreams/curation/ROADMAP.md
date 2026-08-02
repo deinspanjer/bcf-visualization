@@ -113,7 +113,7 @@ Plans:
   4. Word positions and roll ordinals are derived mechanically; Stage 1 emits candidates only and never writes to `chapter_roll_overrides.json`
   5. A candidate Stage 1 cannot support with evidence is emitted as evidence-not-found rather than guessed (`CURATION-CONVENTIONS.md` §5) — partial evidence is a correct outcome, not a failure
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -123,7 +123,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus, per evidence class; commit the report (ACUR-01 Stage 1 measurement)
+- [x] 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus, per evidence class; commit the report (ACUR-01 Stage 1 measurement)
 
 **Notes**: The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — respect the existing predicted-mode mapping rather than inventing one. Measured 2026-08-01 over 718 predicted rolls: `forward_ref` 485 (68%), `direct` 132 (18%), `no_evidence` 74 (10%), `general_only` 27 (4%) — so Stage 1 should be expected to do well on a minority of rolls, and that distribution is exactly why the Phase 4 split exists.
 
@@ -173,7 +173,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 2/2 | Complete    | 2026-08-01 |
-| 3. Provenance Schema & Deterministic Candidate Assembly | 2/3 | In Progress|  |
+| 3. Provenance Schema & Deterministic Candidate Assembly | 3/3 | Complete    | 2026-08-02 |
 | 4. Inference Refinement, Confidence Gate & Routing | 0/TBD | Not started | - |
 | 5. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
 

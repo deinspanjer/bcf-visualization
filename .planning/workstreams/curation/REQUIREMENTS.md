@@ -56,7 +56,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | CINF-03 | Phase 2 | Complete |
 | CINF-01 | Phase 3 | Complete |
 | CINF-04 | Phase 4 | Pending |
-| ACUR-01 | Phase 3 (Stage 1) + Phase 4 (Stage 2) | Pending |
+| ACUR-01 | Phase 3 (Stage 1) + Phase 4 (Stage 2) | Stage 1 complete (03-02/03-03); Stage 2 pending |
 | ACUR-02 | Phase 4 | Pending |
 | ACUR-03 | Phase 4 | Pending |
 | ACUR-04 | Phase 5 | Pending |
