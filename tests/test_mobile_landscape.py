@@ -817,3 +817,176 @@ def test_landscape_reveal_tap_semantics(tmp_path):
                 page.close()
 
             browser.close()
+
+
+def test_landscape_surface_stack(tmp_path):
+    # MOBL-04 (03-03-PLAN.md Task 1, D-33): the layout-agnostic surface
+    # stack (openMobileSurface/closeMobileSurface/trapMobileSurfaceFocus) is
+    # reused wholesale in landscape — a backdrop tap anywhere across the
+    # root (including over the sidebar, the landscape analogue of Phase 2
+    # device defect #3), the opening control a second time, and the mobile
+    # back gesture all dismiss with a balanced history sentinel (D-16);
+    # keyboard focus is trapped inside the panel both directions; the panel
+    # never overlaps the control-dock buttons (the landscape analogue of
+    # Phase 2 device defect #2), and the dock's Settings/About buttons stay
+    # reachable ABOVE the backdrop the same way portrait's transport row
+    # does; every external About link carries rel=noopener (T-03-03); and
+    # the Help overlay's CTA stays reachable within the sky's own height.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Backdrop spans the whole root (including the sidebar); the
+            #     open panel never overlaps a dock button and never exceeds
+            #     the sky's height; a tap over the sidebar's field-log region
+            #     (not a dock button) closes it. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            assert page.locator(".mobile-sky .mobile-flyout").count() == 1
+            assert page.locator(".mobile-flyout-backdrop").count() == 1
+
+            backdrop_box = page.locator(".mobile-flyout-backdrop").bounding_box()
+            sidebar_box = page.locator(".mobile-sidebar").bounding_box()
+            assert backdrop_box is not None and sidebar_box is not None
+            assert backdrop_box["x"] + backdrop_box["width"] >= sidebar_box["x"] + sidebar_box["width"] - 1
+
+            flyout_box = page.locator(".mobile-flyout").bounding_box()
+            sky_box = page.locator(".mobile-sky").bounding_box()
+            assert flyout_box is not None and sky_box is not None
+            assert flyout_box["height"] <= sky_box["height"] + 1
+            dock_btn_locators = page.locator(".mobile-dock-btn").all()
+            assert len(dock_btn_locators) > 0
+            for dock_btn in dock_btn_locators:
+                dock_box = dock_btn.bounding_box()
+                assert dock_box is not None
+                assert not _intersects(flyout_box, dock_box)
+
+            field_log_box = page.locator(".mobile-field-log").bounding_box()
+            assert field_log_box is not None
+            x = sidebar_box["x"] + sidebar_box["width"] / 2
+            y = field_log_box["y"] + field_log_box["height"] / 2
+            page.mouse.click(x, y)
+            assert page.locator(".mobile-flyout").count() == 0
+            assert console_messages == []
+            page.close()
+
+            # --- The opening control closes it a second press; About while
+            #     Settings is open swaps in (reusing the outstanding
+            #     sentinel, not stacking a second one) — this requires the
+            #     REAL dock button to receive the tap, not the backdrop
+            #     underneath it (Task 1's z-index fix; a non-forced
+            #     Playwright click fails outright if the backdrop still
+            #     intercepts it). ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            history_state_before_open = page.evaluate("window.history.state")
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator('.mobile-flyout[aria-label="Settings"]').count() == 1
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 0
+            page.wait_for_timeout(50)
+            assert page.evaluate("window.history.state") == history_state_before_open
+
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator('.mobile-flyout[aria-label="Settings"]').count() == 1
+            state_with_settings_open = page.evaluate("window.history.state")
+            page.click('[data-action="mobile-open-info"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            assert page.locator('.mobile-flyout[aria-label="About"]').count() == 1
+            # The swap reuses the single outstanding sentinel — the state
+            # object is unchanged from what it was right after Settings
+            # opened, not a second pushState for About.
+            assert page.evaluate("window.history.state") == state_with_settings_open
+            assert console_messages == []
+            page.close()
+
+            # --- Focus trap: Tab from the last focusable and Shift+Tab from
+            #     the first both wrap inside the panel, never escaping to the
+            #     sky/rail/dock behind it. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.evaluate(
+                "document.querySelector('.mobile-flyout').contains(document.activeElement)"
+            ) is True
+            focusable_selector = (
+                ".mobile-flyout button, .mobile-flyout [href], .mobile-flyout input, "
+                ".mobile-flyout select, .mobile-flyout textarea"
+            )
+            focusable_count = page.evaluate(
+                "(sel) => document.querySelectorAll(sel).length", focusable_selector,
+            )
+            assert focusable_count > 0
+            for _ in range(focusable_count + 2):
+                page.keyboard.press("Tab")
+            assert page.evaluate(
+                "document.querySelector('.mobile-flyout').contains(document.activeElement)"
+            ) is True
+            for _ in range(focusable_count + 2):
+                page.keyboard.press("Shift+Tab")
+            assert page.evaluate(
+                "document.querySelector('.mobile-flyout').contains(document.activeElement)"
+            ) is True
+            assert console_messages == []
+            page.close()
+
+            # --- The mobile back gesture closes the flyout and leaves the
+            #     app on the same URL; the sentinel is fully consumed
+            #     (history.state returns to whatever it was pre-open — raw
+            #     window.history.length never shrinks via back(), matching
+            #     the established portrait proof's own reasoning). ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            history_state_before_open2 = page.evaluate("window.history.state")
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            page.go_back()
+            page.wait_for_timeout(50)
+            assert page.locator(".mobile-flyout").count() == 0
+            assert page.evaluate("document.querySelector('.mobile-app-landscape') != null") is True
+            assert page.evaluate("window.history.state") == history_state_before_open2
+            assert console_messages == []
+            page.close()
+
+            # --- T-03-03: every external anchor in the About flyout carries
+            #     rel=noopener — enumerate ALL of them, not just the first. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-info"]')
+            links = page.locator('.mobile-flyout[aria-label="About"] a[href^="http"]')
+            link_count = links.count()
+            assert link_count > 0
+            rels = links.evaluate_all("els => els.map(el => el.rel)")
+            assert len(rels) == link_count
+            assert all("noopener" in rel for rel in rels)
+            assert console_messages == []
+            page.close()
+
+            # --- Help overlay: opens from the top-cluster help button in
+            #     landscape, never exceeds the sky region's height (D-19),
+            #     and its CTA stays reachable inside that bound. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-help"]')
+            help_box = page.locator(".mobile-help-overlay").bounding_box()
+            sky_box2 = page.locator(".mobile-sky").bounding_box()
+            assert help_box is not None and sky_box2 is not None
+            assert help_box["height"] <= sky_box2["height"] + 1
+            cta = page.locator(".mobile-got-it")
+            expect(cta).to_be_visible()
+            cta_box = cta.bounding_box()
+            assert cta_box is not None
+            assert cta_box["y"] + cta_box["height"] <= sky_box2["y"] + sky_box2["height"] + 1
+            assert console_messages == []
+            browser.close()

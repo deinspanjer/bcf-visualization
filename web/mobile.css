@@ -600,6 +600,18 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+    /* Task 1 (03-03-PLAN.md): the landscape analogue of the portrait
+       .mobile-dock-transport z-index precedent below — stays above the
+       flyout/backdrop stack (z-index 8/9) so the Settings/About buttons
+       remain tappable even though the backdrop geometrically spans the
+       whole .mobile-app-landscape root, including this sidebar. Without
+       this, opening Settings then pressing About (or pressing Settings a
+       second time to close it) would hit the backdrop instead of the real
+       button and dismiss the surface entirely rather than swapping/
+       toggling it — the exact "buttons painted through/unreachable" shape
+       Phase 2's device-found defects #2/#3 took on in portrait. */
+    position: relative;
+    z-index: 10;
   }
   .mobile-dock-btn {
     padding: 9px 6px;
@@ -782,6 +794,26 @@
     padding: 14px 16px;
     backdrop-filter: blur(14px);
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 18px rgba(92, 244, 255, 0.15);
+  }
+  /* Task 1 (03-03-PLAN.md): landscape override. The base rule above (bottom-
+     anchored + a fixed max-height) was sized against portrait's much taller
+     (~506px) sky. Landscape's sky is the SHORTER dimension — as low as
+     320px at the smallest in-scope viewport — so a fixed max-height guess
+     risks either clipping content or leaving dead space. Setting BOTH top
+     and bottom (with height left auto) stretches the panel to exactly the
+     space between the same 12px inset the cinema-scrub pill already uses,
+     never exceeding the sky's own height; the base rule's overflow-y:auto
+     still gives it internal scroll if content exceeds that (the "internal-
+     scroll" half of the Help overlay's header/body/footer treatment — this
+     panel has no separate footer element to keep static, so the whole panel
+     scrolls together, same as it already does in portrait). Scoped by the
+     `.mobile-app-landscape` class (which only ever exists in landscape DOM)
+     rather than a nested `@media (orientation: landscape)` block, matching
+     this file's existing convention for landscape-only component rules. */
+  .mobile-app-landscape .mobile-flyout {
+    top: 12px;
+    bottom: 12px;
+    max-height: none;
   }
   .mobile-flyout h4 {
     margin: 0 0 4px;
