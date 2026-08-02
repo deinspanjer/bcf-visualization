@@ -117,14 +117,14 @@
   against `roll_validation.json` at that time rather than assuming a clean
   slate.
 
-- **`scripts/realign_chapters.py` writes JSON with `ensure_ascii=True`,
-  causing whole-file unicode-escaping churn in a hand-curated file every
-  time it runs.**
+- **RESOLVED (CINF-01 gap-closure follow-up, Phase 3):** `scripts/realign_chapters.py`
+  wrote JSON with `ensure_ascii=True`, causing whole-file unicode-escaping
+  churn in a hand-curated file every time it ran.
 
   Running the tool to re-stamp ch 100/109/112/114 rewrote the *entire*
   `data/manual/chapter_roll_overrides.json` via
   `OVERRIDES_PATH.write_text(json.dumps(doc, indent=2) + "\n")` (see
-  `_restamp()`), which defaults to `ensure_ascii=True` and escaped ~14
+  `_restamp()`), which defaulted to `ensure_ascii=True` and escaped ~14
   unrelated lines of literal unicode (en-dash `–`, ellipsis `…`, etc.) into
   `\uXXXX` sequences across hand-curated evidence quotes/perk names,
   diverging from the rest of the codebase's established
@@ -132,9 +132,19 @@
   This was caught and manually reverted before committing this session
   (diff reduced back to exactly the 4 intended fingerprint lines) but would
   silently corrupt the diff for any future re-stamp session that didn't
-  catch it. **Not fixed here** (out of this data-curation plan's scope) —
-  a one-line fix (`json.dumps(doc, indent=2, ensure_ascii=False)`) in
-  `scripts/realign_chapters.py::_restamp()` would prevent recurrence.
+  catch it.
+
+  **Fixed** in the CINF-01 gap-closure follow-up alongside four other
+  bare read/write call sites against `chapter_roll_overrides.json`
+  (`scripts/mechanical_verifier.py`, `scripts/chapter_alignment.py`,
+  `scripts/build_exemplar_index.py`, `scripts/bootstrap_chapter_alignment_anchors.py`):
+  `realign_chapters.py::_restamp()` now reads via
+  `chapter_roll_overrides_io.load_chapter_roll_overrides_doc` and writes
+  via the new `chapter_roll_overrides_io.write_chapter_roll_overrides_doc`
+  (schema-validated, `indent=2, ensure_ascii=False`, trailing newline —
+  matching the file's established on-disk convention exactly). A
+  regression test (`tests/test_chapter_roll_overrides_io.py::test_no_bare_write_path_to_overrides_file`)
+  guards against a future contributor reintroducing a bare write path.
 
 - **Task 3 (`scripts/verify.py`) result: 5 pre-existing test failures remain,
   none caused by the ch 104 skip — known-accepted gap, not a regression.**
