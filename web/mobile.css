@@ -666,7 +666,15 @@
     position: absolute;
     left: 12px;
     right: 12px;
-    bottom: 12px;
+    /* Clear the home indicator. The UI-SPEC's safe-area table gave this pill
+       no inset of its own, reasoning that it inherits the root's padding —
+       but that padding is left/right only, so nothing protected its bottom
+       edge. Measured on a real iPhone at the Phase C gate: with --safe-bottom
+       at 21px the pill reached 9px into the indicator zone and clipped the
+       play button by 3px. The scrub track itself was already clear, so the
+       impact was cosmetic-to-marginal rather than a dead control, but a
+       system gesture area is not somewhere interactive chrome should sit. */
+    bottom: max(12px, var(--safe-bottom));
     display: flex;
     align-items: center;
     gap: 8px;
