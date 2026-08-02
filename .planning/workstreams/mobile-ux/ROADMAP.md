@@ -150,7 +150,30 @@ Plans:
   4. Lighthouse Accessibility scores ≥ 90 on the mobile preset
   5. With `prefers-reduced-motion: reduce`, transitions and throw decay are disabled and auto-hide doubles to 8000ms; playback pauses when the page is hidden
 
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Tracer: delete the rotate banner end-to-end (JS + the one sanctioned frozen-CSS edit) + the whole-milestone freeze proof (MOBX-01)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 04-02-PLAN.md — Visually-hidden aria-live region with outcome-aware announcements + mobile keyboard equivalents inside the one existing keydown handler (MOBX-03)
+- [ ] 04-03-PLAN.md — Landing-page title chip, author credit and `?` help dialog, with the Survey letter verbatim (MOBX-02)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 04-04-PLAN.md — Cinema-scrub FAB 44×44 hit area, reduced-motion auto-hide doubling, and the hidden-page pause verification (MOBX-03, MOBX-04, MOBX-05)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 04-05-PLAN.md — Package-legitimacy gate + the committed mobile-preset Lighthouse Accessibility ≥ 90 runner and its remediation (MOBX-03)
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 04-06-PLAN.md — Full-suite sweep, whole-milestone freeze proof, §6 acceptance evidence + the §5 Phase D+E gate review with Dre (iOS device pass, D-49 measurement, VoiceOver check)
+
 **UI hint**: yes
 **Notes**: Merges `INTEGRATION_PLAN.md` §5 phases D and E. Only safe once Phases 2 and 3 have both passed their gates — the portrait banner is the safety net until then. The `user-scalable=no` decision made at the Phase 1 interview is re-verified here against the real Lighthouse run. Phase ends with the §5 Phase D+E gate review plus a desktop smoke test pass.
 
@@ -163,7 +186,7 @@ Plans:
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | 5/5 | Complete    | 2026-08-01 |
 | 3. Landscape Layout | 4/4 | Complete    | 2026-08-02 |
-| 4. Mobile Cutover & Accessibility | 0/TBD | Not started | - |
+| 4. Mobile Cutover & Accessibility | 0/6 | Planned | - |
 
 ## Requirement Coverage
 
