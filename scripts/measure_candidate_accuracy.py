@@ -54,22 +54,59 @@ predictor and curator and diverge by construction (project convention);
 using them as a join key would silently pair unrelated rolls whenever the
 two sequences happen to agree on a number by coincidence.
 
+Curated-side position: a three-tier ladder (methodology fix, follow-up to
+Plan 03-03)
+------------------------------------------------------------------------
+A prior version of this measurement scored "position proximity" almost
+entirely via ORDINAL rank, because only 2 of 681 curated rolls carry a
+non-null ``word_position``. With 679 rolls falling back to "the Nth
+candidate lines up with the Nth curated roll", the resulting accuracy
+number mostly measured whether Stage 1 emits the right *count* of
+candidates per chapter, not whether it identified the right rolls. Per
+``CURATION-CONVENTIONS.md`` Sec 2/3, the curator's actual positional
+ground truth usually lives in a roll's ``evidence_quotes``: 593 of 681
+curated rolls (87%) carry at least one quote with a non-null
+``mention_word_position``. ``_curated_position()`` therefore resolves each
+curated roll's chapter-local position via a documented three-tier
+precedence ladder, and records which tier every roll used (``_source``:
+``"word_position"`` | ``"quote_position"`` | ``"ordinal"``) so the report
+can state plainly how much of the result rests on real positions versus
+ordinal fallback:
+
+a. **word_position** — the roll's own ``word_position`` when non-null (2
+   rolls corpus-wide). Most authoritative: it is the roll's own mechanical
+   position, hand-set by the curator.
+b. **quote_position** — else the MINIMUM ``mention_word_position`` across
+   the roll's ``evidence_quotes`` whose ``mention_chapter_num`` matches the
+   roll's own chapter (its `chapter_roll_overrides` key — the same
+   ``chapter_num`` passed into ``match_candidates_to_curated``). Minimum,
+   not first-in-list order, because Sec 2/3 documents that the
+   *connection* quote — naming the mote/constellation, placed
+   "immediately before and close to" the roll — comes first in narrative
+   position, while later quotes (perk names dwelt on further into the
+   prose) can trail the roll by thousands of words (intra-roll quote span
+   up to 7,392 words per Sec 2). A quote naming a *different* chapter than
+   the roll (``mention_chapter_num`` mismatch, ~8% of corpus quotes per
+   Sec 3) is a different coordinate space entirely and is excluded from
+   this comparison rather than mixed in.
+c. **ordinal** — else the roll's 0-based ordinal rank within the
+   chapter's curated ``rolls[]`` list (the curator's own list order is
+   already narrative reading order) — the remaining ~86 rolls with no
+   positional evidence at all.
+
 The algorithm, in full:
 
-1. For each curated roll, compute its chapter-local position: its own
-   ``word_position`` when that value is non-null (the DIRECT comparison
-   mode — nearly always absent in the real corpus, only 2 of 681 curated
-   rolls carry one), otherwise its 0-based ORDINAL rank within that
-   chapter's curated ``rolls[]`` list (the documented fallback — the
-   curator's own list order is already narrative reading order).
+1. For each curated roll, compute its chapter-local position via the
+   three-tier ladder above.
 2. For each candidate being compared against a curated roll, compute its
    position on the SAME scale the curated roll used: when the curated
-   roll's real ``word_position`` was used, compare against the
-   candidate's own real ``word_position`` (candidates always carry one,
-   copied from ``predicted_word_in_chapter``); when the curated roll fell
-   back to its ordinal rank, compare against the candidate's own 0-based
-   ordinal rank within that chapter's candidate list (candidates are
-   sorted by ``slot_index`` ascending first — already narrative order per
+   roll's tier was ``word_position`` or ``quote_position`` (both real
+   word-count positions), compare against the candidate's own real
+   ``word_position`` (candidates always carry one, copied from
+   ``predicted_word_in_chapter``); when the curated roll fell back to its
+   ordinal rank, compare against the candidate's own 0-based ordinal rank
+   within that chapter's candidate list (candidates are sorted by
+   ``slot_index`` ascending first — already narrative order per
    ``build_candidate_rolls.py``). This keeps every comparison on
    compatible units — an ordinal rank (0, 1, 2, ...) is never diffed
    directly against a raw word-count position (which can run into the
@@ -132,13 +169,19 @@ EVIDENCE_CLASSES = ("direct", "general_only", "forward_ref", "no_evidence")
 _METHOD = (
     "Per chapter present in both the non-stub curated corpus and "
     "candidate_rolls.json (the candidate/curated intersection): each "
-    "curated roll gets a chapter-local position (its own word_position "
-    "when non-null, else its 0-based ordinal rank in the curator's own "
-    "rolls[] list) and is compared against every candidate in the "
-    "chapter on the SAME scale (the candidate's real word_position when "
-    "the curated side used a real word_position, else the candidate's "
-    "own ordinal rank within its slot_index-sorted list). Pairs are "
-    "scored by (position distance ascending, perk-name-overlap "
+    "curated roll gets a chapter-local position via a three-tier ladder "
+    "-- (a) its own word_position when non-null; else (b) the MINIMUM "
+    "mention_word_position across its evidence_quotes whose "
+    "mention_chapter_num matches the roll's own chapter (cross-chapter "
+    "quotes excluded -- different coordinate space); else (c) its "
+    "0-based ordinal rank in the curator's own rolls[] list -- and is "
+    "compared against every candidate in the chapter on the SAME scale "
+    "(the candidate's real word_position when the curated side used "
+    "word_position or quote_position, else the candidate's own ordinal "
+    "rank within its slot_index-sorted list). Which tier each curated "
+    "roll used is recorded (_position_tier_counts) so the reader can see "
+    "how much of the result rests on real positions vs ordinal fallback. "
+    "Pairs are scored by (position distance ascending, perk-name-overlap "
     "descending) -- position proximity is the PRIMARY signal, perk "
     "overlap only a tiebreaker -- and greedily assigned 1:1, most-certain "
     "pair first. This never compares roll_number/source_ordinal -- those "
@@ -188,18 +231,44 @@ def _normalized_perk_set(perks) -> set[str]:
     return {str(p).strip().lower() for p in (perks or []) if p}
 
 
-def _curated_position(curated_rolls: list[dict], index: int) -> tuple[str, float]:
-    word_position = curated_rolls[index].get("word_position")
+def _curated_position(
+    chapter_num: str, curated_rolls: list[dict], index: int,
+) -> tuple[str, float]:
+    """Resolve curated roll ``curated_rolls[index]``'s chapter-local
+    position via the three-tier ladder documented in the module
+    docstring: (a) its own ``word_position``; else (b) the minimum
+    ``mention_word_position`` across its own-chapter ``evidence_quotes``;
+    else (c) its ordinal rank. Returns ``(tier, position)`` where
+    ``tier`` is one of ``"word_position"``, ``"quote_position"``,
+    ``"ordinal"`` -- both callers and ``compute_accuracy`` use ``tier``
+    to tally how much of the measurement rests on real positions.
+    """
+    roll = curated_rolls[index]
+
+    word_position = roll.get("word_position")
     if word_position is not None:
         return ("word_position", float(word_position))
+
+    quote_positions = [
+        quote["mention_word_position"]
+        for quote in (roll.get("evidence_quotes") or [])
+        if quote.get("mention_word_position") is not None
+        and str(quote.get("mention_chapter_num")) == str(chapter_num)
+    ]
+    if quote_positions:
+        return ("quote_position", float(min(quote_positions)))
+
     return ("ordinal", float(index))
 
 
-def _candidate_position(candidates: list[dict], index: int, mode: str) -> float:
-    if mode == "word_position":
-        word_position = candidates[index].get("word_position")
-        return float(word_position) if word_position is not None else float(index)
-    return float(index)
+def _candidate_position(candidates: list[dict], index: int, tier: str) -> float:
+    if tier == "ordinal":
+        return float(index)
+    # tier is "word_position" or "quote_position" -- both are real
+    # word-count positions, so the candidate side compares against its
+    # own real word_position (candidates always carry one).
+    word_position = candidates[index].get("word_position")
+    return float(word_position) if word_position is not None else float(index)
 
 
 def match_candidates_to_curated(
@@ -216,7 +285,8 @@ def match_candidates_to_curated(
             {"index": i, "status": "matched"|"partial"|"missed",
              "evidence_kind_class": "direct"|"general_only"|
                                      "forward_ref"|"no_evidence"|None,
-             "matched_candidate_index": int|None},
+             "matched_candidate_index": int|None,
+             "position_tier": "word_position"|"quote_position"|"ordinal"},
             ...  # one entry per curated_rolls[i], same order
           ],
           "unmatched_candidate_indices": [...],  # indices into
@@ -228,9 +298,16 @@ def match_candidates_to_curated(
     n_curated = len(curated_rolls)
     n_candidates = len(candidates)
 
+    # Resolve each curated roll's (tier, position) once -- reused for
+    # every candidate comparison in this chapter and for the tier tally
+    # reported back to compute_accuracy.
+    curated_positions = [
+        _curated_position(chapter_num, curated_rolls, i) for i in range(n_curated)
+    ]
+
     def distance(i: int, j: int) -> float:
-        mode, curated_pos = _curated_position(curated_rolls, i)
-        candidate_pos = _candidate_position(candidates, j, mode)
+        tier, curated_pos = curated_positions[i]
+        candidate_pos = _candidate_position(candidates, j, tier)
         return abs(curated_pos - candidate_pos)
 
     def overlap(i: int, j: int) -> int:
@@ -257,6 +334,7 @@ def match_candidates_to_curated(
 
     curated_results = []
     for i in range(n_curated):
+        position_tier, _position = curated_positions[i]
         if i in assignment:
             j = assignment[i]
             derivation = candidates[j]["_derivation"]
@@ -266,6 +344,7 @@ def match_candidates_to_curated(
                 "status": status,
                 "evidence_kind_class": derivation["evidence_kind"],
                 "matched_candidate_index": j,
+                "position_tier": position_tier,
             })
             continue
 
@@ -287,6 +366,7 @@ def match_candidates_to_curated(
             "status": "missed",
             "evidence_kind_class": evidence_kind_class,
             "matched_candidate_index": None,
+            "position_tier": position_tier,
         })
 
     unmatched_candidate_indices = sorted(
@@ -311,10 +391,29 @@ def _chapter_sort_key(chapter_num: str) -> float:
         return 0.0
 
 
+POSITION_TIERS = ("word_position", "quote_position", "ordinal")
+
+
 def compute_accuracy(overrides_doc: dict, candidates_doc: dict) -> dict:
-    """Per-evidence-class totals: ``{"direct": {"curated_rolls": N,
-    "matched": N, "partial": N, "missed": N, "unmatched_candidates": N},
-    "general_only": {...}, "forward_ref": {...}, "no_evidence": {...}}``.
+    """Per-evidence-class totals plus curated-side position-tier tally.
+
+    Returns::
+
+        {
+          "by_evidence_class": {"direct": {"curated_rolls": N,
+              "matched": N, "partial": N, "missed": N,
+              "unmatched_candidates": N},
+              "general_only": {...}, "forward_ref": {...},
+              "no_evidence": {...}},
+          "position_tier_counts": {"word_position": N,
+              "quote_position": N, "ordinal": N},
+        }
+
+    ``position_tier_counts`` tallies, across every measured curated roll,
+    which tier of the three-tier ladder (module docstring) resolved its
+    chapter-local position -- this is what lets a reader see how much of
+    the accuracy measurement rests on real positions (``word_position`` +
+    ``quote_position``) versus ordinal fallback.
 
     Stub chapters (``derive_stub_chapters``) are excluded from the
     denominator entirely (D-09). Only chapters present in BOTH the
@@ -338,6 +437,7 @@ def compute_accuracy(overrides_doc: dict, candidates_doc: dict) -> dict:
         }
         for evidence_class in EVIDENCE_CLASSES
     }
+    position_tier_counts = {tier: 0 for tier in POSITION_TIERS}
 
     intersection_chapters = sorted(
         (cn for cn in curated_chapters if cn in candidates_by_chapter),
@@ -352,6 +452,8 @@ def compute_accuracy(overrides_doc: dict, candidates_doc: dict) -> dict:
         result = match_candidates_to_curated(chapter_num, curated_rolls, candidates)
 
         for entry in result["curated_results"]:
+            position_tier_counts[entry["position_tier"]] += 1
+
             evidence_class = entry["evidence_kind_class"]
             if evidence_class is None:
                 continue
@@ -368,7 +470,10 @@ def compute_accuracy(overrides_doc: dict, candidates_doc: dict) -> dict:
             evidence_class = sorted_candidates[j]["_derivation"]["evidence_kind"]
             totals[evidence_class]["unmatched_candidates"] += 1
 
-    return totals
+    return {
+        "by_evidence_class": totals,
+        "position_tier_counts": position_tier_counts,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -398,7 +503,9 @@ def main(argv: list[str] | None = None) -> None:
     candidates_doc = json.loads(args.candidates.read_text())
     overrides_doc = load_overrides(args.overrides)
 
-    by_evidence_class = compute_accuracy(overrides_doc, candidates_doc)
+    accuracy = compute_accuracy(overrides_doc, candidates_doc)
+    by_evidence_class = accuracy["by_evidence_class"]
+    position_tier_counts = accuracy["position_tier_counts"]
     stub_chapters = sorted(derive_stub_chapters(overrides_doc), key=_chapter_sort_key)
 
     chapter_roll_overrides = overrides_doc.get("chapter_roll_overrides") or {}
@@ -426,6 +533,7 @@ def main(argv: list[str] | None = None) -> None:
         "_method": _METHOD,
         "_stub_chapters_excluded": stub_chapters,
         "by_evidence_class": by_evidence_class,
+        "_position_tier_counts": position_tier_counts,
         "_generated_from": {
             "candidates_path": _rel(args.candidates),
             "overrides_path": _rel(args.overrides),
@@ -441,6 +549,11 @@ def main(argv: list[str] | None = None) -> None:
 
     print(f"wrote {_rel(args.output)}")
     print(f"  stub chapters excluded: {len(stub_chapters)} -> {stub_chapters}")
+    print(
+        f"  position tiers: word_position={position_tier_counts['word_position']} "
+        f"quote_position={position_tier_counts['quote_position']} "
+        f"ordinal={position_tier_counts['ordinal']}"
+    )
     for evidence_class in EVIDENCE_CLASSES:
         counters = by_evidence_class[evidence_class]
         print(

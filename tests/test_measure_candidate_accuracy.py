@@ -191,13 +191,165 @@ def test_determinism_rerun_produces_identical_totals() -> None:
         _candidate("5", 2, 500, evidence_kind="forward_ref"),
     ]}
 
-    totals_1 = compute_accuracy(doc, candidates_doc)
-    totals_2 = compute_accuracy(doc, candidates_doc)
-    assert totals_1 == totals_2
-    assert totals_1["direct"]["curated_rolls"] == 1
-    assert totals_1["direct"]["matched"] == 1
-    assert totals_1["forward_ref"]["curated_rolls"] == 1
-    assert totals_1["forward_ref"]["matched"] == 1
+    accuracy_1 = compute_accuracy(doc, candidates_doc)
+    accuracy_2 = compute_accuracy(doc, candidates_doc)
+    assert accuracy_1 == accuracy_2
+    by_evidence_class = accuracy_1["by_evidence_class"]
+    assert by_evidence_class["direct"]["curated_rolls"] == 1
+    assert by_evidence_class["direct"]["matched"] == 1
+    assert by_evidence_class["forward_ref"]["curated_rolls"] == 1
+    assert by_evidence_class["forward_ref"]["matched"] == 1
+    # Both curated rolls in this fixture carry a real word_position, so
+    # both land in the "word_position" tier, not "quote_position" or
+    # "ordinal".
+    assert accuracy_1["position_tier_counts"] == {
+        "word_position": 2, "quote_position": 0, "ordinal": 0,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 8. Three-tier curated-side position ladder.
+# ---------------------------------------------------------------------------
+
+def test_position_tier_word_position_takes_precedence() -> None:
+    """A roll with a real word_position uses it, even when evidence_quotes
+    with mention_word_position are also present."""
+    curated_rolls = [
+        _curated_roll(
+            word_position=100,
+            evidence_quotes=[
+                {"text": "x", "mention_chapter_num": "5", "mention_word_position": 9000},
+            ],
+        ),
+    ]
+    candidates = [_candidate("5", slot_index=1, word_position=100)]
+    result = match_candidates_to_curated("5", curated_rolls, candidates)
+    assert result["curated_results"][0]["position_tier"] == "word_position"
+
+
+def test_position_tier_falls_back_to_min_quote_position() -> None:
+    """No word_position -> minimum mention_word_position among the roll's
+    own-chapter evidence_quotes (the connection quote, per
+    CURATION-CONVENTIONS.md Sec 2/3, sorts earliest; later quotes about
+    the same roll can trail by thousands of words and must not be
+    allowed to pull the position later)."""
+    curated_rolls = [
+        _curated_roll(
+            word_position=None,
+            evidence_quotes=[
+                {"text": "later mention", "mention_chapter_num": "5", "mention_word_position": 900},
+                {"text": "connection quote", "mention_chapter_num": "5", "mention_word_position": 100},
+            ],
+        ),
+    ]
+    candidates = [_candidate("5", slot_index=1, word_position=100)]
+    result = match_candidates_to_curated("5", curated_rolls, candidates)
+    entry = result["curated_results"][0]
+    assert entry["position_tier"] == "quote_position"
+    assert entry["status"] == "matched"
+
+
+def test_position_tier_excludes_cross_chapter_quotes() -> None:
+    """A quote naming a different chapter than the roll's own chapter
+    (~8% of corpus quotes per Sec 3) must never be used for positional
+    comparison -- it is a different coordinate space. A roll with only
+    cross-chapter quotes falls all the way to ordinal."""
+    curated_rolls = [
+        _curated_roll(
+            word_position=None,
+            evidence_quotes=[
+                {"text": "wrong chapter", "mention_chapter_num": "6", "mention_word_position": 50},
+            ],
+        ),
+    ]
+    candidates = [_candidate("5", slot_index=1, word_position=9999)]
+    result = match_candidates_to_curated("5", curated_rolls, candidates)
+    entry = result["curated_results"][0]
+    assert entry["position_tier"] == "ordinal"
+    # Ordinal-tier comparison is against the candidate's own ordinal rank
+    # (0), not its real word_position (9999) -- still a match since both
+    # sides are the sole entry (index 0).
+    assert entry["status"] == "matched"
+
+
+def test_position_tier_ordinal_when_no_positional_evidence_at_all() -> None:
+    curated_rolls = [_curated_roll(word_position=None, evidence_quotes=[])]
+    candidates = [_candidate("5", slot_index=1, word_position=100)]
+    result = match_candidates_to_curated("5", curated_rolls, candidates)
+    assert result["curated_results"][0]["position_tier"] == "ordinal"
+
+
+def test_quote_position_changes_pairing_versus_ordinal_fallback() -> None:
+    """Regression fixture: with two curated rolls and two candidates
+    whose word_positions and ordinal ranks would pair candidates
+    OPPOSITE to how quote-derived positions pair them, the ladder must
+    follow the quote-derived (real) position, not the ordinal rank.
+
+    Curated roll 0 (ordinal 0) has no word_position of its own, but its
+    evidence_quotes point near word 900 -- close to candidate 1
+    (word_position=910), far from candidate 0 (word_position=50).
+    Curated roll 1 (ordinal 1) similarly has evidence pointing near word
+    40 -- close to candidate 0, far from candidate 1.
+
+    Under the old ordinal-only fallback, curated[0] (ordinal 0) would
+    pair with candidate[0] (ordinal 0) and curated[1] (ordinal 1) with
+    candidate[1] (ordinal 1) -- the "Nth-lines-up-with-Nth" degenerate
+    behavior this fix corrects. Under the quote-position ladder, the
+    pairing must invert: curated[0] pairs with candidate[1], and
+    curated[1] pairs with candidate[0].
+    """
+    curated_rolls = [
+        _curated_roll(
+            word_position=None,
+            evidence_quotes=[
+                {"text": "near 900", "mention_chapter_num": "5", "mention_word_position": 900},
+            ],
+        ),
+        _curated_roll(
+            word_position=None,
+            evidence_quotes=[
+                {"text": "near 40", "mention_chapter_num": "5", "mention_word_position": 40},
+            ],
+        ),
+    ]
+    candidates = [
+        _candidate("5", slot_index=1, word_position=50),
+        _candidate("5", slot_index=2, word_position=910),
+    ]
+    result = match_candidates_to_curated("5", curated_rolls, candidates)
+    results = result["curated_results"]
+    assert results[0]["position_tier"] == "quote_position"
+    assert results[0]["matched_candidate_index"] == 1  # word_position=910
+    assert results[1]["position_tier"] == "quote_position"
+    assert results[1]["matched_candidate_index"] == 0  # word_position=50
+
+
+# ---------------------------------------------------------------------------
+# 9. Tier counts reported by compute_accuracy.
+# ---------------------------------------------------------------------------
+
+def test_compute_accuracy_reports_position_tier_counts() -> None:
+    doc = _overrides_doc({
+        "5": {"rolls": [
+            _curated_roll(word_position=100, evidence_quotes=[_QUOTE]),
+            _curated_roll(
+                word_position=None,
+                evidence_quotes=[
+                    {"text": "q", "mention_chapter_num": "5", "mention_word_position": 500},
+                ],
+            ),
+            _curated_roll(word_position=None, evidence_quotes=[]),
+        ]},
+    })
+    candidates_doc = {"candidates": [
+        _candidate("5", 1, 100, evidence_kind="direct"),
+        _candidate("5", 2, 500, evidence_kind="direct"),
+        _candidate("5", 3, 900, evidence_kind="direct"),
+    ]}
+    accuracy = compute_accuracy(doc, candidates_doc)
+    assert accuracy["position_tier_counts"] == {
+        "word_position": 1, "quote_position": 1, "ordinal": 1,
+    }
 
 
 # ---------------------------------------------------------------------------
