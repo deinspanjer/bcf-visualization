@@ -1,14 +1,16 @@
 """Shared helpers for the parser scripts.
 
-Currently exposes `write_validated_json`, which validates a payload
-against its registered JSON schema before writing to disk. Validation
-runs on every parser invocation so structural drift fails the pipeline
-rather than silently producing malformed data.
+Exposes `write_validated_json`, which validates a payload against its
+registered JSON schema before writing to disk, and `read_validated_json`,
+its read-side counterpart. Validation runs on every parser invocation so
+structural drift fails the pipeline rather than silently producing (or
+silently accepting) malformed data.
 """
 
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -28,14 +30,9 @@ def _load_schema(name: str) -> dict[str, Any]:
     return schema
 
 
-def write_validated_json(out_path: Path, payload: dict[str, Any], schema_name: str) -> None:
-    schema = _load_schema(schema_name)
-    # Serialize first so tuples become arrays and any other JSON-only
-    # coercions happen; validate the serialized form to match what gets
-    # written to disk.
-    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+def _validate(payload: dict[str, Any], schema: dict[str, Any], schema_name: str) -> None:
     validator = Draft202012Validator(schema)
-    errors = sorted(validator.iter_errors(json.loads(text)), key=lambda e: list(e.path))
+    errors = sorted(validator.iter_errors(payload), key=lambda e: list(e.path))
     if errors:
         details = "\n".join(
             f"  - at {'/'.join(str(p) for p in e.absolute_path) or '<root>'}: {e.message}"
@@ -45,5 +42,35 @@ def write_validated_json(out_path: Path, payload: dict[str, Any], schema_name: s
         raise ValueError(
             f"{schema_name}: {len(errors)} schema violation(s):\n{details}{more}"
         )
+
+
+def write_validated_json(out_path: Path, payload: dict[str, Any], schema_name: str) -> None:
+    schema = _load_schema(schema_name)
+    # Serialize first so tuples become arrays and any other JSON-only
+    # coercions happen; validate the serialized form to match what gets
+    # written to disk.
+    text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+    _validate(json.loads(text), schema, schema_name)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(text)
+
+
+def read_validated_json(
+    path: Path, schema_name: str, *, default: Any = None
+) -> Any:
+    """Read and schema-validate a JSON document.
+
+    A genuinely missing file returns ``deepcopy(default)`` without any
+    validation — there is nothing on disk to validate. An *existing* file
+    is always parsed and validated: a JSON syntax error or a schema
+    violation raises. Callers must not wrap this call in a broad
+    try/except that silently substitutes ``default`` for either failure —
+    that reintroduces the exact silent-data-loss bug this helper exists
+    to prevent (see scripts/chapter_roll_overrides_io.py).
+    """
+    if not path.exists():
+        return deepcopy(default)
+    schema = _load_schema(schema_name)
+    payload = json.loads(path.read_text())
+    _validate(payload, schema, schema_name)
+    return payload
