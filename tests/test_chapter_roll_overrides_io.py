@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
@@ -151,53 +152,289 @@ def test_writer_round_trip_on_live_corpus_is_byte_identical(tmp_path: Path) -> N
     assert scratch_path.read_bytes() == original
 
 
+# ---------------------------------------------------------------------------
+# AST-based scan machinery shared by the two tests below. Widened
+# (gap-closure follow-up, CINF-01 second sweep) after the original
+# regex-based version of this guard missed a sixth write path:
+# scripts/forge_curator/persistence.py wrote the overrides file through a
+# local helper (``_atomic_write_json(path, doc)``) that took the
+# destination path as a *parameter* rather than referencing a bound path
+# constant directly, and that file lives in scripts/forge_curator/ -- a
+# subdirectory the original scan (``scripts_dir.glob("*.py")``,
+# non-recursive) never looked at. Both gaps are closed here:
+# ``scripts_dir.rglob("*.py")`` walks subdirectories, and the scan
+# additionally tracks "write-sink" function parameters (a parameter that
+# a function passes to ``.write_text``/``.write_bytes`` or as the
+# destination of ``os.replace``/``shutil.move``) and flags call sites
+# where such a helper is invoked with a path bound to
+# chapter_roll_overrides.json.
+#
+# This remains a static source scan, not a full dataflow analysis: "bound
+# to chapter_roll_overrides.json" is computed per-file (a name is bound
+# if its assignment's right-hand side contains the literal
+# "chapter_roll_overrides.json", or if it is assigned from another name
+# already known to be bound -- including names imported from another
+# scripts/ module that binds them the same way). Propagation is scoped to
+# a single file at a time specifically so that unrelated same-named
+# variables in different modules (`OUT`, `path`, `target`, ...) never
+# cross-contaminate each other's bound-name sets.
+
+
+def _idents(src: str) -> set[str]:
+    return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", src))
+
+
+def _resolve_module(scripts_dir: Path, dotted: str) -> Path | None:
+    parts = dotted.split(".")
+    if parts and parts[0] == "scripts":
+        parts = parts[1:]
+    if not parts:
+        return None
+    candidate = scripts_dir.joinpath(*parts).with_suffix(".py")
+    if candidate.exists():
+        return candidate
+    candidate_init = scripts_dir.joinpath(*parts, "__init__.py")
+    if candidate_init.exists():
+        return candidate_init
+    return None
+
+
+def _find_overrides_write_offenders(
+    scripts_dir: Path, *, literal: str, sanctioned_files: set[str]
+) -> list[str]:
+    """Return source locations that write to a path bound to ``literal``
+    outside of ``sanctioned_files``, directly or via a write-sink helper.
+    """
+    py_files = sorted(scripts_dir.rglob("*.py"))
+    trees: dict[Path, ast.Module] = {}
+    for f in py_files:
+        trees[f] = ast.parse(f.read_text(), filename=str(f))
+
+    bound_cache: dict[Path, set[str]] = {}
+    in_progress: set[Path] = set()
+
+    def bound_names_for_file(f: Path) -> set[str]:
+        if f in bound_cache:
+            return bound_cache[f]
+        if f in in_progress:
+            return set()  # break import cycles
+        in_progress.add(f)
+        tree = trees[f]
+
+        local_assigns: list[tuple[str, str]] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                rhs_src = ast.unparse(node.value)
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        local_assigns.append((target.id, rhs_src))
+                    elif (
+                        isinstance(target, ast.Attribute)
+                        and isinstance(target.value, ast.Name)
+                        and target.value.id == "self"
+                    ):
+                        local_assigns.append((f"self.{target.attr}", rhs_src))
+
+        bound: set[str] = {
+            name for name, rhs in local_assigns if literal in rhs
+        }
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                src_file = _resolve_module(scripts_dir, node.module)
+                if src_file is None or src_file == f or src_file not in trees:
+                    continue
+                src_bound = bound_names_for_file(src_file)
+                for alias in node.names:
+                    if alias.name in src_bound:
+                        bound.add(alias.asname or alias.name)
+
+        changed = True
+        while changed:
+            changed = False
+            for name, rhs in local_assigns:
+                if name not in bound and _idents(rhs) & bound:
+                    bound.add(name)
+                    changed = True
+
+        in_progress.discard(f)
+        bound_cache[f] = bound
+        return bound
+
+    bound_by_file = {f: bound_names_for_file(f) for f in trees}
+
+    # Write-sink parameters: for every function/method, any parameter
+    # that is itself the target of .write_text/.write_bytes, or the
+    # destination argument of os.replace(...)/shutil.move(...).
+    sinks: dict[str, list[tuple[str, int]]] = {}
+    for tree in trees.values():
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            params = [a.arg for a in node.args.args]
+            sink_params: set[str] = set()
+            for sub in ast.walk(node):
+                if not isinstance(sub, ast.Call) or not isinstance(sub.func, ast.Attribute):
+                    continue
+                func = sub.func
+                if (
+                    func.attr in {"write_text", "write_bytes"}
+                    and isinstance(func.value, ast.Name)
+                    and func.value.id in params
+                ):
+                    sink_params.add(func.value.id)
+                if (
+                    func.attr in {"replace", "move"}
+                    and len(sub.args) >= 2
+                    and isinstance(sub.args[1], ast.Name)
+                    and sub.args[1].id in params
+                ):
+                    sink_params.add(sub.args[1].id)
+            for p in sink_params:
+                sinks.setdefault(node.name, []).append((p, params.index(p)))
+
+    offenders: list[str] = []
+    for f, tree in trees.items():
+        if f.name in sanctioned_files:
+            continue
+        local_bound = bound_by_file[f]
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            if node.func.attr not in {"write_text", "write_bytes"}:
+                continue
+            target = node.func.value
+            hit = (
+                isinstance(target, ast.Name) and target.id in local_bound
+            ) or (
+                isinstance(target, ast.Attribute)
+                and isinstance(target.value, ast.Name)
+                and target.value.id == "self"
+                and f"self.{target.attr}" in local_bound
+            )
+            if hit:
+                offenders.append(
+                    f"{f}:{node.lineno}: direct {ast.unparse(node.func)}(...)"
+                )
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fname = None
+            if isinstance(node.func, ast.Name):
+                fname = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                fname = node.func.attr
+            if fname not in sinks:
+                continue
+            for param_name, idx in sinks[fname]:
+                arg_node = None
+                if idx < len(node.args):
+                    arg_node = node.args[idx]
+                else:
+                    for kw in node.keywords:
+                        if kw.arg == param_name:
+                            arg_node = kw.value
+                if arg_node is None:
+                    continue
+                arg_src = ast.unparse(arg_node)
+                if arg_src in local_bound or (_idents(arg_src) & local_bound):
+                    offenders.append(
+                        f"{f}:{node.lineno}: indirect via "
+                        f"{fname}(...) arg={arg_src!r}"
+                    )
+
+    return offenders
+
+
 def test_no_bare_write_path_to_overrides_file() -> None:
     """Regression guard: the only sanctioned way to write
     data/manual/chapter_roll_overrides.json is
     chapter_roll_overrides_io.write_chapter_roll_overrides_doc (which
-    delegates to _common.write_validated_json). This closes a gap where
-    five scripts/*.py modules read/wrote the file directly with bare
-    json.loads/json.dumps/write_text, bypassing schema validation
-    entirely -- two of them wrote the corpus back unvalidated and with
-    ensure_ascii defaulting to True, corrupting unicode in hand-curated
-    evidence quotes on every run (deferred-items.md, phase 01).
+    delegates to _common.write_validated_json). This closes two gaps
+    found in successive sweeps:
 
-    This is a durable, grep-style source assertion (not an exhaustive
-    behavioral test) precisely because the failure mode it guards
-    against is a *future* contributor adding a sixth bare write path --
-    it should fail loudly and immediately, without needing a fixture
-    that exercises the new code.
+    1. Five scripts/*.py modules read/wrote the file directly with bare
+       json.loads/json.dumps/write_text, bypassing schema validation
+       entirely -- two of them wrote the corpus back unvalidated and
+       with ensure_ascii defaulting to True, corrupting unicode in
+       hand-curated evidence quotes on every run (deferred-items.md,
+       phase 01).
+    2. A sixth path in scripts/forge_curator/persistence.py (the Forge
+       Curator TUI's auto-save, the highest-traffic write to this file)
+       wrote through a local ``_atomic_write_json(path, doc)`` helper
+       with zero schema validation -- missed by the original version of
+       this guard because it only scanned scripts/*.py non-recursively
+       and only matched literal ``<bound_name>.write_text(...)``, not a
+       helper that receives the path as a parameter.
+
+    This is a durable, grep/AST-style source assertion (not an
+    exhaustive behavioral test) precisely because the failure mode it
+    guards against is a *future* contributor adding a seventh bare (or
+    indirect) write path -- it should fail loudly and immediately,
+    without needing a fixture that exercises the new code. See
+    ``test_scan_detects_synthetic_indirect_write_helper`` below for a
+    fixture-based proof that the indirect-write detection itself works.
     """
-    scripts_dir = SCRIPTS
-    # Every module-level Path constant across scripts/ that is bound to
-    # the overrides file's path, keyed by the constant's name.
-    path_var_pattern = re.compile(
-        r'^(\w+)\s*=\s*.*["\']chapter_roll_overrides\.json["\']',
-        re.MULTILINE,
+    offenders = _find_overrides_write_offenders(
+        SCRIPTS,
+        literal="chapter_roll_overrides.json",
+        sanctioned_files={"_common.py", "chapter_roll_overrides_io.py"},
     )
-    overrides_path_vars: set[str] = set()
-    for py_file in scripts_dir.glob("*.py"):
-        overrides_path_vars.update(path_var_pattern.findall(py_file.read_text()))
-
-    assert overrides_path_vars, (
-        "expected to find at least one *_PATH constant pointing at "
-        "chapter_roll_overrides.json in scripts/ -- did path constants "
-        "move or get renamed?"
-    )
-
-    write_call_pattern = re.compile(r"(\w+)\.write_text\(")
-    offenders: list[str] = []
-    for py_file in scripts_dir.glob("*.py"):
-        if py_file.name == "_common.py":
-            continue  # the one sanctioned writer implementation lives here
-        text = py_file.read_text()
-        for match in write_call_pattern.finditer(text):
-            if match.group(1) in overrides_path_vars:
-                offenders.append(f"{py_file.name}: {match.group(0)}")
 
     assert not offenders, (
-        "found a bare .write_text() call writing directly to a path bound "
-        "to chapter_roll_overrides.json -- route through "
-        "chapter_roll_overrides_io.write_chapter_roll_overrides_doc "
-        f"instead: {offenders}"
+        "found a write to a path bound to chapter_roll_overrides.json "
+        "outside chapter_roll_overrides_io.write_chapter_roll_overrides_doc "
+        f"(direct or via a helper) -- route through it instead: {offenders}"
+    )
+
+
+def test_scan_detects_synthetic_indirect_write_helper(tmp_path: Path) -> None:
+    """Proves the indirect-write detection in
+    _find_overrides_write_offenders actually catches the shape of bug it
+    was added for, rather than merely asserting a clean bill of health
+    on the (now-fixed) real repo. Reproduces the exact pre-fix
+    persistence.py shape in a throwaway fixture tree: a module-level
+    path constant bound to the overrides file, and a sibling module
+    whose helper function receives the path as a parameter and writes
+    to it via tmp-then-os.replace -- structurally identical to
+    ``_atomic_write_json`` / ``_write_chapter_roll_overrides`` before
+    the CINF-01 gap-closure fix."""
+    scripts_dir = tmp_path / "scripts"
+    (scripts_dir / "sub").mkdir(parents=True)
+
+    (scripts_dir / "data_paths.py").write_text(
+        "from pathlib import Path\n"
+        'MANUAL = Path(".")\n'
+        'CHAPTER_ROLL_OVERRIDES = MANUAL / "chapter_roll_overrides.json"\n'
+    )
+    (scripts_dir / "sub" / "persistence.py").write_text(
+        "import os\n"
+        "from pathlib import Path\n"
+        "from data_paths import CHAPTER_ROLL_OVERRIDES\n"
+        "\n"
+        "def _atomic_write_json(path, doc):\n"
+        '    tmp = path.with_suffix(path.suffix + ".tmp")\n'
+        "    tmp.write_text(str(doc))\n"
+        "    os.replace(tmp, path)\n"
+        "\n"
+        "class CurationPersistence:\n"
+        "    def __init__(self):\n"
+        "        self.chapter_roll_overrides_path = CHAPTER_ROLL_OVERRIDES\n"
+        "        self.doc = {}\n"
+        "\n"
+        "    def _write(self):\n"
+        "        _atomic_write_json(self.chapter_roll_overrides_path, self.doc)\n"
+    )
+
+    offenders = _find_overrides_write_offenders(
+        scripts_dir,
+        literal="chapter_roll_overrides.json",
+        sanctioned_files={"_common.py", "chapter_roll_overrides_io.py"},
+    )
+
+    assert any("_atomic_write_json" in o for o in offenders), (
+        "expected the synthetic indirect-write helper to be flagged, "
+        f"got offenders={offenders}"
     )
