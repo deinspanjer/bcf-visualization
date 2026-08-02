@@ -47,6 +47,18 @@ The measurement is the point. Phase 3's recorded accuracy is the evidence that s
 - **D-09:** Compare against curated chapters only, and exclude the 11 stub chapters (`35.1, 55.1, 97, 100, 103, 104, 106, 109, 112, 114, 116.2`) from the accuracy denominator — they carry rolls with no evidence quotes and were not hand-curated, so scoring against them measures agreement with a generated stub rather than with Dre's judgment. Note ch 104 is now genuinely curated (2026-08-01) and may be included; the planner should re-derive the stub list from the data rather than hardcoding this one.
 - **D-10:** The measurement is a committed artifact (a report, as in Phase 1's `corpus-analysis-report.md`), not just console output — Phase 4 reads it to size its own scope.
 
+### Overrides loading & schema enforcement (auto-resolved 2026-08-01, post-pattern-mapping)
+
+- **D-11:** Pattern mapping found that `data/manual/chapter_roll_overrides.json` has **no JSON schema**, unlike every `data/derived/` artifact, and is read via bare `json.loads` in **four independent places**: `scripts/multi_grab.py:load_overrides`, `scripts/build_chapter_facts.py:_load_chapter_roll_overrides`, `scripts/forge_curator/data_loader.py`, and `scripts/forge_curator/persistence.py`. D-01's "absent `curated_by` is a validation error" therefore has no existing hook, and adding the check to four loaders would itself violate the no-parallel-implementations rule.
+
+  **Decision: consolidate to a single loader, and give it schema validation.** Introduce one shared overrides-loading function (a new module, or an existing shared home — planner's call) that reads and validates `chapter_roll_overrides.json` against a registered schema, and rewrite all four call sites to use it. The schema declares `curated_by` **required** with enum `["human", "agent"]`.
+
+  Rationale: this is the same consolidation the project already applied to the tokenizer in Phase 2 (D-01/D-02 there), and it is the only way `curated_by` can be genuinely required rather than required-in-one-place-and-ignored-in-three. The schema file follows the existing `data/derived/_schemas/*.schema.json` convention and `scripts/_common.py:write_validated_json`'s validator, even though the file lives under `data/manual/` — the planner should check whether that helper needs a read-side counterpart or whether one already exists.
+
+  Scope guard: consolidate the *loading*, not the semantics. Each call site's downstream behaviour stays as-is; this is a shared read + validate, not a redesign of how overrides are interpreted. — **Reversibility:** costly — four call sites plus a schema; undoing means re-inlining the loader.
+
+- **D-12:** The consolidated loader is validated against the real 118-chapter corpus as part of this phase — loading the live file must succeed, and a fixture missing `curated_by` must fail. That pairing is the proof the requirement is actually enforced rather than merely declared.
+
 ### Claude's Discretion
 
 - Script and artifact names; whether assembly and measurement are one script or two
