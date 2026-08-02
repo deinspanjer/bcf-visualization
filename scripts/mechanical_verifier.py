@@ -23,6 +23,7 @@ import json
 import re
 from pathlib import Path
 
+from chapter_roll_overrides_io import load_chapter_roll_overrides_doc
 from cp_word_index import _chapter_word_index, _strip_to_spaces, load_chapter_html
 from data_paths import DERIVED, MANUAL, RAW
 from perk_name_resolver import build_directory_match_index, load_perk_aliases
@@ -487,7 +488,7 @@ def _build_prose_loader(epub_path: Path, chapters_doc: dict, classifications_doc
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
 
-    overrides_doc = json.loads(args.overrides.read_text())
+    overrides_doc = load_chapter_roll_overrides_doc(args.overrides)
     chapters_doc = json.loads(args.chapters.read_text())
     perk_directory_doc = json.loads(args.perk_directory.read_text())
     aliases = load_perk_aliases(args.perk_aliases)
