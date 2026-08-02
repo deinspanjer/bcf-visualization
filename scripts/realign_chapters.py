@@ -32,6 +32,10 @@ from chapter_alignment import (
     Mismatch,
     check,
 )
+from chapter_roll_overrides_io import (
+    load_chapter_roll_overrides_doc,
+    write_chapter_roll_overrides_doc,
+)
 
 
 def _load_predicted_by_chapter() -> dict[str, list[dict]]:
@@ -74,13 +78,13 @@ def _print_chapter_diff(m: Mismatch, current_rolls: list[dict]) -> None:
 
 
 def _restamp(chapter_num: str, new_fingerprint: str) -> None:
-    doc = json.loads(OVERRIDES_PATH.read_text())
+    doc = load_chapter_roll_overrides_doc(OVERRIDES_PATH)
     overrides = doc.get("chapter_roll_overrides") or {}
     entry = overrides.get(str(chapter_num))
     if not isinstance(entry, dict):
         raise SystemExit(f"no override entry for chapter {chapter_num}")
     entry[ANCHOR_FIELD] = new_fingerprint
-    OVERRIDES_PATH.write_text(json.dumps(doc, indent=2) + "\n")
+    write_chapter_roll_overrides_doc(doc, OVERRIDES_PATH)
 
 
 def _prompt(prompt_text: str, choices: list[str]) -> str:
