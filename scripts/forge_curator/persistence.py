@@ -26,6 +26,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from scripts.chapter_roll_overrides_io import load_chapter_roll_overrides_doc
 from scripts.forge_curator.data_loader import (
     CHAPTER_ROLL_OVERRIDES,
     MANUAL,
@@ -68,9 +69,18 @@ class CurationPersistence:
         )
         self.journal_dir_path = journal_dir_path or JOURNAL_DIR
         # Load existing override docs (or empty stubs).
-        self.chapter_roll_overrides = self._load_or_default(
+        #
+        # Deliberately NOT routed through ``_load_or_default`` (below) —
+        # that helper's broad ``except Exception: return default`` is
+        # exactly the bug this fixes (D-11/T-03-02): an existing but
+        # malformed file (JSON syntax error, or a chapter entry missing
+        # ``curated_by``) must raise and abort TUI startup, not silently
+        # collapse to an empty document that the next auto-save would then
+        # write back over the real 118-chapter corpus. A genuinely absent
+        # file still defaults cleanly (handled inside the loader).
+        self.chapter_roll_overrides = load_chapter_roll_overrides_doc(
             self.chapter_roll_overrides_path,
-            {
+            default={
                 "_purpose": "Per-chapter paid roll structure + curated metadata.",
                 "chapter_roll_overrides": {},
             },
@@ -157,7 +167,7 @@ class CurationPersistence:
         """Get or create the chapter_roll_overrides entry for ``chapter_num``."""
         cro = self.chapter_roll_overrides.setdefault("chapter_roll_overrides", {})
         if chapter_num not in cro:
-            cro[chapter_num] = {"rolls": []}
+            cro[chapter_num] = {"rolls": [], "curated_by": "human"}
         elif "rolls" not in cro[chapter_num]:
             cro[chapter_num]["rolls"] = []
         self._stamp_chapter_alignment_fingerprint(chapter_num, cro[chapter_num])

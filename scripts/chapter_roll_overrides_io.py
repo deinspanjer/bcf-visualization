@@ -35,8 +35,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from _common import read_validated_json
-from data_paths import MANUAL
+try:
+    from _common import read_validated_json
+    from data_paths import MANUAL
+except ImportError:  # pragma: no cover - import-context fallback
+    # This module is imported two ways: bare (``import
+    # chapter_roll_overrides_io``) from top-level scripts run with
+    # ``scripts/`` on sys.path (e.g. via PYTHONPATH=scripts), and
+    # package-qualified (``from scripts.chapter_roll_overrides_io import
+    # ...``) from the forge_curator TUI package, which runs as ``python -m
+    # scripts.forge_curator`` with only the repo root on sys.path. Fall
+    # back to the package-qualified sibling imports for the latter case.
+    from scripts._common import read_validated_json
+    from scripts.data_paths import MANUAL
 
 CHAPTER_ROLL_OVERRIDES_PATH = MANUAL / "chapter_roll_overrides.json"
 

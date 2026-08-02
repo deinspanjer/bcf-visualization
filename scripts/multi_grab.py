@@ -66,12 +66,11 @@ Public API:
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-from data_paths import MANUAL
+from chapter_roll_overrides_io import load_chapter_roll_overrides_doc
 
-_OVERRIDES_PATH = MANUAL / "chapter_roll_overrides.json"
+
 def _normalise_roll_entry(entry) -> dict:
     """Coerce one roll-spec entry into the canonical dict shape.
 
@@ -125,10 +124,7 @@ def load_overrides(path: Path | None = None) -> dict:
 
     Missing file -> empty dict.
     """
-    p = path or _OVERRIDES_PATH
-    if not p.exists():
-        return {"chapter_roll_overrides": {}}
-    doc = json.loads(p.read_text())
+    doc = load_chapter_roll_overrides_doc(path)
     raw = doc.get("chapter_roll_overrides") or {}
     normalised: dict[str, dict] = {}
     for cn, entry in raw.items():
