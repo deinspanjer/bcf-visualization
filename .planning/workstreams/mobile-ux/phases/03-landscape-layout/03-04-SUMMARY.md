@@ -261,7 +261,17 @@ All five deviations above were test-only or CSS-only fixes; none touched the fro
 
 ## Next Phase Readiness
 
-**Not ready.** Task 2 (the `INTEGRATION_PLAN.md` §5 Phase C gate review, including the mandatory real-device iOS Safari pass) is a blocking human gate that no agent may auto-approve, self-approve, or infer approval of — under any mode, including autonomous or auto-advance. It has not yet been run. Phase 3 stays open until Dre completes the device pass and rules on every gate-agenda item above, including all four carried flagged assumptions.
+**Ready. ✅ PHASE C GATE APPROVED — 2026-08-02.**
+
+Task 2 was a blocking human gate that no agent could auto-approve, self-approve, or infer approval of. It was held open until Dre ran the real-device iOS Safari pass in full (4/4 items measured, results recorded above) and then approved explicitly. Every gate-agenda item is ruled, including all four carried flagged assumptions FA-MOBL-01..04 and the 40×40 cinema-scrub FAB exception, the `dense-rolls` fixture addition, and the 900×600 routing change.
+
+> *Historical note:* while the gate was open this section read "Not ready" and each pass returned `CHECKPOINT REACHED`. That was correct behavior at the time; the text was updated only once Dre actually approved.
+
+**Carried into Phase 4:**
+- The desktop-view escape hatch Dre requested at the Phase 2 gate — Phase 4 already reworks the landing page and deletes the rotate banner, so it belongs there.
+- The 40×40 cinema-scrub FAB sits below the 44×44 floor by prototype design. MOBX-03's Lighthouse ≥ 90 gate may force the issue; that is Phase 4's remediation, not a Phase 3 defect.
+- The frozen `style.css:360` still carries the OLD breakpoint query and is deliberately diverged (see the `MOBILE_LAYOUT_QUERY` comment). Phase 4 deletes that block outright with `renderPortraitBanner`, which resolves the divergence rather than leaving it permanent.
+- Budget a real-device iOS pass into the Phase 4 gate. Three phases running, hardware has found defects a green suite missed every single time — and this phase's two were structural, not cosmetic.
 
 ---
 *Phase: 03-landscape-layout*
