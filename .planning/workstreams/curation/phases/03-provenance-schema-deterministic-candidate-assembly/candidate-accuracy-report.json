@@ -1,0 +1,54 @@
+{
+  "_source": "Stage 1 candidate-assembly accuracy measured against the hand-curated corpus (ACUR-01), per evidence class (D-08). Compares data/derived/candidate_rolls.json (Plan 03-02) against data/manual/chapter_roll_overrides.json (Plan 03-01's schema-validated loader), excluding stub chapters (D-09).",
+  "_method": "Per chapter present in both the non-stub curated corpus and candidate_rolls.json (the candidate/curated intersection): each curated roll gets a chapter-local position (its own word_position when non-null, else its 0-based ordinal rank in the curator's own rolls[] list) and is compared against every candidate in the chapter on the SAME scale (the candidate's real word_position when the curated side used a real word_position, else the candidate's own ordinal rank within its slot_index-sorted list). Pairs are scored by (position distance ascending, perk-name-overlap descending) -- position proximity is the PRIMARY signal, perk overlap only a tiebreaker -- and greedily assigned 1:1, most-certain pair first. This never compares roll_number/source_ordinal -- those predictor/curator sequences diverge by construction and are never used as a join key. A claimed pair whose candidate carries any _derivation.unfilled_fields is 'partial', not 'matched'. A curated roll left unclaimed is 'missed' (bucketed, for reporting only, under its single nearest candidate's evidence_kind, ignoring the claim constraint). A candidate left unclaimed is 'unmatched_candidates', bucketed under its own evidence_kind.",
+  "_stub_chapters_excluded": [
+    "35.1",
+    "55.1",
+    "97",
+    "100",
+    "103",
+    "106",
+    "109",
+    "112",
+    "114",
+    "116.2"
+  ],
+  "by_evidence_class": {
+    "direct": {
+      "curated_rolls": 131,
+      "matched": 4,
+      "partial": 122,
+      "missed": 5,
+      "unmatched_candidates": 0
+    },
+    "general_only": {
+      "curated_rolls": 26,
+      "matched": 0,
+      "partial": 26,
+      "missed": 0,
+      "unmatched_candidates": 0
+    },
+    "forward_ref": {
+      "curated_rolls": 461,
+      "matched": 0,
+      "partial": 446,
+      "missed": 15,
+      "unmatched_candidates": 0
+    },
+    "no_evidence": {
+      "curated_rolls": 45,
+      "matched": 0,
+      "partial": 42,
+      "missed": 3,
+      "unmatched_candidates": 1
+    }
+  },
+  "_generated_from": {
+    "candidates_path": "data/derived/candidate_rolls.json",
+    "overrides_path": "data/manual/chapter_roll_overrides.json",
+    "total_candidates": 718,
+    "total_curated_chapters": 118,
+    "total_curated_rolls": 681,
+    "stub_chapters_excluded_count": 10
+  }
+}
