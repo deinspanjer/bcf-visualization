@@ -5,11 +5,24 @@ registered JSON schema before writing to disk, and `read_validated_json`,
 its read-side counterpart. Validation runs on every parser invocation so
 structural drift fails the pipeline rather than silently producing (or
 silently accepting) malformed data.
+
+`write_validated_json` writes atomically (tmp-file-then-`os.replace`)
+rather than a plain `write_text`. This was added as part of closing the
+sixth unvalidated write path to `chapter_roll_overrides.json` (the Forge
+Curator TUI's auto-save, previously routed around this module entirely
+via its own `_atomic_write_json` helper in
+`scripts/forge_curator/persistence.py`). Rather than hand-roll a second
+atomic-write implementation in `chapter_roll_overrides_io.py` for just
+that one file, the atomicity is added here, at the one place all
+schema-validated writers already funnel through -- every derived-artifact
+writer in `scripts/*.py` gains the same crash-safety for free, and no
+second JSON serializer is introduced anywhere.
 """
 
 from __future__ import annotations
 
 import json
+import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -52,7 +65,13 @@ def write_validated_json(out_path: Path, payload: dict[str, Any], schema_name: s
     text = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
     _validate(json.loads(text), schema, schema_name)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(text)
+    # Atomic write: a validation failure above never touches disk (raises
+    # before this point), and a mid-write crash never leaves a torn file
+    # at ``out_path`` -- the tmp file is written in full first, then
+    # ``os.replace`` swaps it in with a single filesystem rename.
+    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp_path.write_text(text)
+    os.replace(tmp_path, out_path)
 
 
 def read_validated_json(
