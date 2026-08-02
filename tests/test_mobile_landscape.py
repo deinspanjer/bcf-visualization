@@ -77,6 +77,14 @@ DEFAULT_STORAGE = {
     "bcf:help-seen": "true",
 }
 
+# tiny-default's whole story is only 10000 words — at the default 5000
+# words/sec playback speed it finishes (and auto-pauses at the end) inside
+# 2 seconds, well short of the 4000ms auto-hide boundary the timing tests
+# below need to hold playback open across. Merge this into a test's storage
+# dict to keep playback running for the full duration of a multi-second
+# real-time wait.
+SLOW_PLAYBACK_STORAGE = {"bcf:playback:speed:v2": "50"}
+
 
 def test_landscape_tracer_renders_and_follows_playhead(tmp_path):
     playwright_api = pytest.importorskip("playwright.sync_api")
@@ -182,6 +190,37 @@ def test_landscape_field_log_zero_and_empty_states(tmp_path):
             assert count_text.startswith("0 of ")
             assert console_messages2 == []
             page2.close()
+
+            # --- MOBL-02 edge criterion: on the zero-roll story, the
+            #     cinema-scrub still reveals/hides and the play FAB still
+            #     toggles, with no roll markers on the track. Auto-hide must
+            #     not assume at least one roll exists anywhere in its path.
+            #     no-rolls' whole story is only 10000 words — at the default
+            #     5000 words/sec it would finish (and auto-pause) inside 2s,
+            #     well short of the 4000ms boundary this case needs to
+            #     exercise, so this seeds a much slower speed to keep
+            #     playback running for the full window. ---
+            page3, console_messages3 = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=no-rolls",
+                viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+            )
+            fab = page3.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')
+            fab.click()
+            page3.wait_for_timeout(4100)
+            assert page3.evaluate(
+                "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+            ) is True
+            page3.locator(".mobile-sky").click(force=True)
+            page3.wait_for_timeout(50)
+            assert page3.evaluate(
+                "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+            ) is False
+            assert page3.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]').count() == 1
+            assert console_messages3 == []
+            page3.close()
 
             browser.close()
 
@@ -606,4 +645,175 @@ def test_landscape_gestures_survive_rerender_and_surface_toggle(tmp_path):
             assert page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label") == expected
 
             assert console_messages == []
+            browser.close()
+
+
+def test_landscape_chrome_autohide_boundary(tmp_path):
+    # MOBL-02/D-28/D-29: the landscape chrome auto-hide idle timer fires
+    # only during playback, asserted from BOTH sides of the 4000ms boundary
+    # (not only the far side, per the plan's own backstop truth); an
+    # interaction resets/pushes the window out; a paused reader never has
+    # the timer arm at all, and pausing WHILE hidden immediately reveals and
+    # holds it; only the cinema-scrub hides (D-29) — the top chips and the
+    # sidebar stay visible throughout; and the whole hide/reveal cycle costs
+    # zero structural re-renders (auto-hide mutates a class on a cached DOM
+    # ref, never calls render() — D-18/D-22).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            def is_hidden(page):
+                return page.evaluate(
+                    "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+                )
+
+            # --- Both sides of the boundary (visible at 3900ms, hidden at
+            #     4600ms), D-29's hide scope, pause-while-hidden reveal, and
+            #     the zero-structural-render guarantee — one continuous
+            #     session so later assertions build on the timer state
+            #     earlier ones already proved. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+                init_script="window.__bcfRenderStats = { structuralRenders: 0 };",
+            )
+            # Reset AFTER the initial load's own render()s (the "loading"
+            # frame plus the post-loadRuntime rebuild both count) so only
+            # renders from here on are measured — matching the idiom
+            # test_landscape_tracer_renders_and_follows_playhead already
+            # uses.
+            page.evaluate("window.__bcfRenderStats.structuralRenders = 0")
+            page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+            page.wait_for_timeout(3900)
+            assert is_hidden(page) is False
+            page.wait_for_timeout(700)  # ~4600ms total elapsed
+            assert is_hidden(page) is True
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+
+            # D-29: only the scrub hides — top chips and the sidebar stay
+            # visible with non-zero bounding boxes the whole time.
+            top_box = page.locator(".mobile-top-cluster").bounding_box()
+            sidebar_box = page.locator(".mobile-sidebar").bounding_box()
+            assert top_box is not None and top_box["width"] > 0 and top_box["height"] > 0
+            assert sidebar_box is not None and sidebar_box["width"] > 0 and sidebar_box["height"] > 0
+
+            # Pausing while hidden reveals immediately and holds it — past
+            # 4000ms more of paused idle, the scrub stays visible; the timer
+            # never re-arms while paused.
+            #
+            # The FAB sits inside `.mobile-cinema-scrub.is-hidden`, which is
+            # `pointer-events: none` — a Playwright force-click still resolves
+            # to real screen coordinates, and the browser's own hit-test
+            # would route that click straight through to the sky underneath
+            # (itself a valid gesture surface, and its own onTap has a
+            # reveal branch — the resulting pass/fail would be a false
+            # positive for the WRONG code path). Invoke the DOM .click()
+            # method directly on the button instead: it dispatches a real
+            # "click" event from that exact element, bypassing hit-testing
+            # entirely, so this exercises the FAB's own toggle-playback
+            # delegation regardless of the pointer-events CSS.
+            page.evaluate("document.querySelector('.mobile-cinema-scrub-fab').click()")
+            page.wait_for_timeout(50)
+            assert is_hidden(page) is False
+            page.wait_for_timeout(4200)
+            assert is_hidden(page) is False
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+            page.close()
+
+            # --- Reset: an interaction ~3000ms in (a swipe — resets
+            #     unconditionally from onSwipeStep/onSwipeEnd regardless of
+            #     the tap-to-pause preference, unlike a plain tap) pushes the
+            #     hide out — still visible at ~6900ms (3900ms after the
+            #     interaction, not 3900ms after the original start). ---
+            page2, console_messages2 = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+            )
+            page2.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+            page2.wait_for_timeout(3000)
+            sky = page2.locator(".mobile-sky")
+            sky_box = sky.bounding_box()
+            assert sky_box is not None
+            x = sky_box["x"] + sky_box["width"] / 2
+            y = sky_box["y"] + sky_box["height"] / 2
+            page2.mouse.move(x, y)
+            page2.mouse.down()
+            page2.mouse.move(x + 30, y)
+            page2.mouse.up()
+            page2.wait_for_timeout(3800)  # ~6800-6900ms total elapsed
+            assert is_hidden(page2) is False
+            assert console_messages2 == []
+            page2.close()
+
+            # --- Paused from the start: the scrub never hides, even well
+            #     past 6000ms of idle. ---
+            page3, console_messages3 = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+            page3.wait_for_timeout(6000)
+            assert is_hidden(page3) is False
+            assert page3.locator(".mobile-cinema-scrub").is_visible()
+            assert console_messages3 == []
+            page3.close()
+
+            browser.close()
+
+
+def test_landscape_reveal_tap_semantics(tmp_path):
+    # D-30: the first sky tap on hidden landscape chrome ALWAYS reveals it
+    # and leaves playback running, regardless of the tap-to-pause
+    # preference — hidden chrome is never a trap (the "no-trap" guarantee
+    # must be asserted, not merely reasoned about). The NEXT tap pauses only
+    # when tap-to-pause is on; with it off, the second tap changes nothing
+    # (play state unchanged, scrub stays visible).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            for tap_to_pause in ("true", "false"):
+                storage = {**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE, "bcf:tap-to-pause": tap_to_pause}
+                page, console_messages = _page_with_console_capture(
+                    browser, site, viewport=PHONE_LANDSCAPE, storage=storage,
+                )
+                page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+                page.wait_for_timeout(4100)
+                assert page.evaluate(
+                    "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+                ) is True
+
+                sky = page.locator(".mobile-sky")
+
+                # First tap: reveals AND leaves play state unchanged — an
+                # explicit boolean pair, not inferred — in BOTH tap-to-pause
+                # configurations.
+                sky.click(force=True)
+                page.wait_for_timeout(50)
+                assert page.evaluate(
+                    "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+                ) is False
+                assert page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]').count() == 1
+
+                # Second tap (past the double-tap window): pauses only when
+                # tap-to-pause is ON; with it off, this tap is a no-op.
+                page.wait_for_timeout(400)
+                sky.click()
+                page.wait_for_timeout(50)
+                if tap_to_pause == "true":
+                    assert page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').count() == 1
+                else:
+                    assert page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]').count() == 1
+                # The scrub stays visible either way — the second tap never
+                # re-hides it.
+                assert page.evaluate(
+                    "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+                ) is False
+
+                assert console_messages == []
+                page.close()
+
             browser.close()

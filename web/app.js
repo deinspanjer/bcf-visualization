@@ -937,10 +937,26 @@ function togglePlayback() {
     releasePausedFocusLock();
     if (!app.playing) startPlayback();
     else updatePlaybackFrame();  // keep playing; next tick sees the lock released
+    // Escaping a held cinematic always ends in a playing state (both
+    // branches above), so the landscape auto-hide window re-arms here too
+    // (D-28) — this early return must cover the same ground as the
+    // ordinary exit below, not leave a hole in the "only while playing"
+    // gate.
+    resetMobileChromeHideTimer();
     return;
   }
-  if (app.playing) stopPlayback();
-  else startPlayback();
+  if (app.playing) {
+    stopPlayback();
+    // D-28: pausing reveals chrome and holds it revealed. Reveal first,
+    // then reset — resetMobileChromeHideTimer()'s own app.playing gate
+    // turns the reset into a pure clear (no new window arms) now that
+    // app.playing is false.
+    revealMobileChrome();
+    resetMobileChromeHideTimer();
+  } else {
+    startPlayback();
+    resetMobileChromeHideTimer();
+  }
 }
 
 function releasePausedFocusLock() {
