@@ -26,7 +26,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from scripts.chapter_roll_overrides_io import load_chapter_roll_overrides_doc
+from scripts.chapter_roll_overrides_io import (
+    load_chapter_roll_overrides_doc,
+    write_chapter_roll_overrides_doc,
+)
 from scripts.forge_curator.data_loader import (
     CHAPTER_ROLL_OVERRIDES,
     MANUAL,
@@ -140,10 +143,26 @@ class CurationPersistence:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     def _write_chapter_roll_overrides(self, before: dict) -> None:
+        """Auto-save the in-memory override doc via the sanctioned writer.
+
+        Routed through ``chapter_roll_overrides_io.write_chapter_roll_overrides_doc``
+        (D-11/CINF-01 gap closure) rather than the module-local
+        ``_atomic_write_json`` -- this is the ONLY place in the codebase
+        that writes ``chapter_roll_overrides.json`` on nearly every
+        interactive curation action, so it needed both the schema
+        validation gate every other write path already has, and to keep
+        the atomic tmp-then-``os.replace`` write ``_atomic_write_json``
+        already provided (now implemented once, in
+        ``_common.write_validated_json``, rather than duplicated here).
+
+        A validation failure raises *before* anything touches disk (same
+        as any other write to this file) and rolls the in-memory copy
+        back to ``before``, exactly as it did previously for I/O errors.
+        """
         try:
-            _atomic_write_json(
-                self.chapter_roll_overrides_path,
+            write_chapter_roll_overrides_doc(
                 self.chapter_roll_overrides,
+                self.chapter_roll_overrides_path,
             )
         except Exception:
             self.chapter_roll_overrides = deepcopy(before)
@@ -1700,12 +1719,20 @@ class CurationPersistence:
         target_abs = Path(target_rel)
         if not target_abs.is_absolute():
             target_abs = MANUAL.parent / target_rel
-        _atomic_write_json(target_abs, before_state)
-        # Sync in-memory copies so live consumers see the rollback.
-        if target_abs == self.chapter_roll_overrides_path or target_abs.name == "chapter_roll_overrides.json":
+        is_chapter_roll_overrides_target = (
+            target_abs == self.chapter_roll_overrides_path
+            or target_abs.name == "chapter_roll_overrides.json"
+        )
+        if is_chapter_roll_overrides_target:
+            # Same reasoning as _write_chapter_roll_overrides: undo is
+            # still a write to this file and must not be able to put an
+            # invalid document back on disk.
+            write_chapter_roll_overrides_doc(before_state, target_abs)
             self.chapter_roll_overrides = before_state
-        elif target_abs == self.section_classifications_path or target_abs.name == "section_classifications.json":
-            self.section_classifications = before_state
+        else:
+            _atomic_write_json(target_abs, before_state)
+            if target_abs == self.section_classifications_path or target_abs.name == "section_classifications.json":
+                self.section_classifications = before_state
         # Append an "undo" record so audit trail is preserved.
         self._append_journal(
             "undo", target_abs, last.get("chapter_num"),
