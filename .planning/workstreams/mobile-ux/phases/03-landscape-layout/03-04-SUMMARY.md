@@ -212,14 +212,29 @@ None - no external service configuration required for Task 1. Task 2 requires Dr
 
 Assembled per the plan's Task 1, action item 6. **No item below is pre-answered.** Per `03-VALIDATION.md`'s Manual-Only Verifications table, Dre's physical involvement is four actions (rotate landscape/notch-left, rotate 180°/notch-right, edge-swipe-back with a flyout open, rotate back to portrait mid-playback) — every other item below is a measurement or screenshot captured over the `ios-webkit-debug-proxy` CDP bridge, not a subjective "feel" judgment. Auto-hide feel, sky letterboxing framing, and haptics are explicitly cut per Dre's own scoping directive and do not appear below.
 
-### 1. Real-device iOS Safari pass — the four objectively-provable items (03-VALIDATION.md § Manual-Only Verifications)
+### 1. Real-device iOS Safari pass — ✅ COMPLETED 2026-08-02
 
-| # | Item | Requirement | Objective artifact to capture |
-|---|------|-------------|-------------------------------|
-| 1 | Landscape safe-area insets, both rotation directions | MOBL-01 | CDP read of computed `--safe-left`/`--safe-right` plus `getBoundingClientRect()` on rail and sky, showing no clipping; screenshot per rotation direction |
-| 2 | iOS toolbar vs. `svh` in landscape | MOBL-01 | CDP read of `innerHeight` vs `100vh`/`100svh`/`100dvh` and `body.scrollHeight`; pass = zero overflow |
-| 3 | Rotation hand-off on real hardware | MOBL-03 | CDP snapshot of word position, play state, speed, zoom and toggles before and after a physical rotation — a field-by-field diff |
-| 4 | iOS edge swipe-back vs. the history sentinel | MOBL-04 | CDP read of `app.mobileSurface` and `history.length` after the swipe; pass = surface closed, app still loaded |
+Run on Daniel's iPhone (iOS/Safari 18.5, landscape 956×390, portrait 440×760) over the `ios-webkit-debug-proxy` CDP bridge. All four items measured; **two defects found and fixed mid-pass**, both invisible to the automated suite.
+
+| # | Item | Requirement | Result |
+|---|------|-------------|--------|
+| 1 | Landscape safe-area insets, both rotation directions | MOBL-01 | ✅ **PASS after fix.** First non-zero insets ever observed: `--safe-left` 62px, `--safe-right` 62px, `--safe-bottom` 21px. Sky starts at x=62, rail ends 62px short of the right edge, root fully within viewport, no clipping. Identical in both directions (iOS pads landscape symmetrically); direction independently confirmed via `screen.orientation` = `landscape-primary` then `landscape-secondary` (angle 270). Sky/rail split 73%/27% of usable width (956 − 124px inset), matching MOBL-01's ~75/25. |
+| 2 | iOS toolbar vs. `svh` in landscape | MOBL-01 | ✅ **PASS.** `100vh` = 440, `100svh` = `100dvh` = `innerHeight` = 390, `body.scrollHeight` = 390 → **0px overflow**. D-32's un-nesting works: the Phase 2 scroll defect does not recur in landscape. Portrait re-checked post-rotation, also 0px. |
+| 3 | Rotation hand-off on real hardware | MOBL-03 | ✅ **PASS.** Rotated landscape→portrait mid-playback, deliberately during a roll cinematic. `layoutMode` swapped, portrait mounted, landscape surface gone, desktop shell absent. Play state still playing; speed 25000, zoom 1×, tapToPause true, haptics true, helpSeen true — all identical across the swap. Position advanced monotonically (CH 15 → CH 20+) rather than resetting. Playback confirmed still live afterward (CH 24 → CH 25, playhead 10.50% → 11.13% over 3s). Dre observed the cinematic continue smoothly through the rotation — D-22 confirmed visually. |
+| 4 | iOS edge swipe-back vs. the history sentinel | MOBL-04 | ✅ **PASS, and proven rather than inferred.** Research Pitfall 5 (WebKit bug 248303) does NOT affect this app. See the methodology note below — the first measurement was ambiguous and was redone properly. |
+
+**Methodology note on item 4 — worth preserving.** The first attempt looked like a pass but was not conclusive, and the initial "MOBL-04 satisfied" call was overstated and retracted. The flyout backdrop spans the entire screen and closes on touch, so a swipe starting at the display's left edge necessarily lands on it; the flyout closing was consistent with *either* the iOS interactive-pop or a plain backdrop touch. `history.length` could not separate them either, because a backdrop close calls `history.back()` and a popstate close skips it — both leave the length unchanged. Resolved by neutralising the backdrop in page memory (`pointer-events: none` + `data-action` stripped) so it could not possibly be the cause, then repeating the gesture: surface closed, `backdropPointer` = 0, `history.state` returned to `null` (sentinel consumed exactly once), still on the app page, landscape surface intact. A `popstate: 2` reading was separately shown to be double-counting by two of my own instrumentation listeners, not a double-consumption bug — confirmed by dispatching a synthetic `popstate` and observing the counter rise by 2.
+
+**Defects found on device and fixed during the pass:**
+
+| Commit | Defect | Why the suite could not catch it |
+|--------|--------|----------------------------------|
+| `cacde7d` | **The landscape breakpoint excluded the device entirely.** iPhone 16 Pro Max is 956×390 in landscape against a `(max-width: 900px)` ceiling inherited from the frozen `style.css:360`. Neither clause matched, `layoutMode` resolved to `desktop`, and the whole Phase 3 landscape layout never mounted — the desktop shell rendered instead. Not a crash, which is exactly why it survived every check. Clause is now `(orientation: landscape) and (max-height: 500px)`; Dre chose height-based over raising the width ceiling. | All three test files used `PHONE_LANDSCAPE = 844×390`, which fits under the old 900px ceiling. Regression tests now pin 956×390, 932×430 and the 500/501px boundary, plus a tablets-stay-desktop counterpart. |
+| `9e16e36` | **Cinema-scrub sat in the home-indicator zone** — 9px intrusion, clipping the play button by 3px. The UI-SPEC's safe-area table gave the pill no inset of its own, reasoning it inherits the root's padding; that padding is left/right only. Now `bottom: max(12px, var(--safe-bottom))`; re-measured at 0px intrusion for all five landscape elements. | `env(safe-area-inset-*)` resolves to `0px` in every simulator and headless browser, so no automated check can ever observe it. |
+
+One accepted behavioral change rides with `cacde7d`: a 900×600 landscape viewport was previously mobile and is now desktop, because a 600px-tall landscape viewport is not a phone. Approved by Dre when selecting the height-based clause; `test_rotation_at_routing_boundaries` updated to encode it. `tests/test_mobile_plumbing.py` remains byte-identical — all five of its matrix rows hold unchanged under the new query.
+
+Suite after both fixes: **53/53**, freeze proof still clean against the pre-Phase-3 base `22bdd8c`.
 
 ### 2. Four carried flagged assumptions (FA-MOBL-01..04, never probe-resolved — must not be closed by an agent)
 
