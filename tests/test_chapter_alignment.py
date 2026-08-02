@@ -34,8 +34,8 @@ def test_check_passes_when_all_stamps_match(tmp_path, monkeypatch):
     overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
     _write(overrides, {
         "chapter_roll_overrides": {
-            "1": {"_fingerprint": "sha256:aaaa000000000000", "rolls": []},
-            "65": {"_fingerprint": "sha256:bbbb000000000000", "rolls": []},
+            "1": {"_fingerprint": "sha256:aaaa000000000000", "curated_by": "human", "rolls": []},
+            "65": {"_fingerprint": "sha256:bbbb000000000000", "curated_by": "human", "rolls": []},
         }
     })
     _write(fingerprints, {
@@ -53,7 +53,7 @@ def test_check_reports_a_mismatch(tmp_path, monkeypatch):
     overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
     _write(overrides, {
         "chapter_roll_overrides": {
-            "65": {"_fingerprint": "sha256:old0000000000000", "rolls": []},
+            "65": {"_fingerprint": "sha256:old0000000000000", "curated_by": "human", "rolls": []},
         }
     })
     _write(fingerprints, {
@@ -73,7 +73,7 @@ def test_alignment_model_issues_are_chapter_scoped(tmp_path, monkeypatch):
     overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
     _write(overrides, {
         "chapter_roll_overrides": {
-            "65": {"_fingerprint": "sha256:old0000000000000", "rolls": []},
+            "65": {"_fingerprint": "sha256:old0000000000000", "curated_by": "human", "rolls": []},
         }
     })
     _write(fingerprints, {
@@ -134,6 +134,7 @@ def test_check_allows_eligibility_drift_that_preserves_local_slot_shape(
         "chapter_roll_overrides": {
             "65": {
                 "_fingerprint": chapter_alignment_fingerprint(before),
+                "curated_by": "human",
                 "rolls": [{"evidence_quotes": [{"text": "saved quote"}]}],
             },
         }
@@ -153,7 +154,7 @@ def test_fail_if_misaligned_raises_with_chapter_in_message(tmp_path, monkeypatch
     overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
     _write(overrides, {
         "chapter_roll_overrides": {
-            "65": {"_fingerprint": "sha256:old0000000000000", "rolls": []},
+            "65": {"_fingerprint": "sha256:old0000000000000", "curated_by": "human", "rolls": []},
         }
     })
     _write(fingerprints, {
@@ -174,7 +175,7 @@ def test_fail_if_misaligned_errors_on_unstamped_override(tmp_path, monkeypatch):
     overrides, fingerprints = _patched_paths(tmp_path, monkeypatch)
     _write(overrides, {
         "chapter_roll_overrides": {
-            "65": {"rolls": []},  # no _fingerprint
+            "65": {"curated_by": "human", "rolls": []},  # no _fingerprint
         }
     })
     _write(fingerprints, {

@@ -23,6 +23,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from chapter_roll_overrides_io import load_chapter_roll_overrides_doc
 from data_paths import DERIVED, MANUAL
 
 ANCHOR_FIELD = "_fingerprint"
@@ -40,7 +41,7 @@ class Mismatch:
 def _load_stored() -> dict[str, str]:
     if not OVERRIDES_PATH.exists():
         return {}
-    doc = json.loads(OVERRIDES_PATH.read_text())
+    doc = load_chapter_roll_overrides_doc(OVERRIDES_PATH)
     out: dict[str, str] = {}
     for cn, entry in (doc.get("chapter_roll_overrides") or {}).items():
         if isinstance(entry, dict) and entry.get(ANCHOR_FIELD):
@@ -101,7 +102,7 @@ def chapters_overridden_but_unstamped() -> list[str]:
     """Chapters with an override entry but no stamped fingerprint."""
     if not OVERRIDES_PATH.exists():
         return []
-    doc = json.loads(OVERRIDES_PATH.read_text())
+    doc = load_chapter_roll_overrides_doc(OVERRIDES_PATH)
     return [
         str(cn)
         for cn, entry in (doc.get("chapter_roll_overrides") or {}).items()
