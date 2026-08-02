@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from _common import write_validated_json
+from chapter_roll_overrides_io import write_chapter_roll_overrides_doc
 from data_paths import MANUAL
 
 OVERRIDES_PATH = MANUAL / "chapter_roll_overrides.json"
@@ -33,8 +33,11 @@ def stamp(path: Path | None = None) -> tuple[int, int]:
     """Stamp ``curated_by: "human"`` onto every chapter entry lacking it.
 
     Returns ``(newly_stamped, already_had)``. Writes back through
-    ``write_validated_json`` — this both persists the stamp and proves the
-    file now validates against the schema.
+    ``chapter_roll_overrides_io.write_chapter_roll_overrides_doc`` — the
+    one sanctioned writer for this file (gap-closure follow-up, CINF-01)
+    — rather than calling ``_common.write_validated_json`` directly; this
+    both persists the stamp and proves the file now validates against the
+    schema.
     """
     p = path or OVERRIDES_PATH
     doc = json.loads(p.read_text())
@@ -49,7 +52,7 @@ def stamp(path: Path | None = None) -> tuple[int, int]:
             continue
         entry["curated_by"] = "human"
         newly_stamped += 1
-    write_validated_json(p, doc, "chapter_roll_overrides")
+    write_chapter_roll_overrides_doc(doc, p)
     return newly_stamped, already_had
 
 
