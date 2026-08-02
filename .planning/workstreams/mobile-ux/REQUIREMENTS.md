@@ -28,8 +28,8 @@ Requirements for this workstream (MOB*). Curation requirements (EPUB/CINF/ACUR) 
 
 - [x] **MOBL-01**: Landscape phone shows sky (~75% width) plus right rail with field log (top 2/3) and settings/about dock (bottom 1/3), reusing the existing field-log data path
 - [x] **MOBL-02**: Landscape chrome auto-hides after 4000ms idle; first sky tap reveals without pausing, second tap within the window pauses; any sky/rail touch resets the timer
-- [ ] **MOBL-03**: Rotating mid-playback swaps layouts without visible remount, preserving word position, play state, speed, zoom, and pref toggles
-- [ ] **MOBL-04**: Flyouts dismiss on backdrop tap, trap focus while open, and handle the mobile back gesture without leaving the app
+- [x] **MOBL-03**: Rotating mid-playback swaps layouts without visible remount, preserving word position, play state, speed, zoom, and pref toggles
+- [x] **MOBL-04**: Flyouts dismiss on backdrop tap, trap focus while open, and handle the mobile back gesture without leaving the app
 
 ### Mobile Cutover & Accessibility
 
@@ -82,8 +82,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOBP-05 | Phase 2 | Complete |
 | MOBL-01 | Phase 3 | Complete |
 | MOBL-02 | Phase 3 | Complete |
-| MOBL-03 | Phase 3 | Pending |
-| MOBL-04 | Phase 3 | Pending |
+| MOBL-03 | Phase 3 | Complete |
+| MOBL-04 | Phase 3 | Complete |
 | MOBX-01 | Phase 4 | Pending |
 | MOBX-02 | Phase 4 | Pending |
 | MOBX-03 | Phase 4 | Pending |
