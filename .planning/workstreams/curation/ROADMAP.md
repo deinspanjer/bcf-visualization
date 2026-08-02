@@ -112,12 +112,12 @@ Plans:
   4. Word positions and roll ordinals are derived mechanically; Stage 1 emits candidates only and never writes to `chapter_roll_overrides.json`
   5. A candidate Stage 1 cannot support with evidence is emitted as evidence-not-found rather than guessed (`CURATION-CONVENTIONS.md` §5) — partial evidence is a correct outcome, not a failure
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Consolidate the four independent overrides loaders into one schema-validating loader; stamp all 118 entries `curated_by: "human"` (CINF-01, D-11)
+- [x] 03-01-PLAN.md — Consolidate the four independent overrides loaders into one schema-validating loader; stamp all 118 entries `curated_by: "human"` (CINF-01, D-11)
 - [ ] 03-02-PLAN.md — Stage 1 deterministic candidate assembler: bind constellation/paid perk/bundle/free-perk evidence from `roll_text_evidence.json` + `obtained_perks.json` (ACUR-01 Stage 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
