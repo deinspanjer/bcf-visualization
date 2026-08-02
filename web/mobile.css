@@ -8,7 +8,15 @@
    per CONTEXT.md so they are not retrofitted later.
    ────────────────────────────────────────────────────────────────────── */
 
-@media (max-width: 900px), (orientation: portrait) and (max-width: 1100px) {
+/* Breakpoint must stay character-identical to MOBILE_LAYOUT_QUERY in
+   web/app.js (D-06). The landscape clause is height-based: the old
+   `(max-width: 900px)` predates large phones and excluded a real iPhone at
+   956x390, dropping the entire landscape layout to the desktop shell. Phones
+   in landscape are ~390-440 tall, tablets 768-1024 — height is the dimension
+   that actually separates them, and it does not go stale as phones widen.
+   The frozen style.css:360 keeps the old query on purpose; see the app.js
+   comment for why that divergence is inert. */
+@media (orientation: landscape) and (max-height: 500px), (orientation: portrait) and (max-width: 1100px) {
   /* Gesture-surface touch-action policy (D-03): the sanctioned replacement
      for the rejected zoom-disabling viewport meta attributes. Page pinch
      zoom stays enabled globally (a11y); these classes suppress native

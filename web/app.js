@@ -69,8 +69,26 @@ const STORAGE_VERSION = "3";
 const MOBILE_TIMELINE_ZOOM_CHOICES = ["1", "2", "4", "8"];
 
 // Single source of truth for the mobile breakpoint: character-identical to the
-// @media query at web/style.css:360 (D-06). Never hand-roll a second width check.
-const MOBILE_LAYOUT_QUERY = "(max-width: 900px), (orientation: portrait) and (max-width: 1100px)";
+// @media query at web/mobile.css:11 (D-06). Never hand-roll a second width check.
+//
+// The landscape clause is height-based, not width-based. It used to be
+// `(max-width: 900px)`, inherited from the frozen portrait-banner rule at
+// style.css:360 — a threshold that predates large phones. Measured on a real
+// iPhone (Safari 18.5) during the Phase 3 gate: landscape is 956x390, so the
+// 900px ceiling failed and the whole landscape layout silently fell through to
+// the desktop shell. CI never caught it because every test viewport used
+// 844x390, which fits under 900.
+//
+// Height separates the devices by the dimension that actually differs: phones
+// in landscape are ~390-440 tall, tablets 768-1024. That stays correct as
+// phones get wider, where any width ceiling goes stale again.
+//
+// style.css:360 keeps the old query and is deliberately NOT edited (it is
+// frozen, and Phase 4 deletes it outright). It scopes only
+// `.portrait-banner.is-visible`, an element that renders solely inside the
+// desktop shell — which no longer mounts at these viewports — so the
+// divergence has no runtime effect.
+const MOBILE_LAYOUT_QUERY = "(orientation: landscape) and (max-height: 500px), (orientation: portrait) and (max-width: 1100px)";
 const MOBILE_MQ = window.matchMedia(MOBILE_LAYOUT_QUERY);
 const PORTRAIT_MQ = window.matchMedia("(orientation: portrait)");
 

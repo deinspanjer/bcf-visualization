@@ -62,6 +62,14 @@ def _page_with_console_capture(
 
 
 PHONE_LANDSCAPE = {"width": 844, "height": 390}
+# Real large-phone landscape widths. 844x390 (above) is an iPhone 12/13/14-class
+# viewport and fit under the OLD `(max-width: 900px)` landscape clause, which is
+# exactly why CI stayed green while a real iPhone 16 Pro Max — 956x390, measured
+# over the WebKit inspector during the Phase 3 gate — fell through to the desktop
+# shell and never mounted the landscape layout at all. Any landscape breakpoint
+# change must be proven against these, not just against 844.
+PHONE_LANDSCAPE_LARGE = {"width": 956, "height": 390}   # iPhone 16 Pro Max
+PHONE_LANDSCAPE_LARGE_ALT = {"width": 932, "height": 430}  # iPhone 14/15 Pro Max
 # The rotation of Phase 2's PHONE_PORTRAIT_SMALL (320x568). UI-SPEC's own
 # "390x568" row for this viewport reads as a transposition — 568x320 is the
 # true rotated form of the smallest in-scope portrait viewport.
@@ -1151,11 +1159,20 @@ def test_rotation_preserves_state(tmp_path):
 
 
 def test_rotation_at_routing_boundaries(tmp_path):
-    # MOBL-03 boundary matrix (FA-MOBL-03, .planning/workstreams/mobile-ux/
-    # STATE.md's 01-03 decision): 1100x900 landscape stays desktop, 900x1100
-    # portrait is mobile portrait, 900x600 landscape is mobile landscape —
-    # mirrors test_layout_mode_matrix_matches_css_breakpoint in
-    # tests/test_mobile_plumbing.py (left unmodified) without editing it.
+    # MOBL-03 boundary matrix (FA-MOBL-03). Updated at the Phase 3 gate when the
+    # landscape clause moved from `(max-width: 900px)` to
+    # `(orientation: landscape) and (max-height: 500px)` — see
+    # test_large_phones_in_landscape_get_the_mobile_layout for why.
+    #
+    # One expectation genuinely INVERTED, and that is the accepted trade-off of
+    # the height-based rule, not an accident: 900x600 used to be mobile
+    # landscape (900 <= the old 900px ceiling) and is now desktop, because a
+    # 600px-tall landscape viewport is not a phone — real phones in landscape
+    # are ~390-440 tall. Approved by Dre when choosing the height-based clause.
+    #
+    # Still mirrors test_layout_mode_matrix_matches_css_breakpoint in
+    # tests/test_mobile_plumbing.py (verified still green and left byte-
+    # identical — all five of its rows hold under the new query too).
     playwright_api = pytest.importorskip("playwright.sync_api")
 
     with staged_web_runtime_site(tmp_path) as site:
@@ -1165,7 +1182,12 @@ def test_rotation_at_routing_boundaries(tmp_path):
             cases = [
                 ({"width": 1100, "height": 900}, "desktop"),
                 ({"width": 900, "height": 1100}, "portrait"),
-                ({"width": 900, "height": 600}, "landscape"),
+                # Was "landscape" under the width-based clause; now desktop.
+                ({"width": 900, "height": 600}, "desktop"),
+                # Pin the new ceiling from both sides so a silent drift in the
+                # 500px threshold fails loudly.
+                ({"width": 900, "height": 500}, "landscape"),
+                ({"width": 900, "height": 501}, "desktop"),
             ]
             for viewport, expected in cases:
                 page, console_messages = _page_with_console_capture(
@@ -1299,5 +1321,83 @@ def test_rotation_with_surface_open_and_mid_drag(tmp_path):
             assert console_messages == []
 
             browser.close()
+
+            browser.close()
+
+
+@pytest.mark.parametrize(
+    "viewport,label",
+    [
+        (PHONE_LANDSCAPE, "844x390 iPhone 12/13/14-class"),
+        (PHONE_LANDSCAPE_LARGE, "956x390 iPhone 16 Pro Max"),
+        (PHONE_LANDSCAPE_LARGE_ALT, "932x430 iPhone 14/15 Pro Max"),
+        (PHONE_LANDSCAPE_SMALL, "568x320 smallest in-scope"),
+    ],
+)
+def test_large_phones_in_landscape_get_the_mobile_layout(tmp_path, viewport, label):
+    # MOBL-01 regression, found on real hardware at the Phase 3 gate.
+    #
+    # The landscape clause used to be `(max-width: 900px)`, inherited from the
+    # frozen portrait-banner rule (style.css:360) and written before phones got
+    # this wide. A real iPhone 16 Pro Max is 956x390 in landscape, so the clause
+    # failed, neither clause matched, and layoutMode resolved to "desktop" — the
+    # entire landscape layout silently never mounted. Not a crash: the desktop
+    # shell rendered instead, which is why it survived every automated check.
+    #
+    # CI could not have caught it. All three test files used 844x390, which fits
+    # under the old 900px ceiling. The clause is now height-based
+    # ((orientation: landscape) and (max-height: 500px)), and this test pins the
+    # real widths so a width-based regression cannot return unnoticed.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=viewport, storage=DEFAULT_STORAGE,
+            )
+
+            assert page.evaluate("window.__bcfLayoutMode") == "landscape", (
+                f"{label} must resolve to the landscape mobile layout, not desktop"
+            )
+            # The mobile surface mounts and the desktop shell does not — the
+            # bare layoutMode string alone would not have caught the original
+            # defect's user-visible symptom.
+            assert page.evaluate("document.querySelector('.mobile-app') != null") is True
+            assert page.evaluate("document.querySelector('.app')") is None
+            assert page.evaluate("document.querySelector('.portrait-banner')") is None
+            assert console_messages == []
+            page.close()
+
+            browser.close()
+
+
+def test_tablets_in_landscape_stay_desktop(tmp_path):
+    # The other half of the height-based clause: raising the phone ceiling must
+    # NOT sweep tablets into the mobile layout. §7 is explicit that
+    # iPads-in-landscape are desktop. Heights here (768-1024) are far above the
+    # 500px landscape ceiling, so they resolve to desktop by the dimension that
+    # actually distinguishes them, regardless of how wide phones later become.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    tablets = [
+        ({"width": 1024, "height": 768}, "iPad mini / classic 4:3 landscape"),
+        ({"width": 1180, "height": 820}, "iPad Air landscape"),
+        ({"width": 1366, "height": 1024}, "iPad Pro 12.9 landscape"),
+    ]
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            for viewport, label in tablets:
+                page, console_messages = _page_with_console_capture(
+                    browser, site, viewport=viewport, storage=DEFAULT_STORAGE,
+                )
+                assert page.evaluate("window.__bcfLayoutMode") == "desktop", (
+                    f"{label} must stay on the desktop shell (§7)"
+                )
+                assert page.evaluate("document.querySelector('.mobile-app')") is None
+                assert console_messages == []
+                page.close()
 
             browser.close()
