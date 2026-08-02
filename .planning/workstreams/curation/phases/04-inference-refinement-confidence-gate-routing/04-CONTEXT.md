@@ -61,30 +61,30 @@ Measured over all 869 curated evidence quotes and 198 chapters (2026-08-02):
 
 ### What the model may and may not produce (auto-resolved 2026-08-02)
 
-- **D-08:** The model proposes *quote text* and *structure* (grouping, constellation, outcome). It never emits word positions or roll ordinals. Positions are derived mechanically by locating the proposed quote via Phase 2's `cp_word_index` + verifier, exactly as a human curation is verified. A quote that cannot be located is a failed proposal, not a position to invent.
-- **D-09:** Every proposed quote passes Phase 2's `verify_roll()` before it can contribute to a high-confidence routing decision. The verifier is the hard gate (ACUR-02); the model's self-reported confidence is a **tiebreaker only** and can never promote a candidate the verifier rejected.
-- **D-10:** §5 of the conventions still governs: partial output is correct output. Stage 2 marking a field evidence-not-found is a success, not a failure, and should route to proposals rather than being dropped or guessed.
+- **D-10:** The model proposes *quote text* and *structure* (grouping, constellation, outcome). It never emits word positions or roll ordinals. Positions are derived mechanically by locating the proposed quote via Phase 2's `cp_word_index` + verifier, exactly as a human curation is verified. A quote that cannot be located is a failed proposal, not a position to invent.
+- **D-11:** Every proposed quote passes Phase 2's `verify_roll()` before it can contribute to a high-confidence routing decision. The verifier is the hard gate (ACUR-02); the model's self-reported confidence is a **tiebreaker only** and can never promote a candidate the verifier rejected.
+- **D-12:** §5 of the conventions still governs: partial output is correct output. Stage 2 marking a field evidence-not-found is a success, not a failure, and should route to proposals rather than being dropped or guessed.
 
 ### Confidence gate & routing (auto-resolved 2026-08-02)
 
-- **D-11:** Confidence is composite and code-computed: (a) every evidence quote passes verifier Tier 1/Tier 2; (b) the roll's structure agrees with the mechanical bundle from `obtained_perks.json`; (c) perk names resolve per D-06(c); (d) model self-report as tiebreaker only. High confidence requires (a)+(b)+(c). Anything else routes to proposals.
-- **D-12:** Regime-boundary sensitivity (ACUR-02): chapters carrying the `is_boundary` flag from Phase 1's exemplar index must route to low confidence more often — verify this empirically rather than asserting it.
-- **D-13:** Proposals sidecar uses the **same roll-object schema** as the corpus (Phase 3 D-05 precedent), so Phase 5's TUI review needs no translation layer. Location and file shape are Claude's discretion; a `data/derived/` artifact or a `data/manual/`-adjacent proposals file both defensible — but it is NOT the trusted corpus and must never be loaded as such.
-- **D-14 (do not lower the bar to raise the count):** per STACK.md, a large proposals volume is a legitimate outcome. If high-confidence yield is low, that is a finding for Dre's review queue — never a reason to relax verification.
+- **D-13:** Confidence is composite and code-computed: (a) every evidence quote passes verifier Tier 1/Tier 2; (b) the roll's structure agrees with the mechanical bundle from `obtained_perks.json`; (c) perk names resolve per D-06(c); (d) model self-report as tiebreaker only. High confidence requires (a)+(b)+(c). Anything else routes to proposals.
+- **D-14:** Regime-boundary sensitivity (ACUR-02): chapters carrying the `is_boundary` flag from Phase 1's exemplar index must route to low confidence more often — verify this empirically rather than asserting it.
+- **D-15:** Proposals sidecar uses the **same roll-object schema** as the corpus (Phase 3 D-05 precedent), so Phase 5's TUI review needs no translation layer. Location and file shape are Claude's discretion; a `data/derived/` artifact or a `data/manual/`-adjacent proposals file both defensible — but it is NOT the trusted corpus and must never be loaded as such.
+- **D-16 (do not lower the bar to raise the count):** per STACK.md, a large proposals volume is a legitimate outcome. If high-confidence yield is low, that is a finding for Dre's review queue — never a reason to relax verification.
 
 ### Idempotency & the ledger (auto-resolved 2026-08-02)
 
-- **D-15:** Agent-run ledger is a separate file keyed by chapter (Workstream Gate 2), holding run bookkeeping: model, run_id, corpus fingerprint, confidence, timestamps. It is NOT part of the overrides schema.
-- **D-16:** Re-running a chapter with unchanged inputs produces **no diff**. The fingerprint must cover everything that could change the output — at minimum the chapter's prose, its Stage 1 candidates, the conventions/prompt version, and the model id. A prompt or model change must invalidate the fingerprint, or "no diff" silently becomes "stale output preserved."
+- **D-17:** Agent-run ledger is a separate file keyed by chapter (Workstream Gate 2), holding run bookkeeping: model, run_id, corpus fingerprint, confidence, timestamps. It is NOT part of the overrides schema.
+- **D-18:** Re-running a chapter with unchanged inputs produces **no diff**. The fingerprint must cover everything that could change the output — at minimum the chapter's prose, its Stage 1 candidates, the conventions/prompt version, and the model id. A prompt or model change must invalidate the fingerprint, or "no diff" silently becomes "stale output preserved."
 
 ### Calibration & cost control (auto-resolved 2026-08-02)
 
 Measured pool: **108 genuinely curated chapters** (10 stubs excluded), **80 uncurated** targets for Phase 5.
 
-- **D-17:** Split the 108 curated chapters into a calibration set and a **held-out** set. Tune the rubric on calibration only; report final numbers on held-out. Tuning against the set you report on produces a number that cannot be trusted — and Phase 3 just demonstrated how easily a measurement can mislead.
-- **D-18:** Report Stage 2's improvement **per evidence class against Phase 3's recorded Stage 1 baseline** (`candidate-accuracy-report.md`), using the same three-tier position ladder so the comparison is like-for-like. Success criterion 1 is comparative; a standalone Stage 2 number does not satisfy it.
-- **D-19 (spend discipline):** before any batch, emit a **dry-run token estimate** (request count, cached-prefix size, per-request input, projected cost) and gate the run on an explicit ceiling. Start with a small pilot batch, verify the whole pipeline end-to-end, then scale. This phase must not be able to spend unbounded budget by accident.
-- **D-20:** A `checkpoint:decision` before the first run against **uncurated** chapters (roadmap note). Calibration on curated chapters is self-checking because ground truth exists; uncurated output has none, so Dre sees the calibration numbers before that boundary is crossed.
+- **D-19:** Split the 108 curated chapters into a calibration set and a **held-out** set. Tune the rubric on calibration only; report final numbers on held-out. Tuning against the set you report on produces a number that cannot be trusted — and Phase 3 just demonstrated how easily a measurement can mislead.
+- **D-20:** Report Stage 2's improvement **per evidence class against Phase 3's recorded Stage 1 baseline** (`candidate-accuracy-report.md`), using the same three-tier position ladder so the comparison is like-for-like. Success criterion 1 is comparative; a standalone Stage 2 number does not satisfy it.
+- **D-21 (spend discipline):** before any batch, emit a **dry-run token estimate** (request count, cached-prefix size, per-request input, projected cost) and gate the run on an explicit ceiling. Start with a small pilot batch, verify the whole pipeline end-to-end, then scale. This phase must not be able to spend unbounded budget by accident.
+- **D-22:** A `checkpoint:decision` before the first run against **uncurated** chapters (roadmap note). Calibration on curated chapters is self-checking because ground truth exists; uncurated output has none, so Dre sees the calibration numbers before that boundary is crossed.
 
 ### Claude's Discretion
 
