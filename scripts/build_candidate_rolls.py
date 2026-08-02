@@ -154,9 +154,19 @@ def _find_free_perk_evidence(
         search_text, start_char,
     )
     if match is None:
-        tokens = [t for t in re.split(r"[\s-]+", perk_name) if t]
-        if tokens:
-            variant = r"[\s-]*".join(re.escape(t) for t in tokens)
+        # Tier 2: drop the perk name's own spaces/hyphens, then re-join
+        # each remaining character with an OPTIONAL hyphen/space
+        # connector — tolerates a variant with hyphens/spaces inserted,
+        # removed, or repositioned relative to the name (e.g.
+        # obtained-perks name "Altmode" against prose "alt-mode": no
+        # separator in the name at all, one inserted mid-word in prose).
+        # Every connector is a single bounded character class with a
+        # `*` quantifier on a fixed two-char alternation — no nested
+        # quantifiers, no attacker-controlled alternation depth (mirrors
+        # mechanical_verifier._build_tier2_pattern's ReDoS-safety shape).
+        letters = [ch for ch in perk_name if not ch.isspace() and ch != "-"]
+        if letters:
+            variant = r"[\s-]*".join(re.escape(ch) for ch in letters)
             match = re.compile(variant, re.IGNORECASE).search(
                 search_text, start_char,
             )
@@ -299,9 +309,183 @@ def assemble_candidate(
     return candidate, unit_cursor
 
 
-if __name__ == "__main__":
-    print(
-        "build_candidate_rolls.py: assemble_candidate is proven against a "
-        "synthetic fixture in this plan's Task 1 <verify> block; full-corpus "
-        "wiring lands in Task 2."
+def _chapter_sort_key(chapter_num: str) -> tuple[int, int]:
+    """Numeric (major, minor) sort key, matching
+    ``multi_grab.py:merge_paid_units``'s own ``_chapter_sort_key``
+    convention — never a raw string sort (``"92" < "9"`` lexically)."""
+    parts = str(chapter_num).split(".")
+    return (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0)
+
+
+def _build_prose_loader(epub_path: Path, chapters_doc: dict, classifications_doc: dict):
+    """Lazy, per-chapter-cached ``chapter_num -> (html, word_index)``
+    closure over the real epub — mirrors
+    ``mechanical_verifier._build_prose_loader``'s contract exactly, reused
+    (not reimplemented) for the free-perk forward search's prose access.
+    """
+    href_by_chapter = {
+        c["chapter_num"]: c["epub_href"] for c in chapters_doc["chapters"]
+    }
+    classifications = classifications_doc["classifications"]
+    cache: dict[str, tuple[str, list[int]]] = {}
+
+    def _load(chapter_num: str) -> tuple[str, list[int]]:
+        if chapter_num not in cache:
+            href = href_by_chapter[chapter_num]
+            html = load_chapter_html(epub_path, href)
+            word_index = _chapter_word_index(html, classifications, chapter_num)
+            cache[chapter_num] = (html, word_index)
+        return cache[chapter_num]
+
+    return _load
+
+
+def assemble_all_candidates(
+    roll_evidence_rows: list[dict],
+    obtained_perks: list[dict],
+    prose_loader=None,
+) -> list[dict]:
+    """Walk every ``roll_text_evidence.json`` row chapter-by-chapter (in
+    ``_chapter_sort_key`` order, rows within a chapter sorted by
+    ``slot_index``), binding each against that chapter's default
+    ``merge_paid_units`` bundle units via a chapter-local positional
+    cursor reset to 0 at the start of every chapter. A chapter absent
+    from ``roll_evidence_rows`` contributes zero candidates — never an
+    error; a chapter present in ``roll_evidence_rows`` but absent from
+    ``obtained_perks`` (no bundle units at all) still emits one
+    fully-unfilled candidate per row (D-06), never raises.
+
+    ``prose_loader`` (optional, ``chapter_num -> (html, word_index)``)
+    enables the free-perk forward search for hit candidates; omitted
+    (``None``), every hit candidate's free perks are simply not searched
+    (no ``evidence_quotes`` for them, no ``evidence_for:<perk>`` claim —
+    a search that never ran makes no honesty claim about its result).
+
+    Output is explicitly sorted by ``(chapter_num, slot_index)`` before
+    returning — never raw dict/set iteration order — so re-running
+    against unchanged inputs is byte-identical.
+    """
+    units, _stats = merge_paid_units(obtained_perks, overrides=None)
+    units_by_chapter: dict[str, list[dict]] = {}
+    for unit in units:
+        units_by_chapter.setdefault(unit["chapter_num"], []).append(unit)
+
+    rows_by_chapter: dict[str, list[dict]] = {}
+    for row in roll_evidence_rows:
+        rows_by_chapter.setdefault(row["chapter_num"], []).append(row)
+
+    candidates: list[dict] = []
+    for chapter_num in sorted(rows_by_chapter, key=_chapter_sort_key):
+        rows = sorted(rows_by_chapter[chapter_num], key=lambda r: r["slot_index"])
+        chapter_units = units_by_chapter.get(chapter_num, [])
+        cursor = 0
+        chapter_html: str | None = None
+        word_index: list[int] | None = None
+        if prose_loader is not None:
+            chapter_html, word_index = prose_loader(chapter_num)
+        for row in rows:
+            candidate, cursor = assemble_candidate(
+                row, chapter_units, cursor,
+                chapter_html=chapter_html, word_index=word_index,
+            )
+            candidates.append(candidate)
+
+    candidates.sort(
+        key=lambda c: (_chapter_sort_key(c["chapter_num"]), c["slot_index"])
     )
+    return candidates
+
+
+def main() -> None:
+    if not EPUB.exists():
+        raise SystemExit(f"missing {EPUB.relative_to(ROOT)}")
+
+    roll_evidence_doc = json.loads(ROLL_TEXT_EVIDENCE.read_text())
+    obtained_perks_doc = json.loads(OBTAINED_PERKS.read_text())
+    chapters_doc = json.loads(CHAPTERS.read_text())
+    classifications_doc = json.loads(CLASSIFICATIONS.read_text())
+
+    prose_loader = _build_prose_loader(EPUB, chapters_doc, classifications_doc)
+
+    candidates = assemble_all_candidates(
+        roll_evidence_doc["rolls"], obtained_perks_doc["perks"], prose_loader,
+    )
+
+    evidence_kind_totals: dict[str, int] = {}
+    outcome_totals: dict[str, int] = {"hit": 0, "miss": 0, "unfilled": 0}
+    unfilled_candidate_count = 0
+    for candidate in candidates:
+        evidence_kind = candidate["_derivation"]["evidence_kind"]
+        evidence_kind_totals[evidence_kind] = (
+            evidence_kind_totals.get(evidence_kind, 0) + 1
+        )
+        outcome = candidate["outcome"]
+        if outcome == "hit":
+            outcome_totals["hit"] += 1
+        elif outcome == "miss":
+            outcome_totals["miss"] += 1
+        else:
+            outcome_totals["unfilled"] += 1
+        if candidate["_derivation"]["unfilled_fields"]:
+            unfilled_candidate_count += 1
+
+    payload = {
+        "_source": (
+            "Deterministic Stage 1 candidate assembly (ACUR-01, zero LLM): "
+            "binds data/derived/roll_text_evidence.json's predicted-roll "
+            "rows against data/derived/obtained_perks.json's paid-then-free "
+            "bundle units via scripts/multi_grab.py:merge_paid_units"
+            "(overrides=None). Never reads or writes "
+            "data/manual/chapter_roll_overrides.json (D-04) — this is a "
+            "proposal surface only."
+        ),
+        "_method": (
+            "Per predicted roll, walked chapter-by-chapter in narrative "
+            "order (predicted_word_in_chapter / slot_index ascending), "
+            "against a chapter-local positional cursor over that "
+            "chapter's default merge_paid_units bundle units (reset to 0 "
+            "at the start of each chapter): "
+            "(1) if the row's own matching_anchor_kinds contains 'miss', "
+            "classify outcome='miss', bind constellation from a "
+            "constellation_reveal event's anchor_phrase if present (strip "
+            "a leading 'the ' and a trailing 'Constellation' word), and do "
+            "NOT consume a unit. "
+            "(2) Else, if the chapter's unit cursor still has a unit "
+            "available, consume it as outcome='hit' REGARDLESS of whether "
+            "'acquisition' is present in the row's own "
+            "matching_anchor_kinds — perks = the unit's paid perk name + "
+            "free ride-along names, constellation = the paid perk's own "
+            "constellation field. When 'acquisition' is absent, "
+            "'evidence_for:outcome' is added to "
+            "_derivation.unfilled_fields to mark the binding as "
+            "positional-only, not anchor-confirmed. "
+            "(3) Else (no unit remains, no miss anchor), the roll is "
+            "fully unfilled: outcome=null, perks=[], constellation=null, "
+            "with 'outcome'/'constellation'/'perks' all listed in "
+            "unfilled_fields — never guessed, never dropped. "
+            "Every bound hit candidate additionally gets a liberal "
+            "forward search (from its word_position onward) for each "
+            "free perk's name — exact case-insensitive substring first, "
+            "then a hyphen/space-tolerant variant — attaching the first "
+            "match as an evidence_quotes entry sliced verbatim from the "
+            "located prose match, or 'evidence_for:<perk name>' to "
+            "unfilled_fields on no match. This never joins on "
+            "roll_number/source_ordinal identity across the "
+            "predictor/curator numbering sequences (those sequences "
+            "diverge and are never joined, per project convention)."
+        ),
+        "_evidence_kind_totals": evidence_kind_totals,
+        "_outcome_totals": outcome_totals,
+        "candidates": candidates,
+    }
+
+    write_validated_json(OUT, payload, "candidate_rolls")
+
+    print(f"wrote {OUT.relative_to(ROOT)}: {len(candidates)} candidates")
+    print(f"  evidence_kind_totals: {evidence_kind_totals}")
+    print(f"  outcome_totals: {outcome_totals}")
+    print(f"  candidates with any unfilled_fields: {unfilled_candidate_count}")
+
+
+if __name__ == "__main__":
+    main()

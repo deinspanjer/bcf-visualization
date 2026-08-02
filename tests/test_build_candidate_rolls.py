@@ -81,8 +81,8 @@ def _build_word_index(html: str) -> list[int]:
 
 def test_assemble_all_candidates_walks_full_synthetic_corpus_deterministically() -> None:
     obtained_perks = [
-        _obtained_perk("9001", 1, "Altmode", 100, "Testing"),
-        _obtained_perk("9001", 2, "Laser Sword", 0, None),
+        _obtained_perk("9001", 1, "Synthetic Test Perk", 100, "Testing"),
+        _obtained_perk("9001", 2, "Altmode", 0, None),
     ]
     rows = [
         _row(9001, "9001", 1, 0, matching_anchor_kinds=["acquisition"]),
@@ -106,7 +106,7 @@ def test_assemble_all_candidates_walks_full_synthetic_corpus_deterministically()
 
     hit = by_key[("9001", 9001)]
     assert hit["outcome"] == "hit"
-    assert "Altmode" in hit["perks"] and "Laser Sword" in hit["perks"]
+    assert "Synthetic Test Perk" in hit["perks"] and "Altmode" in hit["perks"]
     assert hit["constellation"] == "Testing"
     quote_texts = [q["text"] for q in hit["evidence_quotes"]]
     assert any("alt-mode" in t.lower() for t in quote_texts), quote_texts
