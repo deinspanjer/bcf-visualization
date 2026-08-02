@@ -28,26 +28,36 @@ Stage 2: an inference pass that consumes Stage 1's candidates, recovers what det
 - **Curation authority:** an existing hand-curated chapter entry is never overwritten (CINF-04). Since agents never touch curated chapters, no chapter mixes provenance — D-02's per-roll deferral holds.
 - **Writes go through `chapter_roll_overrides_io.write_chapter_roll_overrides_doc`** (validated + atomic). No new write path.
 
-### Input shape — the dominant cost decision (auto-resolved 2026-08-02)
+### Input shape — retrieve candidate paragraphs, don't feed spans (Dre, 2026-08-02)
 
-Measured token volumes:
+**Dre redirected the original design and the measurements back him decisively.** The first draft fed prose windows plus bounded forward spans (~1.7M tokens) to the model. Dre's point: the important quotes almost always name the perk exactly or close to it, and the TUI *already* has deterministic machinery that flags likely roll-related paragraphs. So retrieve candidate paragraphs cheaply and deterministically, then ask the model only about those.
 
-| Input strategy | Volume | Adequacy |
+Measured over all 869 curated evidence quotes and 198 chapters (2026-08-02):
+
+| Strategy | Recall | Tokens |
 |---|---|---|
-| 250-word prose windows only | ~434k tokens | insufficient — misses `forward_ref` evidence by construction |
-| Windows + bounded forward span | ~1.7M tokens | targeted |
-| Whole chapters | ~3,531k tokens | 8× the window cost, mostly irrelevant text |
+| Whole chapters | — | ~3,531k |
+| Windows + bounded forward spans (original draft) | — | ~1,700k |
+| `evidence_scorer` threshold 1 alone | 83.4% | 1,569k |
+| `evidence_scorer` threshold 3 alone | 71.9% | 221k |
+| **threshold 3 ∪ perk-name match** | **85.5%** | **~363k** |
 
-- **D-01:** Stage 2 receives, per candidate: the Stage 1 candidate object, its `prose_window`, its `matching_events`/`matching_anchor_kinds`, and its `evidence_kind`. **Never the whole chapter.**
-- **D-02 (the `forward_ref` answer):** for `forward_ref` candidates — 485 rolls, 68% and Stage 2's principal job — additionally supply the prose span from the roll position to `next_specific_event_offset`, which `roll_text_evidence.json` already carries for **all 485**. Measured span: median 969 words, p90 3,713, with a pathological max of ~46k words. **Cap the span** (p90 is a defensible starting point) and mark any candidate whose span was truncated, so a miss caused by truncation is distinguishable from a miss caused by the model. Do not silently send an unbounded tail.
-- **D-03:** exemplars come from `query_exemplars.retrieve()` (same-regime, deterministic), bounded to a small k. The full `exemplar_index.json` is 419 KB and must never be sent whole. Exemplars belong in the cached shared prefix (D-05), not per-request.
+- **D-01 (input is a retrieved paragraph set):** Stage 2 receives, per chapter, the union of:
+  1. paragraphs scoring at/above a tuned threshold from the **existing** `scripts/forge_curator/evidence_scorer.py:score_paragraph` / `evidence_candidates`;
+  2. paragraphs containing a known perk name for that chapter from `obtained_perks.json` (token-subset match, tolerant of variants — `Altmode` vs "alt-mode");
+  3. the roll's own `prose_window` from `roll_text_evidence.json` as the positional prior.
+  Plus the Stage 1 candidate object and its `_derivation`. **Never whole chapters, never unbounded spans.**
+- **D-02 (threshold is Stage-2's, not the TUI's):** the scorer's shipped `EVIDENCE_CANDIDATE_THRESHOLD = 4` is correctly tuned as a *low-noise navigation aid* for Dre's `n`/`N` jumping. Stage 2 wants recall, not quiet. Pass a threshold parameter; **do not change the TUI default** — degrading interactive navigation to serve a batch job is a bad trade. Threshold 3 is the measured knee; treat it as a starting point to tune on the calibration split, not a constant.
+- **D-03 (reuse, don't rebuild — this is the no-parallel-implementations rule):** `evidence_scorer.py` (paragraph scoring), `quote_autofill.py` (deterministic constellation extraction from `KNOWN_CONSTELLATIONS`), and `miss_quote_matcher.py` (miss-specific candidates) already exist and are proven in the TUI. Stage 2 consumes them. Writing a second paragraph scorer or constellation extractor is a phase failure. The original draft was about to build span-slicing that duplicates what `evidence_candidates` already does better.
+- **D-04 (the residual ~15% is a routing outcome, not a bug):** roughly one quote in seven is reachable by neither signal. Per `CURATION-CONVENTIONS.md` §5 those become evidence-not-found and route to proposals. Do NOT chase them by lowering the threshold toward 1 — that costs 4× the tokens for 2 points *less* recall than the union.
+- **D-05:** exemplars come from `query_exemplars.retrieve()` (same-regime, deterministic), bounded to a small k. `exemplar_index.json` is 419 KB and must never be sent whole. Exemplars belong in the cached shared prefix, not per-request.
 
 ### API mechanics (auto-resolved 2026-08-02, per `.planning/research/STACK.md`)
 
-- **D-04:** Message Batches API for any multi-chapter run — purpose-built for N independent non-latency-sensitive requests at 50% lower cost. Key results by `custom_id`; **results arrive in arbitrary order, never assume positional correspondence.**
-- **D-05:** Prompt caching with a `cache_control` breakpoint on the shared system prefix (conventions + schema + retrieved exemplars). That prefix is identical across requests in a run, so each subsequent request pays ~0.1× for it. Batching and caching compose — use both.
-- **D-06:** Structured outputs (`output_config.format` JSON Schema with `additionalProperties: false`, or `client.messages.parse()` with a Pydantic model). **No free-text-then-parse.** The output schema is the roll-object schema plus a self-reported confidence field and a one-line reasoning string.
-- **D-07 (model tiering):** calibrate on `claude-opus-5`. Only step the bulk pass down to `claude-sonnet-5` once calibration shows it clears the same verifier + confidence bar — and make that a data-driven decision against held-out chapters, not an assumption. Never Haiku: exact-quote fidelity matters more than latency here.
+- **D-06:** Message Batches API for any multi-chapter run — purpose-built for N independent non-latency-sensitive requests at 50% lower cost. Key results by `custom_id`; **results arrive in arbitrary order, never assume positional correspondence.**
+- **D-07:** Prompt caching with a `cache_control` breakpoint on the shared system prefix (conventions + schema + retrieved exemplars). That prefix is identical across requests in a run, so each subsequent request pays ~0.1× for it. Batching and caching compose — use both.
+- **D-08:** Structured outputs (`output_config.format` JSON Schema with `additionalProperties: false`, or `client.messages.parse()` with a Pydantic model). **No free-text-then-parse.** The output schema is the roll-object schema plus a self-reported confidence field and a one-line reasoning string.
+- **D-09 (model tiering):** calibrate on `claude-opus-5`. Only step the bulk pass down to `claude-sonnet-5` once calibration shows it clears the same verifier + confidence bar — and make that a data-driven decision against held-out chapters, not an assumption. Never Haiku: exact-quote fidelity matters more than latency here.
 
 ### What the model may and may not produce (auto-resolved 2026-08-02)
 
@@ -89,9 +99,11 @@ Measured pool: **108 genuinely curated chapters** (10 stubs excluded), **80 uncu
 
 5 pre-existing failures: 4 `tests/test_forge_curator.py`, 1 `tests/test_roll_ordinal_contract.py::test_chapter_55_1_source_roll_six_borrows_first_56_prediction`. `scripts/verify.py` exits 1 for that reason. Judge by "no NEW failures".
 
-### Note for the planner: AI-SPEC applies here
+### Note for the planner: AI-SPEC does NOT apply (Dre, 2026-08-02)
 
-Phases 1–3 skipped the `ai-integration` capability with rationale — they were deterministic. **Phase 4 genuinely builds an AI system**, so `/gsd-ai-integration-phase` should fire and produce an AI-SPEC.md (framework choice, evaluation strategy, guardrails, monitoring). Do not skip it here on the precedent of the earlier phases.
+An earlier draft of this context flagged that `/gsd-ai-integration-phase` should fire here since Phase 4 "builds an AI system." **Dre pushed back and is right.** This is a targeted prompt to a pre-existing available agent, asking for an inference over heuristically-collected evidence — not an AI system. The capability produces framework selection, evaluation strategy, guardrails, and production monitoring; applying it to a single call site inside a data pipeline generates ceremony around one prompt.
+
+**Skip the `ai-integration` hook, consistent with Phases 1–3.** The evaluation this phase actually needs is already specified concretely and quantitatively below (D-17/D-18: calibration/held-out split, per-evidence-class comparison against Phase 3's recorded baseline) — that is the real eval plan, and it is better grounded than a generated one because it is measured against this corpus.
 
 </decisions>
 
