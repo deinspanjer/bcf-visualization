@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/candidate_rolls.schema.json",
+  "title": "Candidate Rolls (Stage 1 — deterministic assembly)",
+  "description": "One candidate roll object per predicted roll in roll_text_evidence.json, assembled deterministically (zero LLM) via chapter-local positional cursor advance through multi_grab.merge_paid_units's default bundle units. Reuses chapter_roll_overrides.json's roll-object field set verbatim (D-05) so Phase 4 routing and the Phase 5 TUI need no translation layer, plus a _derivation provenance sub-object. This is a proposal surface only — never written to data/manual/chapter_roll_overrides.json (D-04).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_source", "_method", "_evidence_kind_totals", "_outcome_totals", "candidates"
+  ],
+  "properties": {
+    "_source":   { "type": "string" },
+    "_method":   { "type": "string" },
+    "_evidence_kind_totals": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "_outcome_totals": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "roll_number", "chapter_num", "slot_index",
+        "perks", "outcome", "constellation", "word_position",
+        "mention_chapter_num", "mention_word_position",
+        "display_position_policy", "evidence_quotes", "_derivation"
+      ],
+      "properties": {
+        "roll_number":  { "type": "integer", "minimum": 1 },
+        "chapter_num":  { "type": "string", "pattern": "^\\d+(\\.\\d+)?$" },
+        "slot_index":   { "type": "integer", "minimum": 1 },
+        "perks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "outcome": {
+          "anyOf": [
+            { "enum": ["hit", "miss"] },
+            { "type": "null" }
+          ]
+        },
+        "constellation": { "type": ["string", "null"] },
+        "word_position": { "type": ["integer", "null"], "minimum": 0 },
+        "mention_chapter_num": { "type": ["string", "null"] },
+        "mention_word_position": { "type": ["integer", "null"], "minimum": 0 },
+        "display_position_policy": {
+          "anyOf": [
+            { "enum": ["mention", "mechanical", "section_start", "source_marker", "section_end"] },
+            { "type": "null" }
+          ]
+        },
+        "evidence_quotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["text", "mention_chapter_num", "mention_word_position"],
+            "properties": {
+              "text": { "type": "string", "minLength": 1 },
+              "mention_chapter_num": { "type": ["string", "null"] },
+              "mention_word_position": { "type": ["integer", "null"], "minimum": 0 }
+            }
+          }
+        },
+        "_derivation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evidence_kind", "matched_anchor_kinds", "bundle_source", "unfilled_fields"
+          ],
+          "properties": {
+            "evidence_kind": {
+              "enum": ["direct", "general_only", "forward_ref", "no_evidence"]
+            },
+            "matched_anchor_kinds": {
+              "type": "array",
+              "items": {
+                "enum": ["roll_attempt", "miss", "acquisition",
+                         "constellation_reveal", "general"]
+              }
+            },
+            "bundle_source": { "type": ["string", "null"] },
+            "unfilled_fields": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
