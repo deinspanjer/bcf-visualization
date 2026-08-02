@@ -66,6 +66,9 @@ PHONE_LANDSCAPE = {"width": 844, "height": 390}
 # "390x568" row for this viewport reads as a transposition — 568x320 is the
 # true rotated form of the smallest in-scope portrait viewport.
 PHONE_LANDSCAPE_SMALL = {"width": 568, "height": 320}
+# Phase 3 Task 2 (03-03-PLAN.md): the rotation tests below start sessions in
+# portrait — matches tests/test_mobile_portrait.py's own PHONE_PORTRAIT.
+PHONE_PORTRAIT = {"width": 390, "height": 844}
 
 DEFAULT_STORAGE = {
     "bcf:preview-port-storage-version": "3",
@@ -221,6 +224,25 @@ def test_landscape_field_log_zero_and_empty_states(tmp_path):
             assert page3.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]').count() == 1
             assert console_messages3 == []
             page3.close()
+
+            # --- FA-MOBL-03 backstop: rotating into landscape at word
+            #     position 0 on the zero-roll story throws nothing and
+            #     renders the empty field log and zero-marker scrub in the
+            #     freshly-mounted landscape DOM. ---
+            page4, console_messages4 = _page_with_console_capture(
+                browser,
+                site,
+                path="/web/?dataPackage=no-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage=DEFAULT_STORAGE,
+            )
+            page4.set_viewport_size(PHONE_LANDSCAPE)
+            page4.wait_for_function("window.__bcfLayoutMode === 'landscape'")
+            assert page4.locator(".mobile-field-log-header").count() == 1
+            assert page4.locator(".mobile-field-log-list").evaluate("el => el.children.length") == 0
+            assert page4.locator(".mobile-cinema-scrub-inner .mobile-cinema-scrub-roll").count() == 0
+            assert console_messages4 == []
+            page4.close()
 
             browser.close()
 
@@ -816,8 +838,6 @@ def test_landscape_reveal_tap_semantics(tmp_path):
                 assert console_messages == []
                 page.close()
 
-            browser.close()
-
 
 def test_landscape_surface_stack(tmp_path):
     # MOBL-04 (03-03-PLAN.md Task 1, D-33): the layout-agnostic surface
@@ -989,4 +1009,295 @@ def test_landscape_surface_stack(tmp_path):
             assert cta_box is not None
             assert cta_box["y"] + cta_box["height"] <= sky_box2["y"] + sky_box2["height"] + 1
             assert console_messages == []
+            browser.close()
+
+
+def test_rotation_preserves_state(tmp_path):
+    # MOBL-03 (03-03-PLAN.md Task 2, D-20/D-23): the CI half of the phase's
+    # two-pronged rotation proof. Every field MOBL-03 names lives on app.*
+    # and survives onLayoutMaybeChanged()'s full render() rebuild, asserted
+    # individually (not as one aggregate) in both directions; landscape
+    # arrival shows chrome and starts the D-31 idle window; the real-device
+    # resize/orientationchange timing race is plan 04's gate, not this test.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # --- Every preference field set through the real Settings UI
+            #     (never a direct localStorage write), playback started,
+            #     rotated to landscape, then rotated back — each field
+            #     compared individually at every stage. ---
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            page.click('[data-action="mobile-open-settings"]')
+            groups = page.locator(".mobile-flyout .mobile-group")
+            groups.nth(0).get_by_text("Details", exact=True).click()
+            groups.nth(1).locator('[data-on-roll-behavior="quick"]').click()
+            # 0.5x (2500 words/sec), not the default 1x — also slow enough
+            # that tiny-default's 10000-word story survives every wait this
+            # test holds playback open across (a faster rung would finish
+            # and auto-pause the story before the rotation-preserves-
+            # playing-state assertions below run).
+            groups.nth(2).get_by_text("½×", exact=True).click()
+            groups.nth(3).get_by_text("4×", exact=True).click()
+            groups.nth(4).locator(".mobile-row-val").nth(0).click()  # tap-to-pause -> Off
+            groups.nth(4).locator(".mobile-row-val").nth(1).click()  # haptics -> Off
+            # Toggle the flyout shut through the same opening control (D-33
+            # reuses portrait's toggle-shut convention).
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 0
+
+            page.click(".mobile-fab-play")
+            assert page.locator(".mobile-fab-play").get_attribute("aria-label") == "Pause"
+            # Let tickPlayback's persistBookmarkSoon debounce (<=500ms) flush
+            # at least once so the bookmark key reflects live playback, not
+            # just the seeded word 0.
+            page.wait_for_timeout(600)
+
+            def read_fields(fab_selector):
+                return {
+                    "speed": page.evaluate("localStorage.getItem('bcf:playback:speed:v2')"),
+                    "mode": page.evaluate("localStorage.getItem('bcf:mode')"),
+                    "onRoll": page.evaluate("localStorage.getItem('bcf:on-roll-behavior')"),
+                    "zoom": page.evaluate("window.__bcfPrefs.mobileTimelineZoom"),
+                    "tapToPause": page.evaluate("window.__bcfPrefs.tapToPause"),
+                    "haptics": page.evaluate("window.__bcfPrefs.haptics"),
+                    "playing": page.locator(fab_selector).get_attribute("aria-label"),
+                    "wordPos": int(page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")),
+                }
+
+            before = read_fields(".mobile-fab-play")
+            assert before["speed"] == "2500"
+            assert before["mode"] == "detail"
+            assert before["onRoll"] == "quick"
+            assert before["zoom"] == 4
+            assert before["tapToPause"] is False
+            assert before["haptics"] is False
+            assert before["playing"] == "Pause"
+
+            page.set_viewport_size(PHONE_LANDSCAPE)
+            page.wait_for_function("window.__bcfLayoutMode === 'landscape'")
+            expect(page.locator(".mobile-sidebar")).to_be_visible()
+            assert page.evaluate("document.querySelector('.mobile-dock')") is None
+
+            # Phase-level verification #3 (D-20/RESEARCH A3): no cross-fade
+            # was built — the landscape root's className read immediately
+            # after the swap is byte-identical 500ms later, i.e. no
+            # transient transition/animation class is ever applied on
+            # rotation. Asserted behaviorally rather than by grepping for
+            # ROTATION_ANIM's name, so an explanatory comment alone could
+            # never satisfy this gate.
+            class_name_immediately_after = page.evaluate(
+                "document.querySelector('.mobile-app-landscape').className"
+            )
+            page.wait_for_timeout(500)
+            class_name_500ms_later = page.evaluate(
+                "document.querySelector('.mobile-app-landscape').className"
+            )
+            assert class_name_500ms_later == class_name_immediately_after
+
+            page.wait_for_timeout(100)
+
+            after = read_fields(".mobile-cinema-scrub-fab")
+            for key in ("speed", "mode", "onRoll", "zoom", "tapToPause", "haptics", "playing"):
+                assert after[key] == before[key], f"{key} changed across rotation: {before[key]!r} -> {after[key]!r}"
+            assert after["wordPos"] >= before["wordPos"]
+
+            # Round trip: rotate back, every field returns, .mobile-dock is
+            # present again and .mobile-app-landscape is gone.
+            page.set_viewport_size(PHONE_PORTRAIT)
+            page.wait_for_function("window.__bcfLayoutMode === 'portrait'")
+            expect(page.locator(".mobile-dock")).to_be_visible()
+            assert page.evaluate("document.querySelector('.mobile-app-landscape')") is None
+            page.wait_for_timeout(600)
+
+            round_trip = read_fields(".mobile-fab-play")
+            for key in ("speed", "mode", "onRoll", "zoom", "tapToPause", "haptics", "playing"):
+                assert round_trip[key] == before[key], (
+                    f"{key} did not round-trip: {before[key]!r} -> {round_trip[key]!r}"
+                )
+            assert round_trip["wordPos"] >= after["wordPos"]
+
+            assert console_messages == []
+            page.close()
+
+            # --- D-31: rotating into landscape arrives with chrome visible
+            #     and the idle window started — NOT hidden immediately after
+            #     the swap, and hidden 4600ms later if playback continues
+            #     untouched. tiny-default's default speed finishes the whole
+            #     10000-word story in ~2s, so this session seeds a much
+            #     slower speed to survive the wait, matching
+            #     test_landscape_chrome_autohide_boundary's own idiom. ---
+            page2, console_messages2 = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+            )
+            page2.click(".mobile-fab-play")
+            page2.set_viewport_size(PHONE_LANDSCAPE)
+            page2.wait_for_function("window.__bcfLayoutMode === 'landscape'")
+            assert page2.evaluate(
+                "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+            ) is False
+            page2.wait_for_timeout(4600)
+            assert page2.evaluate(
+                "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+            ) is True
+            assert console_messages2 == []
+            browser.close()
+
+
+def test_rotation_at_routing_boundaries(tmp_path):
+    # MOBL-03 boundary matrix (FA-MOBL-03, .planning/workstreams/mobile-ux/
+    # STATE.md's 01-03 decision): 1100x900 landscape stays desktop, 900x1100
+    # portrait is mobile portrait, 900x600 landscape is mobile landscape —
+    # mirrors test_layout_mode_matrix_matches_css_breakpoint in
+    # tests/test_mobile_plumbing.py (left unmodified) without editing it.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            cases = [
+                ({"width": 1100, "height": 900}, "desktop"),
+                ({"width": 900, "height": 1100}, "portrait"),
+                ({"width": 900, "height": 600}, "landscape"),
+            ]
+            for viewport, expected in cases:
+                page, console_messages = _page_with_console_capture(
+                    browser, site, viewport=viewport, storage=DEFAULT_STORAGE,
+                )
+                assert page.evaluate("window.__bcfLayoutMode") == expected
+                if expected == "desktop":
+                    # The landscape arm never mounts at a viewport the
+                    # matrix routes to desktop.
+                    assert page.evaluate("document.querySelector('.mobile-app-landscape')") is None
+                    assert page.locator(".app").count() == 1
+                assert console_messages == []
+                page.close()
+
+            browser.close()
+
+
+def test_rotation_with_surface_open_and_mid_drag(tmp_path):
+    # MOBL-03 (03-03-PLAN.md Task 2, D-21/D-22): (a) an open surface
+    # survives rotation and re-renders in the new layout with a balanced
+    # history sentinel; (b) rotating mid-drag aborts the in-flight scrub
+    # cleanly (the existing frozen-pan teardown, verified rather than
+    # rebuilt per the plan) without deferring the layout swap, and a fresh
+    # drag in the new layout is monotonic from its first sample; (c)
+    # rotating away from landscape while the idle timer is armed leaves no
+    # stale timer behind — it never fires into the new layout.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # (a) Surface survives rotation; history stays balanced.
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            history_state_before_open = page.evaluate("window.history.state")
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            history_length_with_surface_open = page.evaluate("window.history.length")
+
+            page.set_viewport_size(PHONE_LANDSCAPE)
+            page.wait_for_function("window.__bcfLayoutMode === 'landscape'")
+            assert page.locator(".mobile-sky .mobile-flyout").count() == 1
+            # Rotation itself touches no history state — the joint session
+            # history is exactly as long as it was the instant before the
+            # swap, and the sentinel's state object is untouched (D-21).
+            assert page.evaluate("window.history.length") == history_length_with_surface_open
+            assert page.evaluate("window.history.state") == {"bcfMobileSurface": "settings"}
+
+            page.click('[data-action="mobile-open-settings"]')  # toggles shut, consumes the sentinel
+            assert page.locator(".mobile-flyout").count() == 0
+            page.wait_for_timeout(50)
+            assert page.evaluate("window.history.state") == history_state_before_open
+            assert console_messages == []
+            page.close()
+
+            # (b) Mid-drag rotation: press on the portrait mini-rail, rotate
+            #     while still down, release, then a fresh drag on the
+            #     landscape cinema-scrub track is monotonic from its first
+            #     sample with no console error.
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            rail_box = page.locator(".mobile-rail").bounding_box()
+            assert rail_box is not None
+            ry = rail_box["y"] + rail_box["height"] / 2
+            page.mouse.move(rail_box["x"] + rail_box["width"] * 0.30, ry)
+            page.mouse.down()
+            page.mouse.move(rail_box["x"] + rail_box["width"] * 0.30 + 20, ry)
+
+            page.set_viewport_size(PHONE_LANDSCAPE)
+            page.wait_for_function("window.__bcfLayoutMode === 'landscape'")
+            # The structural render that swaps layouts tears the portrait
+            # rail's listeners down mid-drag (the same teardown that clears
+            # app.mobileScrubPanPct on every structural render, D-22) — the
+            # still-held mouse button has nothing left listening to it.
+            page.mouse.up()
+
+            track_box = page.locator(".mobile-cinema-scrub-track").bounding_box()
+            assert track_box is not None
+            ty = track_box["y"] + track_box["height"] / 2
+
+            def playhead_pct():
+                raw = page.evaluate(
+                    "() => document.querySelector('.mobile-cinema-scrub-thumb')?.style.left ?? null"
+                )
+                assert raw is not None, "landscape cinema-scrub thumb not found"
+                return float(raw.rstrip("%"))
+
+            def x_at(fraction):
+                return track_box["x"] + track_box["width"] * fraction
+
+            page.mouse.move(x_at(0.30), ty)
+            page.mouse.down()
+            page.wait_for_timeout(60)
+            observed = [playhead_pct()]
+            for fraction in (0.40, 0.50, 0.60, 0.70):
+                page.mouse.move(x_at(fraction), ty)
+                page.wait_for_timeout(60)
+                observed.append(playhead_pct())
+            page.mouse.up()
+
+            for earlier, later in zip(observed, observed[1:]):
+                assert later >= earlier - 0.01, (
+                    f"post-rotation drag moved the playhead backward "
+                    f"({earlier:.3f}% -> {later:.3f}%) across {observed}"
+                )
+            assert observed[-1] > observed[0] + 1.0, f"post-rotation drag barely moved: {observed}"
+            assert console_messages == []
+            page.close()
+
+            # (c) Rotating away from landscape while the idle timer is
+            #     armed leaves no stale timer behind: once hidden, rotating
+            #     to portrait and waiting well past the window produces no
+            #     console error and no element anywhere carries the
+            #     hidden-state class.
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+            )
+            page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+            page.wait_for_timeout(4600)
+            assert page.evaluate(
+                "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+            ) is True
+            page.set_viewport_size(PHONE_PORTRAIT)
+            page.wait_for_function("window.__bcfLayoutMode === 'portrait'")
+            page.wait_for_timeout(5000)
+            assert page.evaluate("document.querySelectorAll('.is-hidden').length") == 0
+            assert console_messages == []
+
+            browser.close()
+
             browser.close()

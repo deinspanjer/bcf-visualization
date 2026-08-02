@@ -2992,7 +2992,27 @@ function onLayoutMaybeChanged() {
     if (next === app.layoutMode) return;
     app.layoutMode = next;
     window.__bcfLayoutMode = next;
+    // Phase 3 (RESEARCH Pitfall 6/CONTEXT A2): reset the width-guard BEFORE
+    // render() so mobileScrubWidthDefaultForLayout() supplies THIS layout's
+    // default for the very first frame, instead of one frame rendering with
+    // the outgoing layout's stale ResizeObserver measurement (or the shared
+    // default) mis-binning the new track's width.
+    app.mobileRailWidthLayout = null;
     render();
+    // D-31: rotating into landscape counts as activity — the reader sees
+    // the controls they just rotated into, and the cinema view still
+    // appears for someone who then simply watches. This must run AFTER
+    // render(), because the cinema-scrub DOM ref
+    // (app.dom.mobileCinemaScrub, read by revealMobileChrome() and armed by
+    // resetMobileChromeHideTimer()) does not exist until cachePlaybackDomRefs()
+    // has run inside render() above. No setTimeout/debounce/pointer-state
+    // check is added here or anywhere else in this function — an ignored or
+    // deferred rotation reads to the reader as a freeze (D-22); the rAF
+    // coalescing above is the whole of the sanctioned debouncing.
+    if (next === "landscape") {
+      revealMobileChrome();
+      resetMobileChromeHideTimer();
+    }
   });
 }
 MOBILE_MQ.addEventListener("change", onLayoutMaybeChanged);
