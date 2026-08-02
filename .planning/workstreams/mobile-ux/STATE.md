@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Landscape Layout
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-01T23:59:16.975Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-08-02T00:24:23.980Z"
 last_activity: 2026-08-01
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 3 (Landscape Layout) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-01 — Phase 3 execution started
 
-Progress: [████████░░] 77%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [████████░░] 77%
 | Phase 02 P03 | 50min | 2 tasks | 4 files |
 | Phase 02 P04 | 66min | 2 tasks | 3 files |
 | Phase 3 P1 | 40min | 2 tasks | 5 files |
+| Phase 03 P02 | 65min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 03-01: mobileFieldLogPrincipalName generalizes the focal-label perk expression to every outcome (not just hit) instead of special-casing Miss text
 - [Phase ?]: 03-01: updateMobileFieldLogFrame writes the header's left constellation label and the cinema-scrub count span every frame (not only the header count span) so neither goes stale between list-rebuild keys
 - [Phase ?]: 03-01: app.mobileRailWidthLayout is added but not written to yet — Plan 02's ResizeObserver sets it; until then every structural render uses the layout-appropriate default
+- [Phase ?]: 03-02: revealMobileChrome()/resetMobileChromeHideTimer() implemented fully in Task 1's commit (not deferred to Task 2) since Task 1's onTap reveal branch calls them by name
+- [Phase ?]: 03-02: a tap with tap-to-pause OFF does not reset the chrome-hide timer, matching the plan's literal reset-call placement after togglePlayback() inside the tap-to-pause-gated branch
 
 ### Pending Todos
 
@@ -124,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-01T23:59:16.964Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-08-02T00:24:23.970Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None

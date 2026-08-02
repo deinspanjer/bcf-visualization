@@ -114,7 +114,7 @@ Plans:
   3. Rotating mid-playback swaps layouts with no visible remount, preserving word position, play state, speed, zoom, and preference toggles
   4. Flyouts dismiss on backdrop tap, keep focus trapped while open, and close on the mobile back gesture instead of leaving the app
 
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 
 Plans:
 **Wave 1**
@@ -123,7 +123,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 03-02-PLAN.md — One gesture-attach lifecycle for both layouts (D-34) + cinema-scrub drag + the 4000ms chrome auto-hide timer
+- [x] 03-02-PLAN.md — One gesture-attach lifecycle for both layouts (D-34) + cinema-scrub drag + the 4000ms chrome auto-hide timer
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -162,7 +162,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | 5/5 | Complete    | 2026-08-01 |
-| 3. Landscape Layout | 1/4 | In Progress|  |
+| 3. Landscape Layout | 2/4 | In Progress|  |
 | 4. Mobile Cutover & Accessibility | 0/TBD | Not started | - |
 
 ## Requirement Coverage
