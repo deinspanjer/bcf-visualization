@@ -102,6 +102,7 @@ Plans:
 **Two-pass architecture (Dre, 2026-08-01).** Curation is two sequenced stages, not one LLM extraction step. Stage 1 (this phase) is deterministic and reuses machinery that already exists; Stage 2 (Phase 4) applies inference *on top of* Stage 1's output rather than starting from raw prose.
 
 - **Stage 1 — deterministic candidate assembly (zero LLM).** Consumes `data/derived/roll_text_evidence.json` (per predicted roll: prose window, matched regex anchors, and an evidence grade of `direct`/`general_only`/`forward_ref`/`no_evidence`) produced by the existing `find_roll_locations.py` → `find_text_backed_rolls.py` Stage-1 chain, plus the `obtained_perks.json` bundle structure (paid perk first, then its cost-0 ride-alongs). Assembles candidate roll objects: bind the constellation named at the head of a connection passage, bind the paid perk that follows, group the bundle, and search the chapter forward for each free perk's name or substring — attaching the first mention as an additional quote, per the observed curation convention (see Phase 2 `02-CONTEXT.md` D-12).
+
 **Search posture** (`02-CONTEXT.md` D-13): Stage 1 is deliberately liberal — over-produce candidates, tolerate false positives, match name variants and substrings. Phase 2's verifier is the opposite tier — exact-or-reject with no fuzzy path in existence. Never conflate the two tunings.
 
 **Success Criteria** (what must be TRUE):
@@ -112,13 +113,13 @@ Plans:
   4. Word positions and roll ordinals are derived mechanically; Stage 1 emits candidates only and never writes to `chapter_roll_overrides.json`
   5. A candidate Stage 1 cannot support with evidence is emitted as evidence-not-found rather than guessed (`CURATION-CONVENTIONS.md` §5) — partial evidence is a correct outcome, not a failure
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 03-01-PLAN.md — Consolidate the four independent overrides loaders into one schema-validating loader; stamp all 118 entries `curated_by: "human"` (CINF-01, D-11)
-- [ ] 03-02-PLAN.md — Stage 1 deterministic candidate assembler: bind constellation/paid perk/bundle/free-perk evidence from `roll_text_evidence.json` + `obtained_perks.json` (ACUR-01 Stage 1)
+- [x] 03-02-PLAN.md — Stage 1 deterministic candidate assembler: bind constellation/paid perk/bundle/free-perk evidence from `roll_text_evidence.json` + `obtained_perks.json` (ACUR-01 Stage 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -172,7 +173,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 2/2 | Complete    | 2026-08-01 |
-| 3. Provenance Schema & Deterministic Candidate Assembly | 0/3 | Not started | - |
+| 3. Provenance Schema & Deterministic Candidate Assembly | 2/3 | In Progress|  |
 | 4. Inference Refinement, Confidence Gate & Routing | 0/TBD | Not started | - |
 | 5. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
 

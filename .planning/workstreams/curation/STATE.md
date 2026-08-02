@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 3
-current_plan: 2
+current_plan: 3
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-02T17:48:20.000Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-08-02T18:47:53.000Z"
 last_activity: 2026-08-02
-last_activity_desc: 03-01 complete — consolidated schema-validating overrides loader, 118 entries stamped human
+last_activity_desc: 03-02 complete — deterministic Stage 1 candidate assembler, positional binding, 718 candidates
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 workstream: curation
 created: 2026-07-26
 ---
@@ -24,15 +24,15 @@ created: 2026-07-26
 
 **Status:** Executing Phase 3
 **Current Phase:** 3
-**Current Plan:** 2
-**Last Activity:** 2026-08-02 — 03-01 complete — consolidated schema-validating overrides loader, 118 entries stamped human
-**Last Activity Description:** 03-01 complete — consolidated schema-validating overrides loader, 118 entries stamped human
+**Current Plan:** 3
+**Last Activity:** 2026-08-02 — 03-02 complete — deterministic Stage 1 candidate assembler, positional binding, 718 candidates
+**Last Activity Description:** 03-02 complete — deterministic Stage 1 candidate assembler, positional binding, 718 candidates
 
 ## Progress
 
 **Phases Complete:** 2 / 3
-**Plans Complete:** 7 / 9
-**Current Plan:** 03-02-PLAN.md — Stage 1 deterministic candidate assembler
+**Plans Complete:** 8 / 9
+**Current Plan:** 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ created: 2026-07-26
 | Phase 2 P01 | 25 min | 2 tasks | 6 files |
 | Phase 2 P03 | 55min | 3 tasks | 2 files |
 | 03-01 | 20 min | 3 tasks (1 tdd) | 4 created + 13 modified |
+| 03-02 | 19 min | 3 tasks (1 tdd) | 3 created |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ created: 2026-07-26
 - [03-01]: Consolidated all four `chapter_roll_overrides.json` readers into `scripts/chapter_roll_overrides_io.py:load_chapter_roll_overrides_doc`, schema-gated on a new `curated_by` (enum human|agent) required field; all 118 hand-curated entries stamped `curated_by: "human"` via a one-time idempotent bulk script.
 - [03-01]: Fixed a real data-destruction bug in `forge_curator/persistence.py`: `CurationPersistence.__init__` no longer routes the overrides load through `_load_or_default`'s broad except-Exception-return-default — an existing-but-malformed file now raises instead of silently becoming an empty document a later auto-save would overwrite the real corpus with.
 - [03-01]: `chapter_roll_overrides_io.py`'s sibling imports (`_common`, `data_paths`) use a try/except fallback to `scripts._common`/`scripts.data_paths` — discovered during Task 2 that the bare-import convention used by top-level scripts/*.py breaks when the module is imported package-qualified from the forge_curator TUI package (`python -m scripts.forge_curator` puts only the repo root, not `scripts/`, on `sys.path`).
+- [03-02]: Corrected the Stage 1 binding rule from anchor-gated (only 36/718 rolls could ever bind) to chapter-local POSITIONAL cursor advance through `multi_grab.merge_paid_units(overrides=None)`'s default bundle units — `"miss"` is the only anchor tag that still gates (skips) consumption; `"acquisition"` presence/absence only controls the `evidence_for:outcome` honesty marker. Live corpus: 718 candidates — 318 hit (6 anchor-confirmed, 312 positional-only), 24 miss, 376 fully unfilled.
+- [03-02]: Free-perk forward search's Tier 2 fallback uses a per-character (not per-token) hyphen/space-tolerant connector — the token-level join tried first could not match the plan's own cited example ("Altmode" vs. prose "alt-mode", a separator inserted where the perk name has none at all).
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ created: 2026-07-26
 
 ## Session Continuity
 
-Last session: 2026-08-02T17:48:20.000Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/workstreams/curation/phases/03-provenance-schema-deterministic-candidate-assembly/03-02-PLAN.md
+Last session: 2026-08-02T18:47:53.000Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: .planning/workstreams/curation/phases/03-provenance-schema-deterministic-candidate-assembly/03-03-PLAN.md
