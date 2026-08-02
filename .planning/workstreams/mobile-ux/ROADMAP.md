@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Mobile State & Gesture Plumbing** - Interview gate, layout-mode detection, gesture attach/detach contract, storage keys, desktop smoke test (completed 2026-07-26)
 - [x] **Phase 2: Portrait Layout** - Sky over mini-rail dock, sky gestures, zoom-aware rail scrub, cluster-binning, Settings/About/Help (completed 2026-08-01)
-- [ ] **Phase 3: Landscape Layout** - Sky plus field-log rail, cinema-scrub auto-hide, rotation state preservation, flyouts
+- [x] **Phase 3: Landscape Layout** - Sky plus field-log rail, cinema-scrub auto-hide, rotation state preservation, flyouts (completed 2026-08-02)
 - [ ] **Phase 4: Mobile Cutover & Accessibility** - Banner deletion, landing-page chip, aria-live, keyboard, reduced-motion, Lighthouse a11y ≥ 90
 
 ## Phase Details
@@ -162,7 +162,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | 5/5 | Complete    | 2026-08-01 |
-| 3. Landscape Layout | 4/4 | In Progress|  |
+| 3. Landscape Layout | 4/4 | Complete    | 2026-08-02 |
 | 4. Mobile Cutover & Accessibility | 0/TBD | Not started | - |
 
 ## Requirement Coverage
