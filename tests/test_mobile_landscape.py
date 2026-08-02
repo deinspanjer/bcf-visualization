@@ -345,3 +345,265 @@ def test_landscape_field_log_text_containment(tmp_path):
 
             assert console_messages == []
             browser.close()
+
+
+def _dense_rolls_facts(site):
+    facts_path = site.root / "data/packages/dense-rolls/visualization_facts.json"
+    return json.loads(facts_path.read_text())
+
+
+def _dense_rolls_positions_sorted(facts: dict) -> list[int]:
+    return sorted(
+        roll["epub_word_offset_predicted"]
+        for chapter in facts.get("chapters", [])
+        for roll in chapter.get("rolls", [])
+    )
+
+
+def _tiny_default_facts(site):
+    facts_path = site.root / "data/packages/tiny-default/visualization_facts.json"
+    return json.loads(facts_path.read_text())
+
+
+def _facts_total_words(facts: dict) -> int:
+    # Mirrors web/app.js buildStory()'s total_words — see test_mobile_
+    # portrait.py's own copy of this helper for the module-scope rationale.
+    chapters = facts.get("chapters", [])
+    return chapters[-1]["cumulative_words_through_chapter"] if chapters else 0
+
+
+def test_landscape_sky_gesture_contract(tmp_path):
+    # MOBL-02/D-34: the sky gesture callbacks generalize verbatim from
+    # portrait's own proofs (test_sky_gesture_contract and
+    # test_sky_tap_is_noop_when_tap_to_pause_off in tests/test_mobile_
+    # portrait.py) — a tap toggles playback when tap-to-pause is on, is a
+    # no-op when it's off, a double-tap snaps to the last roll at/before the
+    # playhead and resumes (never the story's final roll), and a horizontal
+    # swipe steps exactly one roll per 56px of travel, with zero structural
+    # re-renders across the swipe (D-07/T-02-05).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        mid_word = 5000
+        last_at_or_before = max(w for w in roll_positions if w <= mid_word)
+        final_roll_word = roll_positions[-1]
+        idx = roll_positions.index(last_at_or_before)
+        forward_two = roll_positions[idx + 2]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # Each phase opens its own fresh page seeded to the same starting
+            # bookmark, so a running playback tick from one phase's
+            # assertions can never drift the word position the next phase's
+            # assertions depend on.
+            def fresh_page(extra_storage=None):
+                storage = {
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": str(mid_word),
+                    "bcf:help-seen": "true",
+                }
+                if extra_storage:
+                    storage.update(extra_storage)
+                return _page_with_console_capture(
+                    browser, site, path="/web/?dataPackage=dense-rolls",
+                    viewport=PHONE_LANDSCAPE, storage=storage,
+                )
+
+            # A single tap toggles playback (the cinema-scrub FAB flips Play
+            # -> Pause), and a second single tap (spaced past the
+            # double-tap window) flips it back.
+            page, console_messages = fresh_page()
+            sky = page.locator(".mobile-sky")
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')).to_be_visible()
+            sky.click()
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(400)
+            sky.click()
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')).to_be_visible()
+            assert console_messages == []
+            page.close()
+
+            # Tap-to-pause off: a sky tap leaves play state unchanged.
+            page, console_messages = fresh_page({"bcf:tap-to-pause": "false"})
+            sky = page.locator(".mobile-sky")
+            fab_label_before = page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label")
+            sky.click()
+            page.wait_for_timeout(100)
+            assert page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label") == fab_label_before
+            assert console_messages == []
+            page.close()
+
+            # Double-tap snaps the playhead to the last roll at/before the
+            # pre-double-tap position and resumes — never the final roll.
+            page, console_messages = fresh_page()
+            sky = page.locator(".mobile-sky")
+            sky.dblclick()
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(50)
+            bookmark = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark == str(last_at_or_before)
+            assert int(bookmark) < final_roll_word
+            assert console_messages == []
+            page.close()
+
+            # Horizontal swipe: engagement costs SWIPE_ENGAGE (24px), then
+            # one roll per SCRUB_STEP_PX (56px) — a 140px drag yields exactly
+            # 2 roll-steps (24 + 2*56 = 136 <= 140 < 192), with zero
+            # structural re-renders (gestures ride the incremental tier
+            # only).
+            page, console_messages = fresh_page()
+            page.evaluate("window.__bcfRenderStats = { structuralRenders: 0 }")
+            sky = page.locator(".mobile-sky")
+            sky_box = sky.bounding_box()
+            assert sky_box is not None
+            x = sky_box["x"] + sky_box["width"] / 2
+            y = sky_box["y"] + sky_box["height"] / 2
+            page.mouse.move(x, y)
+            page.mouse.down()
+            for dx in range(8, 141, 8):
+                page.mouse.move(x + dx, y)
+            page.mouse.up()
+            page.wait_for_timeout(50)
+            bookmark_after_right = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark_after_right == str(forward_two)
+            assert page.evaluate("window.__bcfRenderStats.structuralRenders") == 0
+            assert console_messages == []
+
+            browser.close()
+
+
+def test_landscape_cinema_scrub_drag_is_monotonic_at_every_zoom(tmp_path):
+    # MOBL-02/D-17: the landscape cinema-scrub reuses the SAME
+    # attachRailScrub input path and the SAME frozen-auto-pan fix (ed59087,
+    # Phase 2's device-found monotonicity bug) portrait's own regression
+    # proof (test_rail_drag_is_monotonic_at_every_zoom) pins — a continuous
+    # rightward drag must never move the playhead backward, at every zoom
+    # level, from its first commit (not rediscovered on a second device).
+    #
+    # Mid-drag the bookmark key is not yet written (persistBookmarkNow runs
+    # on onScrubEnd), so this reads the live thumb marker's left% instead,
+    # which tracks wordPos through the incremental update tier — the defect
+    # this guards against lives strictly BETWEEN moves of one drag.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        total_words = _facts_total_words(_tiny_default_facts(site))
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            for zoom in (1, 2, 4, 8):
+                page, console_messages = _page_with_console_capture(
+                    browser,
+                    site,
+                    viewport=PHONE_LANDSCAPE,
+                    storage={
+                        "bcf:preview-port-storage-version": "3",
+                        "bcf:bookmark:word_position": str(total_words // 2),
+                        "bcf:timeline-zoom": str(zoom),
+                        "bcf:help-seen": "true",
+                    },
+                )
+
+                track_box = page.locator(".mobile-cinema-scrub-track").bounding_box()
+                assert track_box is not None
+                y = track_box["y"] + track_box["height"] / 2
+
+                def playhead_pct():
+                    raw = page.evaluate(
+                        "() => document.querySelector('.mobile-cinema-scrub-thumb')?.style.left ?? null"
+                    )
+                    assert raw is not None, "landscape cinema-scrub thumb not found"
+                    return float(raw.rstrip("%"))
+
+                def x_at(fraction):
+                    return track_box["x"] + track_box["width"] * fraction
+
+                # One drag: press at 30%, then sweep right without lifting.
+                page.mouse.move(x_at(0.30), y)
+                page.mouse.down()
+                page.wait_for_timeout(60)
+                observed = [playhead_pct()]
+                for fraction in (0.40, 0.50, 0.60, 0.70):
+                    page.mouse.move(x_at(fraction), y)
+                    page.wait_for_timeout(60)
+                    observed.append(playhead_pct())
+                page.mouse.up()
+
+                # Rightward drag => playhead never goes backward. Tolerance
+                # absorbs sub-pixel rounding in the percentage readback only.
+                for earlier, later in zip(observed, observed[1:]):
+                    assert later >= earlier - 0.01, (
+                        f"zoom {zoom}x: rightward drag moved the playhead backward "
+                        f"({earlier:.3f}% -> {later:.3f}%) across the full sweep {observed}"
+                    )
+
+                # And it must actually travel — a frozen mapping would be
+                # monotonic too, but useless.
+                assert observed[-1] > observed[0] + 1.0, (
+                    f"zoom {zoom}x: drag barely moved the playhead: {observed}"
+                )
+
+                assert console_messages == []
+                page.close()
+
+            browser.close()
+
+
+def test_landscape_gestures_survive_rerender_and_surface_toggle(tmp_path):
+    # D-34/Pitfall 3: opening a landscape flyout detaches both gesture
+    # surfaces (a sky tap while it's open never changes play state); closing
+    # it re-attaches exactly once (no double-binding from a stale listener
+    # surviving the structural re-render); and Tab-cycling past the last
+    # focusable inside the open flyout keeps focus trapped there — landscape's
+    # counterpart to test_surface_stack_focus_trap_and_back_gesture, proving
+    # the D-16 focus trap re-attaches outside portrait too (Pitfall 3).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+            )
+
+            page.click('[data-action="mobile-open-settings"]')
+            assert page.locator(".mobile-flyout").count() == 1
+            fab_label_before = page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label")
+            page.click(".mobile-sky", force=True)
+            assert page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label") == fab_label_before
+
+            # Focus trap (Pitfall 3 proof): Tab past every focusable control
+            # inside the open flyout more times than it has focusable
+            # children — focus stays inside, never escaping to the document.
+            focusable_selector = (
+                ".mobile-flyout button, .mobile-flyout [href], .mobile-flyout input, "
+                ".mobile-flyout select, .mobile-flyout textarea"
+            )
+            focusable_count = page.evaluate(
+                "(sel) => document.querySelectorAll(sel).length", focusable_selector,
+            )
+            for _ in range(focusable_count + 2):
+                page.keyboard.press("Tab")
+            assert page.evaluate(
+                "document.querySelector('.mobile-flyout').contains(document.activeElement)"
+            ) is True
+
+            # Close via the backdrop, then confirm a single sky tap after the
+            # structural re-render fires exactly once — a second, stale
+            # listener left over from the surface toggle would double-fire
+            # and desync the play state from a single tap.
+            page.locator(".mobile-flyout-backdrop").click(position={"x": 5, "y": 5})
+            assert page.locator(".mobile-flyout").count() == 0
+            fab_label_after_close = page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label")
+            page.locator(".mobile-sky").click()
+            expected = "Pause" if fab_label_after_close == "Play" else "Play"
+            assert page.locator(".mobile-cinema-scrub-fab").get_attribute("aria-label") == expected
+
+            assert console_messages == []
+            browser.close()

@@ -129,6 +129,14 @@ const app = {
   helpOpen: false,
   settingsOpen: false,
   chromeHidden: false,
+  // Phase 3 (D-34/RESEARCH Pattern 4): the landscape chrome auto-hide idle
+  // timer's setTimeout handle. Lives on `app`, not `app.dom` (which render()
+  // blanks every structural rebuild) and not a module-level closure (which
+  // would survive a landscape->portrait->landscape round trip without being
+  // clearable) — same reasoning already documented below for
+  // mobileSurfaceFocusTrapTeardown. Cleared unconditionally in
+  // attachMobileGestures()'s teardown block, before any re-attach.
+  mobileChromeHideTimer: null,
   tapToPause: readStoredBoolean(LS_TAP_TO_PAUSE, true),
   haptics: readStoredBoolean(LS_HAPTICS, true),
   helpSeen: readStoredBoolean(LS_HELP_SEEN, false),
@@ -1013,16 +1021,20 @@ function render() {
       style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;z-index:2147483647;",
     }));
     attachMobileGestureProbes();
-    if (app.layoutMode === "portrait") {
-      attachMobilePortraitGestures();
-      // D-16: the focus trap re-attaches to whichever surface node this
-      // render pass just built (or tears down if none is open) — never
-      // left pointing at a node the last clear(root) already detached.
-      if (app.mobileSurface) {
-        trapMobileSurfaceFocus(document.querySelector(".mobile-flyout, .mobile-help-overlay"));
-      } else {
-        teardownMobileSurfaceFocusTrap();
-      }
+    // Phase 3 (D-34/Pitfall 3): ONE gesture-attach lifecycle and ONE focus-
+    // trap re-attach serve BOTH mobile layouts — this whole block (both
+    // calls) moved from portrait-only to every non-desktop layout in a
+    // single edit, so a landscape flyout traps keyboard focus exactly like
+    // portrait's does, and never silently stays portrait-only while
+    // gesture-attach alone gets generalized.
+    attachMobileGestures();
+    // D-16: the focus trap re-attaches to whichever surface node this
+    // render pass just built (or tears down if none is open) — never
+    // left pointing at a node the last clear(root) already detached.
+    if (app.mobileSurface) {
+      trapMobileSurfaceFocus(document.querySelector(".mobile-flyout, .mobile-help-overlay"));
+    } else {
+      teardownMobileSurfaceFocusTrap();
     }
   }
 }
@@ -4215,17 +4227,88 @@ function updateMobileLandscapeFrame() {
   updateMobileFieldLogFrame();
 }
 
-// attachMobilePortraitGestures(): mirrors attachMobileGestureProbes's
-// lifecycle exactly (teardown stored on `app`, invoked defensively before
-// re-attach, called only from inside the render pass). Uses the NEW
-// mobileSkyTeardown/mobileRailTeardown slots — never app.mobileGestureTeardown,
-// which the Phase 1 probe owns. Both slots are torn down unconditionally
-// before the mobileSurface guard below so a stale listener never survives an
-// overlay opening/closing between renders (Plan 02-04 introduces
-// app.mobileSurface; treat a missing field as falsy today). Rail scrub
-// commits through the existing setWordPos path only (D-17): a single scrub
-// input, never a second raw pointer-listener override.
-function attachMobilePortraitGestures() {
+// mobileScrubSurfaceEl() (Phase 3, D-34): the ONE place the scrub-drag
+// surface selector lives — portrait's mini-rail vs. landscape's floating
+// cinema-scrub track. NEVER query .mobile-rail for landscape: that class is
+// portrait's mini-rail, and the landscape sidebar is deliberately named
+// .mobile-sidebar precisely so the two "rail" concepts can never be
+// conflated (03-PATTERNS.md's "rail vs rail" naming-collision warning).
+function mobileScrubSurfaceEl() {
+  return app.layoutMode === "landscape"
+    ? document.querySelector(".mobile-cinema-scrub-track")
+    : document.querySelector(".mobile-rail");
+}
+
+// rebuildMobileCinemaScrubTrack() (Phase 3, D-18/D-34): the landscape
+// counterpart of the ResizeObserver's portrait rolls-lane rebuild below —
+// replaces the cinema-scrub track's roll markers with the freshly-binned
+// set and re-caches the progress/thumb refs from the fresh children, so the
+// per-frame style writes in updateMobileLandscapeFrame() never target a
+// node this rebuild just detached.
+function rebuildMobileCinemaScrubTrack() {
+  const inner = app.dom.mobileCinemaScrubInner;
+  if (!inner) return;
+  inner.replaceChildren(...renderMobileCinemaScrubTrackChildren());
+  app.dom.mobileCinemaScrubProgress = inner.querySelector(".mobile-cinema-scrub-progress");
+  app.dom.mobileCinemaScrubThumb = inner.querySelector(".mobile-cinema-scrub-thumb");
+}
+
+// revealMobileChrome() (Phase 3, D-29/D-30): sets app.chromeHidden false and
+// removes the hidden-state class from the cached cinema-scrub node — the
+// scrub is the ONLY thing auto-hide ever hides; the top chips and the rail
+// stay visible so the field log stays readable (D-29). Performs no timer
+// work of its own so callers stay explicit about whether the idle window
+// should re-arm. Never calls render() — a structural render would tear down
+// and reattach every gesture listener.
+function revealMobileChrome() {
+  app.chromeHidden = false;
+  app.dom.mobileCinemaScrub?.classList.remove("is-hidden");
+}
+
+// resetMobileChromeHideTimer() (Phase 3, MOBL-02, RESEARCH Pattern 4): the
+// landscape chrome auto-hide idle-timer lifecycle. Always clears the
+// outstanding handle first, then — ONLY while landscape AND playing AND no
+// surface is open (D-28) — arms a fresh window that hides the scrub via a
+// class mutation on the cached DOM ref, never via render(). Called from
+// every discrete gesture-callback body below (the only sanctioned "any
+// touch happened" signal, since web/mobile-gestures.js is frozen and cannot
+// gain an onDown hook) and from togglePlayback()'s exits. Do NOT call this
+// from updateMobileLandscapeFrame() or key it on a wordPos comparison:
+// wordPos changes on every rAF tick during playback, so that keying (the
+// prototype's own reference bug) would re-arm the timer ~60 times a second
+// and the 4000ms window could never elapse (RESEARCH Pitfall 1) — if a
+// manual pass ever shows the scrub failing to fade during unattended
+// playback, this comment is the first thing to check.
+function resetMobileChromeHideTimer() {
+  clearTimeout(app.mobileChromeHideTimer);
+  app.mobileChromeHideTimer = null;
+  if (app.layoutMode === "landscape" && app.playing && !app.mobileSurface) {
+    app.mobileChromeHideTimer = setTimeout(() => {
+      app.chromeHidden = true;
+      // Optional chain: T-03-06 mitigation — a timer that outlives its
+      // owning layout/DOM must be a silent no-op, never a throw.
+      app.dom.mobileCinemaScrub?.classList.add("is-hidden");
+    }, window.GestureConstants?.CHROME_AUTOHIDE ?? 4000);
+  }
+}
+
+// attachMobileGestures() (Phase 3, D-34 — renamed/generalized from
+// attachMobilePortraitGestures): the SINGLE gesture-attach lifecycle for
+// BOTH mobile layouts. Mirrors attachMobileGestureProbes's lifecycle exactly
+// (teardown stored on `app`, invoked defensively before re-attach, called
+// only from inside the render pass). Uses the mobileSkyTeardown/
+// mobileRailTeardown/mobileRailResizeObserver/mobileChromeHideTimer slots —
+// never app.mobileGestureTeardown, which the Phase 1 probe owns. Every slot
+// is torn down unconditionally before the mobileSurface guard below so a
+// stale listener/timer never survives an overlay opening/closing between
+// renders or a layout transition away from landscape. Rail/cinema-scrub
+// scrub commits through the existing setWordPos path only (D-17): a single
+// scrub input, never a second raw pointer-listener override.
+//
+// The ONE hard branch point is the sky's onTap callback (D-30's reveal-vs-
+// pause ordering only exists in landscape) and mobileScrubSurfaceEl()'s
+// selector — every other callback body is identical for both layouts.
+function attachMobileGestures() {
   if (typeof app.mobileSkyTeardown === "function") {
     app.mobileSkyTeardown();
     app.mobileSkyTeardown = null;
@@ -4246,6 +4329,11 @@ function attachMobilePortraitGestures() {
     app.mobileRailResizeObserver.disconnect();
     app.mobileRailResizeObserver = null;
   }
+  // Phase 3 (Pattern 4/T-03-06): a stale auto-hide timer must never survive
+  // a re-attach or a layout transition away from landscape — cleared
+  // unconditionally, in the same position as the three teardown calls above.
+  clearTimeout(app.mobileChromeHideTimer);
+  app.mobileChromeHideTimer = null;
   // An open overlay (Settings/About/Help, Plan 02-04) owns input while
   // shown — a tap landing on the sky underneath it must never bubble into a
   // pause toggle, so neither gesture surface attaches while it's open.
@@ -4254,11 +4342,22 @@ function attachMobilePortraitGestures() {
   const skyEl = document.querySelector(".mobile-sky");
   if (skyEl && typeof window.attachSkyGestures === "function") {
     app.mobileSkyTeardown = window.attachSkyGestures(skyEl, {
-      // Tap is a no-op unless tap-to-pause is on — otherwise it toggles
-      // playback through the shared setter, same as the FAB/spacebar path.
       onTap: () => {
+        // D-30: the first tap on hidden landscape chrome ALWAYS reveals it,
+        // regardless of the tap-to-pause preference, and must never fall
+        // through to togglePlayback() in the same invocation — hidden
+        // chrome is never a trap. Evaluated FIRST, before the tap-to-pause
+        // check below.
+        if (app.layoutMode === "landscape" && app.chromeHidden) {
+          revealMobileChrome();
+          resetMobileChromeHideTimer();
+          return;
+        }
+        // Tap is a no-op unless tap-to-pause is on — otherwise it toggles
+        // playback through the shared setter, same as the FAB/spacebar path.
         if (!app.tapToPause) return;
         togglePlayback();
+        resetMobileChromeHideTimer();
       },
       // Snap to the last roll at or before the CURRENT playhead and resume —
       // never app.data.story.rolls.at(-1), which would teleport the reader
@@ -4267,6 +4366,7 @@ function attachMobilePortraitGestures() {
         const target = lastRollAtWord(app.wordPos);
         if (target) setWordPos(target.word_position);
         if (!app.playing) togglePlayback();
+        resetMobileChromeHideTimer();
       },
       // Swipe right (dir +1) is forward per INTEGRATION_PLAN.md §1's locked
       // decision; mobile-gestures.js already resolves dir from swipe
@@ -4274,14 +4374,18 @@ function attachMobilePortraitGestures() {
       onSwipeStep: dir => {
         const next = rollStepFrom(app.wordPos, dir);
         if (next) setWordPos(next.word_position);
+        resetMobileChromeHideTimer();
       },
-      onSwipeEnd: () => persistBookmarkNow(),
+      onSwipeEnd: () => {
+        persistBookmarkNow();
+        resetMobileChromeHideTimer();
+      },
     });
   }
 
-  const railEl = document.querySelector(".mobile-rail");
-  if (railEl && typeof window.attachRailScrub === "function") {
-    app.mobileRailTeardown = window.attachRailScrub(railEl, {
+  const scrubEl = mobileScrubSurfaceEl();
+  if (scrubEl && typeof window.attachRailScrub === "function") {
+    app.mobileRailTeardown = window.attachRailScrub(scrubEl, {
       onScrub: viewportFraction => {
         if (!app.data) return null;
         const total = app.data.story.total_words || 1;
@@ -4293,6 +4397,9 @@ function attachMobilePortraitGestures() {
         // on a Pixel 10 Pro XL, a monotonic rightward drag drove the playhead
         // 68k words BACKWARD before recovering. Auto-pan still applies to
         // playback and to taps — each tap is its own drag and re-captures.
+        // The landscape cinema-scrub inherits this exact fix by
+        // construction (same callback body, only the queried element
+        // differs) rather than rediscovering the bug on a second device.
         if (app.mobileScrubPanPct == null) {
           const playheadPctRaw = (app.wordPos / total) * 100;
           app.mobileScrubPanPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
@@ -4300,41 +4407,51 @@ function attachMobilePortraitGestures() {
         const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, app.mobileScrubPanPct);
         const target = Math.round(innerFrac * total);
         setWordPos(target);
+        resetMobileChromeHideTimer();
         return lastRollAtWord(target);
       },
       onScrubEnd: () => {
         app.mobileScrubPanPct = null;
         persistBookmarkNow();
+        resetMobileChromeHideTimer();
       },
     });
   }
 
-  // Rail width observer (MOBP-04, D-18): keeps app.mobileRailWidth current
-  // and recomputes bins on resize — coalesced through a single rAF, and
-  // replacing ONLY the rolls lane's children, never calling render(). A
-  // resize is not a structural-presence change; the sky/dock/chip DOM must
-  // stay untouched.
-  if (railEl && typeof ResizeObserver === "function") {
+  // Rail/cinema-scrub width observer (MOBP-04/D-18, generalized D-34): keeps
+  // app.mobileRailWidth current and recomputes bins on resize — coalesced
+  // through a single rAF, replacing ONLY the layout-appropriate "rolls lane"
+  // markup, never calling render(). A resize is not a structural-presence
+  // change; the rest of the DOM must stay untouched.
+  if (scrubEl && typeof ResizeObserver === "function") {
     let rafId = null;
     const ro = new ResizeObserver(entries => {
       const cr = entries[0]?.contentRect;
       if (!cr) return;
       app.mobileRailWidth = Math.max(50, cr.width);
+      // Phase 3 (Pitfall 6/CONTEXT A2): record which layout this
+      // measurement belongs to so a stale cross-layout width is never used
+      // to bin the OTHER layout's differently-sized scrub track.
+      app.mobileRailWidthLayout = app.layoutMode;
       if (rafId != null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
         recomputeMobileRailBins();
-        const rollsLane = app.dom.mobileRailRollsLane;
-        if (rollsLane) {
-          rollsLane.replaceChildren(...renderMobileRailRollsLaneChildren());
-          // The active dot is rebuilt along with the bins — re-cache the
-          // ref so updateMobileActiveDotFrame() never writes into a node
-          // this resize just detached from the DOM.
-          app.dom.mobileActiveDot = rollsLane.querySelector(".mobile-roll-dot.active");
+        if (app.layoutMode === "landscape") {
+          rebuildMobileCinemaScrubTrack();
+        } else {
+          const rollsLane = app.dom.mobileRailRollsLane;
+          if (rollsLane) {
+            rollsLane.replaceChildren(...renderMobileRailRollsLaneChildren());
+            // The active dot is rebuilt along with the bins — re-cache the
+            // ref so updateMobileActiveDotFrame() never writes into a node
+            // this resize just detached from the DOM.
+            app.dom.mobileActiveDot = rollsLane.querySelector(".mobile-roll-dot.active");
+          }
         }
       });
     });
-    ro.observe(railEl);
+    ro.observe(scrubEl);
     app.mobileRailResizeObserver = ro;
   }
 }
