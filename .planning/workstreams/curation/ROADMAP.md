@@ -93,7 +93,9 @@ Plans:
 **Goal**: Every override entry declares who curated it, and a deterministic pass proposes candidate curations from prose the pipeline already indexes — measured against the hand-curated corpus before any inference is bought
 **Mode:** mvp
 **Depends on**: Phase 2
-**Requirements**: CINF-01, ACUR-01 (Stage 1 half)
+**Requirements**: CINF-01, ACUR-01
+
+> ACUR-01 is delivered across two phases: its Stage 1 (deterministic assembly) half here, its Stage 2 (inference) half in Phase 4.
 
 > **Split applied 2026-08-01 (Dre pre-approved the split guidance).** This was one phase covering both stages plus confidence/routing/idempotency — five requirements and an unbounded calibration loop. Stage 2 and everything that depends on it now live in Phase 4. The stage boundary is the natural seam: Stage 1 is independently valuable, independently verifiable with zero LLM cost, and its measured accuracy is the evidence that decides how much inference is worth buying.
 
@@ -110,7 +112,18 @@ Plans:
   4. Word positions and roll ordinals are derived mechanically; Stage 1 emits candidates only and never writes to `chapter_roll_overrides.json`
   5. A candidate Stage 1 cannot support with evidence is emitted as evidence-not-found rather than guessed (`CURATION-CONVENTIONS.md` §5) — partial evidence is a correct outcome, not a failure
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Consolidate the four independent overrides loaders into one schema-validating loader; stamp all 118 entries `curated_by: "human"` (CINF-01, D-11)
+- [ ] 03-02-PLAN.md — Stage 1 deterministic candidate assembler: bind constellation/paid perk/bundle/free-perk evidence from `roll_text_evidence.json` + `obtained_perks.json` (ACUR-01 Stage 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus, per evidence class; commit the report (ACUR-01 Stage 1 measurement)
+
 **Notes**: The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — respect the existing predicted-mode mapping rather than inventing one. Measured 2026-08-01 over 718 predicted rolls: `forward_ref` 485 (68%), `direct` 132 (18%), `no_evidence` 74 (10%), `general_only` 27 (4%) — so Stage 1 should be expected to do well on a minority of rolls, and that distribution is exactly why the Phase 4 split exists.
 
 ### Phase 4: Inference Refinement, Confidence Gate & Routing
@@ -118,7 +131,9 @@ Plans:
 **Goal**: An inference pass grades Stage 1's candidates and recovers what heuristics cannot, and output is routed by confidence into the trusted corpus or a proposals queue — never silently degrading either
 **Mode:** mvp
 **Depends on**: Phase 3
-**Requirements**: CINF-04, ACUR-01 (Stage 2 half), ACUR-02, ACUR-03
+**Requirements**: CINF-04, ACUR-01, ACUR-02, ACUR-03
+
+> ACUR-01's Stage 2 (inference) half lands here; its Stage 1 half was delivered in Phase 3.
 
 **Stage 2 — inference refinement and grading.** Grades Stage 1's candidates into a confidence signal and teases out what deterministic heuristics cannot reach — principally the `forward_ref` (68% of rolls) and `no_evidence` classes, retrospective phrasing, and misses whose constellation is named only obliquely. Operates on Stage 1 output, never on raw prose from scratch.
 
@@ -157,7 +172,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 2/2 | Complete    | 2026-08-01 |
-| 3. Provenance Schema & Deterministic Candidate Assembly | 0/TBD | Not started | - |
+| 3. Provenance Schema & Deterministic Candidate Assembly | 0/3 | Not started | - |
 | 4. Inference Refinement, Confidence Gate & Routing | 0/TBD | Not started | - |
 | 5. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
 
