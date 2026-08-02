@@ -32,8 +32,10 @@ from collections import Counter
 from pathlib import Path
 
 try:
+    from chapter_roll_overrides_io import load_chapter_roll_overrides_doc
     from regime_simulator import regime_for_chapter
 except ModuleNotFoundError:
+    from scripts.chapter_roll_overrides_io import load_chapter_roll_overrides_doc
     from scripts.regime_simulator import regime_for_chapter
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -309,7 +311,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
 
-    overrides_doc = json.loads(args.overrides.read_text())
+    overrides_doc = load_chapter_roll_overrides_doc(args.overrides)
     chapter_facts_doc = json.loads(args.chapter_facts.read_text())
     transitions_doc = json.loads(args.transitions.read_text())
     transitions = list(transitions_doc.get("transitions") or [])
