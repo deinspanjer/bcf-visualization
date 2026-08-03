@@ -11,8 +11,8 @@ created: 2026-08-02
 # Phase 4 — Validation Strategy
 
 > Per-phase validation contract for feedback sampling during execution.
-> Derived from `04-RESEARCH.md` § Validation Architecture. Supersedes the pre-D-25 draft,
-> which assumed a metered API and a mocked `anthropic` client.
+> Rewritten 2026-08-02 for the descoped one-plan phase. The confidence-gate, ledger, and
+> calibration test rows moved to Phase 5 along with the behaviors they cover.
 
 ---
 
@@ -25,26 +25,30 @@ created: 2026-08-02
 | **Quick run command** | `PYTHONPATH=scripts .venv/bin/python -m pytest tests/test_stage2_*.py -q` |
 | **Full suite command** | `.venv/bin/python scripts/verify.py` |
 | **Estimated runtime** | ~120s full suite |
-| **Data isolation** | `tests/conftest.py` copies `data/` to `tests/.tmp-data/data-<pid>/` via `BCF_DATA_DIR` at import time — already active, so routing tests cannot touch the real corpus |
+| **Data isolation** | `tests/conftest.py` copies `data/` to `tests/.tmp-data/data-<pid>/` via `BCF_DATA_DIR` at import time — already active |
 
 ---
 
 ## The core principle for this phase
 
-**No live inference in the default test path — none, anywhere.** The transport is proven once
-by an explicitly-marked manual step in the tracer, and never again in CI. Everything downstream
-is a pure function over a *recorded submission payload*.
+**No live inference in the default test path — none, anywhere.** The transport is proven twice by
+explicitly-marked manual steps (Task 1's smoke run, Task 3's real run) and never in CI. Everything
+else is a pure function over the recorded submission fixture.
 
-Do **not** build a recorded multi-turn transcript fixture — with read tools in the surface a
-transcript replay is brittle and buys nothing. Record only the final submission payload and
-drive `process_stage2_response()` with it.
+Do **not** build a multi-turn transcript fixture — with read tools in the surface a transcript replay
+is brittle and buys nothing. Record only the final submission payload
+(`tests/fixtures/stage2_submission_sample.json`) and drive `process_stage2_response()` with it.
+
+**The strongest guarantee in this phase is structural, not behavioral:** there is no corpus write
+path at all. `! grep -rn "write_chapter_roll_overrides_doc" scripts/stage2_*.py scripts/run_stage2_chapter.py`
+proves more than any routing test could, because it removes the failure mode rather than checking for it.
 
 ---
 
 ## Sampling Rate
 
 - **After every task commit:** `PYTHONPATH=scripts .venv/bin/python -m pytest tests/test_stage2_*.py -q`
-- **After every plan wave:** `.venv/bin/python -m pytest -q` — compare the failure set against the baseline below
+- **After the wave:** `.venv/bin/python -m pytest -q` — compare the failure set against the baseline
 - **Before `/gsd-verify-work`:** `.venv/bin/python scripts/verify.py` — **no NEW failures**
 - **Max feedback latency:** ~120 seconds
 
@@ -58,89 +62,49 @@ drive `process_stage2_response()` with it.
 
 ## Per-Task Verification Map
 
-Task IDs filled by the planner. Behaviors and commands are fixed by research and must be preserved.
-
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 04-02-T1 | 04-02 | 2 | ACUR-01 | T-04-13 | D-05a adapter starts byte-identical to `_chapter_word_index`; length preserved | unit | `pytest tests/test_stage2_retrieval.py::test_adapter_offsets_match_cp_word_index -x` | ❌ W0 | ⬜ pending |
-| 04-02-T1 | 04-02 | 2 | ACUR-01 | T-04-14 | Adapter yields >3 paragraphs on a real chapter (Pitfall 3 regression guard) | unit | `pytest tests/test_stage2_retrieval.py::test_paragraph_segmentation -x` | ❌ W0 | ⬜ pending |
-| 04-02-T2 | 04-02 | 2 | ACUR-01 | — | D-01 union includes miss-matcher output for every miss-outcome candidate | unit | `pytest tests/test_stage2_retrieval.py::test_union_includes_miss_candidates -x` | ❌ W0 | ⬜ pending |
-| 04-02-T2 | 04-02 | 2 | ACUR-01 | T-04-15 | Exemplar self-exclusion: target chapter never appears in its own prefix | unit | `pytest tests/test_stage2_prompt.py::test_target_chapter_excluded -x` | ❌ W0 | ⬜ pending |
-| 04-01-T2 | 04-01 | 1 | ACUR-01 | T-04-05 | `submit_stage2_rolls` `inputSchema` rejects a malformed payload (the D-26 guarantee) | unit | `pytest tests/test_stage2_mcp_schema.py -x` | ❌ W0 | ⬜ pending |
-| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | MCP tool handler is a thin delegate — invokes `process_stage2_response` and nothing else | unit (async) | `pytest tests/test_stage2_mcp_server.py::test_handler_delegates -x` | ❌ W0 | ⬜ pending |
-| 04-01-T2 | 04-01 | 1 | ACUR-01 | T-04-01 | **Server exposes no write/route/destination tool** (propose-only invariant) | unit | `pytest tests/test_stage2_mcp_server.py::test_tool_surface_is_propose_only -x` | ❌ W0 | ⬜ pending |
+| 04-01-T1 | 04-01 | 1 | ACUR-01 | T-04-01 | Server exposes exactly the three propose-only tools (set equality) | unit | `pytest tests/test_stage2_mcp_server.py::test_tool_surface_is_propose_only -x` | ❌ W0 | ⬜ pending |
+| 04-01-T1 | 04-01 | 1 | ACUR-01 | T-04-05 | `submit_stage2_rolls` schema rejects a malformed payload and unknown keys | unit | `pytest tests/test_stage2_mcp_server.py::test_submit_schema_rejects_malformed -x` | ❌ W0 | ⬜ pending |
+| 04-01-T1 | 04-01 | 1 | ACUR-01 | T-04-06 | Server socket closes even when the run body raises | unit | `pytest tests/test_stage2_mcp_server.py::test_server_shutdown_on_exception -x` | ❌ W0 | ⬜ pending |
+| 04-01-T1 | 04-01 | 1 | ACUR-01 | T-04-01 | **No corpus write path exists in any Stage 2 module** | grep | `! grep -rn "write_chapter_roll_overrides_doc" scripts/stage2_*.py scripts/run_stage2_chapter.py` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | Adapter word starts byte-identical to `_chapter_word_index` on ≥3 real chapters | unit | `pytest tests/test_stage2_prose.py::test_adapter_offsets_match_cp_word_index -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | Adapter yields >3 paragraphs on a real chapter (Pitfall 3 guard) | unit | `pytest tests/test_stage2_prose.py::test_paragraph_segmentation -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | Adapter preserves string length | unit | `pytest tests/test_stage2_prose.py::test_adapter_preserves_length -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | One word-offset pipeline only — no `data_loader` import in Stage 2 | grep | `! grep -rn "data_loader" scripts/stage2_*.py` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | Rolls map by explicit `slot_index`, never list position; duplicate → `isError` | unit | `pytest tests/test_stage2_response.py::test_slot_index_not_positional -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | An unverifiable quote becomes evidence-not-found with no invented position, model text preserved | unit | `pytest tests/test_stage2_response.py::test_unverified_quote_becomes_evidence_not_found -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | Quote-less rolls (WoG, evidence-not-found) and an empty `rolls` array are valid outcomes | unit | `pytest tests/test_stage2_response.py::test_quoteless_roll_accepted -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | — | Proposals are maximally pre-filled (quote, position, constellation, grouping, per-field record) | unit | `pytest tests/test_stage2_response.py::test_proposal_is_fully_prefilled -x` | ❌ W0 | ⬜ pending |
+| 04-01-T2 | 04-01 | 1 | ACUR-01 | T-04-07 | Read-tool caps are inclusive integers; 400-word span served in full | unit | `pytest tests/test_stage2_mcp_server.py::test_read_tool_caps_inclusive -x` | ❌ W0 | ⬜ pending |
 | 04-01-T2 | 04-01 | 1 | ACUR-01 | T-04-02 | Read tools record nothing and return no destination | unit | `pytest tests/test_stage2_mcp_server.py::test_read_tools_are_side_effect_free -x` | ❌ W0 | ⬜ pending |
-| 04-03-T1 | 04-03 | 2 | ACUR-02 | T-04-04 | Gate: pass + agreement → high even with `self_reported_confidence: "low"` | unit | `pytest tests/test_stage2_confidence.py::test_self_report_never_promotes -x` | ❌ W0 | ⬜ pending |
-| 04-03-T1 | 04-03 | 2 | ACUR-02 | T-04-04 | Gate: verifier fail + self-report "high" → low | unit | `pytest tests/test_stage2_confidence.py -x` | ❌ W0 | ⬜ pending |
-| 04-03-T1 | 04-03 | 2 | ACUR-02 | T-04-16 | Gate: `bundle_source is None` → `structural_agreement False` even on passing verify | unit | `pytest tests/test_stage2_confidence.py -x` | ❌ W0 | ⬜ pending |
-| 04-03-T1 | 04-03 | 2 | ACUR-02 | — | Gate: `constellation_check == "mechanical_overrides"` → low | unit | `pytest tests/test_stage2_confidence.py -x` | ❌ W0 | ⬜ pending |
-| 04-03-T3 | 04-03 | 2 | ACUR-03 | T-04-01 | High-confidence chapter → corpus entry with `curated_by: "agent"` | integration | `pytest tests/test_stage2_routing.py::test_high_confidence_writes_corpus -x` | ❌ W0 | ⬜ pending |
-| 04-01-T3 | 04-01 | 1 | ACUR-03 | — | Low-confidence chapter → proposals sidecar, validating against its schema | integration | `pytest tests/test_stage2_routing.py::test_low_confidence_writes_proposals -x` | ❌ W0 | ⬜ pending |
-| 04-03-T2 | 04-03 | 2 | ACUR-03 | T-04-17 | D-17: proposals and corpus branches receive **identical** assembled roll objects | unit | `pytest tests/test_stage2_routing.py::test_proposal_richness_equals_corpus -x` | ❌ W0 | ⬜ pending |
-| 04-01-T3 | 04-01 | 1 | CINF-04 | T-04-01 | A `curated_by: "human"` chapter is NEVER written to corpus, whatever the confidence | integration | `pytest tests/test_stage2_routing.py::test_never_overwrites_human -x` | ❌ W0 | ⬜ pending |
-| 04-04-T1 | 04-04 | 3 | CINF-04 | T-04-19 | D-20: prose / candidates / `prompt_version` / `tool_surface_version` / `model` each change the fingerprint | unit (5 params) | `pytest tests/test_stage2_ledger.py::test_fingerprint_covers_all_inputs -x` | ❌ W0 | ⬜ pending |
-| 04-04-T1 | 04-04 | 3 | CINF-04 | T-04-19 | D-20: a chapter at an unchanged fingerprint is skipped and produces no diff | integration | `pytest tests/test_stage2_ledger.py::test_rerun_is_noop -x` | ❌ W0 | ⬜ pending |
-| 04-04-T1 | 04-04 | 3 | CINF-04 | T-04-08 | `read_set` is recorded but does **not** affect the fingerprint | unit | `pytest tests/test_stage2_ledger.py::test_read_set_not_in_fingerprint -x` | ❌ W0 | ⬜ pending |
-| 04-04-T2 | 04-04 | 3 | CINF-04 | T-04-11 | Every transport failure mode maps to its ledger state and writes no partial entry | unit | `pytest tests/test_stage2_transport.py::test_failure_states -x` | ❌ W0 | ⬜ pending |
-| 04-01-T3 | 04-01 | 1 | — | T-04-05 | **Guard: no test constructs a live transport** | grep | `! grep -rn "ClaudeCliTransport(" tests/` | ❌ W0 | ⬜ pending |
-| 04-04-T3 | 04-04 | 3 | CINF-04 | T-04-20 | `--allow-uncurated` defaults to refusing; no in-repo caller passes it | unit + grep | `pytest tests/test_stage2_transport.py -q` and `grep -rn 'allow_uncurated' scripts/ \| grep -v run_stage2_batch.py` | ❌ W0 | ⬜ pending |
-| 04-04-T3 | 04-04 | 3 | ACUR-01 | T-04-06 | The warm MCP server is torn down even when the batch body raises | unit | `pytest tests/test_stage2_transport.py -q` | ❌ W0 | ⬜ pending |
-| 04-05-T2 | 04-05 | 4 | ACUR-02 | T-04-15 | The calibration/held-out split is deterministic, disjoint, and re-derives the stub set | unit | `pytest tests/test_stage2_calibration_split.py -q` | ❌ W0 | ⬜ pending |
-| 04-06-T2 | 04-06 | 5 | ACUR-01 | T-04-23 | Stage 2 is scored on Phase 3's three-tier curated-position ladder, per evidence class | unit | `pytest tests/test_measure_stage2_accuracy.py -q` | ❌ W0 | ⬜ pending |
-| 04-06-T3 | 04-06 | 5 | ACUR-02 | T-04-24 | `is_boundary` is a measurement partition only and is consulted by no routing module | unit + grep | `pytest tests/test_measure_stage2_accuracy.py -q` and `grep -rn 'is_boundary' scripts/stage2_confidence.py scripts/stage2_routing.py scripts/stage2_response.py` | ❌ W0 | ⬜ pending |
+| 04-01-T3 | 04-01 | 1 | ACUR-01 | T-04-01 | The trusted corpus is byte-unchanged by a real run | integration | `git diff --exit-code data/manual/chapter_roll_overrides.json` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-
-### What each layer proves
-
-- **The MCP `inputSchema`** proves *shape only* — that a submission is structurally well-formed.
-  It proves nothing about correctness and is never a substitute for the confidence gate (D-26 says
-  exactly this). Test it directly against the schema constant with `jsonschema`; no server, no transport.
-- **The recorded-submission fixture** proves the entire verify → grade → route → never-overwrite
-  path. This is where the phase's real behavior lives, and it needs zero inference.
-- **Pure functions** (retrieval union, D-05a adapter, fingerprint, gate, ledger skip rule, proposals
-  assembly) are directly unit-testable with synthetic fixtures, per the repo's `build_*`/`verify_*`
-  test convention.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_stage2_mcp_schema.py` — ACUR-01 (the D-26 schema guarantee) — **Plan 04-01 T2**
-- [ ] `tests/test_stage2_mcp_server.py` — ACUR-01 (propose-only invariant, thin delegation, read-tool purity, cap boundaries) — **Plan 04-01 T2**
-- [ ] `tests/test_stage2_routing.py` — ACUR-03 + CINF-04 (proposals landing, never-overwrite) — **Plan 04-01 T3**; extended with corpus write, richness parity and the agent-rewrite case in **Plan 04-03 T2/T3**
-- [ ] `tests/fixtures/stage2_submission_ch92.json` — the recorded submission payload every downstream test drives from — **Plan 04-01 T3**
-- [ ] `tests/test_stage2_retrieval.py` — ACUR-01 (D-05a adapter, D-01 union, dedupe/order/empty) — **Plan 04-02 T1/T2**
-- [ ] `tests/test_stage2_prompt.py` — ACUR-01 (exemplar self-exclusion, prefix composition) — **Plan 04-02 T2**
-- [ ] `tests/test_stage2_confidence.py` — ACUR-02 (four gate cases, self-report inertness) — **Plan 04-03 T1**
-- [ ] `tests/test_stage2_ledger.py` — CINF-04 (fingerprint coverage, rerun no-op, read-set exclusion) — **Plan 04-04 T1**
-- [ ] `tests/test_stage2_transport.py` — failure-mode → ledger-state mapping, uncurated guard, server teardown — **Plan 04-04 T2/T3**
-- [ ] `tests/test_stage2_calibration_split.py` — ACUR-02 (deterministic, disjoint, re-derived stub set) — **Plan 04-05 T2**
-- [ ] `tests/test_measure_stage2_accuracy.py` — ACUR-01/ACUR-02 (position ladder, class denominators, boundary partition) — **Plan 04-06 T2/T3**
+- [ ] `tests/test_stage2_mcp_server.py` — tool surface, schema rejection, shutdown, read-tool caps and purity
+- [ ] `tests/test_stage2_prose.py` — D-33 adapter (offsets, segmentation, length)
+- [ ] `tests/test_stage2_response.py` — slot mapping, evidence-not-found, quote-less rolls, pre-fill richness
+- [ ] `tests/fixtures/stage2_submission_sample.json` — the recorded submission payload every downstream test drives from
 - [ ] Framework install: **none needed** — `pytest` and `pytest-asyncio` are already in the `dev` extra
 
 ---
 
 ## Manual-Only Verifications
 
-Only these four genuinely require a live harness. Each is an explicitly-marked manual or
-checkpoint step, never a CI test.
+| Behavior | Task | Requirement | Why Manual | Test Instructions |
+|----------|------|-------------|------------|-------------------|
+| Package legitimacy for `mcp` | 04-01-T1 | ACUR-01 | Threat T-04-05 — a human eye on a new dependency before install. Short check, not a ceremony. | Confirm `modelcontextprotocol/python-sdk`, MIT, pin excludes the days-old 2.0.0 |
+| Transport smoke run — warm server connects, stub handler records a submission | 04-01-T1 | ACUR-01 | Requires a live subscribed harness; retires the integration risk before pipeline code exists | One `claude -p` invocation; assert **handler-side state**, never the exit code. Record `num_turns`, `duration_ms`, `usage`. |
+| Real run on 4–6 curated chapters | 04-01-T3 | ACUR-01 | Live harness | Run `run_stage2_chapter.py`; emit the per-chapter report |
+| **Does this save Dre work?** | 04-01-T3 | ACUR-01 | This is the phase's actual success criterion, and only Dre can answer it | `checkpoint:decision` — review the proposals and report; also decide `get_prose_span`'s fate from its instrumented numbers |
 
-| Task ID | Behavior | Requirement | Why Manual | Test Instructions |
-|---------|----------|-------------|------------|-------------------|
-| 04-01-T1 | Package-legitimacy gate for `mcp>=1.29,<2` (threat T-04-05) | ACUR-01 | Supply-chain judgement a seam cannot make; D-27 explicitly does not waive it, and it is never auto-approvable | `checkpoint:human-verify` `gate="blocking-human"` **before** any install; confirm LF stewardship, release history, MIT license and the 1.x pin on `pypi.org/project/mcp` |
-| 04-01-T2 | Transport smoke test — warm loopback HTTP MCP server connects and a submission lands | ACUR-01 | Requires a live subscribed harness; retires the D-25/D-26 integration risk before pipeline code exists | `scripts/stage2_mcp_server.py --smoke-test` starts the server on the loopback interface at an ephemeral port, invokes `claude -p` per the researched flag set, and asserts **handler-side state** (a valid submission arrived) — never the subprocess exit code |
-| 04-01-T3 | Tracer's one real end-to-end run on a single curated chapter | ACUR-01/02/03 | The tracer's whole point is that the real transport is exercised, not stubbed | `scripts/run_stage2_chapter.py --chapter 92 --model opus`; verify the proposals entry landed, the corpus diff is empty, and the `usage` block was recorded |
-| 04-05-T1 | Calibration run-size approval | ACUR-02 | Consumes Dre's subscription usage window; D-29 re-framed this from a dollar approval to a run-size approval | `checkpoint:decision`; present calibration-side chapter count, measured per-chapter wall clock and `usage` from 04-01, and projected totals per tier |
-| 04-05-T3 | D-28 Opus-vs-Sonnet comparison | ACUR-02 | Model-tiering must be data-driven, not asserted; requires two live runs over identical inputs | Operator-invoked at the approved size; recommendation is provisional until 04-06 confirms it on held-out |
-| 04-06-T1 | Held-out run-size approval and end-of-tuning confirmation | ACUR-01/02 | Reading held-out is a once-only act; after it, no parameter may change | `checkpoint:decision`; present the three calibration verdicts with their numbers and the held-out chapter and `is_boundary` counts |
-| Phase 5 | D-24 approval before the first run against **uncurated** chapters | ACUR-03 | No ground truth exists past that line — money was never the justification | `checkpoint:decision`; Dre reviews calibration and held-out numbers first. **Phase 4 never crosses it**; Plan 04-04 T3 builds the `--allow-uncurated` guard, and Phase 5 must add the checkpoint — the flag alone is necessary but not sufficient |
-
-**Spend policy (revised per D-29):** there is no per-token dollar cost, so the struck D-23 cost
-estimator and `--ceiling-usd` cap are gone. The scarce resources are Dre's subscription usage
-window and wall clock. Bound runs by **chapter count and concurrency**, log the harness's
-`usage` block into every ledger entry, and rely on ledger resumability so an interrupted run
-restarts free.
+**Spend policy:** no per-token dollar cost (D-25). Bound runs by chapter count and concurrency
+(default 2), and log the harness `usage` block so run size is measurable rather than guessed.
 
 ---
 
@@ -148,6 +112,7 @@ restarts free.
 
 - [ ] All tasks have `<automated>` verify or Wave 0 dependencies
 - [ ] **No test in the default suite performs live inference**
+- [ ] **No Stage 2 module imports the corpus writer** (structural, grep-proven)
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags

@@ -23,8 +23,8 @@ Within this workstream, phases are strictly sequential — each stage's correctn
 - [x] **Phase 1: Epub Refresh & Exemplar Mining** - Latest chapters hydrated, pipeline green, regime-tagged exemplar index from the 118-chapter corpus (completed 2026-07-26)
 - [x] **Phase 2: Mechanical Verifier** - Deterministic quote/word-position/perk-name verification baselined at 100% on hand-curated chapters (completed 2026-08-01)
 - [x] **Phase 3: Provenance Schema & Deterministic Candidate Assembly** - `curated_by` field rewrite, plus Stage 1: deterministic roll-candidate assembly from existing anchor/prose-window machinery, baselined against the hand-curated corpus. Zero LLM. (completed 2026-08-02)
-- [ ] **Phase 4: Inference Refinement, Confidence Gate & Routing** - Stage 2: inference pass that grades Stage 1 candidates and recovers what heuristics cannot; confidence gate, overrides/proposals routing, agent-run ledger idempotency
-- [ ] **Phase 5: Proposal Review & Full Batch Run** - Forge Curator proposal review flow plus the full batch over remaining chapters
+- [ ] **Phase 4: Stage 2 Inference → Proposals** - Stage 2: inference pass that finds, positions, and attaches evidence quotes; everything lands in a proposals file for review. No corpus writes.
+- [ ] **Phase 5: Review, Confidence Gate & Full Batch Run** - Forge Curator proposal review flow, the confidence gate and corpus-write path built against real proposal data, ledger idempotency, and the full batch over remaining chapters
 
 ## Phase Details
 
@@ -127,73 +127,59 @@ Plans:
 
 **Notes**: The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — respect the existing predicted-mode mapping rather than inventing one. Measured 2026-08-01 over 718 predicted rolls: `forward_ref` 485 (68%), `direct` 132 (18%), `no_evidence` 74 (10%), `general_only` 27 (4%) — so Stage 1 should be expected to do well on a minority of rolls, and that distribution is exactly why the Phase 4 split exists.
 
-### Phase 4: Inference Refinement, Confidence Gate & Routing
+### Phase 4: Stage 2 Inference → Proposals
 
-**Goal**: An inference pass grades Stage 1's candidates and recovers what heuristics cannot, and output is routed by confidence into the trusted corpus or a proposals queue — never silently degrading either
+**Goal**: Chapters come back with their evidence quotes already found, positioned, and attached, sitting in a proposals file for Dre to review — so the tedious part of curation is done before he opens the TUI
 **Mode:** mvp
 **Depends on**: Phase 3
-**Requirements**: CINF-04, ACUR-01, ACUR-02, ACUR-03
+**Requirements**: ACUR-01
 
 > ACUR-01's Stage 2 (inference) half lands here; its Stage 1 half was delivered in Phase 3.
 
-**Stage 2 — inference refinement and grading.** Grades Stage 1's candidates into a confidence signal and teases out what deterministic heuristics cannot reach — principally the `forward_ref` (68% of rolls) and `no_evidence` classes, retrospective phrasing, and misses whose constellation is named only obliquely. Operates on Stage 1 output, never on raw prose from scratch.
+> **Descoped 2026-08-02 (Dre).** This phase was previously "Inference Refinement, Confidence Gate & Routing" and was planned twice — five plans against a metered API, then six against the subscribed harness. Dre called the second version over-engineered relative to its value, and he is right: `04-CONTEXT.md`'s own value function says *"A run that auto-writes little but hands back 80 densely pre-filled chapters is a success."* The confidence gate, the agent-run ledger, the calibration/held-out split, and corpus auto-writes are all machinery for the auto-write path — the least valuable half by that measure. **They move to Phase 5**, to be built against real proposal data rather than designed up front. Phase 4 is now one plan that produces proposals.
+>
+> Nothing in `04-CONTEXT.md` is reversed by this — D-01…D-33 still hold. The descope is about *sequencing*: what gets built now versus once there is evidence to build it from.
+
+**Stage 2 — inference into proposals.** Teases out what deterministic heuristics cannot reach — principally the `forward_ref` (68% of rolls) and `no_evidence` classes, retrospective phrasing, and misses whose constellation is named only obliquely. Operates on Stage 1's output plus the paragraphs the existing scorer already flags, never on raw prose from scratch. Everything it produces goes to proposals; nothing it produces touches `chapter_roll_overrides.json`.
 
 **Success Criteria** (what must be TRUE):
 
-  1. Stage 2 consumes Stage 1 candidates and improves on them measurably against held-out hand-curated chapters, versus the Stage 3-recorded Stage 1 baseline
-  2. Word positions and roll ordinals stay mechanically derived; Stage 2 may adjust structure and confidence but never invents a position
-  3. High-confidence curations write into `chapter_roll_overrides.json` with provenance; low-confidence curations write to a proposals sidecar in the same roll-object schema
-  4. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
-  5. The confidence gate uses Phase 2's mechanical verification as the hard signal, with model self-report recorded as explanatory metadata only and never used as a routing input, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
+  1. Running Stage 2 on a curated chapter produces a proposals entry whose evidence quotes are located in the real prose, with mechanically-derived word positions — verified by Phase 2's `verify_roll()`, not asserted
+  2. Word positions and roll ordinals stay mechanically derived; the model proposes quote text and structure and never invents a position
+  3. Every proposal is maximally pre-filled (D-17): located quote text, derived position, constellation, bundle grouping, and a per-field record of what is evidenced versus evidence-not-found — so review is confirm-or-correct, never start-from-blank
+  4. `data/manual/chapter_roll_overrides.json` is byte-unchanged by any Stage 2 run — the trusted corpus has no write path in this phase at all
+  5. Dre reviews the output of a real run on several curated chapters and confirms it removes hand-work, before anything further is built on top of it
 
-**Plans**: 6 plans
-
-> **Replanned in full 2026-08-02** against `04-CONTEXT.md` D-25…D-33. The previous five-plan set was
-> designed around a metered API (Batches API, `cache_control` prompt caching, `output_config.format`,
-> the vendor SDK, a dollar-cost estimator) and is struck. Inference now rides the subscribed `claude`
-> CLI through a propose-only MCP server; run size, not dollars, is the scarce resource.
+**Plans**: 1 plan
 
 Plans:
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Tracer: package-legitimacy gate for `mcp`, propose-only MCP server on warm loopback HTTP, real `claude -p` submission, then derive/verify/grade/route end-to-end on chapter 92 into the proposals sidecar (ACUR-01, ACUR-02, ACUR-03, CINF-04)
+- [ ] 04-01-PLAN.md — Propose-only MCP server on warm loopback HTTP, `claude -p` transport, prompt assembly from Stage 1 candidates + scorer-flagged paragraphs, mechanical position derivation + `verify_roll()`, everything written to the proposals sidecar; then a real run on several curated chapters for Dre to eyeball (ACUR-01)
 
-**Wave 2** *(blocked on Wave 1 completion; 04-02 and 04-03 run in parallel — zero file overlap)*
+**Notes**: **Spends no metered API budget** (D-25) — inference rides the subscribed `claude` CLI through a propose-only MCP server. No confidence gate: everything routes to proposals, because Dre reviews it either way. No ledger: re-running a chapter overwrites its proposal. No calibration or held-out split: success criterion 5 is Dre's own judgment on real output, which is both cheaper and more honest than a rubric designed before any output exists. The `mcp` dependency carries the standard new-package legitimacy look (D-27/D-32) — a short check, not a ceremony.
 
-- [ ] 04-02-PLAN.md — D-05a/D-33 offset adapter + the D-01 retrieval union + re-measured recall and token cost under the new paragraph segmentation (ACUR-01)
-- [ ] 04-03-PLAN.md — Confidence gate in its final two-part form, assemble-once-route-after proposal richness, and the CINF-04 never-overwrite routing proofs (ACUR-02, ACUR-03, CINF-04)
+### Phase 5: Review, Confidence Gate & Full Batch Run
 
-**Wave 3** *(blocked on Wave 2 completion)*
+> **Absorbed from Phase 4 on its 2026-08-02 descope:** ACUR-02 (confidence gate), ACUR-03 (corpus-vs-proposals routing), and CINF-04 (ledger idempotency + never-overwrite). Phase 4 now produces proposals only and has no corpus write path. Building the gate here means tuning it against **real Phase 4 proposal output** instead of a rubric designed before any output existed — which is also what `04-CONTEXT.md` D-21 asks for (tune on calibration, report on held-out) with the ordering fixed.
+>
+> **Carried obligation (plan-checker, 2026-08-02):** D-24 requires a human to see calibration numbers before the first run against **uncurated** chapters. A code-level `--allow-uncurated` flag is necessary but NOT sufficient — a script author could pass it without showing Dre anything. Phase 5 MUST add an actual `checkpoint:decision` gating its first use, and Phase 5's plan-checker must verify the checkpoint exists rather than treating the flag's existence as the control.
 
-- [ ] 04-04-PLAN.md — Fingerprint-keyed agent-run ledger, eight transport failure states, and the bounded batch runner with the `--allow-uncurated` guard (CINF-04, ACUR-01)
-
-**Wave 4** *(blocked on Wave 3 completion)*
-
-- [ ] 04-05-PLAN.md — Deterministic calibration/held-out split + calibration runs (Opus then Sonnet) + threshold, `get_prose_span` keep-or-drop, and provisional tiering verdicts (ACUR-01, ACUR-02)
-
-**Wave 5** *(blocked on Wave 4 completion)*
-
-- [ ] 04-06-PLAN.md — Held-out run + per-evidence-class report vs the Stage 1 baseline on the same position ladder + regime-boundary check + D-18 richness metrics (ACUR-01, ACUR-02)
-
-**Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically against known chapters, with a checkpoint before running on uncurated ones. **This phase spends no metered API budget** (D-25); the scarce resources are Dre's subscription usage window and wall clock, so the two approval checkpoints (Plan 04-05 before calibration, Plan 04-06 before held-out) approve **run size**, not dollars (D-29). Phase 3's measured baseline sizes the run. Phase 4 itself never runs against an uncurated chapter — the `--allow-uncurated` guard built in Plan 04-04 is Phase 5's gate, not this phase's. One `blocking-human` package-legitimacy checkpoint exists (Plan 04-01 Task 1, threat T-04-05, transferred to `mcp` per D-27/D-32 and explicitly not waived).
-
-### Phase 5: Proposal Review & Full Batch Run
-
-> **Carried obligation from Phase 4 (plan-checker, 2026-08-02):** Phase 4 realizes D-24's "human sees calibration numbers before the first uncurated run" as a code-level `--allow-uncurated` guard in `run_stage2_batch.py`. A CLI flag is necessary but NOT sufficient — a script author could pass it without showing Dre anything. **Phase 5 MUST add an actual `checkpoint:decision` gating the first use of that flag**, and Phase 5's plan-checker must verify the checkpoint exists rather than treating the flag's existence as the control.
-
-**Goal**: The remaining chapters are curated, and everything the agent was unsure about is sitting in the TUI waiting for Dre
+**Goal**: The remaining chapters are curated, everything the agent was unsure about is sitting in the TUI waiting for Dre, and the obviously-correct proposals stop needing his attention at all
 **Mode:** mvp
 **Depends on**: Phase 4
-**Requirements**: ACUR-04, ACUR-05
+**Requirements**: ACUR-02, ACUR-03, ACUR-04, ACUR-05, CINF-04
 **Success Criteria** (what must be TRUE):
 
   1. The Forge Curator TUI lists agent proposals and supports reviewing, accepting, editing, and rejecting them using its existing keybind and interaction model
   2. Accepting a proposal produces a hand-curated entry that outranks agent provenance for that chapter
-  3. A batch run over all remaining uncurated chapters completes and emits a per-chapter summary report of accepted / proposed / failed
-  4. Pipeline validation is green after the batch, and the visualization renders agent-curated chapters correctly alongside hand-curated ones
+  3. A confidence gate tuned against real Phase 4 proposal output promotes high-confidence proposals into `chapter_roll_overrides.json` with provenance, using Phase 2's mechanical verification as the hard signal and model self-report as explanatory metadata only, never as a routing input
+  4. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
+  5. A batch run over all remaining uncurated chapters completes and emits a per-chapter summary report of accepted / proposed / failed
+  6. Pipeline validation is green after the batch, and the visualization renders agent-curated chapters correctly alongside hand-curated ones
 
 **Plans**: TBD
-**Notes**: Extends the existing ~7.5K-line TUI rather than building a second review surface. Depends on the finalized proposals-file schema from Phase 3.
+**Notes**: Extends the existing ~7.5K-line TUI rather than building a second review surface. Consumes the proposals-file schema Phase 4 ships. Sequence the gate *after* enough review has happened to know which proposals are reliably correct — that is the data the gate should be built from. Report D-18's richness metrics (fields pre-filled per chapter, chapters needing no manual quote-hunting) alongside any confidence split; per the value function, richness is the measure that matters.
 
 ## Progress
 
@@ -204,8 +190,8 @@ Plans:
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 2/2 | Complete    | 2026-08-01 |
 | 3. Provenance Schema & Deterministic Candidate Assembly | 3/3 | Complete    | 2026-08-02 |
-| 4. Inference Refinement, Confidence Gate & Routing | 0/6 | Planned | - |
-| 5. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
+| 4. Stage 2 Inference → Proposals | 0/1 | Planned | - |
+| 5. Review, Confidence Gate & Full Batch Run | 0/TBD | Not started | - |
 
 ## Requirement Coverage
 
@@ -216,8 +202,8 @@ Plans:
 | 1 | EPUB-01, EPUB-02, CINF-02 | 3 |
 | 2 | CINF-03 | 1 |
 | 3 | CINF-01, ACUR-01 (Stage 1) | 2 |
-| 4 | CINF-04, ACUR-01 (Stage 2), ACUR-02, ACUR-03 | 4 |
-| 5 | ACUR-04, ACUR-05 | 2 |
+| 4 | ACUR-01 (Stage 2) | 1 |
+| 5 | ACUR-02, ACUR-03, ACUR-04, ACUR-05, CINF-04 | 5 |
 | **Total** | | **11** |
 
 ---
