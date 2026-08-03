@@ -517,17 +517,23 @@ def test_dock_speed_cycle_persists_and_hint_row_context(tmp_path):
             assert console_messages3 == []
             page.close()
 
-            # --- Every dock-transport button clears the 44px tap-target
-            #     floor at 320px viewport width. ---
+            # --- Every dock-transport button AND the top-cluster help
+            #     button clear the 44px tap-target floor at 320px viewport
+            #     width (04-04-PLAN.md Task 1 test 5). The cinema-scrub FAB
+            #     is landscape-only and is verified by offset click instead
+            #     — see test_cinema_scrub_fab_offset_click_hit_area in
+            #     tests/test_mobile_landscape.py — because its host box is
+            #     permanently 40x40 by design; a rect assertion on it would
+            #     always fail. ---
             page, console_messages4 = _page_with_console_capture(
                 browser, site, viewport=PHONE_PORTRAIT_SMALL, storage=DEFAULT_STORAGE,
             )
             boxes = page.eval_on_selector_all(
-                ".mobile-dock-transport button",
+                ".mobile-dock-transport button, .mobile-top-cluster button",
                 "els => els.map(el => { const r = el.getBoundingClientRect(); "
                 "return { width: r.width, height: r.height }; })",
             )
-            assert len(boxes) >= 2
+            assert len(boxes) >= 3
             for box in boxes:
                 assert box["width"] >= 44
                 assert box["height"] >= 44

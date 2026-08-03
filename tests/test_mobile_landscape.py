@@ -792,6 +792,134 @@ def test_landscape_chrome_autohide_boundary(tmp_path):
             browser.close()
 
 
+def test_cinema_scrub_fab_offset_click_hit_area(tmp_path):
+    # 04-04-PLAN.md Task 1 (D-39/MOBX-03): the FAB's hit area is a
+    # transparent ::before overlay (inset: -4px -> a 48x48 hit-testable box
+    # around the unchanged 40x40 painted circle), not padding — padding
+    # would visibly grow the glowing circle since background/box-shadow
+    # paint through the padding box (04-UI-SPEC.md, 04-PATTERNS.md's
+    # CONTRASTING pair with .mobile-icon-btn.compact). Because the overlay
+    # is a pseudo-element, getBoundingClientRect() on the host can never
+    # prove the 44x44 floor here (04-VALIDATION.md finding 3) — verify by
+    # offset click instead. Sky-tap is seeded OFF so a click that misses the
+    # overlay and lands on the sky underneath is a genuine no-op, not a
+    # second route to toggling playback that would mask a real failure.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            def fresh_page():
+                return _page_with_console_capture(
+                    browser, site, viewport=PHONE_LANDSCAPE,
+                    storage={**DEFAULT_STORAGE, "bcf:tap-to-pause": "false"},
+                )
+
+            # Test 1: a click 2px outside the painted left edge, at the
+            # button's vertical midpoint, toggles playback — the overlay
+            # dispatches the click to its host.
+            page, console_messages = fresh_page()
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')).to_be_visible()
+            fab_box = page.locator(".mobile-cinema-scrub-fab").bounding_box()
+            assert fab_box is not None
+            y_mid = fab_box["y"] + fab_box["height"] / 2
+            page.mouse.click(fab_box["x"] - 2, y_mid)
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]')).to_be_visible()
+            assert console_messages == []
+            page.close()
+
+            # Test 2 (control): a click 10px outside that same edge does NOT
+            # toggle playback — proving test 1's result came from the
+            # overlay and not from something else catching the click (e.g.
+            # the sky underneath, with sky-tap disabled, correctly no-op'ing).
+            page2, console_messages2 = fresh_page()
+            fab2_box = page2.locator(".mobile-cinema-scrub-fab").bounding_box()
+            assert fab2_box is not None
+            y_mid2 = fab2_box["y"] + fab2_box["height"] / 2
+            page2.mouse.click(fab2_box["x"] - 10, y_mid2)
+            page2.wait_for_timeout(100)
+            expect(page2.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')).to_be_visible()
+            assert console_messages2 == []
+            page2.close()
+
+            # Test 3: the play button's own bounding rect still measures
+            # exactly 40x40 — asserted deliberately as documentation of why
+            # a rect check cannot verify this control (a ::before's
+            # absolute-position overflow never changes its host's own
+            # layout box).
+            page3, console_messages3 = fresh_page()
+            fab3_box = page3.locator(".mobile-cinema-scrub-fab").bounding_box()
+            assert fab3_box is not None
+            assert fab3_box["width"] == 40
+            assert fab3_box["height"] == 40
+
+            # Test 4: the overlay's own computed box measures at least
+            # 44x44 and carries no paint declaration — computed from the
+            # pseudo-element's resolved inset offsets against the host's
+            # own rect, since getBoundingClientRect() cannot target a
+            # pseudo-element directly.
+            overlay = page3.evaluate(
+                "() => {"
+                "  const el = document.querySelector('.mobile-cinema-scrub-fab');"
+                "  const rect = el.getBoundingClientRect();"
+                "  const cs = getComputedStyle(el, '::before');"
+                "  const left = parseFloat(cs.left);"
+                "  const right = parseFloat(cs.right);"
+                "  const top = parseFloat(cs.top);"
+                "  const bottom = parseFloat(cs.bottom);"
+                "  return {"
+                "    width: rect.width - left - right,"
+                "    height: rect.height - top - bottom,"
+                "    backgroundImage: cs.backgroundImage,"
+                "    backgroundColor: cs.backgroundColor,"
+                "    boxShadow: cs.boxShadow,"
+                "  };"
+                "}"
+            )
+            assert overlay["width"] >= 44
+            assert overlay["height"] >= 44
+            assert overlay["backgroundImage"] == "none"
+            assert overlay["backgroundColor"] in ("rgba(0, 0, 0, 0)", "transparent")
+            assert overlay["boxShadow"] == "none"
+            assert console_messages3 == []
+            page3.close()
+
+            browser.close()
+
+
+def test_landscape_other_tap_targets_clear_44px(tmp_path):
+    # 04-04-PLAN.md Task 1 test 5: every OTHER tappable control in the
+    # landscape layout (top-cluster help button, sidebar quick-action
+    # buttons) still clears the 44x44 floor by rect — the existing portrait
+    # pattern (tests/test_mobile_portrait.py) extended to landscape's own
+    # controls. The cinema-scrub FAB is deliberately excluded by selector:
+    # its host box is permanently 40x40 by design (D-39) and is verified by
+    # offset click in test_cinema_scrub_fab_offset_click_hit_area above, not
+    # by a rect measurement — do NOT "fix" this exclusion by relaxing the
+    # threshold below 44 for the FAB.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE_SMALL, storage=DEFAULT_STORAGE,
+            )
+            boxes = page.eval_on_selector_all(
+                ".mobile-top-cluster button, .mobile-sidebar .mobile-dock-btn",
+                "els => els.map(el => { const r = el.getBoundingClientRect(); "
+                "return { width: r.width, height: r.height }; })",
+            )
+            assert len(boxes) >= 3
+            for box in boxes:
+                assert box["width"] >= 44
+                assert box["height"] >= 44
+            assert console_messages == []
+            browser.close()
+
+
 def test_landscape_reveal_tap_semantics(tmp_path):
     # D-30: the first sky tap on hidden landscape chrome ALWAYS reveals it
     # and leaves playback running, regardless of the tap-to-pause

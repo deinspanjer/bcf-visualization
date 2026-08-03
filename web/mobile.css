@@ -695,9 +695,15 @@
   .mobile-cinema-scrub-fab {
     /* UI-SPEC's locked, flagged sub-44px exception carried from the
        approved prototype (.fab-play.sm) — identical in kind to Phase 2's
-       .mobile-icon-btn.compact (36x36) exception. Remediated in Phase 4 if
-       the Lighthouse accessibility pass flags it; not silently enlarged
-       here to avoid drifting from the approved visual reference. */
+       .mobile-icon-btn.compact (36x36) exception. Phase 4/D-39: the hit
+       area is expanded via the transparent ::before overlay below (a
+       48x48 hit-testable box around this unchanged 40x40 painted circle);
+       the painted size and glow stay pixel-identical. Because the overlay
+       is a pseudo-element, getBoundingClientRect() on THIS element will
+       always report 40x40 — verification is an offset click, not a rect
+       assertion (see tests/test_mobile_landscape.py). `position: relative`
+       is required so the ::before resolves against this button itself. */
+    position: relative;
     flex-shrink: 0;
     width: 40px;
     height: 40px;
@@ -712,6 +718,17 @@
     justify-content: center;
   }
   .mobile-cinema-scrub-fab:active { transform: scale(0.94); }
+  /* D-39 hit-area overlay: transparent, absolutely positioned, so it
+     dispatches clicks to its host without painting anything — the host's
+     own paint properties fill through the padding box, which is why a
+     padding-based expansion (correct for .mobile-icon-btn.compact above)
+     would visibly grow the glowing circle here instead. This overlay
+     declares none of those paint properties, so nothing renders. */
+  .mobile-cinema-scrub-fab::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
   .mobile-cinema-scrub-count {
     font-family: var(--mono);
     font-size: 10px;
