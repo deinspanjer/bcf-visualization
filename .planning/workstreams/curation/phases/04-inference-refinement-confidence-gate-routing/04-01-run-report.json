@@ -1,0 +1,291 @@
+{
+  "run_id": "2026-08-03T03:14:18Z-46e05c4c",
+  "model": "opus",
+  "concurrency": 2,
+  "retrieval_threshold": 3,
+  "chapters": {
+    "92": {
+      "submitted": true,
+      "state": "routed",
+      "turns": 7,
+      "duration_ms": 42638,
+      "usage": {
+        "input_tokens": 8,
+        "cache_creation_input_tokens": 23865,
+        "cache_read_input_tokens": 65991,
+        "output_tokens": 3058,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 23865,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 298,
+            "cache_read_input_tokens": 22926,
+            "cache_creation_input_tokens": 939,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 939
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "total_cost_usd": 0.3481355,
+      "permission_denials": [],
+      "error_detail": null,
+      "retrieved_passages": 26,
+      "prompt_chars": 16411,
+      "stats": {
+        "rolls": 2,
+        "answered_by_model": 2,
+        "quotes_located": 5,
+        "quotes_unlocated": 0,
+        "tier1": 5,
+        "tier2": 0,
+        "verify_pass": 2,
+        "verify_fail": 0,
+        "verify_no_evidence": 0,
+        "fields_prefilled": 7,
+        "rolls_evidence_not_found": 0
+      }
+    },
+    "104": {
+      "submitted": true,
+      "state": "routed",
+      "turns": 9,
+      "duration_ms": 59349,
+      "usage": {
+        "input_tokens": 8,
+        "cache_creation_input_tokens": 23147,
+        "cache_read_input_tokens": 60003,
+        "output_tokens": 4234,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 23147,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 311,
+            "cache_read_input_tokens": 21658,
+            "cache_creation_input_tokens": 1489,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1489
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "total_cost_usd": 0.36736149999999995,
+      "permission_denials": [],
+      "error_detail": null,
+      "retrieved_passages": 16,
+      "prompt_chars": 9547,
+      "stats": {
+        "rolls": 3,
+        "answered_by_model": 3,
+        "quotes_located": 6,
+        "quotes_unlocated": 0,
+        "tier1": 6,
+        "tier2": 0,
+        "verify_pass": 3,
+        "verify_fail": 0,
+        "verify_no_evidence": 0,
+        "fields_prefilled": 11,
+        "rolls_evidence_not_found": 0
+      }
+    },
+    "88": {
+      "submitted": true,
+      "state": "routed",
+      "turns": 20,
+      "duration_ms": 106685,
+      "usage": {
+        "input_tokens": 10,
+        "cache_creation_input_tokens": 42092,
+        "cache_read_input_tokens": 155393,
+        "output_tokens": 8822,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 42092,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 241,
+            "cache_read_input_tokens": 40881,
+            "cache_creation_input_tokens": 3273,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 3273
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "total_cost_usd": 0.7192164999999999,
+      "permission_denials": [],
+      "error_detail": null,
+      "retrieved_passages": 69,
+      "prompt_chars": 59631,
+      "stats": {
+        "rolls": 12,
+        "answered_by_model": 12,
+        "quotes_located": 17,
+        "quotes_unlocated": 0,
+        "tier1": 17,
+        "tier2": 0,
+        "verify_pass": 12,
+        "verify_fail": 0,
+        "verify_no_evidence": 0,
+        "fields_prefilled": 41,
+        "rolls_evidence_not_found": 0
+      }
+    },
+    "81": {
+      "submitted": true,
+      "state": "routed",
+      "turns": 12,
+      "duration_ms": 62254,
+      "usage": {
+        "input_tokens": 6,
+        "cache_creation_input_tokens": 29230,
+        "cache_read_input_tokens": 57093,
+        "output_tokens": 5319,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 29230,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 267,
+            "cache_read_input_tokens": 29678,
+            "cache_creation_input_tokens": 1614,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1614
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "total_cost_usd": 0.45385149999999996,
+      "permission_denials": [],
+      "error_detail": null,
+      "retrieved_passages": 25,
+      "prompt_chars": 31610,
+      "stats": {
+        "rolls": 8,
+        "answered_by_model": 8,
+        "quotes_located": 13,
+        "quotes_unlocated": 0,
+        "tier1": 13,
+        "tier2": 0,
+        "verify_pass": 8,
+        "verify_fail": 0,
+        "verify_no_evidence": 0,
+        "fields_prefilled": 29,
+        "rolls_evidence_not_found": 0
+      }
+    },
+    "36": {
+      "submitted": true,
+      "state": "routed",
+      "turns": 13,
+      "duration_ms": 68437,
+      "usage": {
+        "input_tokens": 6,
+        "cache_creation_input_tokens": 49650,
+        "cache_read_input_tokens": 34225,
+        "output_tokens": 5849,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 49650,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 349,
+            "cache_read_input_tokens": 28860,
+            "cache_creation_input_tokens": 1754,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1754
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "total_cost_usd": 0.6598675,
+      "permission_denials": [],
+      "error_detail": null,
+      "retrieved_passages": 23,
+      "prompt_chars": 28445,
+      "stats": {
+        "rolls": 8,
+        "answered_by_model": 8,
+        "quotes_located": 11,
+        "quotes_unlocated": 0,
+        "tier1": 11,
+        "tier2": 0,
+        "verify_pass": 8,
+        "verify_fail": 0,
+        "verify_no_evidence": 0,
+        "fields_prefilled": 27,
+        "rolls_evidence_not_found": 0
+      }
+    }
+  },
+  "usage_total": {
+    "input_tokens": 38,
+    "cache_creation_input_tokens": 167984,
+    "cache_read_input_tokens": 372705,
+    "output_tokens": 27282
+  },
+  "read_tool_instrumentation": {
+    "prose_span_calls": 1,
+    "check_quote_calls": 50,
+    "prose_span_quotes_verified": 3,
+    "check_quote_quotes_verified": 52
+  },
+  "read_set_size": 51
+}

@@ -32,6 +32,7 @@ proposals sidecar.
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -125,17 +126,23 @@ class Stage2RunContext:
     # whether a read tool actually contributed a quote that verified.
     _span_texts: list[str] = field(default_factory=list)
     _checked_quotes: set[str] = field(default_factory=set)
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     # -- Stage2Context protocol -------------------------------------------
 
     def submit_rolls(self, chapter_num: str, rolls: list[dict[str, Any]]) -> str:
-        self.submissions[str(chapter_num)] = {
-            "chapter_num": str(chapter_num),
-            "rolls": rolls,
-        }
-        outcome = process_stage2_response(str(chapter_num), rolls, ctx=self)
-        self.outcomes[str(chapter_num)] = outcome
-        return outcome.model_facing_summary
+        # Serialized because the proposals sidecar is read-modify-written
+        # and a run may have several chapters in flight at once. Holding
+        # the lock across processing also keeps the warm prose-loader
+        # cache from being populated twice for the same chapter.
+        with self._lock:
+            self.submissions[str(chapter_num)] = {
+                "chapter_num": str(chapter_num),
+                "rolls": rolls,
+            }
+            outcome = process_stage2_response(str(chapter_num), rolls, ctx=self)
+            self.outcomes[str(chapter_num)] = outcome
+            return outcome.model_facing_summary
 
     def prose_span(self, chapter_num: str, start_word: int, end_word: int) -> str:
         chapter_html, word_starts = self.prose_loader(str(chapter_num))
