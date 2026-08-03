@@ -18,6 +18,15 @@
 - Revisit `roll_locations_validation.json` findings after the
   reclassification pass; current "curator divergence" conclusions may
   be artifacts of an overly strict simulator rule.
+- Resolve the unbound source rolls in chapters 56 and 67 — both chapters
+  have predicted slots and curated source rolls but zero bindings between
+  them (22 unbound rolls corpus-wide). Needs a curator-TUI judgment on the
+  7-vs-6 and 5-vs-4 mismatches, same shape as the chapter 104 item. Details
+  and the full unbound list: `docs/unbound_source_rolls_ch56_ch67.md`.
+- Re-anchor the four `tests/test_forge_curator.py` stats-click tests on
+  (chapter, within-chapter ordinal) instead of literal curator roll labels
+  like `R520/P548`; curator roll numbers renumber on every curation pass,
+  so the current fixtures go stale repeatedly. Same doc.
 - Extract in-world dates per chapter into a structured manual or
   derived file so the scrubber can add an in-world date track.
 - Research the public Google Sheet layout for perk descriptions and add
