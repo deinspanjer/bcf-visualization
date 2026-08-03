@@ -4,16 +4,17 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 04
 current_plan: 1
-status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-08-03T00:32:30.055Z"
-last_activity: 2026-08-02
-last_activity_desc: Phase 04 execution started
+status: stopped
+stopped_at: Phase 4 stopped by decision (Stage 2 parked)
+last_updated: "2026-08-03T00:00:00.000Z"
+last_activity: 2026-08-03
+last_activity_desc: Phase 04 stopped at Dre decision — Stage 2 parked
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 14
   completed_plans: 9
+  stopped_plans: 1
 workstream: curation
 created: 2026-07-26
 ---
@@ -22,17 +23,17 @@ created: 2026-07-26
 
 ## Current Position
 
-**Status:** Executing Phase 04
+**Status:** Phase 04 STOPPED by decision — Stage 2 parked
 **Current Phase:** 04
 **Current Plan:** 1
-**Last Activity:** 2026-08-02 — Phase 04 execution started
-**Last Activity Description:** Phase 04 execution started
+**Last Activity:** 2026-08-03 — Phase 04 stopped at Dre decision
+**Last Activity Description:** Plan 04-01 executed all 3 tasks; at Task 3's checkpoint Dre answered "no" to "does this save you work?". Stage 2 parked, not deleted.
 
 ## Progress
 
 **Phases Complete:** 3 / 3
 **Plans Complete:** 9 / 9
-**Current Plan:** 03-03-PLAN.md — Measure Stage 1 candidate accuracy against the hand-curated corpus (complete)
+**Current Plan:** 04-01-PLAN.md — Stage 2 inference into proposals (executed, then STOPPED by decision)
 
 ## Performance Metrics
 
@@ -78,9 +79,15 @@ created: 2026-07-26
 - [03-03]: Deterministic candidate-to-curated matching never joins on `roll_number`/`source_ordinal`: chapter-local position proximity (word_position when curated side has one — only 2/681 corpus-wide — else both sides fall back to their own ordinal rank) is the primary signal, perk-name overlap a tiebreaker only. A curated roll left unclaimed ("missed") is still bucketed by evidence class via its single nearest candidate, computed ignoring the claim constraint, so all 5 D-08 counters are well-defined per class.
 - [03-03]: `derive_stub_chapters` treats a zero-roll chapter entry (55.1) as a stub via vacuous truth (`all()` over an empty list) rather than requiring at least one roll — needed to exactly reproduce D-09's originally-flagged 11-chapter list (minus 104, genuinely curated 2026-08-01).
 
+- [04-01]: Stage 2 STOPPED by Dre (2026-08-03). All 3 tasks executed. Quote finding worked — 52/52 quotes located in real prose at verifier Tier 1, zero hallucinated, ch 104 reproduced at byte-identical positions, CURATION-CONVENTIONS §5 trap correctly declined. Roll structure did not — ch 81 proposed five `hit / Personal Reality` where the corpus has misses; ch 88 called 5 hits against 2 curated. Decision reflects total cost across three planning attempts, not this run's numbers alone.
+- [04-01]: `get_prose_span` judged dead weight (1 call, 3 quotes across the whole run) — verdict "delete", deliberately NOT executed since the workstream was parked in the same breath. `check_quote` (50 calls) is the tool that carried the result and is what to keep if Stage 2 is ever revived.
+- [04-01]: The propose-only guarantee is structural, not test-asserted — no Stage 2 module imports `write_chapter_roll_overrides_doc`, and `data/manual/chapter_roll_overrides.json` is byte-unchanged. `mcp>=1.29,<2` is isolated behind a `curation` optional extra; `verify.py`, the TUI, and the pipeline run unaffected on a base install.
+
 ### Pending Todos
 
 - Dre to manually review chapter 104's `rolls` array in the curator TUI (2 curated hit rolls vs. 1 predicted slot) before its alignment anchor can be safely re-stamped.
+
+- Stage 2 code is parked in-tree and harmless. Removal command and the resume read are in `phases/04-inference-refinement-confidence-gate-routing/04-01-SUMMARY.md`.
 
 ### Blockers/Concerns
 
@@ -102,6 +109,6 @@ created: 2026-07-26
 
 ## Session Continuity
 
-Last session: 2026-08-02T21:20:57.559Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/workstreams/curation/phases/04-inference-refinement-confidence-gate-routing/04-CONTEXT.md
+Last session: 2026-08-03
+Stopped at: Phase 4 stopped by decision — Stage 2 parked, Dre returning to manual curation
+Resume file: .planning/workstreams/curation/phases/04-inference-refinement-confidence-gate-routing/04-01-SUMMARY.md

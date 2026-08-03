@@ -127,7 +127,23 @@ Plans:
 
 **Notes**: The provenance field shape is already settled (Workstream Gate 2); no interview needed. Curator vs. predictor roll numbering diverge — respect the existing predicted-mode mapping rather than inventing one. Measured 2026-08-01 over 718 predicted rolls: `forward_ref` 485 (68%), `direct` 132 (18%), `no_evidence` 74 (10%), `general_only` 27 (4%) — so Stage 1 should be expected to do well on a minority of rolls, and that distribution is exactly why the Phase 4 split exists.
 
-### Phase 4: Stage 2 Inference → Proposals
+### Phase 4: Stage 2 Inference → Proposals — STOPPED
+
+> **Stopped by Dre 2026-08-03**, at Plan 04-01 Task 3's decision checkpoint. All three tasks executed
+> and committed; the run produced 52 quotes across 5 curated chapters, all located in real prose at
+> verifier Tier 1 with none hallucinated. **Quote finding worked; roll structure (hit/miss and
+> constellation assignment) did not** — ch 81 proposed five `hit / Personal Reality` rolls where the
+> corpus has misses. Dre answered "no" to whether it saves him work and is returning to manual curation.
+>
+> The decision reflects total cost across three planning attempts for this one phase, not this run's
+> numbers in isolation. Stage 2 code is parked in-tree, harmless, and isolated behind a `curation`
+> optional extra; the corpus is byte-unchanged. **See `04-01-SUMMARY.md`** for what was learned, the
+> removal command, and the honest read for anyone resuming.
+>
+> **Phase 5 is blocked** — it consumed Phase 4's proposals output. If curation stays manual, ACUR-01
+> (Stage 2), ACUR-02, ACUR-03, ACUR-05, and CINF-04 have no delivery path and this milestone's agent-
+> curation half is unmet. ACUR-04 (TUI review of proposals) has nothing to review. That is a
+> milestone-scope question, not a phase one.
 
 **Goal**: Chapters come back with their evidence quotes already found, positioned, and attached, sitting in a proposals file for Dre to review — so the tedious part of curation is done before he opens the TUI
 **Mode:** mvp
@@ -190,8 +206,8 @@ Plans:
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 2/2 | Complete    | 2026-08-01 |
 | 3. Provenance Schema & Deterministic Candidate Assembly | 3/3 | Complete    | 2026-08-02 |
-| 4. Stage 2 Inference → Proposals | 0/1 | Planned | - |
-| 5. Review, Confidence Gate & Full Batch Run | 0/TBD | Not started | - |
+| 4. Stage 2 Inference → Proposals | 1/1 executed | **Stopped by decision** | 2026-08-03 |
+| 5. Review, Confidence Gate & Full Batch Run | 0/TBD | Blocked (depends on Phase 4) | - |
 
 ## Requirement Coverage
 
