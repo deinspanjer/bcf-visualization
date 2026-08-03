@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Mobile Cutover & Accessibility
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-08-03T01:42:04.820Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-08-03T02:07:45.702Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 4 (Mobile Cutover & Accessibility) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-08-02 — Phase 4 execution started
 
-Progress: [█████████░] 89%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [█████████░] 89%
 | Phase 4 P2 | 50min | 2 tasks | 4 files |
 | Phase 04-mobile-cutover-accessibility P03 | 45min | 2 tasks | 3 files |
 | Phase 04-mobile-cutover-accessibility P04 | 55min | 2 tasks | 4 files |
+| Phase 04 P05 | 24min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 04-04: MOBX-04 throw-decay clause recorded vacuous (feature never implemented) rather than fabricated — carried to Phase D+E gate
 - [Phase ?]: 04-04: FAB hit-area expanded via transparent ::before overlay (position:relative + inset:-4px), verified by offset click, never by rect measurement (host stays 40x40 by design)
 - [Phase ?]: 04-04: MOBX-03's 44x44 clause and plan 04-05's Lighthouse >=90 check are independent verifications — neither is evidence for the other
+- [Phase ?]: 04-05: Task 1's SUS-verdict Lighthouse package-legitimacy checkpoint was pre-resolved by Dre (2026-08-02): approved, pinned to lighthouse@13.4.1
+- [Phase ?]: 04-05: Lighthouse Accessibility gate scored 0.98 (mobile preset) on first run, above the 0.90 floor — no remediation to web/mobile.css or index.html was needed
+- [Phase ?]: 04-05: D-03 (page zoom stays enabled) re-verified against the real audit — viewport meta and Lighthouse's meta-viewport audit both confirm zoom was never disabled
 
 ### Pending Todos
 
@@ -145,6 +149,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-03T01:42:04.810Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-08-03T02:07:45.692Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None

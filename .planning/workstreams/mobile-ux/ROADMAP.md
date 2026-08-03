@@ -150,7 +150,7 @@ Plans:
   4. Lighthouse Accessibility scores ≥ 90 on the mobile preset
   5. With `prefers-reduced-motion: reduce`, transitions and throw decay are disabled and auto-hide doubles to 8000ms; playback pauses when the page is hidden
 
-**Plans**: 3/6 plans executed
+**Plans**: 5/6 plans executed
 
 Plans:
 **Wave 1**
@@ -168,7 +168,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 04-05-PLAN.md — Package-legitimacy gate + the committed mobile-preset Lighthouse Accessibility ≥ 90 runner and its remediation (MOBX-03)
+- [x] 04-05-PLAN.md — Package-legitimacy gate + the committed mobile-preset Lighthouse Accessibility ≥ 90 runner and its remediation (MOBX-03)
 
 **Wave 5** *(blocked on Wave 4)*
 
@@ -186,7 +186,7 @@ Plans:
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | 5/5 | Complete    | 2026-08-01 |
 | 3. Landscape Layout | 4/4 | Complete    | 2026-08-02 |
-| 4. Mobile Cutover & Accessibility | 3/6 | In Progress|  |
+| 4. Mobile Cutover & Accessibility | 5/6 | In Progress|  |
 
 ## Requirement Coverage
 
