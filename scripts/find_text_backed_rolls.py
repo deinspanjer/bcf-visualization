@@ -51,9 +51,8 @@ import zipfile
 from pathlib import Path
 
 from _common import write_validated_json
-from find_roll_locations import (
-    _split_sections, _strip_to_spaces, _to_plain,
-)
+from cp_word_index import _chapter_word_index
+from find_roll_locations import _to_plain  # unrelated to D-01; still needed here
 
 ROOT = Path(__file__).resolve().parent.parent
 EPUB = ROOT / "data" / "raw" / "Brocktons_Celestial_Forge.epub"
@@ -75,42 +74,6 @@ WORD_RADIUS = 250
 SPECIFIC_ANCHOR_KINDS = {
     "constellation_reveal", "miss", "roll_attempt", "acquisition",
 }
-
-
-def _chapter_word_index(
-    chapter_html: str,
-    section_classifications: dict[str, dict],
-    chapter_num: str,
-) -> list[int]:
-    """Return a list of char offsets, one per CP-earning word in the
-    chapter, in order. Index N gives the start char of the (N+1)-th
-    CP-earning word in this chapter's HTML.
-
-    Sections whose span starts before the opening <body> tag (i.e. the
-    XML declaration, DOCTYPE, and <head> preamble) are clamped to start
-    at the first byte after <body>.  This prevents the chapter title
-    inside <title>...</title> from being counted as CP-earning prose
-    words when a section's html_start == 0.
-    """
-    # Locate the end of the <body...> opening tag so we never count words
-    # in the XML/DOCTYPE/head preamble.  If somehow the file has no <body>
-    # tag, fall back to 0 (no clamping).
-    body_m = re.search(r"<body[^>]*>", chapter_html)
-    body_content_start = body_m.end() if body_m else 0
-
-    out: list[int] = []
-    for section_index, (_header, s_start, s_end) in enumerate(_split_sections(chapter_html)):
-        cls = section_classifications.get(f"{chapter_num}@{section_index}")
-        if not cls or not cls.get("counts_for_cp"):
-            continue
-        # Clamp: skip any bytes that fall inside the XML/HTML preamble.
-        effective_start = max(s_start, body_content_start)
-        if effective_start >= s_end:
-            continue
-        spaced = _strip_to_spaces(chapter_html[effective_start:s_end])
-        for m in re.finditer(r"\S+", spaced):
-            out.append(effective_start + m.start())
-    return out
 
 
 def _prose_window(

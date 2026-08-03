@@ -6,6 +6,7 @@ import argparse
 import contextlib
 import http.server
 import json
+import re
 import socketserver
 import sys
 import threading
@@ -251,6 +252,34 @@ def _roll_word_position(
     return round(chapter_start + chapter_span * fraction)
 
 
+def _web_storage_version(site_dir: Path) -> str:
+    """Read STORAGE_VERSION out of the served app.js.
+
+    The smoke seeds localStorage with a version string so the app's
+    migratePreviewStorage() purge does not wipe the bookmark the smoke
+    just planted. That only works while the seeded string matches what
+    the app expects, so derive it instead of hardcoding a copy that
+    silently rots the next time the app bumps its schema.
+    """
+    site_dir = Path(site_dir)
+    candidates = [site_dir / "web" / "app.js", site_dir / "app.js"]
+    app_js = next((p for p in candidates if p.exists()), None)
+    if app_js is None:
+        raise SystemExit(
+            "smoke: cannot read STORAGE_VERSION, tried "
+            + ", ".join(str(p) for p in candidates)
+        )
+    # Anchor the name so this does not match LS_STORAGE_VERSION, whose value
+    # is the localStorage KEY ("bcf:preview-port-storage-version") rather than
+    # the version string.
+    m = re.search(
+        r'(?<![A-Za-z0-9_])STORAGE_VERSION\s*=\s*"([^"]+)"', app_js.read_text()
+    )
+    if not m:
+        raise SystemExit(f"smoke: no STORAGE_VERSION constant found in {app_js}")
+    return m.group(1)
+
+
 def _early_chapter_probe(facts: dict) -> EarlyChapterProbe:
     chapters = facts.get("chapters")
     if not isinstance(chapters, list) or not chapters or not isinstance(chapters[0], dict):
@@ -326,6 +355,7 @@ def smoke_browser(*, site_dir: Path) -> None:
 
     _package_dir, viz_path = _default_runtime_paths(site_dir)
     probe = _early_chapter_probe(_read_json(viz_path))
+    storage_version = _web_storage_version(site_dir)
 
     with _served_site(site_dir) as url:
         with sync_playwright() as p:
@@ -333,10 +363,11 @@ def smoke_browser(*, site_dir: Path) -> None:
             page = browser.new_page(viewport={"width": 1280, "height": 900})
             page.add_init_script(
                 """
-                localStorage.setItem("bcf:preview-port-storage-version", "2");
+                localStorage.setItem("bcf:preview-port-storage-version", "__BCF_STORAGE_VERSION__");
                 localStorage.setItem("bcf:bookmark:word_position", String(window.__BCF_SMOKE_WORD__));
                 localStorage.setItem("bcf:mode", "playthrough");
                 """.replace("window.__BCF_SMOKE_WORD__", str(probe.word_position))
+                .replace("__BCF_STORAGE_VERSION__", storage_version)
             )
             messages: list[str] = []
             page.on("console", lambda msg: messages.append(f"{msg.type}: {msg.text}"))

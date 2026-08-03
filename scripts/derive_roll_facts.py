@@ -2102,7 +2102,19 @@ def main() -> None:
             1 for _idx, row in curator_rows
             if row.get("kind") != "trigger"
         )
-        extra = non_trigger_count - len(inp["slots"])
+        # The curator roll log only covers chapters 1-75. Past that, an
+        # override entry is the sole record of how many rolls a chapter
+        # holds -- and chapter_roll_overrides.json's own contract is that
+        # an entry FULLY determines that chapter's paid roll list. Sizing
+        # the slot requirement from curator rows alone silently ignores
+        # that for every post-75 chapter. Take whichever source claims
+        # more rolls; explicit positions still gate actual injection
+        # below, so this can never invent a slot for an uncurated chapter.
+        override_slot_need = sum(
+            1 for r in ((multi_overrides.get(cn) or {}).get("rolls") or [])
+            if not r.get("skipped")
+        )
+        extra = max(non_trigger_count, override_slot_need) - len(inp["slots"])
         if extra <= 0:
             continue
         words = int(inp["chapter_words"])
@@ -2398,7 +2410,12 @@ def main() -> None:
                     )
                 ov_origin = row.get("_override_origin") if isinstance(row, dict) else None
                 if ov_origin is not None:
-                    roll_key = f"curator:{source_idx:04d}.{ov_origin}"
+                    # Chapter-scoped: source_idx alone collides across chapters
+                    # once the curator roll log is exhausted (source_idx==0 for
+                    # every chapter past the log's coverage). Chapter numbers
+                    # can themselves contain dots (e.g. "95.5"), so the
+                    # chapter/index separator must not be ".".
+                    roll_key = f"override:{chapter_num}:{source_idx:04d}.{ov_origin}"
                 else:
                     roll_key = f"curator:{source_idx:04d}"
 

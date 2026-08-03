@@ -123,6 +123,124 @@ def test_manual_chapter_references_must_exist_in_source_epub(tmp_path: Path) -> 
         hydrate_source_epub.hydrate_source_epub(data_dir=data_dir)
 
 
+def _write_source_json(data_dir: Path, **fields: object) -> Path:
+    path = data_dir / "raw" / "Brocktons_Celestial_Forge.source.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 1,
+        "source_kind": "private-source",
+        "source_path": "data/private-source/Brocktons_Celestial_Forge.epub",
+        "private_source_commit": "deadbeef",
+        "epub_sha256": "abc123",
+        "chapter_count": 198,
+        "last_chapter_num": "121.1",
+        "last_chapter_title": "121.1 Some Title",
+    }
+    payload.update(fields)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def _write_private_source_metadata(data_dir: Path, **fields: object) -> Path:
+    path = data_dir / "private-source" / "Brocktons_Celestial_Forge.metadata.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 1,
+        "sha256": "abc123",
+        "version_tag": "source-v20260726.1",
+        "chapters": {
+            "count": 198,
+            "last_chapter_friendly_number": "121.1",
+            "last_chapter_href": "chap_198.xhtml",
+            "last_chapter_title": "121.1 Some Title",
+        },
+    }
+    payload.update(fields)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def test_verify_epub_freshness_reports_fresh_when_all_fields_agree(tmp_path: Path) -> None:
+    from scripts import verify_epub_freshness
+
+    data_dir = tmp_path / "data"
+    _write_source_json(data_dir)
+    _write_private_source_metadata(data_dir)
+
+    result = verify_epub_freshness.verify_epub_freshness(data_dir=data_dir)
+
+    assert result["fresh"] is True
+    assert result["chapter_count"]["match"] is True
+    assert result["last_chapter_num"]["match"] is True
+    assert result["epub_sha256"]["match"] is True
+
+
+def test_verify_epub_freshness_detects_chapter_count_mismatch(tmp_path: Path) -> None:
+    from scripts import verify_epub_freshness
+
+    data_dir = tmp_path / "data"
+    _write_source_json(data_dir, chapter_count=195, last_chapter_num="120.2")
+    _write_private_source_metadata(data_dir)
+
+    result = verify_epub_freshness.verify_epub_freshness(data_dir=data_dir)
+
+    assert result["fresh"] is False
+    assert result["chapter_count"]["match"] is False
+    assert result["chapter_count"]["source"] == 195
+    assert result["chapter_count"]["private_source"] == 198
+
+
+def test_verify_epub_freshness_detects_last_chapter_num_mismatch(tmp_path: Path) -> None:
+    from scripts import verify_epub_freshness
+
+    data_dir = tmp_path / "data"
+    _write_source_json(data_dir, last_chapter_num="121.0")
+    _write_private_source_metadata(data_dir)
+
+    result = verify_epub_freshness.verify_epub_freshness(data_dir=data_dir)
+
+    assert result["fresh"] is False
+    assert result["chapter_count"]["match"] is True
+    assert result["last_chapter_num"]["match"] is False
+    assert result["last_chapter_num"]["source"] == "121.0"
+    assert result["last_chapter_num"]["private_source"] == "121.1"
+
+
+def test_verify_epub_freshness_main_exits_1_and_guides_refresh_when_stale(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from scripts import verify_epub_freshness
+
+    data_dir = tmp_path / "data"
+    _write_source_json(data_dir, chapter_count=195, last_chapter_num="120.2")
+    _write_private_source_metadata(data_dir)
+
+    with pytest.raises(SystemExit) as excinfo:
+        verify_epub_freshness.main(["--data-dir", str(data_dir)])
+
+    assert excinfo.value.code == 1
+    captured = capsys.readouterr()
+    assert "sync_private_source_repo.py" in captured.err
+    assert "hydrate_source_epub.py" in captured.err
+
+
+def test_verify_epub_freshness_main_exits_0_and_summarizes_when_fresh(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from scripts import verify_epub_freshness
+
+    data_dir = tmp_path / "data"
+    _write_source_json(data_dir)
+    _write_private_source_metadata(data_dir)
+
+    with pytest.raises(SystemExit) as excinfo:
+        verify_epub_freshness.main(["--data-dir", str(data_dir)])
+
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert "fresh" in captured.out.lower()
+
+
 def test_private_source_commit_is_recorded_when_available(tmp_path: Path) -> None:
     from scripts import hydrate_source_epub
 
@@ -135,6 +253,9 @@ def test_private_source_commit_is_recorded_when_available(tmp_path: Path) -> Non
     subprocess.run(["git", "init"], cwd=private_dir, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=private_dir, check=True)
     subprocess.run(["git", "config", "user.name", "Test"], cwd=private_dir, check=True)
+    # Keep the fixture repo hermetic: without this it inherits the developer's
+    # global commit.gpgsign and fails when their signing agent is unavailable.
+    subprocess.run(["git", "config", "commit.gpgsign", "false"], cwd=private_dir, check=True)
     subprocess.run(["git", "add", "Brocktons_Celestial_Forge.epub"], cwd=private_dir, check=True)
     subprocess.run(["git", "commit", "-m", "source"], cwd=private_dir, check=True, capture_output=True)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=private_dir, text=True).strip()

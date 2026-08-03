@@ -1,6 +1,6 @@
 {
   "_source": "Bootstrapped from AO3 navigate page + EPUB 'Last edited:' footers. Hand-editable thereafter; re-running this script overwrites. published_source/last_edited_source record where each date came from.",
-  "_count": 197,
+  "_count": 198,
   "chapters": [
     {
       "chapter_num": "1",
@@ -1378,6 +1378,13 @@
       "chapter_num": "121",
       "published_at": "2026-06-25",
       "published_source": "ao3",
+      "last_edited_at": null,
+      "last_edited_source": null
+    },
+    {
+      "chapter_num": "121.1",
+      "published_at": "2026-07-23",
+      "published_source": "manual",
       "last_edited_at": null,
       "last_edited_source": null
     }

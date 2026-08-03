@@ -46,6 +46,9 @@ def _run_release_classifier(tmp_path: Path, changed_path: str) -> dict[str, str]
     subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
     subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    # Keep the fixture repo hermetic: without this it inherits the developer's
+    # global commit.gpgsign and fails when their signing agent is unavailable.
+    subprocess.run(["git", "config", "commit.gpgsign", "false"], cwd=repo, check=True)
     before = _commit_path(repo, "README.md", "baseline\n")
     head = _commit_path(repo, changed_path, "changed\n")
     output = repo / "github-output.txt"
