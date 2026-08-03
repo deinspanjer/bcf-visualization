@@ -35,6 +35,7 @@ import {
   paidRollPerks,
   perkDisplayLabel,
   phase,
+  rollMarkerModel,
   rollTotalCost,
   ROLL_FIRING_WINDOW_WORDS,
   silhouetteOpacity,
@@ -54,14 +55,47 @@ const DATA_VERSION = "phase9-info-link";
 
 const LS_BOOKMARK = "bcf:bookmark:word_position";
 const LS_SPEED = "bcf:playback:speed:v2";
-const LS_ZOOM = "bcf:timeline:zoom";
+const LS_ZOOM = "bcf:timeline:zoom"; // desktop continuous zoom — distinct from LS_MOBILE_TIMELINE_ZOOM ("bcf:timeline-zoom"); do not merge
 const LS_MODE = "bcf:mode";
 const LS_ON_ROLL_BEHAVIOR = "bcf:on-roll-behavior";
 const LS_ROLL_LOCATION = "bcf:roll-location";
 const LS_FIELD_LOG_HIDDEN = "bcf:field-log:hidden";
-const LS_PORTRAIT_DISMISSED = "bcf:portrait-dismissed";
+const LS_MOBILE_TIMELINE_ZOOM = "bcf:timeline-zoom"; // mobile quantized zoom (1/2/4/8) — hyphen-separated, distinct from LS_ZOOM ("bcf:timeline:zoom"); do not merge
+const LS_TAP_TO_PAUSE = "bcf:tap-to-pause";
+const LS_HAPTICS = "bcf:haptics";
+const LS_HELP_SEEN = "bcf:help-seen";
 const LS_STORAGE_VERSION = "bcf:preview-port-storage-version";
-const STORAGE_VERSION = "2";
+const STORAGE_VERSION = "3";
+const MOBILE_TIMELINE_ZOOM_CHOICES = ["1", "2", "4", "8"];
+
+// Single source of truth for the mobile breakpoint: character-identical to the
+// @media query at web/mobile.css:11 (D-06). Never hand-roll a second width check.
+//
+// The landscape clause is height-based, not width-based. It used to be
+// `(max-width: 900px)`, inherited from the frozen portrait-banner rule at
+// style.css:360 — a threshold that predates large phones. Measured on a real
+// iPhone (Safari 18.5) during the Phase 3 gate: landscape is 956x390, so the
+// 900px ceiling failed and the whole landscape layout silently fell through to
+// the desktop shell. CI never caught it because every test viewport used
+// 844x390, which fits under 900.
+//
+// Height separates the devices by the dimension that actually differs: phones
+// in landscape are ~390-440 tall, tablets 768-1024. That stays correct as
+// phones get wider, where any width ceiling goes stale again.
+//
+// style.css:360 keeps the old query and is deliberately NOT edited (it is
+// frozen, and Phase 4 deletes it outright). It scopes only
+// `.portrait-banner.is-visible`, an element that renders solely inside the
+// desktop shell — which no longer mounts at these viewports — so the
+// divergence has no runtime effect.
+const MOBILE_LAYOUT_QUERY = "(orientation: landscape) and (max-height: 500px), (orientation: portrait) and (max-width: 1100px)";
+const MOBILE_MQ = window.matchMedia(MOBILE_LAYOUT_QUERY);
+const PORTRAIT_MQ = window.matchMedia("(orientation: portrait)");
+
+function detectLayoutMode() {
+  if (!MOBILE_MQ.matches) return "desktop";
+  return PORTRAIT_MQ.matches ? "portrait" : "landscape";
+}
 const DEFAULT_WORD_POS = 450_000;
 const DEFAULT_SPEED = 5_000;
 const DEFAULT_ZOOM = 2.75;
@@ -69,6 +103,15 @@ const DEFAULT_ON_ROLL_BEHAVIOR = "cinematic";
 const ON_ROLL_BEHAVIORS = ["cinematic", "pause", "quick"];
 const ROLL_LOCATIONS = ["predicted", "curated"];
 const DEFAULT_ROLL_LOCATION = "predicted";
+// The single allow-list for app.mode, shared by the init read and setMode's
+// write-side guard (T-02-12) — "detail" is singular, matching the live
+// LS_MODE storage contract; never "details" (the prototype's spelling).
+const MODE_CHOICES = ["playthrough", "detail"];
+const DEFAULT_MODE = "playthrough";
+// The one surface stack (Settings/About/Help) a portrait reader can have
+// open at a time (MOBP-05) — openMobileSurface/closeMobileSurface below are
+// the only writers of app.mobileSurface.
+const MOBILE_SURFACES = ["settings", "info", "help"];
 
 const STORY_LINKS = [
   { label: "SV", href: "https://forums.sufficientvelocity.com/threads/brocktons-celestial-forge-worm-jumpchain.70036/threadmarks" },
@@ -91,7 +134,7 @@ const app = {
   packageIndex: null,
   selectedPackageId: null,
   selectedPackageMeta: null,
-  mode: readStoredChoice(LS_MODE, ["playthrough", "detail"], "playthrough"),
+  mode: readStoredChoice(LS_MODE, MODE_CHOICES, DEFAULT_MODE),
   wordPos: readStoredNumber(LS_BOOKMARK, DEFAULT_WORD_POS),
   playing: false,
   speed: readStoredNumber(LS_SPEED, DEFAULT_SPEED),
@@ -99,7 +142,68 @@ const app = {
   onRollBehavior: readStoredChoice(LS_ON_ROLL_BEHAVIOR, ON_ROLL_BEHAVIORS, DEFAULT_ON_ROLL_BEHAVIOR),
   rollLocation: readStoredChoice(LS_ROLL_LOCATION, ROLL_LOCATIONS, DEFAULT_ROLL_LOCATION),
   fieldLogHidden: readStoredBoolean(LS_FIELD_LOG_HIDDEN, false),
-  portraitDismissed: readStoredBoolean(LS_PORTRAIT_DISMISSED, false),
+  layoutMode: detectLayoutMode(),
+  helpOpen: false,
+  settingsOpen: false,
+  chromeHidden: false,
+  // Phase 3 (D-34/RESEARCH Pattern 4): the landscape chrome auto-hide idle
+  // timer's setTimeout handle. Lives on `app`, not `app.dom` (which render()
+  // blanks every structural rebuild) and not a module-level closure (which
+  // would survive a landscape->portrait->landscape round trip without being
+  // clearable) — same reasoning already documented below for
+  // mobileSurfaceFocusTrapTeardown. Cleared unconditionally in
+  // attachMobileGestures()'s teardown block, before any re-attach.
+  mobileChromeHideTimer: null,
+  tapToPause: readStoredBoolean(LS_TAP_TO_PAUSE, true),
+  haptics: readStoredBoolean(LS_HAPTICS, true),
+  helpSeen: readStoredBoolean(LS_HELP_SEEN, false),
+  mobileTimelineZoom: Number(readStoredChoice(LS_MOBILE_TIMELINE_ZOOM, MOBILE_TIMELINE_ZOOM_CHOICES, "1")),
+  mobileGestureTeardown: null,
+  // Phase 2 (D-17/D-18): portrait-only gesture teardown handles, kept separate
+  // from mobileGestureTeardown (the Phase 1 diagnostic probe's slot) so
+  // re-attaching one never drops the other's teardown.
+  mobileSkyTeardown: null,
+  mobileRailTeardown: null,
+  // Phase 2 Plan 3 (MOBP-04): the rail's measured pixel width (default
+  // mirrors the prototype's useState(350) fallback before the first
+  // ResizeObserver callback fires), the cached cluster bins computed from
+  // it (app.mobileRailBins, recomputed only on structural render/zoom
+  // change/resize — never on a playback frame, D-18), and the observer
+  // handle itself (defensive-teardown discipline matching the gesture
+  // slots above).
+  mobileRailWidth: 350,
+  // Phase 3 (D-36/RESEARCH Pitfall 6): which layout's ResizeObserver last
+  // measured mobileRailWidth, so a stale portrait/landscape measurement is
+  // never used to bin the OTHER layout's differently-sized scrub track for
+  // one frame after a rotation. null until a measurement lands (Plan 02's
+  // ResizeObserver writes it); see mobileScrubWidthDefaultForLayout().
+  mobileRailWidthLayout: null,
+  mobileRailBins: [],
+  mobileRailResizeObserver: null,
+  // Auto-pan offset frozen for the duration of one rail drag (null when no
+  // drag is in flight). See the onScrub callback for why it must not be
+  // recomputed per move.
+  mobileScrubPanPct: null,
+  // Session-only (never persisted): the first-run sky tap hint mounts once
+  // per page load, tracked here rather than localStorage since it's a
+  // per-session affordance, not a durable preference.
+  mobileSkyHintShown: false,
+  // Phase 2 Plan 4 (MOBP-05): the one surface stack. mobileSurface is null
+  // or one of MOBILE_SURFACES; mobileSurfaceOpener is the data-action
+  // string of the button that opened it (NOT a node reference — render()
+  // rebuilds the whole portrait DOM on every structural render, so a raw
+  // node would already be detached by the time closeMobileSurface() needs
+  // it) — closeMobileSurface() re-resolves a live element by that selector
+  // to restore focus there (D-16). mobileSurfaceFocusTrapTeardown lives on
+  // `app` (not app.dom, which render() resets) so it survives to be invoked
+  // defensively before the next surface mounts. mobileHelpAutoOpened is
+  // session-only (never persisted) — it guards the first-run auto-open
+  // against re-firing on a later structural render within the same page
+  // load.
+  mobileSurface: null,
+  mobileSurfaceOpener: null,
+  mobileSurfaceFocusTrapTeardown: null,
+  mobileHelpAutoOpened: false,
   rollFilter: "all",
   rollSort: "roll",
   raf: null,
@@ -112,6 +216,8 @@ const app = {
   frameKeys: {
     narrative: null,
     skyCamera: null,
+    mobileChip: null,
+    mobileFocal: null,
     detail: {},
   },
   bookmarkPersistTimer: null,
@@ -315,7 +421,11 @@ function persistBookmarkSoon() {
 function migratePreviewStorage() {
   try {
     if (localStorage.getItem(LS_STORAGE_VERSION) === STORAGE_VERSION) return;
-    for (const key of [LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR, LS_ROLL_LOCATION, LS_FIELD_LOG_HIDDEN]) {
+    for (const key of [
+      LS_BOOKMARK, LS_SPEED, LS_ZOOM, LS_MODE, LS_ON_ROLL_BEHAVIOR,
+      LS_ROLL_LOCATION, LS_FIELD_LOG_HIDDEN,
+      LS_MOBILE_TIMELINE_ZOOM, LS_TAP_TO_PAUSE, LS_HAPTICS, LS_HELP_SEEN,
+    ]) {
       localStorage.removeItem(key);
     }
     localStorage.setItem(LS_STORAGE_VERSION, STORAGE_VERSION);
@@ -692,6 +802,22 @@ function lastRollAtWord(wordPos) {
   return last;
 }
 
+// rollStepFrom(wordPos, dir): the sky swipe-step target, one roll at a time.
+// Derives the current index from lastRollAtWord's result rather than a
+// second binary search / roll-index lookup (no-parallel-implementations) —
+// lastRollAtWord IS the single roll-lookup semantic in the codebase. dir is
+// +1 (forward) or -1 (backward); the result clamps into [0, rolls.length-1]
+// so repeated steps past either end hold at the first/last roll instead of
+// throwing or wrapping. Returns null when the story has no rolls at all.
+function rollStepFrom(wordPos, dir) {
+  const rolls = app.data.story.rolls;
+  if (!rolls.length) return null;
+  const current = lastRollAtWord(wordPos);
+  const currentIndex = current ? rolls.indexOf(current) : -1;
+  const nextIndex = clamp(currentIndex + dir, 0, rolls.length - 1);
+  return rolls[nextIndex];
+}
+
 function recentRolls(wordPos, count = 10) {
   const rows = [];
   for (let i = app.data.story.rolls.length - 1; i >= 0 && rows.length < count; i -= 1) {
@@ -752,6 +878,10 @@ function setWordPos(value) {
 }
 
 function setMode(mode) {
+  // T-02-12: write-side allow-list guard mirroring setRollLocation's — an
+  // out-of-list value (e.g. the prototype's plural "details") must never
+  // reach storage, or the next reload would silently revert to the default.
+  if (!MODE_CHOICES.includes(mode)) return;
   app.mode = mode;
   store(LS_MODE, mode);
   render();
@@ -823,10 +953,26 @@ function togglePlayback() {
     releasePausedFocusLock();
     if (!app.playing) startPlayback();
     else updatePlaybackFrame();  // keep playing; next tick sees the lock released
+    // Escaping a held cinematic always ends in a playing state (both
+    // branches above), so the landscape auto-hide window re-arms here too
+    // (D-28) — this early return must cover the same ground as the
+    // ordinary exit below, not leave a hole in the "only while playing"
+    // gate.
+    resetMobileChromeHideTimer();
     return;
   }
-  if (app.playing) stopPlayback();
-  else startPlayback();
+  if (app.playing) {
+    stopPlayback();
+    // D-28: pausing reveals chrome and holds it revealed. Reveal first,
+    // then reset — resetMobileChromeHideTimer()'s own app.playing gate
+    // turns the reset into a pure clear (no new window arms) now that
+    // app.playing is false.
+    revealMobileChrome();
+    resetMobileChromeHideTimer();
+  } else {
+    startPlayback();
+    resetMobileChromeHideTimer();
+  }
 }
 
 function releasePausedFocusLock() {
@@ -875,7 +1021,7 @@ function render() {
   clear(root);
   recordStructuralRender();
   app.dom = {};
-  app.frameKeys = { narrative: null, skyCamera: null, detail: {} };
+  app.frameKeys = { narrative: null, skyCamera: null, mobileChip: null, mobileFocal: null, mobileActiveDot: null, mobileFieldLog: null, mobileCinemaScrub: null, detail: {} };
   app.carousel.visibleSlots = new Map();
   if (app.error) {
     root.append(renderLoadError(app.error));
@@ -885,9 +1031,59 @@ function render() {
     root.append(renderLoading());
     return;
   }
-  root.append(renderAppShell());
+  // Phase 3: the D-12 interim landscape fallback (renderAppShell() for
+  // layoutMode === "landscape") is retired — landscape gets its own arm,
+  // renderMobileLandscape(), exactly like portrait's D-12 arm. Only
+  // layoutMode === "desktop" still appends renderAppShell().
+  root.append(
+    app.layoutMode === "portrait" ? renderMobilePortrait()
+    : app.layoutMode === "landscape" ? renderMobileLandscape()
+    : renderAppShell(),
+  );
   cachePlaybackDomRefs();
   updatePlaybackFrame();
+  if (app.layoutMode !== "desktop") {
+    root.append(el("div", {
+      class: "mobile-gesture-probe",
+      "aria-hidden": "true",
+      // z-index pinned to the max 32-bit signed int so the portrait DOM
+      // (which now renders real, stacked, pointer-events:auto content) can
+      // never steal this diagnostic probe's hit target (Phase 1 tests drive
+      // it at PHONE_PORTRAIT, F-01).
+      style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;z-index:2147483647;",
+    }));
+    // MOBX-03 (D-42..D-45): one visually-hidden polite ARIA live region,
+    // mounted only on the mobile layouts, never on desktop. The hiding
+    // technique lives entirely in web/mobile.css's `.mobile-live-region`
+    // rule (04-UI-SPEC.md's locked property table) — this node carries no
+    // inline style of its own. Cached on app.dom AFTER cachePlaybackDomRefs()
+    // has already replaced that object (see the comment at its call site
+    // above), so this ref is never discarded by a later reassignment.
+    const mobileLiveRegion = el("div", {
+      class: "mobile-live-region",
+      role: "status",
+      "aria-live": "polite",
+      "aria-atomic": "true",
+    });
+    root.append(mobileLiveRegion);
+    app.dom.mobileLiveRegion = mobileLiveRegion;
+    attachMobileGestureProbes();
+    // Phase 3 (D-34/Pitfall 3): ONE gesture-attach lifecycle and ONE focus-
+    // trap re-attach serve BOTH mobile layouts — this whole block (both
+    // calls) moved from portrait-only to every non-desktop layout in a
+    // single edit, so a landscape flyout traps keyboard focus exactly like
+    // portrait's does, and never silently stays portrait-only while
+    // gesture-attach alone gets generalized.
+    attachMobileGestures();
+    // D-16: the focus trap re-attaches to whichever surface node this
+    // render pass just built (or tears down if none is open) — never
+    // left pointing at a node the last clear(root) already detached.
+    if (app.mobileSurface) {
+      trapMobileSurfaceFocus(document.querySelector(".mobile-flyout, .mobile-help-overlay"));
+    } else {
+      teardownMobileSurfaceFocusTrap();
+    }
+  }
 }
 
 function renderLoading() {
@@ -912,7 +1108,6 @@ function renderLoadError(error) {
 function renderAppShell() {
   return el("div", { class: "app" },
     renderHeader(),
-    app.portraitDismissed ? null : renderPortraitBanner(),
     el("main", { class: "app-main" },
       app.mode === "playthrough"
         ? [
@@ -1039,13 +1234,6 @@ function renderInfoPopover() {
       el("span", { text: dataVersionDescription(app.data.packageMeta || app.data.pkg, app.selectedPackageId === (app.packageIndex?.default_package_id || app.selectedPackageId)) }),
       renderPackageSelector(),
     ),
-  );
-}
-
-function renderPortraitBanner() {
-  return el("div", { class: "portrait-banner is-visible", role: "status" },
-    el("span", {}, el("strong", { text: "Best in landscape." }), " The Forge timeline reaches across millions of words - rotating gives the scrubber room to breathe."),
-    el("button", { type: "button", onClick: () => { app.portraitDismissed = true; store(LS_PORTRAIT_DISMISSED, true); render(); }, text: "got it" }),
   );
 }
 
@@ -2521,6 +2709,36 @@ function closeIcon() {
   );
 }
 
+// Mobile surface-dock icons (Plan 02-04) — ported verbatim from
+// design/mobile-ux/prototype/panels.jsx's GearIcon/InfoIcon/HelpIcon
+// (same viewBox/path data), sized to the compact 18px the prototype uses.
+function mobileGearIcon() {
+  return svgEl(
+    "svg",
+    { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" },
+    svgEl("circle", { cx: "12", cy: "12", r: "3" }),
+    svgEl("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" }),
+  );
+}
+
+function mobileInfoIcon() {
+  return svgEl(
+    "svg",
+    { width: 18, height: 18, viewBox: "0 0 18 18", fill: "none", stroke: "currentColor", "stroke-width": "1.3", "aria-hidden": "true" },
+    svgEl("circle", { cx: "9", cy: "9", r: "7" }),
+    svgEl("path", { d: "M9 8v4M9 5.5v.5", "stroke-linecap": "round" }),
+  );
+}
+
+function mobileHelpIcon() {
+  return svgEl(
+    "svg",
+    { width: 18, height: 18, viewBox: "0 0 18 18", fill: "none", stroke: "currentColor", "stroke-width": "1.4", "aria-hidden": "true" },
+    svgEl("circle", { cx: "9", cy: "9", r: "7" }),
+    svgEl("path", { d: "M7 7a2 2 0 1 1 3 1.7c-.7.4-1 .8-1 1.5M9 12.5v.5", "stroke-linecap": "round" }),
+  );
+}
+
 function cachePlaybackDomRefs() {
   app.dom = {
     scrubberScroller: document.querySelector(".scrubber-scroller"),
@@ -2542,6 +2760,49 @@ function cachePlaybackDomRefs() {
     constellationBarsPanel: document.querySelector("#constellation-bars-panel"),
     rollLogPanel: document.querySelector("#detail-roll-log-panel"),
   };
+  if (app.layoutMode === "portrait") {
+    // Portrait-only refs (D-18) — appended to the same app.dom object so
+    // updateMobilePortraitFrame() can mutate text/style without rebuilding
+    // the rail's lanes every frame. Desktop refs above stay untouched.
+    app.dom.mobileSky = document.querySelector(".mobile-sky");
+    app.dom.mobileSkyCameraLayer = document.querySelector(".mobile-sky-camera-layer");
+    app.dom.mobileFocalLabel = document.querySelector(".mobile-focal-label");
+    app.dom.mobileDockMeta = document.querySelector(".mobile-dock-meta");
+    app.dom.mobileDockTitle = document.querySelector(".mobile-dock-title");
+    app.dom.mobileFab = document.querySelector(".mobile-fab-play");
+    app.dom.mobileRail = document.querySelector(".mobile-rail");
+    app.dom.mobileRailInner = document.querySelector(".mobile-rail-inner");
+    app.dom.mobileRailRollsLane = document.querySelector(".mobile-lane-rolls");
+    app.dom.mobilePlayhead = document.querySelector(".mobile-playhead");
+    app.dom.mobileActiveDot = document.querySelector(".mobile-roll-dot.active");
+    app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
+    app.dom.mobileChipRow = document.querySelector(".mobile-chip-row");
+    app.dom.mobileHintRow = document.querySelector(".mobile-hint-row");
+  } else if (app.layoutMode === "landscape") {
+    // Landscape-only refs (D-18/D-26) — a distinct branch from portrait's
+    // above (never collapsed into one `!== "desktop"` block: the ref sets
+    // genuinely differ). mobileSky/mobileSkyCameraLayer/mobileFocalLabel/
+    // mobileTopCluster/mobileChipRow use the SAME selectors as portrait
+    // (D-35's shared sky helper) — safe because only one layout is ever
+    // mounted, so exactly one of these two branches ever queries the DOM.
+    app.dom.mobileSky = document.querySelector(".mobile-sky");
+    app.dom.mobileSkyCameraLayer = document.querySelector(".mobile-sky-camera-layer");
+    app.dom.mobileFocalLabel = document.querySelector(".mobile-focal-label");
+    app.dom.mobileTopCluster = document.querySelector(".mobile-top-cluster");
+    app.dom.mobileChipRow = document.querySelector(".mobile-chip-row");
+    app.dom.mobileFieldLog = document.querySelector(".mobile-field-log");
+    app.dom.mobileFieldLogHeader = document.querySelector(".mobile-field-log-header");
+    app.dom.mobileFieldLogHeaderCount = document.querySelector(".mobile-field-log-header .count");
+    app.dom.mobileFieldLogList = document.querySelector(".mobile-field-log-list");
+    app.dom.mobileCinemaScrub = document.querySelector(".mobile-cinema-scrub");
+    app.dom.mobileCinemaScrubTrack = document.querySelector(".mobile-cinema-scrub-track");
+    app.dom.mobileCinemaScrubInner = document.querySelector(".mobile-cinema-scrub-inner");
+    app.dom.mobileCinemaScrubProgress = document.querySelector(".mobile-cinema-scrub-progress");
+    app.dom.mobileCinemaScrubThumb = document.querySelector(".mobile-cinema-scrub-thumb");
+    app.dom.mobileCinemaScrubFab = document.querySelector(".mobile-cinema-scrub-fab");
+    app.dom.mobileCinemaScrubCount = document.querySelector(".mobile-cinema-scrub-count");
+    app.dom.mobileDockStatus = document.querySelector(".mobile-dock-status");
+  }
   app.carousel.visibleSlots = new Map(
     [...document.querySelectorAll(".carousel-slot[data-roll-uid]")]
       .map(slot => [slot.dataset.rollUid, slot]),
@@ -2550,6 +2811,20 @@ function cachePlaybackDomRefs() {
 
 function updatePlaybackFrame() {
   if (!app.data) return;
+  // D-18/T-02-01: portrait has no #scrubber-playhead, so this early return
+  // MUST land before the `!app.dom?.playhead` gate below — otherwise the
+  // very first portrait frame recurses into render() forever (RESEARCH
+  // Pitfall 2). Landscape has no #scrubber-playhead either (Phase 3), so its
+  // early return needs the same ordering. Desktop is byte-identical past
+  // this point.
+  if (app.layoutMode === "portrait") {
+    updateMobilePortraitFrame();
+    return;
+  }
+  if (app.layoutMode === "landscape") {
+    updateMobileLandscapeFrame();
+    return;
+  }
   if (!app.dom?.playhead) {
     render();
     return;
@@ -2721,6 +2996,1597 @@ function centerScrubber() {
   scroller.scrollLeft = target;
 }
 
+// ── Mobile UX ─────────────────────────────────────────────────────────────
+// Phase 1 plumbing (INTEGRATION_PLAN.md §0.4): layout-mode detection, the
+// window.__bcfPrefs bridge for the verbatim mobile-gestures.js port, the
+// bcf:* preference setters Phase 2's Settings UI will call, and the
+// per-render gesture attach lifecycle (D-06, D-07, D-09, D-11).
+
+// rAF-coalesced layout-mode recompute. A discrete layout transition is the
+// one sanctioned full-render trigger; resize/orientation event storms
+// collapse into a single check per frame. (The ~100ms iOS re-settle re-check
+// is intentionally NOT added until a real device shows the flap.)
+let layoutRaf = null;
+function onLayoutMaybeChanged() {
+  if (layoutRaf != null) return;
+  layoutRaf = requestAnimationFrame(() => {
+    layoutRaf = null;
+    const next = detectLayoutMode();
+    if (next === app.layoutMode) return;
+    app.layoutMode = next;
+    window.__bcfLayoutMode = next;
+    // Phase 3 (RESEARCH Pitfall 6/CONTEXT A2): reset the width-guard BEFORE
+    // render() so mobileScrubWidthDefaultForLayout() supplies THIS layout's
+    // default for the very first frame, instead of one frame rendering with
+    // the outgoing layout's stale ResizeObserver measurement (or the shared
+    // default) mis-binning the new track's width.
+    app.mobileRailWidthLayout = null;
+    render();
+    // D-31: rotating into landscape counts as activity — the reader sees
+    // the controls they just rotated into, and the cinema view still
+    // appears for someone who then simply watches. This must run AFTER
+    // render(), because the cinema-scrub DOM ref
+    // (app.dom.mobileCinemaScrub, read by revealMobileChrome() and armed by
+    // resetMobileChromeHideTimer()) does not exist until cachePlaybackDomRefs()
+    // has run inside render() above. No setTimeout/debounce/pointer-state
+    // check is added here or anywhere else in this function — an ignored or
+    // deferred rotation reads to the reader as a freeze (D-22); the rAF
+    // coalescing above is the whole of the sanctioned debouncing.
+    if (next === "landscape") {
+      revealMobileChrome();
+      resetMobileChromeHideTimer();
+    }
+  });
+}
+MOBILE_MQ.addEventListener("change", onLayoutMaybeChanged);
+PORTRAIT_MQ.addEventListener("change", onLayoutMaybeChanged);
+window.addEventListener("orientationchange", onLayoutMaybeChanged);
+window.__bcfLayoutMode = app.layoutMode;
+
+// Bridge for mobile-gestures.js's haptic() guard (reads window.__bcfPrefs?.haptics)
+// and a read surface for tests. Keeps the gesture module byte-identical to the
+// prototype (D-11: haptics stay decorative-only).
+Object.defineProperty(window, "__bcfPrefs", {
+  get: () => ({
+    haptics: app.haptics,
+    tapToPause: app.tapToPause,
+    helpSeen: app.helpSeen,
+    mobileTimelineZoom: app.mobileTimelineZoom,
+  }),
+});
+
+// Preference setters — the MOBF-04 written-on-change contract Phase 2's
+// Settings UI calls. Each updates app state and persists via store().
+function setTapToPause(value) {
+  app.tapToPause = Boolean(value);
+  store(LS_TAP_TO_PAUSE, app.tapToPause);
+}
+function setHaptics(value) {
+  app.haptics = Boolean(value);
+  store(LS_HAPTICS, app.haptics);
+}
+function setMobileTimelineZoom(value) {
+  if (![1, 2, 4, 8].includes(value)) return; // allow-list; ignore anything else
+  app.mobileTimelineZoom = value;
+  store(LS_MOBILE_TIMELINE_ZOOM, value);
+  // A zoom change is a sanctioned structural render (like the dock speed
+  // cycle) — the rail's inner width AND its bins (pxWidth = railWidth *
+  // zoom) both depend on it, so recompute bins before the rebuild rather
+  // than leaving stale bins from the previous zoom on screen for one frame.
+  recomputeMobileRailBins();
+  render();
+}
+function markHelpSeen() {
+  app.helpSeen = true;
+  store(LS_HELP_SEEN, true);
+}
+
+// ── Surface stack: Settings / About / Help (Plan 02-04, MOBP-05) ───────────
+// Exactly one of MOBILE_SURFACES (or none) is ever open. openMobileSurface
+// is the only place that pushes a history sentinel; closeMobileSurface is
+// the only place that consumes one — every close route (backdrop tap, close
+// button, back gesture) funnels through it exactly once (T-02-14).
+
+// openMobileSurface(kind, triggerEl): closes whatever's open (in memory only
+// — no history.back(), since the new sentinel below replaces it), sets both
+// fields, pushes exactly one sentinel, then renders. triggerEl is
+// remembered so closeMobileSurface() can restore focus there (D-16) — but
+// render() unconditionally clears and rebuilds the ENTIRE portrait DOM tree
+// on every structural render (no per-node diffing anywhere in this app), so
+// triggerEl itself will already be a detached node by the time a later
+// close happens. app.mobileSurfaceOpener therefore stores triggerEl's
+// data-action string (a stable identifier for "the button that opens this
+// surface"), not the node — closeMobileSurface re-resolves a live element
+// by that selector AFTER its own render() rebuild, rather than calling
+// .focus() on a stale reference that would silently do nothing.
+function openMobileSurface(kind, triggerEl) {
+  if (!MOBILE_SURFACES.includes(kind)) return;
+  // Pressing the control that opened a surface closes it again. Without this
+  // the second press re-opened the same surface AND pushed a second history
+  // sentinel, so escaping by back-gesture took as many presses as taps.
+  if (app.mobileSurface === kind) {
+    closeMobileSurface();
+    return;
+  }
+  // Swapping Settings <-> About reuses the sentinel already on the stack, so
+  // exactly one is outstanding while any surface is open — one back press
+  // always closes, whatever route got you here.
+  const alreadyOpen = app.mobileSurface !== null;
+  app.mobileSurface = kind;
+  app.mobileSurfaceOpener = triggerEl?.dataset?.action || null;
+  if (!alreadyOpen) history.pushState({ bcfMobileSurface: kind }, "");
+  render();
+}
+
+// closeMobileSurface({ fromPopstate }): a no-op when nothing is open, so a
+// popstate arriving after an already-closed surface (or a stray back
+// keypress) never double-fires. Consumes the sentinel with history.back()
+// unless the close itself originated FROM a popstate (that navigation
+// already consumed it) — this is what keeps history.length unchanged across
+// every close route.
+function closeMobileSurface({ fromPopstate = false } = {}) {
+  if (!app.mobileSurface) return;
+  const openerAction = app.mobileSurfaceOpener;
+  app.mobileSurface = null;
+  app.mobileSurfaceOpener = null;
+  if (!fromPopstate) history.back();
+  render();
+  if (openerAction) {
+    const opener = document.querySelector(`[data-action="${openerAction}"]`);
+    if (opener) opener.focus();
+  }
+}
+
+// A single module-level popstate listener closes the topmost surface when
+// one is open — this is how the phone's own back gesture dismisses a
+// flyout instead of leaving the app (D-16).
+window.addEventListener("popstate", () => {
+  if (app.mobileSurface) closeMobileSurface({ fromPopstate: true });
+});
+
+// trapMobileSurfaceFocus(surfaceEl): tears down any prior trap first
+// (defensive, matching the gesture-teardown convention), then — if a
+// surface is mounted — moves focus to its first focusable element and
+// installs a focusin listener (redirects focus back in if it escapes) plus
+// a keydown listener (wraps Tab/Shift+Tab at the first/last focusable).
+// Teardown lives on `app`, not app.dom (render() resets app.dom every call).
+const MOBILE_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function mobileSurfaceFocusables(surfaceEl) {
+  return [...surfaceEl.querySelectorAll(MOBILE_FOCUSABLE_SELECTOR)]
+    .filter(node => !node.disabled && node.offsetParent !== null);
+}
+
+function teardownMobileSurfaceFocusTrap() {
+  if (typeof app.mobileSurfaceFocusTrapTeardown === "function") {
+    app.mobileSurfaceFocusTrapTeardown();
+  }
+  app.mobileSurfaceFocusTrapTeardown = null;
+}
+
+function trapMobileSurfaceFocus(surfaceEl) {
+  teardownMobileSurfaceFocusTrap();
+  if (!surfaceEl) return;
+  const initial = mobileSurfaceFocusables(surfaceEl)[0];
+  if (initial) initial.focus();
+  const onFocusIn = event => {
+    if (surfaceEl.contains(event.target)) return;
+    const first = mobileSurfaceFocusables(surfaceEl)[0];
+    if (first) first.focus();
+  };
+  const onKeyDown = event => {
+    if (event.key !== "Tab") return;
+    const items = mobileSurfaceFocusables(surfaceEl);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener("focusin", onFocusIn);
+  document.addEventListener("keydown", onKeyDown);
+  app.mobileSurfaceFocusTrapTeardown = () => {
+    document.removeEventListener("focusin", onFocusIn);
+    document.removeEventListener("keydown", onKeyDown);
+  };
+}
+
+// binRolls/binSize/panOffsetForPlayhead/mobileInnerFraction are read-only
+// exposures of the SAME functions the rail's render/scrub paths call — this
+// is exposure of the single implementation for test assertions, never a
+// second math path (no-parallel-implementations).
+window.__bcfMobile = {
+  setTapToPause,
+  setHaptics,
+  setMobileTimelineZoom,
+  markHelpSeen,
+  binRolls,
+  binSize,
+  panOffsetForPlayhead,
+  mobileInnerFraction,
+  // setMode's write-side allow-list guard (T-02-12) is otherwise only
+  // reachable through the Settings UI's own allow-listed buttons — exposed
+  // here (like the setters above) so the guard itself can be asserted
+  // directly against an out-of-allow-list value.
+  setMode,
+};
+
+// Dock speed control (MOBP-02/UI-SPEC "Settings — Speed options"). Every
+// rung's value is an existing option of the frozen desktop speed <select>
+// ([1000, 2500, 5000, 10000, 25000, 50000, 100000]), so a speed chosen on a
+// phone can never leave that control rendering blank. The rung LABEL is the
+// UI-SPEC's canonical value string ("0.5"/"1"/"2"/"4" — same convention the
+// prototype's own Settings speed radio group uses, design/mobile-ux/
+// prototype/panels.jsx), not the display glyph; mobileSpeedButtonLabel()
+// below maps "0.5" to the "½" glyph the prototype's app.jsx also renders,
+// for the dock button's text only. The 4x label maps to the 25000 rung (the
+// nearest existing rung at or above 4 x 5000) — this approximation is on
+// the Phase B gate agenda (F-04).
+const MOBILE_SPEED_RUNGS = [["0.5", 2500], ["1", 5000], ["2", 10000], ["4", 25000]];
+
+// mobileSpeedMultiplier(): the label of the rung whose value equals the
+// live app.speed, or null when the current speed came from the desktop
+// control and matches no rung.
+function mobileSpeedMultiplier() {
+  const rung = MOBILE_SPEED_RUNGS.find(([, value]) => value === app.speed);
+  return rung ? rung[0] : null;
+}
+
+// setMobileSpeedMultiplier(label): looks the label up in the allow-listed
+// rung table (ignoring anything else), assigns app.speed to that rung's
+// words-per-second value, persists through the SAME LS_SPEED path the
+// desktop <select> uses (no second persistence route), and renders — a
+// control change is a sanctioned structural render, unlike a gesture.
+function setMobileSpeedMultiplier(label) {
+  const rung = MOBILE_SPEED_RUNGS.find(([rungLabel]) => rungLabel === label);
+  if (!rung) return;
+  app.speed = rung[1];
+  store(LS_SPEED, app.speed);
+  render();
+}
+
+// Dock speed button's display text: "{glyph}×" when the current speed
+// matches a rung (the "0.5" rung reads "½", matching the prototype's own
+// speedLabel convention), else a raw words/sec readout for an
+// out-of-rung speed set from the desktop control.
+function mobileSpeedButtonLabel() {
+  const rungLabel = mobileSpeedMultiplier();
+  if (rungLabel == null) return `${formatWords(app.speed)}w/s`;
+  return `${rungLabel === "0.5" ? "½" : rungLabel}×`;
+}
+
+// Diagnostic counter mirroring recordStructuralRender(): increments only when
+// the test harness pre-injected window.__bcfGestureStats; production no-op.
+function recordGestureEvent(kind) {
+  const stats = window.__bcfGestureStats;
+  if (stats && typeof stats[kind] === "number") {
+    stats[kind] += 1;
+  }
+}
+
+// Per-render gesture attach lifecycle (D-07): called only from inside the
+// render pass, after the probe element is mounted — never from the matchMedia
+// handler, and no gesture callback ever triggers a structural render. The
+// diagnostic callbacks ARE the Phase 1 attach point; Phase 2 renderers pass
+// production callbacks through this exact convention. Teardown lives on
+// `app` (NOT app.dom, which render() resets) so it survives to be invoked
+// defensively before re-attach.
+function attachMobileGestureProbes() {
+  if (typeof app.mobileGestureTeardown === "function") {
+    app.mobileGestureTeardown();
+    app.mobileGestureTeardown = null;
+  }
+  const probe = document.querySelector(".mobile-gesture-probe");
+  if (!probe || typeof window.attachSkyGestures !== "function") return;
+  app.mobileGestureTeardown = window.attachSkyGestures(probe, {
+    onTap: () => recordGestureEvent("taps"),
+    onDoubleTap: () => recordGestureEvent("doubleTaps"),
+    onSwipeStep: () => recordGestureEvent("swipeSteps"),
+    onSwipeEnd: () => recordGestureEvent("swipeEnds"),
+  });
+  recordGestureEvent("attaches");
+}
+
+// ── Portrait C layout (Phase 2, D-12/D-13/D-17/D-18) ────────────────────────
+// Real sky + always-visible mini-rail dock. Duplicates markup over the
+// shared model (plan §7) — never edits the frozen desktop renderers it
+// calls (renderViewportFrame, renderSkyCamera, playthroughFrameState).
+
+// Verbatim port of prototype/scrubber.jsx panOffsetForPlayhead (algorithm
+// unchanged): the auto-pan transform that keeps the playhead visible once
+// the mini-rail's zoomed-in content would otherwise scroll it off-screen.
+function panOffsetForPlayhead(playheadPctRaw, zoom) {
+  if (zoom <= 1) return 0;
+  const wantedPct = playheadPctRaw * zoom - 50;
+  const maxPct = (zoom - 1) * 100;
+  return Math.max(0, Math.min(maxPct, wantedPct));
+}
+
+// Verbatim port of prototype/scrubber.jsx fractionFromPointer (algorithm
+// unchanged): resolves a fraction of the INNER (zoomed) content from a raw
+// pointer event against the rail element's bounding box.
+function fractionFromPointer(el, e, zoom, panPct) {
+  const rect = el.getBoundingClientRect();
+  if (rect.width <= 0) return 0;
+  const xFracView = (e.clientX - rect.left) / rect.width;
+  const innerFrac = (xFracView + panPct / 100) / zoom;
+  return Math.max(0, Math.min(1, innerFrac));
+}
+
+// The single viewport-fraction -> inner-content-fraction conversion shared
+// by the rail's onScrub callback (attachRailScrub already resolves the
+// viewport fraction from the pointer event) and later plans. Never
+// duplicate this math a second time (no-parallel-implementations).
+function mobileInnerFraction(viewportFraction, zoom, panPct) {
+  return Math.max(0, Math.min(1, (viewportFraction + panPct / 100) / zoom));
+}
+
+// ── Cluster binning (MOBP-04, 02-03-PLAN.md) ────────────────────────────────
+// Verbatim port of design/mobile-ux/prototype/scrubber.jsx's binRolls/
+// finalizeBin/binSize (algorithm unchanged) — the ONLY change is the field
+// accessor: the live schema is roll.word_position/roll.outcome, not the
+// prototype's camelCase wordPosition. Never invent a second cluster-merge
+// implementation alongside this one.
+const MIN_DOT_SPACING_PX = 5;
+
+function binRolls(rolls, totalWords, pxWidth, minPx = MIN_DOT_SPACING_PX) {
+  if (!rolls.length || pxWidth <= 0) return [];
+  const minWords = (minPx / pxWidth) * totalWords;
+  const bins = [];
+  let cur = null;
+  for (const r of rolls) {
+    if (!cur || r.word_position - cur.firstWord > minWords) {
+      if (cur) bins.push(finalizeBin(cur));
+      cur = { firstWord: r.word_position, rolls: [r], outcomes: {} };
+      cur.outcomes[r.outcome] = 1;
+    } else {
+      cur.rolls.push(r);
+      cur.outcomes[r.outcome] = (cur.outcomes[r.outcome] || 0) + 1;
+    }
+  }
+  if (cur) bins.push(finalizeBin(cur));
+  return bins;
+}
+
+function finalizeBin(bin) {
+  // Midpoint word for visual placement; carry the dominant outcome.
+  const last = bin.rolls[bin.rolls.length - 1];
+  bin.midWord = (bin.firstWord + last.word_position) / 2;
+  const e = bin.outcomes;
+  if ((e.hit || 0) >= (e.miss || 0) && (e.hit || 0) >= (e.unknown || 0)) bin.dominant = "hit";
+  else if ((e.miss || 0) >= (e.unknown || 0)) bin.dominant = "miss";
+  else bin.dominant = "unknown";
+  return bin;
+}
+
+function binSize(bin) {
+  if (bin.rolls.length === 1) return 6;
+  return Math.min(14, 5 + Math.round(Math.sqrt(bin.rolls.length) * 1.6));
+}
+
+// recomputeMobileRailBins(): reads the rail's current pixel width
+// (app.mobileRailWidth, kept current by the ResizeObserver installed in
+// attachMobilePortraitGestures) and caches the resulting bins on
+// app.mobileRailBins. Call ONLY from: the structural render (renderMobile-
+// Portrait), renderMobileLandscape() (Phase 3 — the fourth sanctioned call
+// site, same discipline), the zoom setter (setMobileTimelineZoom), and the
+// rail's ResizeObserver callback — never from updateMobilePortraitFrame() or
+// updateMobileLandscapeFrame() (D-18: bins recompute on render/zoom/resize,
+// never on a playback frame).
+function recomputeMobileRailBins() {
+  if (!app.data) {
+    app.mobileRailBins = [];
+    return;
+  }
+  const story = app.data.story;
+  app.mobileRailBins = binRolls(
+    story.rolls,
+    story.total_words || 1,
+    app.mobileRailWidth * app.mobileTimelineZoom,
+  );
+}
+
+// mobileScrubWidthDefaultForLayout() (Phase 3, RESEARCH Pitfall 6/CONTEXT
+// A2): app.mobileRailWidth and app.mobileRailBins stay SHARED across both
+// mobile layouts — exactly one layout is ever mounted, so a second pair of
+// fields would just be dead weight. But a stale portrait measurement (the
+// 350 default, or a prior real measurement) must never mis-bin the
+// narrower, floating landscape cinema-scrub track for one frame right after
+// a rotation, and vice versa. app.mobileRailWidthLayout records which
+// layout's ResizeObserver last wrote a real measurement; when it doesn't
+// match the CURRENT layout, this returns a layout-appropriate default
+// instead of the other layout's stale number (200 for landscape — the
+// prototype's own cinema-scrub fallback; 350 for portrait, unchanged from
+// Phase 2). Once a layout's ResizeObserver measures and writes
+// app.mobileRailWidthLayout = app.layoutMode, this returns the live
+// measurement unchanged until the layout changes again.
+function mobileScrubWidthDefaultForLayout() {
+  if (app.mobileRailWidthLayout === app.layoutMode) return app.mobileRailWidth;
+  return app.layoutMode === "landscape" ? 200 : 350;
+}
+
+// renderMobileRailBinEl(bin, total): a single `.mobile-roll-bin` marker,
+// colour-keyed on the bin's dominant outcome, with a `.count` child only
+// once the bin holds more than one roll AND is large enough to hold the
+// digits (prototype's `size >= 10` rule).
+function renderMobileRailBinEl(bin, total) {
+  const size = binSize(bin);
+  const isMulti = bin.rolls.length > 1;
+  return el("div", {
+    class: `mobile-roll-bin ${bin.dominant}`,
+    style: { left: `${(bin.midWord / total) * 100}%`, width: `${size}px`, height: `${size}px` },
+  }, isMulti && size >= 10 ? el("span", { class: "count", text: String(bin.rolls.length) }) : null);
+}
+
+// renderMobileRailRollsLaneChildren(): the rolls lane's full child set — POV
+// bands, cached cluster bins (app.mobileRailBins, never recomputed here),
+// and the active roll's own marker drawn last so it always paints above the
+// bins. Shared by the initial structural build (renderMobileScrubber) and
+// the rail ResizeObserver's partial rebuild — never a third copy of this
+// markup.
+function renderMobileRailRollsLaneChildren() {
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const bands = story.chapters.map(chapter => el("div", {
+    class: `mobile-pov-band ${chapter.pov === "Joe" ? "mc" : chapter.pov === "Aisha" ? "aisha" : "other"}`,
+    style: {
+      left: `${(chapter.word_start / total) * 100}%`,
+      width: `${Math.max(0.02, ((chapter.word_end - chapter.word_start) / total) * 100)}%`,
+    },
+  }));
+  const bins = (app.mobileRailBins || []).map(bin => renderMobileRailBinEl(bin, total));
+  const activeRoll = lastRollAtWord(app.wordPos);
+  const activeDot = activeRoll
+    ? el("div", {
+      class: "mobile-roll-dot active",
+      style: { left: `${(activeRoll.word_position / total) * 100}%` },
+    })
+    : null;
+  return [...bands, ...bins, activeDot].filter(Boolean);
+}
+
+// maybeAutoOpenHelp(): the first-run welcome (MOBP-05). Runs at the TOP of
+// renderMobilePortrait(), before any node is built, so the surface it opens
+// is reflected in THIS SAME render pass — it must never call
+// openMobileSurface() or render() itself (either would recurse into the
+// render pass currently building this exact frame, breaking both the
+// portrait-crossing render count and the attach-count assertions the
+// plumbing/desktop-smoke suites already pin down).
+function maybeAutoOpenHelp() {
+  if (!app.data || app.helpSeen || app.mobileHelpAutoOpened) return;
+  app.mobileHelpAutoOpened = true;
+  app.mobileSurface = "help";
+  app.mobileSurfaceOpener = null;
+  history.pushState({ bcfMobileSurface: "help" }, "");
+}
+
+// renderMobileSkyRegion(frame) (Phase 3, D-35): the sky markup common to
+// BOTH mobile layouts — viewport frame corners, the cinematic camera layer,
+// the focal label, the tap hint, and the Settings/About/Help mount points.
+// Extracted verbatim from renderMobilePortrait()'s former inline sky block
+// so it exists in exactly ONE place; each caller wraps the returned array in
+// its own `.mobile-sky mobile-sky-surface` container with layout-specific
+// sizing (portrait: 60% height stack; landscape: ~75% width flex sibling of
+// the rail). Never duplicate this block a second time — D-35's justification
+// is that duplicating would mean fixing the tap hint, focal label and camera
+// layer twice.
+function renderMobileSkyRegion(frame) {
+  return [
+    renderViewportFrame(),
+    el("div", { class: "mobile-sky-camera-layer" },
+      frame.scene ? renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT) : null,
+    ),
+    renderMobileFocalLabel(frame),
+    renderMobileSkyTapHint(),
+    // D-19: the Help overlay is scoped to the sky region (not the whole
+    // mobile surface) so the dock/rail — including the play button a
+    // first-run empty-storage load must still be able to click — stays
+    // visible and operable while it's open.
+    app.mobileSurface === "help" ? renderMobileHelpOverlay() : null,
+    // Settings/About mount here too, under the same D-19 rationale as Help.
+    // They previously mounted as the last child of .mobile-app with a fixed
+    // `bottom: 152px`, which assumed the prototype's shorter dock: on a real
+    // iPhone (440x760) the dock is 304px tall and its transport row sits
+    // 112-166px from the bottom, so a 152px anchor landed inside that band
+    // and the buttons — z-index 10 against the flyout's 9 — painted through
+    // the panel. Scoping the surfaces to the sky removes the collision
+    // structurally instead of re-tuning the constant, and keeps the dock
+    // operable while a surface is open (the backdrop no longer covers it).
+    // D-33 reuses this same scoping for landscape's Settings/About.
+    renderMobileSurface(),
+  ];
+}
+
+// renderMobilePortrait(): the D-12 portrait arm of render(). Root
+// `.mobile-app` holds the top chip cluster, the real sky (D-13 — never the
+// prototype's procedural placeholder) with its cinematic camera and focal
+// label, and the dock (transport row + mini-rail + hint row).
+function renderMobilePortrait() {
+  maybeAutoOpenHelp();
+  const frame = playthroughFrameState();
+  // Phase 3/RESEARCH Pitfall 6: guard against a stale landscape measurement
+  // (or the other layout's default) surviving a rotation into portrait — see
+  // mobileScrubWidthDefaultForLayout(). A no-op once a portrait
+  // ResizeObserver measurement has already landed this session.
+  app.mobileRailWidth = mobileScrubWidthDefaultForLayout();
+  // Structural render is one of the four sanctioned call sites for bin
+  // recomputation (D-18) — never inside updateMobilePortraitFrame().
+  recomputeMobileRailBins();
+  return el("div", { class: "mobile-app" },
+    renderMobileTopCluster(),
+    el("div", { class: "mobile-sky mobile-sky-surface" },
+      ...renderMobileSkyRegion(frame),
+    ),
+    el("div", { class: "mobile-dock" },
+      el("div", { class: "mobile-dock-transport" },
+        el("button", {
+          class: "mobile-fab-play",
+          type: "button",
+          "data-action": "toggle-playback",
+          "aria-label": app.playing ? "Pause" : "Play",
+          title: app.playing ? "Pause (space)" : "Play (space)",
+          text: app.playing ? "❚❚" : "▶",
+        }),
+        el("div", { class: "mobile-dock-now" },
+          el("div", { class: "mobile-dock-meta readout-meta", text: mobileDockMetaText() }),
+          el("div", { class: "mobile-dock-title", text: frame.chapter?.title || "—" }),
+        ),
+        el("button", {
+          class: "mobile-icon-btn compact",
+          type: "button",
+          "data-action": "mobile-cycle-speed",
+          "aria-label": "Playback speed",
+          title: "Cycle playback speed",
+          text: mobileSpeedButtonLabel(),
+        }),
+        el("button", {
+          class: `mobile-icon-btn compact${app.mobileSurface === "settings" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-settings",
+          "aria-label": "Settings",
+          title: "Settings",
+        }, mobileGearIcon()),
+        el("button", {
+          class: `mobile-icon-btn compact${app.mobileSurface === "info" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-info",
+          "aria-label": "About",
+          title: "About this visualization",
+        }, mobileInfoIcon()),
+      ),
+      renderMobileScrubber(),
+      renderMobileHintRow(),
+    ),
+    renderMobileSurfaceBackdrop(),
+  );
+}
+
+// renderMobileSurface(): the exclusive Settings/About stack — returns null
+// when neither is open, or the backdrop + flyout pair when one is. Mounted
+// inside .mobile-sky (D-19), the same containing block as the Help overlay,
+// so a flyout can never geometrically collide with the dock and the backdrop
+// never covers the transport controls.
+function renderMobileSurface() {
+  if (app.mobileSurface === "settings") return renderMobileSettingsFlyout();
+  if (app.mobileSurface === "info") return renderMobileInfoFlyout();
+  return null;
+}
+
+// The dismiss backdrop stays a child of .mobile-app, NOT of .mobile-sky. It
+// has to span the whole surface: scoping it to the sky shrank the
+// tap-outside-to-close target to a thin strip and left the dock — the
+// natural place to tap next, right where the opening button is — with no
+// backdrop at all, so a flyout became impossible to dismiss by tapping out.
+// Only the panel itself needs to live in the sky (to avoid the dock overlap).
+function renderMobileSurfaceBackdrop() {
+  if (!app.mobileSurface || app.mobileSurface === "help") return null;
+  return el("div", { class: "mobile-flyout-backdrop", "data-action": "mobile-close-surface" });
+}
+
+// mobileSeg(value, options, onSelect): a `.mobile-seg` segmented control —
+// options is an array of [value, label] pairs. Shared by every Settings
+// group whose options commit through a plain setter call (View mode, Speed,
+// Timeline zoom); the On-roll group instead wires its buttons through the
+// existing set-on-roll-behavior data-action delegation directly (see
+// renderMobileSettingsFlyout) so it reuses that handler's own allow-list and
+// running-cinematic-clear logic rather than a second setter path.
+function mobileSeg(value, options, onSelect) {
+  return el("div", { class: "mobile-seg", role: "group" },
+    options.map(([v, label]) => el("button", {
+      type: "button",
+      class: value === v ? "is-active" : "",
+      "aria-pressed": value === v,
+      onClick: () => onSelect(v),
+      text: label,
+    })),
+  );
+}
+
+function mobileSettingsGroup(label, ...children) {
+  return el("div", { class: "mobile-group" },
+    el("div", { class: "mobile-group-label", text: label }),
+    ...children,
+  );
+}
+
+function mobileComfortRow(label, value, onToggle) {
+  return el("div", { class: "mobile-row" },
+    el("span", { text: label }),
+    el("button", { type: "button", class: "mobile-row-val", onClick: onToggle, text: value ? "On" : "Off" }),
+  );
+}
+
+// renderMobileSettingsFlyout(): every control routes through an existing
+// shared setter/delegated action — never a direct localStorage write
+// (T-02-12). Group order is locked (MOBP-05 ordering edge): View mode, On
+// roll, Speed, Timeline zoom, Comfort.
+function renderMobileSettingsFlyout() {
+  return el("div", { class: "mobile-flyout", role: "dialog", "aria-label": "Settings" },
+    el("h4", { text: "Settings" }),
+    el("div", { class: "mobile-flyout-divider" }),
+    mobileSettingsGroup(
+      "View mode",
+      mobileSeg(
+        app.mode,
+        [["playthrough", "Playthrough"], ["detail", "Details"]],
+        setMode,
+      ),
+    ),
+    mobileSettingsGroup(
+      "On roll",
+      el("div", { class: "mobile-seg", role: "group" },
+        [["cinematic", "Cinematic"], ["quick", "Skip"], ["pause", "Pause"]].map(([v, label]) => el("button", {
+          type: "button",
+          class: app.onRollBehavior === v ? "is-active" : "",
+          "aria-pressed": app.onRollBehavior === v,
+          "data-action": "set-on-roll-behavior",
+          "data-on-roll-behavior": v,
+          text: label,
+        })),
+      ),
+    ),
+    mobileSettingsGroup(
+      "Speed",
+      mobileSeg(
+        mobileSpeedMultiplier(),
+        [["0.5", "½×"], ["1", "1×"], ["2", "2×"], ["4", "4×"]],
+        setMobileSpeedMultiplier,
+      ),
+    ),
+    mobileSettingsGroup(
+      "Timeline zoom",
+      mobileSeg(
+        String(app.mobileTimelineZoom),
+        [["1", "1×"], ["2", "2×"], ["4", "4×"], ["8", "8×"]],
+        value => window.__bcfMobile.setMobileTimelineZoom(Number(value)),
+      ),
+    ),
+    mobileSettingsGroup(
+      "Comfort",
+      mobileComfortRow("Tap sky to pause", app.tapToPause, () => { setTapToPause(!app.tapToPause); render(); }),
+      mobileComfortRow("Haptics", app.haptics, () => { setHaptics(!app.haptics); render(); }),
+    ),
+  );
+}
+
+// renderMobileInfoFlyout(): story credit, the live STORY_LINKS constant
+// (never the prototype's hard-coded URLs — T-02-13/prohibition), and live
+// dataset counts read straight off app.data.story.
+function renderMobileInfoFlyout() {
+  const story = app.data.story;
+  return el("div", { class: "mobile-flyout", role: "dialog", "aria-label": "About" },
+    el("h4", { text: "About this visualization" }),
+    el("h2", { text: "Brockton's Celestial Forge" }),
+    el("div", { class: "mobile-flyout-credit" },
+      "Worm × Jumpchain crossover by ", el("b", { text: "LordRoustabout" }),
+    ),
+    el("div", { class: "mobile-flyout-divider" }),
+    mobileSettingsGroup(
+      "Read the source",
+      el("div", { class: "mobile-source-row" },
+        STORY_LINKS.map(link => el("a", {
+          href: link.href,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          text: `${link.label} ↗`,
+        })),
+      ),
+    ),
+    mobileSettingsGroup(
+      "Dataset",
+      el("div", { class: "mobile-flyout-dataset" },
+        el("div", { text: `${story.rolls.length} rolls · ${story.chapters.length} chapters` }),
+        el("div", { class: "muted", text: `${formatWords(story.total_words)} words` }),
+      ),
+    ),
+    el("button", {
+      type: "button",
+      class: "mobile-full-btn",
+      onClick: event => openMobileSurface("help", event.currentTarget),
+    }, el("span", { text: "Gestures & help" }), el("span", { text: "↗" })),
+  );
+}
+
+// The seven locked "How to play" gesture rows (UI-SPEC Copywriting
+// Contract) — icon glyph + bold lead-in + description, verbatim.
+const MOBILE_HELP_GESTURE_ROWS = [
+  ["👆", "Tap sky", "pause / resume."],
+  ["👆👆", "Double-tap sky", "snap to live edge."],
+  ["👈👉", "Swipe sky", "scrub by roll (haptic on each)."],
+  ["↔", "Drag scrubber", "direct scrub by word."],
+  ["🔄", "Rotate", "switches portrait ↔ landscape; state persists."],
+  ["⚙", "Settings", "speed, on-roll behavior, comfort."],
+  ["ⓘ", "About", "story credits, source links, gestures."],
+];
+
+// renderMobileHelpOverlay(): mounted inside .mobile-sky (D-19), never a
+// full-portrait overlay. Both the close button and the CTA dismiss through
+// the same markHelpSeen() + closeMobileSurface() pair.
+function renderMobileHelpOverlay() {
+  const dismiss = () => { markHelpSeen(); closeMobileSurface(); };
+  return el("div", { class: "mobile-help-overlay", role: "dialog", "aria-label": "Help" },
+    el("header", {},
+      el("div", {},
+        el("div", { class: "label", text: "Help & credits" }),
+        el("h1", { text: "Reading on mobile" }),
+      ),
+      el("button", { type: "button", class: "mobile-help-close", "aria-label": "Close", onClick: dismiss, text: "×" }),
+    ),
+    // The body scrolls; the header and the CTA below it do not. Scoped to the
+    // sky region (D-19), the content is taller than the available height on
+    // every phone-sized viewport, so a CTA in normal flow scrolls out of sight
+    // and first-run users cannot see how to dismiss.
+    el("div", { class: "mobile-help-body" },
+    el("div", { class: "mobile-credit-block" },
+      el("div", { class: "title", text: "Brockton's Celestial Forge" }),
+      el("div", { class: "by" }, "by ", el("b", { text: "LordRoustabout" }), " · Worm × Jumpchain"),
+      el("div", { class: "mobile-source-row" },
+        STORY_LINKS.map(link => el("a", {
+          href: link.href,
+          target: "_blank",
+          rel: "noopener noreferrer",
+          text: `${link.label} ↗`,
+        })),
+      ),
+    ),
+    el("h3", { text: "How to play" }),
+    el("div", { class: "mobile-help-gestures" },
+      MOBILE_HELP_GESTURE_ROWS.map(([icon, lead, rest]) => [
+        el("span", { class: "ico", text: icon }),
+        el("span", {}, el("b", { text: lead }), ` — ${rest}`),
+      ]),
+    ),
+    el("h3", { text: "Heads-up" }),
+    el("div", { class: "mobile-help-headsup" },
+      "Your bookmark, speed, and preferences survive a refresh — pick up where you left off. Haptics and tap-to-pause can be disabled in Settings → Comfort.",
+    ),
+    ),
+    el("button", { type: "button", class: "mobile-got-it", onClick: dismiss, text: "Got it — read on" }),
+  );
+}
+
+function mobileDockMetaText() {
+  const total = app.data.story.total_words || 1;
+  return `${formatWords(app.wordPos)} / ${formatWords(total)} words · ${Math.round((app.wordPos / total) * 100)}%`;
+}
+
+// The top chip cluster (MOBP-01). Absolutely positioned 12px inset from the
+// sky's top/left/right (its containing block is `.mobile-app`, which the
+// prototype's `.app` equivalent gives `position: relative`). The 44x44 help
+// button (Plan 02-04) fills the slot Plan 02-01 reserved as an empty
+// spacer, at the same footprint, so the layout never shifted when it
+// landed.
+function renderMobileTopCluster() {
+  const roll = lastRollAtWord(app.wordPos);
+  return el("div", { class: "mobile-top-cluster" },
+    el("div", { class: "mobile-chip-row" },
+      el("div", { class: "mobile-chip", text: mobileChChipText() }),
+      roll ? el("div", { class: "mobile-chip amber", text: mobileAmberChipText(roll) }) : null,
+    ),
+    el("button", {
+      class: `mobile-icon-btn${app.mobileSurface === "help" ? " is-active" : ""}`,
+      type: "button",
+      "data-action": "mobile-open-help",
+      "aria-label": "Help",
+      title: "Gestures & help",
+    }, mobileHelpIcon()),
+  );
+}
+
+function mobileChChipText() {
+  // Defensive optional-chain: chapterAtWord() returns undefined when
+  // app.data.story.chapters is empty (UI-SPEC partial-data row) — never
+  // let that surface as a literal "undefined" in the chip.
+  const chNum = chapterAtWord(app.wordPos)?.chapter_num ?? "—";
+  // Phase 3 UI-SPEC Typography table: landscape's top chip omits the word
+  // count segment (a real, intentional content difference from portrait's
+  // `CH {num} · {words}w`, not a truncation bug — prototype layouts.jsx:69).
+  // Branching inside this shared helper (rather than a flag passed from
+  // renderMobileTopCluster()) means updateMobileTopClusterFrame() picks the
+  // correct variant up for free in both layouts.
+  if (app.layoutMode === "landscape") return `CH ${chNum}`;
+  return `CH ${chNum} · ${formatWords(app.wordPos)}w`;
+}
+
+function mobileAmberChipText(roll) {
+  return `◢ ${roll.roll_label || "R—"}`;
+}
+
+// The sky's focal label (MOBP-01/UI-SPEC Display role). Renders only while
+// the cinematic is firing on a real roll — structurally absent otherwise,
+// never a blanked placeholder.
+function renderMobileFocalLabel(frame) {
+  if (!(frame.firing && frame.lastRoll)) return null;
+  const roll = frame.lastRoll;
+  const isHit = roll.outcome === "hit";
+  const kicker = roll.constellation || "—";
+  let name;
+  if (isHit) {
+    const principal = paidRollPerks(roll)[0] ?? (roll.free_perks || [])[0];
+    name = perkDisplayLabel(principal) || roll.rolled_perk_name || roll.constellation || "—";
+  } else {
+    name = "Miss";
+  }
+  const sub = isHit
+    ? `${rollTotalCost(roll)} CP · ch ${roll.chapter_num}`
+    : `miss ${roll.miss_cost_estimate ?? "?"} · ch ${roll.chapter_num}`;
+  return el("div", { class: "mobile-focal-label" },
+    el("div", { class: "kicker", text: kicker }),
+    el("div", { class: "name", text: name }),
+    el("div", { class: "sub", text: sub }),
+  );
+}
+
+// First-run tap-sky-to-pause affordance (UI-SPEC Copywriting Contract).
+// Mounts at most once per page session — app.mobileSkyHintShown is set the
+// moment it mounts, so a later structural re-render (e.g. a speed-cycle
+// click) never remounts it. Absent entirely when tap-to-pause is off, since
+// there's nothing to teach the reader about tapping the sky in that case.
+function renderMobileSkyTapHint() {
+  if (!app.tapToPause || app.mobileSkyHintShown) return null;
+  app.mobileSkyHintShown = true;
+  return el("div", { class: "mobile-sky-tap-hint", "aria-hidden": "true", text: "tap sky to pause" });
+}
+
+// Hint row (locked copy, UI-SPEC Copywriting Contract). Left span is
+// static; the right span's zoom segment is omitted entirely at 1x.
+function renderMobileHintRow() {
+  const chapter = chapterAtWord(app.wordPos);
+  return el("div", { class: "mobile-hint-row" },
+    el("span", { text: "tap rail → jump · drag → scrub" }),
+    el("span", { text: mobileHintRowRightText(chapter) }),
+  );
+}
+
+function mobileHintRowRightText(chapter) {
+  const zoomPart = app.mobileTimelineZoom > 1 ? `${app.mobileTimelineZoom}× zoom · ` : "";
+  return `${zoomPart}${chapter?.pov || "Joe"} POV`;
+}
+
+// renderMobileScrubber(): the mini-rail. Rolls lane is cluster-binned
+// (MOBP-04) via renderMobileRailRollsLaneChildren(), read from the LIVE
+// schema (word_position/outcome/word_start/word_end/chapter_num/pov), never
+// the prototype's camelCase names.
+function renderMobileScrubber() {
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  const zoom = app.mobileTimelineZoom;
+  const panPct = panOffsetForPlayhead(playheadPctRaw, zoom);
+  return el("div", { class: "mobile-rail mobile-rail-surface" },
+    el("div", {
+      class: "mobile-rail-inner",
+      style: { width: `${zoom * 100}%`, transform: `translateX(-${panPct}%)` },
+    },
+      el("div", { class: "mobile-lane mobile-lane-chapters" },
+        story.chapters.map(chapter => el("div", {
+          class: `mobile-ch-tick ${Number(chapter.chapter_num) % 10 === 0 || chapter.chapter_num === "1" ? "major" : ""}`,
+          style: { left: `${(chapter.word_start / total) * 100}%` },
+        })),
+      ),
+      el("div", { class: "mobile-lane mobile-lane-rolls" },
+        renderMobileRailRollsLaneChildren(),
+      ),
+      el("div", { class: "mobile-playhead", style: { left: `${playheadPctRaw}%` } }),
+    ),
+  );
+}
+
+// updateMobileSkyCameraFrame(frame) (Phase 3): the sky camera key-diff
+// shared by BOTH mobile layouts' incremental tiers (D-35 — the shared sky
+// region means the shared sky-camera update logic lives once too, never
+// pasted twice). Identical logic, identical app.frameKeys.skyCamera field,
+// previously inlined in updateMobilePortraitFrame() only.
+function updateMobileSkyCameraFrame(frame) {
+  const skyCameraKey = frame.scene ? `scene:${frame.lastRoll?.uid || ""}` : "none";
+  if (app.dom.mobileSkyCameraLayer && (frame.scene || app.frameKeys.skyCamera !== skyCameraKey)) {
+    app.dom.mobileSkyCameraLayer.replaceChildren(
+      ...(frame.scene ? [renderSkyCamera(frame.lastRoll, frame.scene, frame.focusT)] : []),
+    );
+    app.frameKeys.skyCamera = skyCameraKey;
+  }
+}
+
+// updateMobilePortraitFrame(): the D-18 incremental tier for portrait,
+// mirroring updatePlaythroughFrame's key-diff shape. Mutates text/style
+// only — never rebuilds the rail's lanes here (that only happens on
+// structural render, zoom change, or rail resize — 02-03-PLAN.md).
+function updateMobilePortraitFrame() {
+  const frame = playthroughFrameState();
+  updateMobileSkyCameraFrame(frame);
+  if (app.dom.mobileFab) {
+    const label = app.playing ? "Pause" : "Play";
+    app.dom.mobileFab.setAttribute("aria-label", label);
+    app.dom.mobileFab.title = `${label} (space)`;
+    app.dom.mobileFab.textContent = app.playing ? "❚❚" : "▶";
+  }
+  if (app.dom.mobileDockMeta) app.dom.mobileDockMeta.textContent = mobileDockMetaText();
+  if (app.dom.mobileDockTitle) app.dom.mobileDockTitle.textContent = frame.chapter?.title || "—";
+
+  updateMobileTopClusterFrame();
+  updateMobileFocalLabelFrame(frame);
+  updateMobileHintRowFrame(frame);
+  updateMobileActiveDotFrame();
+
+  const total = app.data.story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  if (app.dom.mobilePlayhead) app.dom.mobilePlayhead.style.left = `${playheadPctRaw}%`;
+  if (app.dom.mobileRailInner) {
+    const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+    app.dom.mobileRailInner.style.transform = `translateX(-${panPct}%)`;
+  }
+}
+
+// The active roll's own marker (MOBP-04) is a style.left write keyed on the
+// active roll's uid — moving it as playback/scrub advances never rebuilds
+// the rolls lane (the bins stay untouched, D-18). A presence change (no
+// active roll yet <-> an active roll now) is the same append/remove-once
+// pattern as updateMobileFocalLabelFrame, not a lane rebuild.
+function updateMobileActiveDotFrame() {
+  const rollsLane = app.dom.mobileRailRollsLane;
+  if (!rollsLane) return;
+  const total = app.data.story.total_words || 1;
+  const activeRoll = lastRollAtWord(app.wordPos);
+  const key = activeRoll ? String(activeRoll.uid) : "none";
+  const pct = activeRoll ? (activeRoll.word_position / total) * 100 : 0;
+  if (app.frameKeys.mobileActiveDot !== key) {
+    if (app.dom.mobileActiveDot) app.dom.mobileActiveDot.remove();
+    const next = activeRoll ? el("div", { class: "mobile-roll-dot active", style: { left: `${pct}%` } }) : null;
+    if (next) rollsLane.appendChild(next);
+    app.dom.mobileActiveDot = next;
+    app.frameKeys.mobileActiveDot = key;
+  } else if (app.dom.mobileActiveDot) {
+    app.dom.mobileActiveDot.style.left = `${pct}%`;
+  }
+}
+
+// The CH chip's word count updates every frame; the amber roll chip is a
+// structural presence change keyed on the active roll's uid (or "none") —
+// replaceChildren fires only when that key changes, never every frame.
+function updateMobileTopClusterFrame() {
+  const chipRow = app.dom.mobileChipRow;
+  if (!chipRow) return;
+  const roll = lastRollAtWord(app.wordPos);
+  const key = roll ? String(roll.uid) : "none";
+  if (app.frameKeys.mobileChip !== key) {
+    chipRow.replaceChildren(
+      el("div", { class: "mobile-chip", text: mobileChChipText() }),
+      roll ? el("div", { class: "mobile-chip amber", text: mobileAmberChipText(roll) }) : null,
+    );
+    app.frameKeys.mobileChip = key;
+  } else if (chipRow.firstElementChild) {
+    chipRow.firstElementChild.textContent = mobileChChipText();
+  }
+}
+
+// The focal label is a structural presence change keyed on firing + roll
+// uid (or "none") — appended/removed from the sky only when that key
+// changes, never rebuilt every frame.
+function updateMobileFocalLabelFrame(frame) {
+  const sky = app.dom.mobileSky;
+  if (!sky) return;
+  const active = frame.firing && frame.lastRoll;
+  const key = active ? String(frame.lastRoll.uid) : "none";
+  if (app.frameKeys.mobileFocal === key) return;
+  if (app.dom.mobileFocalLabel) app.dom.mobileFocalLabel.remove();
+  const next = active ? renderMobileFocalLabel(frame) : null;
+  if (next) sky.appendChild(next);
+  app.dom.mobileFocalLabel = next;
+  app.frameKeys.mobileFocal = key;
+}
+
+// Hint row: the left span is static; only the right span's zoom/POV text
+// depends on scrubber position, so only it needs an every-frame textContent
+// write.
+function updateMobileHintRowFrame(frame) {
+  const hintRow = app.dom.mobileHintRow;
+  if (!hintRow) return;
+  const rightSpan = hintRow.lastElementChild;
+  if (rightSpan) rightSpan.textContent = mobileHintRowRightText(frame.chapter);
+}
+
+// ── Landscape layout (Phase 3, D-20..D-36) ──────────────────────────────
+// Retires the D-12 interim landscape fallback (renderAppShell()). Sky at
+// ~75% width (renderMobileSkyRegion, D-35 — shared with portrait) beside a
+// 224px right rail (field log over a Settings/About control dock), wired
+// through the SAME render -> cache-refs -> incremental-update tier portrait
+// uses (D-18). The field log's ONLY data call is recentRolls(wordPos, count)
+// (D-24) — never renderNarrativeReadout/renderRecentRolls, which are §0.2
+// frozen and carry desktop sizing/scroll assumptions.
+
+// mobileFieldLogRows(): the D-24 model seam, read once per structural/
+// incremental pass. recentRolls() returns NEWEST-FIRST, so `live` (the most
+// recent roll at or before the playhead) is element 0; `recent` slices it
+// off the head (the prototype's own de-dup — the live roll never appears
+// twice) so the field-log list holds only the OLDER of the up-to-6 rows.
+function mobileFieldLogRows() {
+  const rows = recentRolls(app.wordPos, 6);
+  const live = rows.length ? rows[0] : null;
+  const recent = rows.slice(live ? 1 : 0);
+  const total = app.data.story.rolls.length;
+  const idx = live ? app.data.story.rolls.indexOf(live) : -1;
+  return { live, recent, idx, total };
+}
+
+// mobileFieldLogPrincipalName(roll): the SAME principal-perk expression
+// renderMobileFocalLabel() uses for a hit roll, generalized with the same
+// fallback chain for a miss/unknown roll (whose purchased_perks/free_perks
+// are empty, so this falls straight through to roll.constellation, then an
+// em-dash) — never a second perk-name-resolution implementation.
+function mobileFieldLogPrincipalName(roll) {
+  const principal = paidRollPerks(roll)[0] ?? (roll.free_perks || [])[0];
+  return perkDisplayLabel(principal) || roll.rolled_perk_name || roll.constellation || "—";
+}
+
+// mobileFieldLogQuoteText(roll)/mobileTruncate(s, n) (D-27): the live-roll
+// card's truncated evidence quote. mobileFieldLogQuoteText reads the first
+// evidence quote's `text` field (confirmed against derive_roll_facts.py's
+// _evidence_quotes payload shape) or "" when absent; mobileTruncate mirrors
+// the prototype's own truncate(s, n) helper verbatim.
+function mobileFieldLogQuoteText(roll) {
+  return roll.evidence_quotes?.[0]?.text || "";
+}
+
+function mobileTruncate(s, n) {
+  if (s.length <= n) return s;
+  return `${s.slice(0, n - 1).trim()}…`;
+}
+
+// mobileFieldLogSubChildren(roll): the live card's `.sub` node children —
+// jump, a middle-dot separator only when BOTH a jump and a quote exist, and
+// the truncated quote wrapped in straight double quotes inside an `em` node.
+// Every text fragment flows through el()'s `text` prop (textContent), never
+// string-concatenated markup (T-03-01) — a quote containing tag-looking
+// characters renders as literal characters, never parsed HTML.
+function mobileFieldLogSubChildren(roll) {
+  const quote = mobileFieldLogQuoteText(roll);
+  const truncated = quote ? mobileTruncate(quote, 100) : "";
+  const children = [];
+  if (roll.jump) children.push(roll.jump);
+  if (roll.jump && truncated) children.push(" · ");
+  if (truncated) children.push(el("em", { text: `"${truncated}"` }));
+  return children;
+}
+
+// renderMobileFieldLogChildren(rows): the field-log list's full child set —
+// the live-roll card first (structurally ABSENT, never a blanked
+// placeholder, when no roll has fired at or before the playhead), then one
+// `.mobile-field-log-entry` per row in `recent`. Shared by the initial
+// structural build (renderMobileFieldLog) and the incremental update
+// (updateMobileFieldLogFrame) — never a third copy of this markup.
+function renderMobileFieldLogChildren(rows) {
+  const { live, recent } = rows;
+  const liveCard = live ? el("div", { class: "mobile-field-log-live" },
+    el("div", { class: "row1" },
+      el("span", { text: `◢ ROLL ${live.roll_label || "R—"} · ${live.outcome}` }),
+      el("span", { text: live.outcome === "hit" ? `${rollTotalCost(live)} CP` : "—" }),
+    ),
+    el("div", { class: "name", text: mobileFieldLogPrincipalName(live) }),
+    el("div", { class: "sub" }, ...mobileFieldLogSubChildren(live)),
+  ) : null;
+  const entries = recent.map(r => el("div", { class: "mobile-field-log-entry" },
+    el("div", { class: "row1" },
+      el("span", { text: `Ch ${r.chapter_num}` }),
+      el("span", { text: r.outcome === "hit" ? `${rollTotalCost(r)} CP` : r.outcome }),
+    ),
+    el("div", { class: "name", text: mobileFieldLogPrincipalName(r) }),
+  ));
+  return [liveCard, ...entries].filter(Boolean);
+}
+
+// renderMobileFieldLog(): `.mobile-field-log` — header (`Field Log ·
+// {constellation}` left, `{idx+1} of {total}` right, both em-dash/0-safe for
+// an unknown constellation or a zero-roll story) over the list.
+function renderMobileFieldLog() {
+  const rows = mobileFieldLogRows();
+  return el("div", { class: "mobile-field-log" },
+    el("h3", { class: "mobile-field-log-header" },
+      el("span", { text: `Field Log · ${rows.live?.constellation || "—"}` }),
+      el("span", { class: "count", text: `${rows.idx + 1} of ${rows.total}` }),
+    ),
+    el("div", { class: "mobile-field-log-list" }, renderMobileFieldLogChildren(rows)),
+  );
+}
+
+// renderMobileLandscapeSidebar(frame): `.mobile-sidebar` — the field log
+// (top 2/3) over the control dock (bottom 1/3: Settings/About quick actions
+// + a speed/mode/POV status row). Settings/About commit through the SAME
+// module-level data-action delegation portrait's dock buttons use — no new
+// click handler.
+function renderMobileLandscapeSidebar(frame) {
+  const controlDock = el("div", { class: "mobile-control-dock" },
+    el("div", { class: "mobile-dock-quick-actions" },
+      el("div", { class: "mobile-group-label", text: "Quick actions" }),
+      el("div", { class: "mobile-dock-grid" },
+        el("button", {
+          class: `mobile-dock-btn${app.mobileSurface === "settings" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-settings",
+          "aria-label": "Settings",
+        }, mobileGearIcon(), el("span", { text: "Settings" })),
+        el("button", {
+          class: `mobile-dock-btn${app.mobileSurface === "info" ? " is-active" : ""}`,
+          type: "button",
+          "data-action": "mobile-open-info",
+          "aria-label": "About",
+        }, mobileInfoIcon(), el("span", { text: "About" })),
+      ),
+    ),
+    el("div", { class: "mobile-dock-status" },
+      el("span", { text: `${mobileSpeedMultiplier() ?? "—"}× · ${app.mode}` }),
+      el("span", { class: "val", text: `${frame.chapter?.pov || "Joe"} POV` }),
+    ),
+  );
+  return el("div", { class: "mobile-sidebar" }, renderMobileFieldLog(), controlDock);
+}
+
+// renderMobileCinemaScrubTrackChildren(): the baseline rail, the raw-
+// playhead-percentage progress bar, one `.mobile-cinema-scrub-roll` marker
+// per CACHED bin in app.mobileRailBins (never a second binning call — reuses
+// the exact bins renderMobileLandscape()/the ResizeObserver already
+// computed), and the thumb last so it always paints above the markers.
+function renderMobileCinemaScrubTrackChildren() {
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  const rail = el("div", { class: "mobile-cinema-scrub-rail" });
+  const progress = el("div", { class: "mobile-cinema-scrub-progress", style: { width: `${playheadPctRaw}%` } });
+  const rolls = (app.mobileRailBins || []).map(bin => el("div", {
+    class: `mobile-cinema-scrub-roll ${bin.dominant}`,
+    style: { left: `${(bin.midWord / total) * 100}%` },
+  }));
+  const thumb = el("div", { class: "mobile-cinema-scrub-thumb", style: { left: `${playheadPctRaw}%` } });
+  return [rail, progress, ...rolls, thumb];
+}
+
+// renderMobileCinemaScrub(): `.mobile-cinema-scrub` — the floating play/
+// pause FAB, the roll-count readout, and the scrub track. Structure only —
+// Plan 02 attaches the drag (attachRailScrub, D-17's single scrub input
+// path) and the auto-hide chrome behavior; the play button commits through
+// the SAME module-level `data-action="toggle-playback"` delegation the
+// portrait FAB uses, no new click handler. `.mobile-rail-surface` (the
+// existing touch-action:none gesture-surface utility) is applied directly
+// to the track so Plan 02 never needs to write a second touch-action rule.
+function renderMobileCinemaScrub() {
+  const rows = mobileFieldLogRows();
+  const story = app.data.story;
+  const total = story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  const zoom = app.mobileTimelineZoom;
+  const panPct = panOffsetForPlayhead(playheadPctRaw, zoom);
+  return el("div", { class: "mobile-cinema-scrub" },
+    el("button", {
+      class: "mobile-cinema-scrub-fab",
+      type: "button",
+      "data-action": "toggle-playback",
+      "aria-label": app.playing ? "Pause" : "Play",
+      text: app.playing ? "❚❚" : "▶",
+    }),
+    el("span", { class: "mobile-cinema-scrub-count", text: `${rows.idx + 1} / ${rows.total}` }),
+    el("div", { class: "mobile-cinema-scrub-track mobile-rail-surface" },
+      el("div", {
+        class: "mobile-cinema-scrub-inner",
+        style: { width: `${zoom * 100}%`, transform: `translateX(-${panPct}%)` },
+      },
+        renderMobileCinemaScrubTrackChildren(),
+      ),
+    ),
+  );
+}
+
+// renderMobileLandscape(): the Phase 3 landscape arm of render(), structural
+// sibling of renderMobilePortrait() in the same order (maybeAutoOpenHelp ->
+// frame state -> rail-width guard -> bin recompute -> root el()). Root
+// `.mobile-app mobile-app-landscape` holds the landscape stage (shared sky +
+// top chips + cinema-scrub, the containing block for their absolutely-
+// positioned children) beside the sidebar, with the surface backdrop as the
+// LAST child spanning the whole root — same D-19-derived shape Phase 2
+// arrived at, so a backdrop tap dismisses over the whole surface including
+// the rail.
+function renderMobileLandscape() {
+  maybeAutoOpenHelp();
+  const frame = playthroughFrameState();
+  // RESEARCH Pitfall 6/CONTEXT A2: guard against a stale portrait
+  // measurement (or the shared default) mis-binning the narrower landscape
+  // cinema-scrub track for one frame right after a rotation.
+  app.mobileRailWidth = mobileScrubWidthDefaultForLayout();
+  // Structural render is one of the four sanctioned call sites for bin
+  // recomputation (D-18) — never inside updateMobileLandscapeFrame().
+  recomputeMobileRailBins();
+  return el("div", { class: "mobile-app mobile-app-landscape" },
+    el("div", { class: "mobile-landscape-stage" },
+      el("div", { class: "mobile-sky mobile-sky-surface mobile-sky-landscape" },
+        ...renderMobileSkyRegion(frame),
+      ),
+      renderMobileTopCluster(),
+      renderMobileCinemaScrub(),
+    ),
+    renderMobileLandscapeSidebar(frame),
+    renderMobileSurfaceBackdrop(),
+  );
+}
+
+// updateMobileFieldLogFrame() (D-18/D-26): the field log's incremental
+// update, the memoized-key idiom desktop's updatePlaythroughFrame() already
+// uses for its own field log (app.frameKeys.narrative). The key joins the
+// live roll's uid (or a "none" sentinel) with the recent rolls' uids — only
+// when it changes does replaceChildren() rebuild the list; the header's
+// count/label spans and the cinema-scrub's count span get a plain
+// textContent write every frame regardless (cheap, and correctness-critical:
+// they must never show a stale constellation/count while the list itself
+// hasn't changed key).
+function updateMobileFieldLogFrame() {
+  const rows = mobileFieldLogRows();
+  const key = `${rows.live ? rows.live.uid : "none"}|${rows.recent.map(r => r.uid).join(",")}`;
+  if (app.dom.mobileFieldLogList && app.frameKeys.mobileFieldLog !== key) {
+    app.dom.mobileFieldLogList.replaceChildren(...renderMobileFieldLogChildren(rows));
+    app.frameKeys.mobileFieldLog = key;
+  }
+  if (app.dom.mobileFieldLogHeader?.firstElementChild) {
+    app.dom.mobileFieldLogHeader.firstElementChild.textContent = `Field Log · ${rows.live?.constellation || "—"}`;
+  }
+  if (app.dom.mobileFieldLogHeaderCount) {
+    app.dom.mobileFieldLogHeaderCount.textContent = `${rows.idx + 1} of ${rows.total}`;
+  }
+  if (app.dom.mobileCinemaScrubCount) {
+    app.dom.mobileCinemaScrubCount.textContent = `${rows.idx + 1} / ${rows.total}`;
+  }
+}
+
+// updateMobileLandscapeFrame() (D-18/D-26): the landscape incremental tier,
+// mirroring updateMobilePortraitFrame()'s shape. Mutates text/style only —
+// never rebuilds the cinema-scrub track's markers here (bins only recompute
+// on structural render/zoom change/resize, D-18).
+function updateMobileLandscapeFrame() {
+  const frame = playthroughFrameState();
+  updateMobileSkyCameraFrame(frame);
+  updateMobileTopClusterFrame();
+  updateMobileFocalLabelFrame(frame);
+  if (app.dom.mobileCinemaScrubFab) {
+    const label = app.playing ? "Pause" : "Play";
+    app.dom.mobileCinemaScrubFab.setAttribute("aria-label", label);
+    app.dom.mobileCinemaScrubFab.textContent = app.playing ? "❚❚" : "▶";
+  }
+  if (app.dom.mobileDockStatus?.lastElementChild) {
+    app.dom.mobileDockStatus.lastElementChild.textContent = `${frame.chapter?.pov || "Joe"} POV`;
+  }
+  const total = app.data.story.total_words || 1;
+  const playheadPctRaw = (app.wordPos / total) * 100;
+  if (app.dom.mobileCinemaScrubThumb) app.dom.mobileCinemaScrubThumb.style.left = `${playheadPctRaw}%`;
+  if (app.dom.mobileCinemaScrubProgress) app.dom.mobileCinemaScrubProgress.style.width = `${playheadPctRaw}%`;
+  if (app.dom.mobileCinemaScrubInner) {
+    const panPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+    app.dom.mobileCinemaScrubInner.style.transform = `translateX(-${panPct}%)`;
+  }
+  updateMobileFieldLogFrame();
+}
+
+// mobileScrubSurfaceEl() (Phase 3, D-34): the ONE place the scrub-drag
+// surface selector lives — portrait's mini-rail vs. landscape's floating
+// cinema-scrub track. NEVER query .mobile-rail for landscape: that class is
+// portrait's mini-rail, and the landscape sidebar is deliberately named
+// .mobile-sidebar precisely so the two "rail" concepts can never be
+// conflated (03-PATTERNS.md's "rail vs rail" naming-collision warning).
+function mobileScrubSurfaceEl() {
+  return app.layoutMode === "landscape"
+    ? document.querySelector(".mobile-cinema-scrub-track")
+    : document.querySelector(".mobile-rail");
+}
+
+// rebuildMobileCinemaScrubTrack() (Phase 3, D-18/D-34): the landscape
+// counterpart of the ResizeObserver's portrait rolls-lane rebuild below —
+// replaces the cinema-scrub track's roll markers with the freshly-binned
+// set and re-caches the progress/thumb refs from the fresh children, so the
+// per-frame style writes in updateMobileLandscapeFrame() never target a
+// node this rebuild just detached.
+function rebuildMobileCinemaScrubTrack() {
+  const inner = app.dom.mobileCinemaScrubInner;
+  if (!inner) return;
+  inner.replaceChildren(...renderMobileCinemaScrubTrackChildren());
+  app.dom.mobileCinemaScrubProgress = inner.querySelector(".mobile-cinema-scrub-progress");
+  app.dom.mobileCinemaScrubThumb = inner.querySelector(".mobile-cinema-scrub-thumb");
+}
+
+// revealMobileChrome() (Phase 3, D-29/D-30): sets app.chromeHidden false and
+// removes the hidden-state class from the cached cinema-scrub node — the
+// scrub is the ONLY thing auto-hide ever hides; the top chips and the rail
+// stay visible so the field log stays readable (D-29). Performs no timer
+// work of its own so callers stay explicit about whether the idle window
+// should re-arm. Never calls render() — a structural render would tear down
+// and reattach every gesture listener.
+function revealMobileChrome() {
+  app.chromeHidden = false;
+  app.dom.mobileCinemaScrub?.classList.remove("is-hidden");
+}
+
+// resetMobileChromeHideTimer() (Phase 3, MOBL-02, RESEARCH Pattern 4): the
+// landscape chrome auto-hide idle-timer lifecycle. Always clears the
+// outstanding handle first, then — ONLY while landscape AND playing AND no
+// surface is open (D-28) — arms a fresh window that hides the scrub via a
+// class mutation on the cached DOM ref, never via render(). Called from
+// every discrete gesture-callback body below (the only sanctioned "any
+// touch happened" signal, since web/mobile-gestures.js is frozen and cannot
+// gain an onDown hook) and from togglePlayback()'s exits. Do NOT call this
+// from updateMobileLandscapeFrame() or key it on a wordPos comparison:
+// wordPos changes on every rAF tick during playback, so that keying (the
+// prototype's own reference bug) would re-arm the timer ~60 times a second
+// and the 4000ms window could never elapse (RESEARCH Pitfall 1) — if a
+// manual pass ever shows the scrub failing to fade during unattended
+// playback, this comment is the first thing to check.
+function resetMobileChromeHideTimer() {
+  clearTimeout(app.mobileChromeHideTimer);
+  app.mobileChromeHideTimer = null;
+  if (app.layoutMode === "landscape" && app.playing && !app.mobileSurface) {
+    const base = window.GestureConstants?.CHROME_AUTOHIDE ?? 4000;
+    // MOBX-04: double the auto-hide window under reduced motion, reusing
+    // the single PREFERS_REDUCED_MOTION snapshot taken at module load
+    // (app.js:236) — never a second matchMedia query. A timer already
+    // armed before this branch ran keeps its original window; the
+    // doubling applies to timers armed from here on.
+    const delay = PREFERS_REDUCED_MOTION ? base * 2 : base;
+    app.mobileChromeHideTimer = setTimeout(() => {
+      app.chromeHidden = true;
+      // Optional chain: T-03-06 mitigation — a timer that outlives its
+      // owning layout/DOM must be a silent no-op, never a throw.
+      app.dom.mobileCinemaScrub?.classList.add("is-hidden");
+    }, delay);
+  }
+}
+
+// mobileRollAnnouncement(roll) (MOBX-03/D-43): the outcome-aware live-region
+// string. Branches on rollMarkerModel(roll).isMissLike FIRST — misses are
+// 410 of 670 rolls in the real dataset, the common case, not an edge case —
+// so no perk field is ever touched before that check. Numbering reuses the
+// exact {n}/{total} expression mobileFieldLogRows() already computes
+// (app.data.story.rolls.indexOf(roll) + 1 / .length), never roll_label
+// (null on 669/670 rolls) or any *_ordinal field. Outcome classification
+// reuses rollMarkerModel(roll) (viz-model.js) — no second classifier.
+function mobileRollAnnouncement(roll) {
+  const total = app.data.story.rolls.length;
+  const n = app.data.story.rolls.indexOf(roll) + 1;
+  const marker = rollMarkerModel(roll);
+  if (marker.isMissLike) {
+    // FA-MOBX-05: `evidence_kind === "untracked_acquisition"` has zero
+    // instances in the current dataset — no dedicated phrasing is invented
+    // here; see 04-UI-SPEC.md's "UI Considerations" row. isUntracked rolls
+    // never reach this branch (rollMarkerModel excludes them from
+    // isMissLike), so they fall through to the ordinary hit phrasing below.
+    return `Roll ${n} of ${total}. Miss.`;
+  }
+  if (marker.paidCount > 1) {
+    const first = perkDisplayLabel(paidRollPerks(roll)[0]);
+    const more = marker.paidCount - 1;
+    return `Roll ${n} of ${total}. ${first} and ${more} more, ${marker.cost} CP.`;
+  }
+  if (marker.paidCount === 1) {
+    const perkName = perkDisplayLabel(paidRollPerks(roll)[0]);
+    return `Roll ${n} of ${total}. ${perkName}, ${marker.cost} CP.`;
+  }
+  // Free-only fallback (0 live examples today; kept for robustness — the
+  // same fallback chain mobileFieldLogPrincipalName already carries).
+  const freePerk = (roll.free_perks || [])[0];
+  return `Roll ${n} of ${total}. ${perkDisplayLabel(freePerk)} (free).`;
+}
+
+// announceMobileRoll() (MOBX-03/D-42/D-44): writes the current playhead's
+// roll into the live region — called ONLY from the five user-caused sites
+// (double-tap, swipe-step, rail-scrub release, the two mobile keyboard
+// steps), never from the rAF playback tier and never on a plain tap. Silence
+// (no write at all) when lastRollAtWord() finds nothing, matching this
+// project's established absent-element-over-placeholder-copy convention.
+function announceMobileRoll() {
+  const node = app.dom.mobileLiveRegion;
+  if (!node) return;
+  const roll = lastRollAtWord(app.wordPos);
+  if (!roll) return;
+  const message = mobileRollAnnouncement(roll);
+  // Two synchronous writes in the same tick: assistive tech only fires on a
+  // text MUTATION, so landing twice on the same roll (e.g. scrubbing away
+  // and back) would otherwise produce an identical string and stay silent.
+  node.textContent = "";
+  node.textContent = message;
+}
+
+// attachMobileGestures() (Phase 3, D-34 — renamed/generalized from
+// attachMobilePortraitGestures): the SINGLE gesture-attach lifecycle for
+// BOTH mobile layouts. Mirrors attachMobileGestureProbes's lifecycle exactly
+// (teardown stored on `app`, invoked defensively before re-attach, called
+// only from inside the render pass). Uses the mobileSkyTeardown/
+// mobileRailTeardown/mobileRailResizeObserver/mobileChromeHideTimer slots —
+// never app.mobileGestureTeardown, which the Phase 1 probe owns. Every slot
+// is torn down unconditionally before the mobileSurface guard below so a
+// stale listener/timer never survives an overlay opening/closing between
+// renders or a layout transition away from landscape. Rail/cinema-scrub
+// scrub commits through the existing setWordPos path only (D-17): a single
+// scrub input, never a second raw pointer-listener override.
+//
+// The ONE hard branch point is the sky's onTap callback (D-30's reveal-vs-
+// pause ordering only exists in landscape) and mobileScrubSurfaceEl()'s
+// selector — every other callback body is identical for both layouts.
+function attachMobileGestures() {
+  if (typeof app.mobileSkyTeardown === "function") {
+    app.mobileSkyTeardown();
+    app.mobileSkyTeardown = null;
+  }
+  if (typeof app.mobileRailTeardown === "function") {
+    app.mobileRailTeardown();
+    app.mobileRailTeardown = null;
+  }
+  // A structural render tears the rail listeners down mid-drag without ever
+  // firing onScrubEnd, so drop any frozen pan here too — otherwise the next
+  // drag would inherit a stale offset from the abandoned one.
+  app.mobileScrubPanPct = null;
+  // Defensive teardown discipline (same as the two gesture slots above):
+  // disconnect any prior rail ResizeObserver before a re-attach ever
+  // installs a new one, so a stale observer from a previous render can
+  // never pile up alongside the current one.
+  if (app.mobileRailResizeObserver) {
+    app.mobileRailResizeObserver.disconnect();
+    app.mobileRailResizeObserver = null;
+  }
+  // Phase 3 (Pattern 4/T-03-06): a stale auto-hide timer must never survive
+  // a re-attach or a layout transition away from landscape — cleared
+  // unconditionally, in the same position as the three teardown calls above.
+  clearTimeout(app.mobileChromeHideTimer);
+  app.mobileChromeHideTimer = null;
+  // An open overlay (Settings/About/Help, Plan 02-04) owns input while
+  // shown — a tap landing on the sky underneath it must never bubble into a
+  // pause toggle, so neither gesture surface attaches while it's open.
+  if (app.mobileSurface) return;
+
+  const skyEl = document.querySelector(".mobile-sky");
+  if (skyEl && typeof window.attachSkyGestures === "function") {
+    app.mobileSkyTeardown = window.attachSkyGestures(skyEl, {
+      onTap: () => {
+        // D-30: the first tap on hidden landscape chrome ALWAYS reveals it,
+        // regardless of the tap-to-pause preference, and must never fall
+        // through to togglePlayback() in the same invocation — hidden
+        // chrome is never a trap. Evaluated FIRST, before the tap-to-pause
+        // check below.
+        if (app.layoutMode === "landscape" && app.chromeHidden) {
+          revealMobileChrome();
+          resetMobileChromeHideTimer();
+          return;
+        }
+        // Tap is a no-op unless tap-to-pause is on — otherwise it toggles
+        // playback through the shared setter, same as the FAB/spacebar path.
+        if (!app.tapToPause) return;
+        togglePlayback();
+        resetMobileChromeHideTimer();
+      },
+      // Snap to the last roll at or before the CURRENT playhead and resume —
+      // never app.data.story.rolls.at(-1), which would teleport the reader
+      // to the end of the story (RESEARCH Pitfall 4).
+      onDoubleTap: () => {
+        const target = lastRollAtWord(app.wordPos);
+        if (target) {
+          setWordPos(target.word_position);
+          announceMobileRoll();
+        }
+        if (!app.playing) togglePlayback();
+        resetMobileChromeHideTimer();
+      },
+      // Swipe right (dir +1) is forward per INTEGRATION_PLAN.md §1's locked
+      // decision; mobile-gestures.js already resolves dir from swipe
+      // direction, so this callback only ever forwards it.
+      onSwipeStep: dir => {
+        const next = rollStepFrom(app.wordPos, dir);
+        if (next) {
+          setWordPos(next.word_position);
+          announceMobileRoll();
+        }
+        resetMobileChromeHideTimer();
+      },
+      onSwipeEnd: () => {
+        persistBookmarkNow();
+        resetMobileChromeHideTimer();
+      },
+    });
+  }
+
+  const scrubEl = mobileScrubSurfaceEl();
+  if (scrubEl && typeof window.attachRailScrub === "function") {
+    app.mobileRailTeardown = window.attachRailScrub(scrubEl, {
+      onScrub: viewportFraction => {
+        if (!app.data) return null;
+        const total = app.data.story.total_words || 1;
+        // Freeze the auto-pan offset for the whole drag, capturing it on the
+        // first callback (pointerdown) and clearing it in onScrubEnd.
+        // Recomputing per move feeds the position this drag just committed
+        // back into the mapping: the content shifts under the stationary
+        // finger, so the next move lands somewhere unrelated. Measured at 4x
+        // on a Pixel 10 Pro XL, a monotonic rightward drag drove the playhead
+        // 68k words BACKWARD before recovering. Auto-pan still applies to
+        // playback and to taps — each tap is its own drag and re-captures.
+        // The landscape cinema-scrub inherits this exact fix by
+        // construction (same callback body, only the queried element
+        // differs) rather than rediscovering the bug on a second device.
+        if (app.mobileScrubPanPct == null) {
+          const playheadPctRaw = (app.wordPos / total) * 100;
+          app.mobileScrubPanPct = panOffsetForPlayhead(playheadPctRaw, app.mobileTimelineZoom);
+        }
+        const innerFrac = mobileInnerFraction(viewportFraction, app.mobileTimelineZoom, app.mobileScrubPanPct);
+        const target = Math.round(innerFrac * total);
+        setWordPos(target);
+        resetMobileChromeHideTimer();
+        return lastRollAtWord(target);
+      },
+      onScrubEnd: () => {
+        app.mobileScrubPanPct = null;
+        persistBookmarkNow();
+        // Announce the settled position only — the per-move onScrub callback
+        // above never calls this, so a drag across many rolls writes nothing
+        // until release (D-42's "no throttle" rule: one true announcement at
+        // the end, not a rate-limited stream of the ones in between).
+        announceMobileRoll();
+        resetMobileChromeHideTimer();
+      },
+    });
+  }
+
+  // Rail/cinema-scrub width observer (MOBP-04/D-18, generalized D-34): keeps
+  // app.mobileRailWidth current and recomputes bins on resize — coalesced
+  // through a single rAF, replacing ONLY the layout-appropriate "rolls lane"
+  // markup, never calling render(). A resize is not a structural-presence
+  // change; the rest of the DOM must stay untouched.
+  if (scrubEl && typeof ResizeObserver === "function") {
+    let rafId = null;
+    const ro = new ResizeObserver(entries => {
+      const cr = entries[0]?.contentRect;
+      if (!cr) return;
+      app.mobileRailWidth = Math.max(50, cr.width);
+      // Phase 3 (Pitfall 6/CONTEXT A2): record which layout this
+      // measurement belongs to so a stale cross-layout width is never used
+      // to bin the OTHER layout's differently-sized scrub track.
+      app.mobileRailWidthLayout = app.layoutMode;
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        recomputeMobileRailBins();
+        if (app.layoutMode === "landscape") {
+          rebuildMobileCinemaScrubTrack();
+        } else {
+          const rollsLane = app.dom.mobileRailRollsLane;
+          if (rollsLane) {
+            rollsLane.replaceChildren(...renderMobileRailRollsLaneChildren());
+            // The active dot is rebuilt along with the bins — re-cache the
+            // ref so updateMobileActiveDotFrame() never writes into a node
+            // this resize just detached from the DOM.
+            app.dom.mobileActiveDot = rollsLane.querySelector(".mobile-roll-dot.active");
+          }
+        }
+      });
+    });
+    ro.observe(scrubEl);
+    app.mobileRailResizeObserver = ro;
+  }
+}
+
 // Module-level click delegation keeps hot playback controls independent of
 // whether a structural render or incremental frame update touched their DOM.
 // Keyboard activation (Enter/Space on a focused button) still fires `click`
@@ -2748,6 +4614,27 @@ document.body.addEventListener("click", event => {
       render();
     }
     event.preventDefault();
+  } else if (action === "mobile-cycle-speed") {
+    // Advances to the next rung, wrapping from the last back to the first;
+    // starts from "1" when the current speed matches no rung (e.g. it was
+    // set from the desktop <select> to a value outside the mobile rungs).
+    const currentLabel = mobileSpeedMultiplier() ?? "1";
+    const currentIndex = MOBILE_SPEED_RUNGS.findIndex(([label]) => label === currentLabel);
+    const nextIndex = (currentIndex + 1) % MOBILE_SPEED_RUNGS.length;
+    setMobileSpeedMultiplier(MOBILE_SPEED_RUNGS[nextIndex][0]);
+    event.preventDefault();
+  } else if (action === "mobile-open-settings") {
+    openMobileSurface("settings", target);
+    event.preventDefault();
+  } else if (action === "mobile-open-info") {
+    openMobileSurface("info", target);
+    event.preventDefault();
+  } else if (action === "mobile-open-help") {
+    openMobileSurface("help", target);
+    event.preventDefault();
+  } else if (action === "mobile-close-surface") {
+    closeMobileSurface();
+    event.preventDefault();
   }
 });
 
@@ -2764,6 +4651,54 @@ window.addEventListener("keydown", event => {
     return;
   }
   if (editable) return;
+  // D-46/D-47: mobile keyboard equivalents — one early branch inside this
+  // SAME listener (never a second top-level keydown subscription, which
+  // would be exactly the double-binding class of bug D-07's attach
+  // discipline exists to prevent). Placed after the editable guard
+  // (a focused Settings control still swallows these, matching desktop) and
+  // before the desktop word-stepping chain below, so desktop never sees
+  // these keys on mobile and mobile never falls through to word-stepping.
+  // Arrows step ONE ROLL via rollStepFrom() — the same stepping function the
+  // swipe callback already calls (D-46, no second stepping model) — and
+  // Home mirrors onDoubleTap's body exactly (live edge, NOT word 0, which is
+  // what desktop's own Home does a few lines below).
+  if (app.layoutMode !== "desktop") {
+    if (event.key === "ArrowRight") {
+      const next = rollStepFrom(app.wordPos, 1);
+      if (next) {
+        setWordPos(next.word_position);
+        announceMobileRoll();
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "ArrowLeft") {
+      const next = rollStepFrom(app.wordPos, -1);
+      if (next) {
+        setWordPos(next.word_position);
+        announceMobileRoll();
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "Home") {
+      const target = lastRollAtWord(app.wordPos);
+      if (target) {
+        setWordPos(target.word_position);
+        announceMobileRoll();
+      }
+      if (!app.playing) togglePlayback();
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "?") {
+      // openMobileSurface() already closes on a re-request (D-48) — a
+      // second `?` toggles Help shut with no second history sentinel.
+      openMobileSurface("help");
+      event.preventDefault();
+      return;
+    }
+  }
   const step = event.shiftKey ? 2000 : 10000;
   if (event.key === "ArrowRight") setWordPos(app.wordPos + step);
   else if (event.key === "ArrowLeft") setWordPos(app.wordPos - step);
@@ -2779,6 +4714,11 @@ window.addEventListener("pagehide", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && app.data) persistBookmarkNow();
+  // D-02, mobile-only: hiding the page pauses playthrough with state intact;
+  // no auto-resume on return to visible. Desktop path above is unchanged.
+  if (document.visibilityState === "hidden" && app.layoutMode !== "desktop" && app.playing) {
+    stopPlayback();
+  }
 });
 
 render();
