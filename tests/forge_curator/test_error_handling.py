@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from scripts.forge_curator.persistence import CurationPersistence
 from tests.helpers.forge_curator_fixture import forge_curator_fixture
 
 
-def test_malformed_manual_roll_overrides_load_as_empty_document(
+def test_malformed_manual_roll_overrides_raises_on_load(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -18,22 +19,29 @@ def test_malformed_manual_roll_overrides_load_as_empty_document(
     overrides_path = fixture.manual / "chapter_roll_overrides.json"
     overrides_path.write_text("{not valid json")
 
-    persistence = CurationPersistence(
-        chapter_roll_overrides_path=overrides_path,
-        section_classifications_path=fixture.manual / "section_classifications.json",
-        journal_dir_path=fixture.manual / ".session_journals",
-    )
-
-    assert persistence.chapter_roll_overrides == {
-        "_purpose": "Per-chapter paid roll structure + curated metadata.",
-        "chapter_roll_overrides": {},
-    }
+    # A malformed *existing* file must raise, never silently collapse to
+    # an empty document — the old behaviour here let CurationPersistence
+    # swallow the parse error and treat the file as empty, which the
+    # next auto-save would then write back over the real 118-chapter
+    # hand-curated corpus (T-03-02, the data-destruction bug this
+    # phase fixes). Only a genuinely absent file is allowed to default.
+    with pytest.raises((ValueError, json.JSONDecodeError)):
+        CurationPersistence(
+            chapter_roll_overrides_path=overrides_path,
+            section_classifications_path=fixture.manual / "section_classifications.json",
+            journal_dir_path=fixture.manual / ".session_journals",
+        )
 
 
 def test_roll_override_write_failure_rolls_back_memory_and_disk(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Gap-closure (CINF-01): _write_chapter_roll_overrides is now routed
+    through chapter_roll_overrides_io.write_chapter_roll_overrides_doc
+    (schema-validated, atomic) rather than the module-local
+    _atomic_write_json, so a write failure must be simulated at that
+    call site to still exercise this rollback path."""
     fixture = forge_curator_fixture(tmp_path, monkeypatch)
     overrides_path = fixture.manual / "chapter_roll_overrides.json"
     before_text = overrides_path.read_text()
@@ -43,17 +51,52 @@ def test_roll_override_write_failure_rolls_back_memory_and_disk(
         journal_dir_path=fixture.manual / ".session_journals",
     )
     before_doc = deepcopy(persistence.chapter_roll_overrides)
-    real_write = persistence_module._atomic_write_json
 
-    def fail_write(path: Path, doc: object) -> None:
-        if path == overrides_path:
-            raise OSError("fixture write failure")
-        real_write(path, doc)
+    def fail_write(doc: object, path: Path | None = None) -> None:
+        raise OSError("fixture write failure")
 
-    monkeypatch.setattr(persistence_module, "_atomic_write_json", fail_write)
+    monkeypatch.setattr(
+        persistence_module, "write_chapter_roll_overrides_doc", fail_write
+    )
 
     with pytest.raises(OSError, match="fixture write failure"):
         persistence.update_roll_at_index("1", 2, outcome="miss")
+
+    assert persistence.chapter_roll_overrides == before_doc
+    assert overrides_path.read_text() == before_text
+    assert not (fixture.manual / ".session_journals").exists()
+
+
+def test_roll_override_schema_violation_raises_value_error_and_rolls_back(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Gap-closure (CINF-01): the TUI auto-save now validates on every
+    write. If a chapter entry's curated_by is ever corrupted to something
+    schema-invalid, the write must raise a legible ValueError (not crash
+    with something opaque, and never silently write the bad state to
+    disk) and roll the in-memory document back to the pre-action state --
+    same contract as the pre-existing OSError rollback test above, this
+    time for the new validation gate rather than an I/O failure."""
+    fixture = forge_curator_fixture(tmp_path, monkeypatch)
+    overrides_path = fixture.manual / "chapter_roll_overrides.json"
+    persistence = CurationPersistence(
+        chapter_roll_overrides_path=overrides_path,
+        section_classifications_path=fixture.manual / "section_classifications.json",
+        journal_dir_path=fixture.manual / ".session_journals",
+    )
+    # Simulate an already-corrupted in-memory document (e.g. from a bug
+    # elsewhere) rather than going through the normal action API, which
+    # always stamps a valid curated_by on new entries.
+    persistence.chapter_roll_overrides["chapter_roll_overrides"]["1"] = {
+        "curated_by": "robot",
+        "rolls": [],
+    }
+    before_text = overrides_path.read_text()
+    before_doc = deepcopy(persistence.chapter_roll_overrides)
+
+    with pytest.raises(ValueError, match="curated_by"):
+        persistence.update_roll_at_index("1", 1, outcome="miss")
 
     assert persistence.chapter_roll_overrides == before_doc
     assert overrides_path.read_text() == before_text

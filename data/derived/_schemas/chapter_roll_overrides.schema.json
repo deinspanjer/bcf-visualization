@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/chapter_roll_overrides.schema.json",
+  "title": "Chapter Roll Overrides",
+  "description": "Hand-curated (or, from Phase 4 onward, agent-curated) per-chapter paid roll structure and evidence metadata. Consolidated read/validation gate for data/manual/chapter_roll_overrides.json — see scripts/chapter_roll_overrides_io.py. `curated_by` is required on every chapter entry and never defaults (D-01): an absent value is a validation error, not a silent human-assumption.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["chapter_roll_overrides"],
+  "properties": {
+    "chapter_roll_overrides": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/chapter_entry" }
+    }
+  },
+  "$defs": {
+    "chapter_entry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["curated_by", "rolls"],
+      "properties": {
+        "curated_by": { "enum": ["human", "agent"] },
+        "rolls": { "type": "array" }
+      }
+    }
+  }
+}

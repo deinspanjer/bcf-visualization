@@ -1106,10 +1106,12 @@ def test_space_f_restamps_current_chapter_fingerprint_only(tmp_path) -> None:
                 "chapter_roll_overrides": {
                     chapter_num: {
                         "_fingerprint": "sha256:oldchapter1",
+                        "curated_by": "human",
                         "rolls": [],
                     },
                     "2": {
                         "_fingerprint": "sha256:oldchapter2",
+                        "curated_by": "human",
                         "rolls": [],
                     },
                 }

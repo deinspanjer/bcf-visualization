@@ -33,6 +33,7 @@ def test_yes_flag_restamps_every_mismatched_chapter(
         "chapter_roll_overrides": {
             "65": {
                 "_fingerprint": "sha256:old0000000000000",
+                "curated_by": "human",
                 "rolls": [{"perks": [], "outcome": "miss"}],
             },
         }
@@ -89,7 +90,7 @@ def test_yes_flag_is_noop_when_no_mismatches(
     fingerprints = tmp_path / "chapter_alignment_fingerprints.json"
     _write(overrides, {
         "chapter_roll_overrides": {
-            "65": {"_fingerprint": "sha256:abc0000000000000", "rolls": []},
+            "65": {"_fingerprint": "sha256:abc0000000000000", "curated_by": "human", "rolls": []},
         }
     })
     _write(fingerprints, {

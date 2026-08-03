@@ -150,6 +150,7 @@ def test_stats_evidence_omits_prior_unassigned_slot_quotes(
         {
             "chapter_roll_overrides": {
                 "1": {
+                    "curated_by": "human",
                     "rolls": [
                         {
                             "evidence_quotes": [

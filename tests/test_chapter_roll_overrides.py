@@ -23,6 +23,7 @@ def test_roll_entries_must_use_dict_shape(tmp_path: Path) -> None:
     path.write_text(json.dumps({
         "chapter_roll_overrides": {
             "1": {
+                "curated_by": "human",
                 "rolls": [
                     ["Old Bare List"],
                 ],
@@ -38,6 +39,20 @@ def test_missing_override_file_has_no_legacy_fallback(tmp_path: Path) -> None:
     result = load_overrides(tmp_path / "chapter_roll_overrides.json")
 
     assert result == {"chapter_roll_overrides": {}}
+
+
+def test_load_overrides_missing_curated_by_raises(tmp_path: Path) -> None:
+    """D-01/D-11: an existing chapter entry missing curated_by is a hard
+    validation error at load time, never a silent default."""
+    path = tmp_path / "chapter_roll_overrides.json"
+    path.write_text(json.dumps({
+        "chapter_roll_overrides": {
+            "1": {"rolls": []},
+        },
+    }))
+
+    with pytest.raises(ValueError, match="curated_by"):
+        load_overrides(path)
 
 
 def test_quote_only_override_preserves_existing_roll_shape() -> None:

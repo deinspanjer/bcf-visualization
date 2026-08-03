@@ -18,8 +18,11 @@ Run after ``scripts/predict_rolls.py``.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
+from chapter_roll_overrides_io import (
+    load_chapter_roll_overrides_doc,
+    write_chapter_roll_overrides_doc,
+)
 from data_paths import DERIVED, MANUAL
 
 ANCHOR_FIELD = "_fingerprint"
@@ -42,7 +45,7 @@ def _load_overrides() -> dict:
         raise SystemExit(
             f"missing {OVERRIDES_PATH.relative_to(MANUAL.parent.parent)}"
         )
-    return json.loads(OVERRIDES_PATH.read_text())
+    return load_chapter_roll_overrides_doc(OVERRIDES_PATH)
 
 
 def stamp(force: bool = False) -> tuple[int, int, list[str]]:
@@ -74,7 +77,7 @@ def stamp(force: bool = False) -> tuple[int, int, list[str]]:
         entry[ANCHOR_FIELD] = target
         stamped += 1
     if stamped:
-        OVERRIDES_PATH.write_text(json.dumps(doc, indent=2) + "\n")
+        write_chapter_roll_overrides_doc(doc, OVERRIDES_PATH)
     return stamped, skipped, missing
 
 

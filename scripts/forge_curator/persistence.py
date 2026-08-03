@@ -26,6 +26,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from scripts.chapter_roll_overrides_io import (
+    load_chapter_roll_overrides_doc,
+    write_chapter_roll_overrides_doc,
+)
 from scripts.forge_curator.data_loader import (
     CHAPTER_ROLL_OVERRIDES,
     MANUAL,
@@ -68,9 +72,18 @@ class CurationPersistence:
         )
         self.journal_dir_path = journal_dir_path or JOURNAL_DIR
         # Load existing override docs (or empty stubs).
-        self.chapter_roll_overrides = self._load_or_default(
+        #
+        # Deliberately NOT routed through ``_load_or_default`` (below) —
+        # that helper's broad ``except Exception: return default`` is
+        # exactly the bug this fixes (D-11/T-03-02): an existing but
+        # malformed file (JSON syntax error, or a chapter entry missing
+        # ``curated_by``) must raise and abort TUI startup, not silently
+        # collapse to an empty document that the next auto-save would then
+        # write back over the real 118-chapter corpus. A genuinely absent
+        # file still defaults cleanly (handled inside the loader).
+        self.chapter_roll_overrides = load_chapter_roll_overrides_doc(
             self.chapter_roll_overrides_path,
-            {
+            default={
                 "_purpose": "Per-chapter paid roll structure + curated metadata.",
                 "chapter_roll_overrides": {},
             },
@@ -130,10 +143,26 @@ class CurationPersistence:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     def _write_chapter_roll_overrides(self, before: dict) -> None:
+        """Auto-save the in-memory override doc via the sanctioned writer.
+
+        Routed through ``chapter_roll_overrides_io.write_chapter_roll_overrides_doc``
+        (D-11/CINF-01 gap closure) rather than the module-local
+        ``_atomic_write_json`` -- this is the ONLY place in the codebase
+        that writes ``chapter_roll_overrides.json`` on nearly every
+        interactive curation action, so it needed both the schema
+        validation gate every other write path already has, and to keep
+        the atomic tmp-then-``os.replace`` write ``_atomic_write_json``
+        already provided (now implemented once, in
+        ``_common.write_validated_json``, rather than duplicated here).
+
+        A validation failure raises *before* anything touches disk (same
+        as any other write to this file) and rolls the in-memory copy
+        back to ``before``, exactly as it did previously for I/O errors.
+        """
         try:
-            _atomic_write_json(
-                self.chapter_roll_overrides_path,
+            write_chapter_roll_overrides_doc(
                 self.chapter_roll_overrides,
+                self.chapter_roll_overrides_path,
             )
         except Exception:
             self.chapter_roll_overrides = deepcopy(before)
@@ -157,7 +186,7 @@ class CurationPersistence:
         """Get or create the chapter_roll_overrides entry for ``chapter_num``."""
         cro = self.chapter_roll_overrides.setdefault("chapter_roll_overrides", {})
         if chapter_num not in cro:
-            cro[chapter_num] = {"rolls": []}
+            cro[chapter_num] = {"rolls": [], "curated_by": "human"}
         elif "rolls" not in cro[chapter_num]:
             cro[chapter_num]["rolls"] = []
         self._stamp_chapter_alignment_fingerprint(chapter_num, cro[chapter_num])
@@ -1690,12 +1719,20 @@ class CurationPersistence:
         target_abs = Path(target_rel)
         if not target_abs.is_absolute():
             target_abs = MANUAL.parent / target_rel
-        _atomic_write_json(target_abs, before_state)
-        # Sync in-memory copies so live consumers see the rollback.
-        if target_abs == self.chapter_roll_overrides_path or target_abs.name == "chapter_roll_overrides.json":
+        is_chapter_roll_overrides_target = (
+            target_abs == self.chapter_roll_overrides_path
+            or target_abs.name == "chapter_roll_overrides.json"
+        )
+        if is_chapter_roll_overrides_target:
+            # Same reasoning as _write_chapter_roll_overrides: undo is
+            # still a write to this file and must not be able to put an
+            # invalid document back on disk.
+            write_chapter_roll_overrides_doc(before_state, target_abs)
             self.chapter_roll_overrides = before_state
-        elif target_abs == self.section_classifications_path or target_abs.name == "section_classifications.json":
-            self.section_classifications = before_state
+        else:
+            _atomic_write_json(target_abs, before_state)
+            if target_abs == self.section_classifications_path or target_abs.name == "section_classifications.json":
+                self.section_classifications = before_state
         # Append an "undo" record so audit trail is preserved.
         self._append_journal(
             "undo", target_abs, last.get("chapter_num"),

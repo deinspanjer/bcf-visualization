@@ -20,6 +20,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+from scripts.chapter_roll_overrides_io import load_chapter_roll_overrides_doc
 from scripts.data_paths import DERIVED, MANUAL, RAW, ROOT
 
 EPUB_PATH = RAW / "Brocktons_Celestial_Forge.epub"
@@ -278,10 +279,9 @@ class ForgeCuratorData:
     @property
     def chapter_roll_overrides(self) -> dict:
         if self._chapter_roll_overrides_doc is None:
-            if CHAPTER_ROLL_OVERRIDES.exists():
-                self._chapter_roll_overrides_doc = _read_json(CHAPTER_ROLL_OVERRIDES)
-            else:
-                self._chapter_roll_overrides_doc = {"chapter_roll_overrides": {}}
+            self._chapter_roll_overrides_doc = load_chapter_roll_overrides_doc(
+                CHAPTER_ROLL_OVERRIDES
+            )
         return self._chapter_roll_overrides_doc
 
     @property

@@ -117,7 +117,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "97": {
       "rolls": [
@@ -141,7 +142,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:614faef15c5b1c54"
+      "_fingerprint": "sha256:614faef15c5b1c54",
+      "curated_by": "human"
     },
     "1": {
       "rolls": [
@@ -181,7 +183,8 @@
           "source_ordinal": 2
         }
       ],
-      "_fingerprint": "sha256:35709f3fbd991ce3"
+      "_fingerprint": "sha256:35709f3fbd991ce3",
+      "curated_by": "human"
     },
     "100": {
       "rolls": [
@@ -198,7 +201,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:a997c3b5e11a9e5c"
+      "_fingerprint": "sha256:cc917a5a72067de0",
+      "curated_by": "human"
     },
     "103": {
       "rolls": [
@@ -220,7 +224,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:cc917a5a72067de0"
+      "_fingerprint": "sha256:cc917a5a72067de0",
+      "curated_by": "human"
     },
     "104": {
       "rolls": [
@@ -236,9 +241,28 @@
             "Entrance Hall – Tybalt"
           ],
           "outcome": "hit",
-          "constellation": "Toolkits",
-          "word_position": null,
-          "evidence_quotes": []
+          "constellation": "Personal Reality",
+          "word_position": 2860,
+          "mention_chapter_num": "104",
+          "mention_word_position": 2861,
+          "display_position_policy": "mention",
+          "evidence_quotes": [
+            {
+              "text": "I paused as I felt my power connect to a cluster of motes from the Personal Reality Constellation.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 2861
+            },
+            {
+              "text": "Everyone had received their own Entrance Hall, and a key to go with it. Five-meter cubic rooms had appeared across the Workshop, one for every resident.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 2986
+            },
+            {
+              "text": "There were actually two entrances that had been provided for the Kerbals, one in the Space Center and one in the embassy. It seemed that the pilots and engineering staff were counted separately by my power.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 3355
+            }
+          ]
         },
         {
           "perks": [
@@ -246,11 +270,33 @@
           ],
           "outcome": "hit",
           "constellation": "Resources and Durability",
-          "word_position": null,
-          "evidence_quotes": []
+          "word_position": 8439,
+          "evidence_quotes": [
+            {
+              "text": "I felt my power shift again, bringing forth a massive mote from the Resources and Durability constellation, which was also the final mote from the Resources and Durability constellation.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 8440
+            },
+            {
+              "text": "The power was called Firestorm.",
+              "mention_chapter_num": "104",
+              "mention_word_position": 8613
+            }
+          ]
         }
       ],
-      "_fingerprint": "sha256:161e5abc1b8f878c"
+      "_fingerprint": "sha256:5a2fe49d8482f0ea",
+      "model_validation_resolution": {
+        "status": "resolved",
+        "resolved_issue_codes": [
+          "paid_rolls_exceed_predicted_slots",
+          "known_attempts_exceed_predicted_slots",
+          "cost_schedule_infeasible"
+        ],
+        "reason_code": "curator_confirmed_extra_attempt",
+        "note": "Curator confirmed chapter 104 has 2 roll events despite 1 predicted model slot. Both are directly evidenced in prose and cannot be one roll, since they name different constellations: Personal Reality at word 2861 ('I paused as I felt my power connect to a cluster of motes from the Personal Reality Constellation', an 8-mote multi-grab of Entrance Hall at 50 CP each) and Resources and Durability at word 8440 ('bringing forth a massive mote from the Resources and Durability constellation, which was also the final mote', Firestorm at 600 CP). The stored alignment anchor predates the ch 95.5 mention_chapter_num correction, which reattributed 600 CP upstream and shifted this chapter's roll boundary out; the model is short a slot here, the curation is not wrong."
+      },
+      "curated_by": "human"
     },
     "106": {
       "rolls": [
@@ -265,7 +311,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:161e5abc1b8f878c"
+      "_fingerprint": "sha256:161e5abc1b8f878c",
+      "curated_by": "human"
     },
     "109": {
       "rolls": [
@@ -281,7 +328,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:5a2fe49d8482f0ea"
+      "_fingerprint": "sha256:161e5abc1b8f878c",
+      "curated_by": "human"
     },
     "112": {
       "rolls": [
@@ -296,7 +344,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:161e5abc1b8f878c"
+      "_fingerprint": "sha256:5a2fe49d8482f0ea",
+      "curated_by": "human"
     },
     "114": {
       "rolls": [
@@ -312,7 +361,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:5a2fe49d8482f0ea"
+      "_fingerprint": "sha256:161e5abc1b8f878c",
+      "curated_by": "human"
     },
     "116.2": {
       "rolls": [
@@ -327,7 +377,8 @@
           "evidence_quotes": []
         }
       ],
-      "_fingerprint": "sha256:f8969eb4d3cd965d"
+      "_fingerprint": "sha256:f8969eb4d3cd965d",
+      "curated_by": "human"
     },
     "2": {
       "rolls": [
@@ -399,7 +450,8 @@
           "source_ordinal": 6
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "3": {
       "rolls": [
@@ -457,7 +509,8 @@
           "source_ordinal": 9
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "4": {
       "rolls": [
@@ -526,7 +579,8 @@
           ]
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "5": {
       "rolls": [
@@ -587,7 +641,8 @@
           "source_ordinal": 16
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "6": {
       "rolls": [
@@ -688,7 +743,8 @@
           "source_ordinal": 21
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "7": {
       "rolls": [
@@ -744,7 +800,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "8": {
       "rolls": [
@@ -819,7 +876,8 @@
           "curator_note": "skipped after ch8/ch8.1/ch9 reconciliation; likely edit drift rather than deferred evidence"
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "8.1": {
       "rolls": [
@@ -912,7 +970,8 @@
           "curator_note": "skipped after moving ch8.1 evidence to earliest source-backed slots"
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "9": {
       "rolls": [
@@ -997,7 +1056,8 @@
           "source_ordinal": 33
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "10": {
       "rolls": [
@@ -1112,7 +1172,8 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 10 has 5 known attempts despite 4 predicted model slots."
       },
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "11": {
       "rolls": [
@@ -1217,7 +1278,8 @@
           "source_ordinal": 43
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "12": {
       "rolls": [
@@ -1303,7 +1365,8 @@
           "source_ordinal": 47
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "13": {
       "rolls": [
@@ -1435,7 +1498,8 @@
         ],
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 13 has 6 known attempts despite 5 predicted model slots."
-      }
+      },
+      "curated_by": "human"
     },
     "14": {
       "rolls": [
@@ -1599,7 +1663,8 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 14 has 6 known attempts despite 5 predicted model slots."
       },
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "15": {
       "rolls": [
@@ -1723,7 +1788,8 @@
           "source_ordinal": 65
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "16": {
       "rolls": [
@@ -1859,7 +1925,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "17": {
       "rolls": [
@@ -1996,7 +2063,8 @@
           "source_ordinal": 75
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "18": {
       "rolls": [
@@ -2154,7 +2222,8 @@
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 18 has 6 known attempts despite 5 predicted model slots."
       },
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "19": {
       "rolls": [
@@ -2307,7 +2376,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "20": {
       "rolls": [
@@ -2450,7 +2520,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "21": {
       "rolls": [
@@ -2611,7 +2682,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "22": {
       "rolls": [
@@ -2712,7 +2784,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "23": {
       "rolls": [
@@ -2903,7 +2976,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "24": {
       "rolls": [
@@ -3067,7 +3141,8 @@
           "source_ordinal": 118
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "25": {
       "rolls": [
@@ -3191,7 +3266,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "26": {
       "rolls": [
@@ -3302,7 +3378,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "27": {
       "rolls": [
@@ -3491,7 +3568,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:8a03cd4a8f9766d3"
+      "_fingerprint": "sha256:8a03cd4a8f9766d3",
+      "curated_by": "human"
     },
     "28": {
       "rolls": [
@@ -3662,7 +3740,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:3fbbca067e6462d9"
+      "_fingerprint": "sha256:3fbbca067e6462d9",
+      "curated_by": "human"
     },
     "29": {
       "rolls": [
@@ -3841,7 +3920,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:8a03cd4a8f9766d3"
+      "_fingerprint": "sha256:8a03cd4a8f9766d3",
+      "curated_by": "human"
     },
     "30": {
       "rolls": [
@@ -4110,7 +4190,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:09d275fb9ff57e18"
+      "_fingerprint": "sha256:09d275fb9ff57e18",
+      "curated_by": "human"
     },
     "31": {
       "rolls": [
@@ -4288,7 +4369,8 @@
           "source_ordinal": 173
         }
       ],
-      "_fingerprint": "sha256:3fbbca067e6462d9"
+      "_fingerprint": "sha256:3fbbca067e6462d9",
+      "curated_by": "human"
     },
     "32": {
       "rolls": [
@@ -4456,7 +4538,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "33": {
       "rolls": [
@@ -4588,7 +4671,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "34": {
       "rolls": [
@@ -4711,7 +4795,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "35": {
       "rolls": [
@@ -4887,7 +4972,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:3fbbca067e6462d9"
+      "_fingerprint": "sha256:3fbbca067e6462d9",
+      "curated_by": "human"
     },
     "35.1": {
       "rolls": [
@@ -5000,7 +5086,8 @@
           "source_ordinal": 207
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "36": {
       "rolls": [
@@ -5171,7 +5258,8 @@
           "source_ordinal": 215
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "37": {
       "rolls": [
@@ -5302,7 +5390,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "38": {
       "rolls": [
@@ -5504,7 +5593,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:5b211388beb65add"
+      "_fingerprint": "sha256:5b211388beb65add",
+      "curated_by": "human"
     },
     "39": {
       "rolls": [
@@ -5758,7 +5848,8 @@
           "source_ordinal": 245
         }
       ],
-      "_fingerprint": "sha256:6f7c549716c1955b"
+      "_fingerprint": "sha256:6f7c549716c1955b",
+      "curated_by": "human"
     },
     "40": {
       "rolls": [
@@ -5913,7 +6004,8 @@
           "source_ordinal": 253
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "41": {
       "rolls": [
@@ -6236,7 +6328,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:47ebe876a5458799"
+      "_fingerprint": "sha256:47ebe876a5458799",
+      "curated_by": "human"
     },
     "42": {
       "rolls": [
@@ -6364,7 +6457,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "43": {
       "rolls": [
@@ -6464,7 +6558,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "43.1": {
       "rolls": [
@@ -6535,7 +6630,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "44": {
       "rolls": [
@@ -6658,7 +6754,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "45": {
       "rolls": [
@@ -6804,7 +6901,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "46": {
       "rolls": [
@@ -7045,7 +7143,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:9c504ddf95c27c96"
+      "_fingerprint": "sha256:9c504ddf95c27c96",
+      "curated_by": "human"
     },
     "46.1": {
       "rolls": [
@@ -7157,7 +7256,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "47": {
       "rolls": [
@@ -7313,7 +7413,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "48": {
       "rolls": [
@@ -7495,7 +7596,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:3fbbca067e6462d9"
+      "_fingerprint": "sha256:3fbbca067e6462d9",
+      "curated_by": "human"
     },
     "49": {
       "rolls": [
@@ -7613,7 +7715,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "50": {
       "rolls": [
@@ -7783,7 +7886,8 @@
           "source_ordinal": 346
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "51": {
       "rolls": [
@@ -7917,7 +8021,8 @@
           "source_ordinal": 352
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "52": {
       "rolls": [
@@ -8082,7 +8187,8 @@
           "source_ordinal": 360
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "53": {
       "rolls": [
@@ -8182,7 +8288,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "54": {
       "rolls": [
@@ -8315,7 +8422,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "55": {
       "rolls": [
@@ -8505,7 +8613,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:8a03cd4a8f9766d3"
+      "_fingerprint": "sha256:8a03cd4a8f9766d3",
+      "curated_by": "human"
     },
     "56": {
       "rolls": [
@@ -8747,7 +8856,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "57": {
       "rolls": [
@@ -9036,7 +9146,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:58a3f2cff5767668"
+      "_fingerprint": "sha256:58a3f2cff5767668",
+      "curated_by": "human"
     },
     "58": {
       "rolls": [
@@ -9137,7 +9248,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "55.1": {
       "rolls": [],
@@ -9149,7 +9261,8 @@
         ],
         "reason_code": "curator_confirmed_extra_attempt",
         "note": "Curator confirmed chapter 55.1 has 6 known attempts despite 5 predicted model slots."
-      }
+      },
+      "curated_by": "human"
     },
     "58.1": {
       "rolls": [
@@ -9192,7 +9305,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:35709f3fbd991ce3"
+      "_fingerprint": "sha256:35709f3fbd991ce3",
+      "curated_by": "human"
     },
     "58.2": {
       "rolls": [
@@ -9307,7 +9421,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "59": {
       "rolls": [
@@ -9451,7 +9566,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "60": {
       "rolls": [
@@ -9566,7 +9682,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "61": {
       "rolls": [
@@ -9686,7 +9803,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "62": {
       "rolls": [
@@ -9787,7 +9905,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "63": {
       "rolls": [
@@ -9917,7 +10036,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "64": {
       "rolls": [
@@ -9960,7 +10080,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:35709f3fbd991ce3"
+      "_fingerprint": "sha256:35709f3fbd991ce3",
+      "curated_by": "human"
     },
     "65": {
       "rolls": [
@@ -10070,7 +10191,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "66": {
       "rolls": [
@@ -10171,7 +10293,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "68": {
       "rolls": [
@@ -10276,7 +10399,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "69": {
       "rolls": [
@@ -10390,7 +10514,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "70": {
       "rolls": [
@@ -10496,7 +10621,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "71": {
       "rolls": [
@@ -10659,7 +10785,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "72": {
       "rolls": [
@@ -10715,7 +10842,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "73": {
       "rolls": [
@@ -10869,7 +10997,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "74": {
       "rolls": [
@@ -11008,7 +11137,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "74.2": {
       "rolls": [
@@ -11137,7 +11267,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "75": {
       "rolls": [
@@ -11271,7 +11402,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "76": {
       "rolls": [
@@ -11352,7 +11484,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "77": {
       "rolls": [
@@ -11449,7 +11582,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "78": {
       "rolls": [
@@ -11568,7 +11702,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "79": {
       "rolls": [
@@ -11691,7 +11826,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "80": {
       "rolls": [
@@ -11781,7 +11917,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:da900eb15e655d16"
+      "_fingerprint": "sha256:da900eb15e655d16",
+      "curated_by": "human"
     },
     "81": {
       "rolls": [
@@ -11977,7 +12114,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:fcf9d5f82f020eb8"
+      "_fingerprint": "sha256:fcf9d5f82f020eb8",
+      "curated_by": "human"
     },
     "82": {
       "rolls": [
@@ -12219,7 +12357,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:5b211388beb65add"
+      "_fingerprint": "sha256:5b211388beb65add",
+      "curated_by": "human"
     },
     "82.1": {
       "rolls": [
@@ -12344,7 +12483,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "83": {
       "rolls": [
@@ -12409,7 +12549,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "83.1": {
       "rolls": [
@@ -12536,7 +12677,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "84": {
       "rolls": [
@@ -12603,7 +12745,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "85": {
       "rolls": [
@@ -12711,7 +12854,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:49ac1f51a000d7ea"
+      "_fingerprint": "sha256:49ac1f51a000d7ea",
+      "curated_by": "human"
     },
     "86": {
       "rolls": [
@@ -12762,7 +12906,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:35709f3fbd991ce3"
+      "_fingerprint": "sha256:35709f3fbd991ce3",
+      "curated_by": "human"
     },
     "87": {
       "rolls": [
@@ -12907,7 +13052,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:73a9a68bde51740f"
+      "_fingerprint": "sha256:73a9a68bde51740f",
+      "curated_by": "human"
     },
     "88": {
       "rolls": [
@@ -13174,7 +13320,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:9c504ddf95c27c96"
+      "_fingerprint": "sha256:9c504ddf95c27c96",
+      "curated_by": "human"
     },
     "89": {
       "rolls": [
@@ -13307,7 +13454,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "90": {
       "rolls": [
@@ -13439,7 +13587,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:c73ccc9cfd86a1f9"
+      "_fingerprint": "sha256:c73ccc9cfd86a1f9",
+      "curated_by": "human"
     },
     "91": {
       "rolls": [
@@ -13519,7 +13668,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:83825097d256dac2"
+      "_fingerprint": "sha256:83825097d256dac2",
+      "curated_by": "human"
     },
     "92": {
       "rolls": [
@@ -13590,7 +13740,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:6d47f7d7c5f7803a"
+      "_fingerprint": "sha256:6d47f7d7c5f7803a",
+      "curated_by": "human"
     },
     "93": {
       "rolls": [
@@ -13655,7 +13806,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:6d47f7d7c5f7803a"
+      "_fingerprint": "sha256:6d47f7d7c5f7803a",
+      "curated_by": "human"
     },
     "94": {
       "rolls": [
@@ -13698,7 +13850,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:6d47f7d7c5f7803a"
+      "_fingerprint": "sha256:6d47f7d7c5f7803a",
+      "curated_by": "human"
     },
     "94.1": {
       "rolls": [
@@ -13735,7 +13888,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:247a75bbb27a97fd"
+      "_fingerprint": "sha256:247a75bbb27a97fd",
+      "curated_by": "human"
     },
     "95": {
       "rolls": [
@@ -13804,7 +13958,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:370b45b9a9250c92"
+      "_fingerprint": "sha256:370b45b9a9250c92",
+      "curated_by": "human"
     },
     "95.5": {
       "rolls": [
@@ -13816,7 +13971,7 @@
           "outcome": "hit",
           "constellation": "Quality",
           "word_position": null,
-          "mention_chapter_num": null,
+          "mention_chapter_num": "95",
           "mention_word_position": null,
           "display_position_policy": null,
           "skipped": false,
@@ -13870,7 +14025,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:6d47f7d7c5f7803a"
+      "_fingerprint": "sha256:6d47f7d7c5f7803a",
+      "curated_by": "human"
     },
     "96": {
       "rolls": [
@@ -14008,7 +14164,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:4e03316314ca49ca"
+      "_fingerprint": "sha256:4e03316314ca49ca",
+      "curated_by": "human"
     },
     "95.6": {
       "rolls": [
@@ -14073,7 +14230,8 @@
           "curator_note": null
         }
       ],
-      "_fingerprint": "sha256:370b45b9a9250c92"
+      "_fingerprint": "sha256:370b45b9a9250c92",
+      "curated_by": "human"
     }
   }
 }

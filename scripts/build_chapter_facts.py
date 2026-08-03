@@ -41,6 +41,7 @@ from collections import Counter
 
 from _common import write_validated_json
 from chapter_alignment import model_issues_by_chapter
+from chapter_roll_overrides_io import load_chapter_roll_overrides_doc
 from data_paths import DERIVED, MANUAL, RAW, ROOT
 from data_release import refresh_current_runtime_manifest
 from eligibility_spans import (
@@ -246,9 +247,7 @@ def _chapter_story_word_count(
 
 
 def _load_chapter_roll_overrides() -> dict[str, dict]:
-    if not CHAPTER_ROLL_OVERRIDES.exists():
-        return {}
-    data = json.loads(CHAPTER_ROLL_OVERRIDES.read_text())
+    data = load_chapter_roll_overrides_doc(CHAPTER_ROLL_OVERRIDES)
     return {
         str(chapter_num): override
         for chapter_num, override
@@ -258,9 +257,7 @@ def _load_chapter_roll_overrides() -> dict[str, dict]:
 
 
 def _load_association_review_marker() -> dict | None:
-    if not CHAPTER_ROLL_OVERRIDES.exists():
-        return None
-    data = json.loads(CHAPTER_ROLL_OVERRIDES.read_text())
+    data = load_chapter_roll_overrides_doc(CHAPTER_ROLL_OVERRIDES)
     marker = data.get("association_review")
     return marker if isinstance(marker, dict) else None
 

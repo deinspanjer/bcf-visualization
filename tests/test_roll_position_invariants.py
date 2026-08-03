@@ -134,3 +134,32 @@ def test_canonical_roll_facts_preserve_mechanical_and_display_positions() -> Non
             assert roll["word_position"] == roll["display_word_position"], (
                 f"{source_name} {roll.get('roll_key')} display alias local"
             )
+
+
+def test_roll_key_is_unique_across_all_chapters() -> None:
+    """Regression test for the roll_key collision bug (2026-08).
+
+    Prior to the chapter-scoped ``override:{chapter_num}:...`` form, rows
+    generated for a chapter-roll-override entry without a matching curator
+    log row used ``curator:{source_idx:04d}.{ov_origin}``, where
+    ``source_idx`` is always 0 once the curator log runs out of coverage
+    (past ~chapter 75). That made the dotted key collide across every such
+    chapter, so a single ``roll_overrides.json`` patch entry could silently
+    apply to dozens of unrelated rolls in dozens of unrelated chapters via
+    ``_apply_overrides``.
+    """
+    roll_facts = json.loads(ROLL_FACTS_JSON.read_text())["rolls"]
+
+    keys = [roll.get("roll_key") for roll in roll_facts]
+    assert all(isinstance(k, str) and k for k in keys), (
+        "every roll must have a non-empty string roll_key"
+    )
+
+    counts: dict[str, int] = {}
+    for key in keys:
+        counts[key] = counts.get(key, 0) + 1
+    duplicates = {key: count for key, count in counts.items() if count > 1}
+    assert not duplicates, (
+        f"roll_key values must be unique across all chapters; "
+        f"found duplicates: {duplicates}"
+    )
