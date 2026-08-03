@@ -1685,3 +1685,246 @@ def test_mobile_live_region_reannounces_repeat_landing(tmp_path):
             assert console_messages == []
             browser.close()
 
+
+def test_mobile_keyboard_arrows_step_one_roll_and_announce(tmp_path):
+    # D-46/D-47: ArrowRight/ArrowLeft step exactly ONE ROLL on mobile via the
+    # same rollStepFrom() the swipe callback already calls, and announce.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        mid_word = 5000
+        last_at_or_before = max(w for w in roll_positions if w <= mid_word)
+        idx = roll_positions.index(last_at_or_before)
+        forward_one = roll_positions[idx + 1]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": str(mid_word)},
+            )
+            page.keyboard.press("ArrowRight")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == str(forward_one)
+            assert page.locator(".mobile-live-region").text_content() != ""
+
+            page.keyboard.press("ArrowLeft")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == str(last_at_or_before)
+
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_keyboard_home_snaps_to_live_edge_and_resumes(tmp_path):
+    # D-46: Home mirrors the double-tap body exactly — the last roll at or
+    # before the playhead, resuming playback — NOT desktop's jump to word 0.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        mid_word = 5000
+        last_at_or_before = max(w for w in roll_positions if w <= mid_word)
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": str(mid_word)},
+            )
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            page.keyboard.press("Home")
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(50)
+
+            bookmark = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert bookmark == str(last_at_or_before)
+            assert page.locator(".mobile-live-region").text_content() != ""
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_keyboard_question_mark_toggles_help(tmp_path):
+    # D-48: `?` routes through the same openMobileSurface("help") call the
+    # on-screen button makes, so a second press closes it — no second
+    # history sentinel (window.history.state, not the raw joint-session
+    # history.length, is the correct proxy: history.back() never shrinks
+    # history.length — see test_surface_stack_focus_trap_and_back_gesture's
+    # own comment on this exact point).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            history_state_before = page.evaluate("window.history.state")
+
+            page.keyboard.press("?")
+            page.wait_for_timeout(50)
+            assert page.locator(".mobile-help-overlay").count() == 1
+
+            page.keyboard.press("?")
+            page.wait_for_timeout(50)
+            assert page.locator(".mobile-help-overlay").count() == 0
+            assert page.evaluate("window.history.state") == history_state_before
+
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_keyboard_arrow_adjacency_holds_at_list_ends(tmp_path):
+    # MOBX-03 edge (adjacency): stepping past either end of the roll list
+    # holds at the first/last roll (rollStepFrom clamps) and re-announces
+    # that same roll on every press, rather than wrapping or going silent.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        first_roll_word = roll_positions[0]
+        last_roll_word = roll_positions[-1]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": str(first_roll_word)},
+            )
+            _install_live_region_mutation_counter(page)
+            for _ in range(3):
+                page.keyboard.press("ArrowLeft")
+                page.wait_for_timeout(30)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == str(first_roll_word)
+            assert page.evaluate("window.__liveRegionMutationCount") == 3
+            assert console_messages == []
+            page.close()
+
+            page, console_messages2 = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": str(last_roll_word)},
+            )
+            _install_live_region_mutation_counter(page)
+            for _ in range(3):
+                page.keyboard.press("ArrowRight")
+                page.wait_for_timeout(30)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == str(last_roll_word)
+            assert page.evaluate("window.__liveRegionMutationCount") == 3
+            assert console_messages2 == []
+            browser.close()
+
+
+def test_desktop_keyboard_stepping_unaffected_by_mobile_branch(tmp_path):
+    # D-47/§0.1: the new mobile branch never leaks into desktop — arrow step
+    # sizes (10000, 2000 with shift) and Home (word 0) stay byte-identical,
+    # asserted numerically (a mobile-shaped leak would still "move," just by
+    # the wrong amount, so a directional assertion would not catch it).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            def desktop_page(bookmark):
+                return _page_with_console_capture(
+                    browser, site, viewport={"width": 1400, "height": 900},
+                    storage={
+                        "bcf:preview-port-storage-version": "3",
+                        "bcf:bookmark:word_position": str(bookmark),
+                    },
+                )
+
+            page, console_messages = desktop_page(0)
+            page.keyboard.press("ArrowRight")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == "10000"
+            assert console_messages == []
+            page.close()
+
+            page, console_messages2 = desktop_page(0)
+            page.keyboard.press("Shift+ArrowRight")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == "2000"
+            assert console_messages2 == []
+            page.close()
+
+            page, console_messages3 = desktop_page(5000)
+            page.keyboard.press("Home")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == "0"
+            assert page.evaluate("document.querySelector('.mobile-live-region')") is None
+            assert console_messages3 == []
+            browser.close()
+
+
+def test_mobile_keyboard_space_toggles_playback_on_every_layout(tmp_path):
+    # MOBX-03: Space needs no new code — the existing handler's Space case
+    # has no layoutMode gate and already toggles playback identically
+    # everywhere; this closes the requirement with a test, not an edit.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            cases = [
+                (PHONE_PORTRAIT, 'button[aria-label="Play"]', 'button[aria-label="Pause"]'),
+                (PHONE_LANDSCAPE, '.mobile-cinema-scrub-fab[aria-label="Play"]', '.mobile-cinema-scrub-fab[aria-label="Pause"]'),
+                ({"width": 1400, "height": 900}, "#play-pause[aria-label='Play']", "#play-pause[aria-label='Pause']"),
+            ]
+            for viewport, play_sel, pause_sel in cases:
+                page, console_messages = _page_with_console_capture(
+                    browser, site, viewport=viewport, storage=DEFAULT_STORAGE,
+                )
+                expect(page.locator(play_sel)).to_be_visible()
+                page.keyboard.press("Space")
+                expect(page.locator(pause_sel)).to_be_visible()
+                page.keyboard.press("Space")
+                expect(page.locator(play_sel)).to_be_visible()
+                assert console_messages == []
+                page.close()
+
+            browser.close()
+
+
+def test_mobile_keyboard_respects_editable_guard(tmp_path):
+    # D-47: the mobile branch lives AFTER the handler's existing editable
+    # guard, so a focused text control still swallows these keys exactly as
+    # it swallows desktop's — this app's own mobile Settings surface is
+    # all-button (no text input) today, so a bare <input> is synthesized to
+    # exercise the guard honestly.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "5000"},
+            )
+            page.evaluate(
+                "() => { const i = document.createElement('input'); "
+                "document.body.appendChild(i); i.focus(); }"
+            )
+            page.keyboard.press("ArrowRight")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == "5000"
+
+            page.keyboard.press("?")
+            page.wait_for_timeout(50)
+            assert page.evaluate("document.querySelector('.mobile-help-overlay')") is None
+
+            assert console_messages == []
+            browser.close()

@@ -1434,3 +1434,36 @@ def test_mobile_live_region_mounts_and_announces_in_landscape(tmp_path):
             assert console_messages == []
             browser.close()
 
+
+def test_mobile_keyboard_arrow_and_help_in_landscape(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        facts = _dense_rolls_facts(site)
+        roll_positions = _dense_rolls_positions_sorted(facts)
+        mid_word = 5000
+        last_at_or_before = max(w for w in roll_positions if w <= mid_word)
+        idx = roll_positions.index(last_at_or_before)
+        forward_one = roll_positions[idx + 1]
+
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": str(mid_word)},
+            )
+            page.keyboard.press("ArrowRight")
+            page.wait_for_timeout(50)
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == str(forward_one)
+            assert page.locator(".mobile-live-region").text_content() != ""
+
+            page.keyboard.press("?")
+            page.wait_for_timeout(50)
+            assert page.locator(".mobile-help-overlay").count() == 1
+            page.keyboard.press("?")
+            page.wait_for_timeout(50)
+            assert page.locator(".mobile-help-overlay").count() == 0
+
+            assert console_messages == []
+            browser.close()

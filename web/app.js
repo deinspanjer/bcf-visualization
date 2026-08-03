@@ -4644,6 +4644,54 @@ window.addEventListener("keydown", event => {
     return;
   }
   if (editable) return;
+  // D-46/D-47: mobile keyboard equivalents — one early branch inside this
+  // SAME listener (never a second top-level keydown subscription, which
+  // would be exactly the double-binding class of bug D-07's attach
+  // discipline exists to prevent). Placed after the editable guard
+  // (a focused Settings control still swallows these, matching desktop) and
+  // before the desktop word-stepping chain below, so desktop never sees
+  // these keys on mobile and mobile never falls through to word-stepping.
+  // Arrows step ONE ROLL via rollStepFrom() — the same stepping function the
+  // swipe callback already calls (D-46, no second stepping model) — and
+  // Home mirrors onDoubleTap's body exactly (live edge, NOT word 0, which is
+  // what desktop's own Home does a few lines below).
+  if (app.layoutMode !== "desktop") {
+    if (event.key === "ArrowRight") {
+      const next = rollStepFrom(app.wordPos, 1);
+      if (next) {
+        setWordPos(next.word_position);
+        announceMobileRoll();
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "ArrowLeft") {
+      const next = rollStepFrom(app.wordPos, -1);
+      if (next) {
+        setWordPos(next.word_position);
+        announceMobileRoll();
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "Home") {
+      const target = lastRollAtWord(app.wordPos);
+      if (target) {
+        setWordPos(target.word_position);
+        announceMobileRoll();
+      }
+      if (!app.playing) togglePlayback();
+      event.preventDefault();
+      return;
+    }
+    if (event.key === "?") {
+      // openMobileSurface() already closes on a re-request (D-48) — a
+      // second `?` toggles Help shut with no second history sentinel.
+      openMobileSurface("help");
+      event.preventDefault();
+      return;
+    }
+  }
   const step = event.shiftKey ? 2000 : 10000;
   if (event.key === "ArrowRight") setWordPos(app.wordPos + step);
   else if (event.key === "ArrowLeft") setWordPos(app.wordPos - step);
