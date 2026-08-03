@@ -35,6 +35,7 @@ import {
   paidRollPerks,
   perkDisplayLabel,
   phase,
+  rollMarkerModel,
   rollTotalCost,
   ROLL_FIRING_WINDOW_WORDS,
   silhouetteOpacity,
@@ -1051,6 +1052,21 @@ function render() {
       // it at PHONE_PORTRAIT, F-01).
       style: "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;z-index:2147483647;",
     }));
+    // MOBX-03 (D-42..D-45): one visually-hidden polite ARIA live region,
+    // mounted only on the mobile layouts, never on desktop. The hiding
+    // technique lives entirely in web/mobile.css's `.mobile-live-region`
+    // rule (04-UI-SPEC.md's locked property table) — this node carries no
+    // inline style of its own. Cached on app.dom AFTER cachePlaybackDomRefs()
+    // has already replaced that object (see the comment at its call site
+    // above), so this ref is never discarded by a later reassignment.
+    const mobileLiveRegion = el("div", {
+      class: "mobile-live-region",
+      role: "status",
+      "aria-live": "polite",
+      "aria-atomic": "true",
+    });
+    root.append(mobileLiveRegion);
+    app.dom.mobileLiveRegion = mobileLiveRegion;
     attachMobileGestureProbes();
     // Phase 3 (D-34/Pitfall 3): ONE gesture-attach lifecycle and ONE focus-
     // trap re-attach serve BOTH mobile layouts — this whole block (both
@@ -4335,6 +4351,60 @@ function resetMobileChromeHideTimer() {
   }
 }
 
+// mobileRollAnnouncement(roll) (MOBX-03/D-43): the outcome-aware live-region
+// string. Branches on rollMarkerModel(roll).isMissLike FIRST — misses are
+// 410 of 670 rolls in the real dataset, the common case, not an edge case —
+// so no perk field is ever touched before that check. Numbering reuses the
+// exact {n}/{total} expression mobileFieldLogRows() already computes
+// (app.data.story.rolls.indexOf(roll) + 1 / .length), never roll_label
+// (null on 669/670 rolls) or any *_ordinal field. Outcome classification
+// reuses rollMarkerModel(roll) (viz-model.js) — no second classifier.
+function mobileRollAnnouncement(roll) {
+  const total = app.data.story.rolls.length;
+  const n = app.data.story.rolls.indexOf(roll) + 1;
+  const marker = rollMarkerModel(roll);
+  if (marker.isMissLike) {
+    // FA-MOBX-05: `evidence_kind === "untracked_acquisition"` has zero
+    // instances in the current dataset — no dedicated phrasing is invented
+    // here; see 04-UI-SPEC.md's "UI Considerations" row. isUntracked rolls
+    // never reach this branch (rollMarkerModel excludes them from
+    // isMissLike), so they fall through to the ordinary hit phrasing below.
+    return `Roll ${n} of ${total}. Miss.`;
+  }
+  if (marker.paidCount > 1) {
+    const first = perkDisplayLabel(paidRollPerks(roll)[0]);
+    const more = marker.paidCount - 1;
+    return `Roll ${n} of ${total}. ${first} and ${more} more, ${marker.cost} CP.`;
+  }
+  if (marker.paidCount === 1) {
+    const perkName = perkDisplayLabel(paidRollPerks(roll)[0]);
+    return `Roll ${n} of ${total}. ${perkName}, ${marker.cost} CP.`;
+  }
+  // Free-only fallback (0 live examples today; kept for robustness — the
+  // same fallback chain mobileFieldLogPrincipalName already carries).
+  const freePerk = (roll.free_perks || [])[0];
+  return `Roll ${n} of ${total}. ${perkDisplayLabel(freePerk)} (free).`;
+}
+
+// announceMobileRoll() (MOBX-03/D-42/D-44): writes the current playhead's
+// roll into the live region — called ONLY from the five user-caused sites
+// (double-tap, swipe-step, rail-scrub release, the two mobile keyboard
+// steps), never from the rAF playback tier and never on a plain tap. Silence
+// (no write at all) when lastRollAtWord() finds nothing, matching this
+// project's established absent-element-over-placeholder-copy convention.
+function announceMobileRoll() {
+  const node = app.dom.mobileLiveRegion;
+  if (!node) return;
+  const roll = lastRollAtWord(app.wordPos);
+  if (!roll) return;
+  const message = mobileRollAnnouncement(roll);
+  // Two synchronous writes in the same tick: assistive tech only fires on a
+  // text MUTATION, so landing twice on the same roll (e.g. scrubbing away
+  // and back) would otherwise produce an identical string and stay silent.
+  node.textContent = "";
+  node.textContent = message;
+}
+
 // attachMobileGestures() (Phase 3, D-34 — renamed/generalized from
 // attachMobilePortraitGestures): the SINGLE gesture-attach lifecycle for
 // BOTH mobile layouts. Mirrors attachMobileGestureProbes's lifecycle exactly
@@ -4407,7 +4477,10 @@ function attachMobileGestures() {
       // to the end of the story (RESEARCH Pitfall 4).
       onDoubleTap: () => {
         const target = lastRollAtWord(app.wordPos);
-        if (target) setWordPos(target.word_position);
+        if (target) {
+          setWordPos(target.word_position);
+          announceMobileRoll();
+        }
         if (!app.playing) togglePlayback();
         resetMobileChromeHideTimer();
       },
@@ -4416,7 +4489,10 @@ function attachMobileGestures() {
       // direction, so this callback only ever forwards it.
       onSwipeStep: dir => {
         const next = rollStepFrom(app.wordPos, dir);
-        if (next) setWordPos(next.word_position);
+        if (next) {
+          setWordPos(next.word_position);
+          announceMobileRoll();
+        }
         resetMobileChromeHideTimer();
       },
       onSwipeEnd: () => {
@@ -4456,6 +4532,11 @@ function attachMobileGestures() {
       onScrubEnd: () => {
         app.mobileScrubPanPct = null;
         persistBookmarkNow();
+        // Announce the settled position only — the per-move onScrub callback
+        // above never calls this, so a drag across many rolls writes nothing
+        // until release (D-42's "no throttle" rule: one true announcement at
+        // the end, not a rate-limited stream of the ones in between).
+        announceMobileRoll();
         resetMobileChromeHideTimer();
       },
     });

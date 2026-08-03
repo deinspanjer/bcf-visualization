@@ -1081,4 +1081,24 @@
     outline: 2px solid var(--cyan);
     outline-offset: 2px;
   }
+
+  /* MOBX-03 (D-42..D-45): the live region's hiding technique, locked in
+     04-UI-SPEC.md verbatim — this is the single most failure-prone value in
+     the phase. display:none / visibility:hidden / the hidden attribute /
+     aria-hidden="true" / content-visibility:hidden / a zero-width-or-height
+     box all remove the node from the ACCESSIBILITY TREE, not just from
+     view — the element would satisfy every DOM-presence assertion while
+     announcing nothing. This is the standard "visually hidden"/"sr-only"
+     pattern instead: a non-zero 1x1px box, clipped and pulled out of flow. */
+  .mobile-live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    margin: -1px;
+    border: 0;
+    padding: 0;
+  }
 }

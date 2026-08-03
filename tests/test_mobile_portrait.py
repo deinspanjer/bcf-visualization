@@ -16,7 +16,7 @@ import json
 
 import pytest
 
-from tests.helpers.web_runtime_site import staged_web_runtime_site
+from tests.helpers.web_runtime_site import LONG_MULTIBYTE_PERK_NAME, staged_web_runtime_site
 
 
 def _chromium_browser_or_skip(playwright, playwright_api):
@@ -1381,3 +1381,307 @@ def test_rail_drag_is_monotonic_at_every_zoom(tmp_path):
                 page.close()
 
             browser.close()
+
+
+# ---------------------------------------------------------------------------
+# 04-02-PLAN.md: the visually-hidden aria-live region (MOBX-03/D-42..D-45)
+# and mobile keyboard equivalents (MOBX-03/D-46..D-48). No analog existed in
+# this file before this plan (grep confirmed zero aria-live/keyboard
+# assertions) — see 04-PATTERNS.md.
+# ---------------------------------------------------------------------------
+
+_LIVE_REGION_MUTATION_OBSERVER_SCRIPT = (
+    "() => { window.__liveRegionMutationCount = 0; "
+    "const el = document.querySelector('.mobile-live-region'); "
+    "const mo = new MutationObserver(() => { window.__liveRegionMutationCount += 1; }); "
+    "mo.observe(el, { childList: true, characterData: true, subtree: true }); "
+    "window.__liveRegionMO = mo; }"
+)
+
+
+def _install_live_region_mutation_counter(page):
+    # Counts MutationObserver CALLBACK invocations, not raw mutation
+    # records — announceMobileRoll()'s two synchronous textContent writes
+    # (clear, then set) land in the SAME microtask batch, so one call to
+    # announceMobileRoll() always increments this counter by exactly 1.
+    page.evaluate(_LIVE_REGION_MUTATION_OBSERVER_SCRIPT)
+
+
+def test_mobile_live_region_mounts_hidden_on_mobile_only(tmp_path):
+    # MOBX-03 (D-42..D-44): exactly one polite live region exists in the
+    # mobile shell, hidden with 04-UI-SPEC.md's LOCKED visually-hidden
+    # technique — a non-zero 1px box, clipped, never display:none/
+    # visibility:hidden/aria-hidden (any of those removes the node from the
+    # accessibility tree while still passing a DOM-presence assertion). It
+    # must never mount on the desktop path (frozen).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT, storage=DEFAULT_STORAGE,
+            )
+            assert page.locator('.mobile-live-region[role="status"]').count() == 1
+            box = page.evaluate(
+                "() => { const el = document.querySelector('.mobile-live-region'); "
+                "const cs = getComputedStyle(el); "
+                "return { width: parseFloat(cs.width), height: parseFloat(cs.height), "
+                "display: cs.display, visibility: cs.visibility, "
+                "ariaLive: el.getAttribute('aria-live'), ariaAtomic: el.getAttribute('aria-atomic') }; }"
+            )
+            assert 0 < box["width"] <= 2
+            assert 0 < box["height"] <= 2
+            assert box["display"] != "none"
+            assert box["visibility"] != "hidden"
+            assert box["ariaLive"] == "polite"
+            assert box["ariaAtomic"] == "true"
+            assert console_messages == []
+            page.close()
+
+            # Desktop path (>= 1100px, frozen): the live region never mounts.
+            page, console_messages2 = _page_with_console_capture(
+                browser, site, viewport={"width": 1400, "height": 900},
+            )
+            assert page.evaluate("document.querySelector('.mobile-live-region')") is None
+            assert console_messages2 == []
+            browser.close()
+
+
+def test_mobile_live_region_announces_on_swipe_and_silent_on_tap(tmp_path):
+    # A swipe-step names the roll number, total, perk and CP; a plain tap
+    # never calls setWordPos() (it only toggles play state / reveals chrome)
+    # so it must never write the live region (D-42's resolved tap ambiguity).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            # Fresh page per phase (matching this file's own established
+            # pattern) — a plain tap starts playback (tap-to-pause is on by
+            # default), and a running playback tick would otherwise drift
+            # the word position the swipe phase below depends on.
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "5000"},
+            )
+            sky = page.locator(".mobile-sky")
+
+            # Two plain taps (toggle play, then toggle back) never announce.
+            sky.click()
+            page.wait_for_timeout(100)
+            assert page.locator(".mobile-live-region").text_content() == ""
+            page.wait_for_timeout(400)
+            sky.click()
+            page.wait_for_timeout(100)
+            assert page.locator(".mobile-live-region").text_content() == ""
+            assert console_messages == []
+            page.close()
+
+            # A swipe forward from word 5000 lands on the cluster's last roll
+            # + 1 step -> the first spread roll (word 7200, hit, "Dense Perk
+            # 9", 100 CP) -> roll 9 of 12 in this fixture's sorted roll list.
+            # 24px engage + 1*56px step = 80px; a <=88px drag stays inside the
+            # single-step band (2 steps would need >=136px).
+            page, console_messages2 = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "5000"},
+            )
+            sky = page.locator(".mobile-sky")
+            sky_box = sky.bounding_box()
+            assert sky_box is not None
+            x = sky_box["x"] + sky_box["width"] / 2
+            y = sky_box["y"] + sky_box["height"] / 2
+            page.mouse.move(x, y)
+            page.mouse.down()
+            for dx in range(8, 89, 8):
+                page.mouse.move(x + dx, y)
+            page.mouse.up()
+            page.wait_for_timeout(100)
+
+            text = page.locator(".mobile-live-region").text_content()
+            assert text == "Roll 9 of 12. Dense Perk 9, 100 CP."
+            # Structural safety: a text-only write, never markup.
+            assert page.evaluate("document.querySelector('.mobile-live-region').children.length") == 0
+            assert console_messages2 == []
+            browser.close()
+
+
+def test_mobile_live_region_renders_special_characters_as_text(tmp_path):
+    # T-04-05: the perk-name string flows through node.textContent only,
+    # never innerHTML — a name with special characters (em-dash, accented
+    # letters) must reach the DOM as literal text.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                # Word 3105 resolves to the cluster's very first roll (word
+                # 3100, hit, the long-multibyte-perk-name fixture roll).
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "3105"},
+            )
+            sky = page.locator(".mobile-sky")
+            sky.dblclick()
+            page.wait_for_timeout(100)
+            text = page.locator(".mobile-live-region").text_content()
+            assert text == f"Roll 1 of 12. {LONG_MULTIBYTE_PERK_NAME}, 100 CP."
+            assert page.evaluate("document.querySelector('.mobile-live-region').children.length") == 0
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_live_region_rail_scrub_announces_once_at_release(tmp_path):
+    # D-42: a rail-scrub DRAG writes nothing on any pointermove — only the
+    # settled position at pointerup announces, exactly once, never a
+    # throttled stream of the ones in between.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "0"},
+            )
+            _install_live_region_mutation_counter(page)
+
+            rail_box = page.locator(".mobile-rail").bounding_box()
+            assert rail_box is not None
+            y = rail_box["y"] + rail_box["height"] / 2
+            x_start = rail_box["x"] + rail_box["width"] * 0.1
+            page.mouse.move(x_start, y)
+            page.mouse.down()
+            for frac in (0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9):
+                page.mouse.move(rail_box["x"] + rail_box["width"] * frac, y)
+                page.wait_for_timeout(10)
+            page.mouse.up()
+            page.wait_for_timeout(100)
+
+            assert page.evaluate("window.__liveRegionMutationCount") == 1
+            assert page.locator(".mobile-live-region").text_content() != ""
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_live_region_silent_during_free_playback(tmp_path):
+    # D-42/D-45: the live region never writes during free playback, however
+    # many rolls it crosses — a throttle is explicitly forbidden (it would
+    # silently drop announcements and misreport the roll count), so the only
+    # correct behavior is total silence between user gestures.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={
+                    **DEFAULT_STORAGE,
+                    # word 3100 = the cluster's first roll; "quick" on-roll
+                    # behavior skips the cinematic lock entirely, so tickPlayback
+                    # never stalls mid-cluster; a fast speed guarantees crossing
+                    # the whole 8-roll cluster (words 3100-3170) well inside the
+                    # wait window below.
+                    "bcf:bookmark:word_position": "3100",
+                    "bcf:on-roll-behavior": "quick",
+                    "bcf:playback:speed:v2": "5000",
+                },
+            )
+            sky = page.locator(".mobile-sky")
+            sky.dblclick()  # snaps to roll 1 (already there) and starts playing
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(100)
+            text_before = page.locator(".mobile-live-region").text_content()
+            assert text_before != ""
+
+            _install_live_region_mutation_counter(page)
+            page.wait_for_timeout(500)
+            sky.click()  # pause; forces an immediate, synchronous bookmark write
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            page.wait_for_timeout(50)
+
+            bookmark = int(page.evaluate("localStorage.getItem('bcf:bookmark:word_position')"))
+            assert bookmark > 3170  # advanced past the whole 8-roll cluster
+            assert page.evaluate("window.__liveRegionMutationCount") == 0
+            assert page.locator(".mobile-live-region").text_content() == text_before
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_live_region_empty_when_no_roll_before_playhead(tmp_path):
+    # MOBX-03 edge (empty): scrubbing to a position before the first roll
+    # writes nothing — silence, not a placeholder string.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "5000"},
+            )
+            rail_box = page.locator(".mobile-rail").bounding_box()
+            assert rail_box is not None
+            x = rail_box["x"]  # leftmost edge -> word 0, before the first roll (word 3100)
+            y = rail_box["y"] + rail_box["height"] / 2
+            page.mouse.move(x, y)
+            page.mouse.down()
+            page.mouse.up()
+            page.wait_for_timeout(100)
+
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == "0"
+            assert page.locator(".mobile-live-region").text_content() == ""
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_live_region_reannounces_repeat_landing(tmp_path):
+    # MOBX-03 edge (ordering): landing on the same roll twice in a row still
+    # re-announces — proven by observing a MUTATION, not by comparing two
+    # equal strings (an unchanged string written twice produces no second
+    # screen-reader announcement unless the node actually mutates).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, path="/web/?dataPackage=dense-rolls",
+                viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "5000"},
+            )
+            _install_live_region_mutation_counter(page)
+            sky = page.locator(".mobile-sky")
+
+            sky.dblclick()
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(50)
+            text_first = page.locator(".mobile-live-region").text_content()
+            assert text_first != ""
+
+            page.wait_for_timeout(400)  # past the double-tap detection window
+            sky.click()  # pause, so the second double-tap lands on the same roll
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            page.wait_for_timeout(400)
+
+            sky.dblclick()
+            page.wait_for_timeout(50)
+            text_second = page.locator(".mobile-live-region").text_content()
+
+            assert text_second == text_first
+            assert page.evaluate("window.__liveRegionMutationCount") == 2
+            assert console_messages == []
+            browser.close()
+

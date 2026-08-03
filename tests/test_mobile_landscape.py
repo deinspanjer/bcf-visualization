@@ -1401,3 +1401,36 @@ def test_tablets_in_landscape_stay_desktop(tmp_path):
                 page.close()
 
             browser.close()
+
+
+# ---------------------------------------------------------------------------
+# 04-02-PLAN.md (Task 1 test 9 / Task 2 test 10): the live region and mobile
+# keyboard equivalents mount/behave identically in landscape — attachMobile-
+# Gestures()/the keydown handler both gate on `layoutMode !== "desktop"`,
+# never a layout-specific check, so the cheapest proof is one gesture and
+# one key each, mirroring the portrait file's own coverage.
+# ---------------------------------------------------------------------------
+
+
+def test_mobile_live_region_mounts_and_announces_in_landscape(tmp_path):
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "2000"},
+            )
+            assert page.locator('.mobile-live-region[role="status"]').count() == 1
+
+            sky = page.locator(".mobile-sky")
+            sky.dblclick()
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(100)
+            text = page.locator(".mobile-live-region").text_content()
+            assert text == "Roll 1 of 2. Synthetic Toolkit, 100 CP."
+            assert console_messages == []
+            browser.close()
+
