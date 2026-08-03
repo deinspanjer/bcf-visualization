@@ -36,8 +36,8 @@ Requirements for this workstream (MOB*). Curation requirements (EPUB/CINF/ACUR) 
 - [x] **MOBX-01**: `renderPortraitBanner` and its CSS are deleted; no "rotate to landscape" banner anywhere; desktop UI byte-identical above the breakpoint
 - [x] **MOBX-02**: Landing page shows story-title chip with author credit and a `?` help button opening the same help overlay; Survey letter stays verbatim
 - [x] **MOBX-03**: Roll changes announce via `aria-live="polite"`; keyboard equivalents work (Space, ←/→, Home, `?`); all tappable targets ≥ 44×44 CSS px; Lighthouse Accessibility ≥ 90 on mobile preset
-- [ ] **MOBX-04**: `prefers-reduced-motion: reduce` disables transitions and throw decay and doubles auto-hide to 8000ms
-- [ ] **MOBX-05**: Playback pauses when the page is hidden (`document.visibilitychange`), per interview confirmation
+- [x] **MOBX-04**: `prefers-reduced-motion: reduce` disables transitions and throw decay and doubles auto-hide to 8000ms
+- [x] **MOBX-05**: Playback pauses when the page is hidden (`document.visibilitychange`), per interview confirmation
 
 ## v2 Requirements
 
@@ -87,8 +87,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOBX-01 | Phase 4 | Complete |
 | MOBX-02 | Phase 4 | Complete |
 | MOBX-03 | Phase 4 | Complete |
-| MOBX-04 | Phase 4 | Pending |
-| MOBX-05 | Phase 4 | Pending |
+| MOBX-04 | Phase 4 | Complete |
+| MOBX-05 | Phase 4 | Complete |
 
 **Coverage:**
 

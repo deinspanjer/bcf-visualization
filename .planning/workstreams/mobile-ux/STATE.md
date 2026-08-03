@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Mobile Cutover & Accessibility
 status: executing
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-08-03T01:16:43.809Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-08-03T01:42:04.820Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 4 (Mobile Cutover & Accessibility) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-08-02 — Phase 4 execution started
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Progress: [████████░░] 84%
 | Phase 04 P01 | 25min | 2 tasks | 5 files |
 | Phase 4 P2 | 50min | 2 tasks | 4 files |
 | Phase 04-mobile-cutover-accessibility P03 | 45min | 2 tasks | 3 files |
+| Phase 04-mobile-cutover-accessibility P04 | 55min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 04-03: form method=dialog CTA closes the native <dialog> natively (fires 'close') with zero script; the file's only inline <script> is the focus-return listener
 - [Phase ?]: 04-03: backdrop click on #landing-help-dialog verified NOT to close it (no light-dismiss handler added, by design) — recorded as the actual FA-MOBX-02 backdrop-route behavior
 - [Phase ?]: 04-03: Tasks 1 and 2 landed in a single commit (c563a60) instead of two atomic per-task commits — process deviation, no functional impact, all acceptance criteria independently verified
+- [Phase ?]: 04-04: MOBX-04 throw-decay clause recorded vacuous (feature never implemented) rather than fabricated — carried to Phase D+E gate
+- [Phase ?]: 04-04: FAB hit-area expanded via transparent ::before overlay (position:relative + inset:-4px), verified by offset click, never by rect measurement (host stays 40x40 by design)
+- [Phase ?]: 04-04: MOBX-03's 44x44 clause and plan 04-05's Lighthouse >=90 check are independent verifications — neither is evidence for the other
 
 ### Pending Todos
 
@@ -141,6 +145,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-03T01:16:43.797Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-08-03T01:42:04.810Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None

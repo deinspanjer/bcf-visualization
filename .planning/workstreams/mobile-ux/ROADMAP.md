@@ -164,7 +164,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 04-04-PLAN.md — Cinema-scrub FAB 44×44 hit area, reduced-motion auto-hide doubling, and the hidden-page pause verification (MOBX-03, MOBX-04, MOBX-05)
+- [x] 04-04-PLAN.md — Cinema-scrub FAB 44×44 hit area, reduced-motion auto-hide doubling, and the hidden-page pause verification (MOBX-03, MOBX-04, MOBX-05)
 
 **Wave 4** *(blocked on Wave 3)*
 
