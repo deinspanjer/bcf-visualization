@@ -67,6 +67,14 @@ def _copy_web_files(repo_root: Path, site_root: Path) -> None:
         shutil.copy2(repo_root / "web" / filename, web_dir / filename)
 
 
+def _copy_landing_page(repo_root: Path, site_root: Path) -> None:
+    # 04-03-PLAN.md: stage the repo-root landing page (index.html) alongside
+    # the already-staged web/ app, so `site.url_for("/")` serves the landing
+    # page AND its relative `./web/` link resolves against a real staged app
+    # rather than 404ing. Additive only — no existing test targets "/" today.
+    shutil.copy2(repo_root / "index.html", site_root / "index.html")
+
+
 def _manifest(package_id: str) -> dict:
     return {
         "package_id": package_id,
@@ -597,6 +605,7 @@ def staged_web_runtime_site(
     repo_root = Path(__file__).resolve().parents[2]
     site_root = tmp_path / "runtime-site"
     _copy_web_files(repo_root, site_root)
+    _copy_landing_page(repo_root, site_root)
     _write_json(
         site_root / "data/packages.json",
         {
