@@ -87,7 +87,7 @@ created: 2026-07-26
 
 - Dre to manually review chapter 104's `rolls` array in the curator TUI (2 curated hit rolls vs. 1 predicted slot) before its alignment anchor can be safely re-stamped.
 
-- Stage 2 code is parked in-tree and harmless. Removal command and the resume read are in `phases/04-inference-refinement-confidence-gate-routing/04-01-SUMMARY.md`.
+- Stage 2 code is parked on branch `parked/stage2-inference` (pushed to origin) and REMOVED from main, so future agents don't build on it. The 52 verified quotes it produced live on main at `docs/stage2_agent_curation_trial_2026-08.md`. Restore command + honest read: `phases/04-inference-refinement-confidence-gate-routing/04-01-SUMMARY.md`.
 
 ### Blockers/Concerns
 

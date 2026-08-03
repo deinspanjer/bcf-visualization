@@ -136,9 +136,12 @@ Plans:
 > corpus has misses. Dre answered "no" to whether it saves him work and is returning to manual curation.
 >
 > The decision reflects total cost across three planning attempts for this one phase, not this run's
-> numbers in isolation. Stage 2 code is parked in-tree, harmless, and isolated behind a `curation`
-> optional extra; the corpus is byte-unchanged. **See `04-01-SUMMARY.md`** for what was learned, the
-> removal command, and the honest read for anyone resuming.
+> numbers in isolation. The corpus is byte-unchanged.
+>
+> **The implementation has been removed from `main`** and parked on branch `parked/stage2-inference`
+> (pushed to `origin`), so it is not mistaken for a foundation. The 52 verified quotes it produced are
+> preserved on `main` at **`docs/stage2_agent_curation_trial_2026-08.md`**. See `04-01-SUMMARY.md` for
+> what was learned and the restore command.
 >
 > **Phase 5 is blocked** — it consumed Phase 4's proposals output. If curation stays manual, ACUR-01
 > (Stage 2), ACUR-02, ACUR-03, ACUR-05, and CINF-04 have no delivery path and this milestone's agent-

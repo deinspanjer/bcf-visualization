@@ -1,5 +1,24 @@
 # Phase 4: Inference Refinement, Confidence Gate & Routing — Research
 
+> ## ⛔ STOPPED — do not build from this document
+>
+> **Phase 4 was stopped by Dre on 2026-08-03.** This research is accurate and its transport findings
+> were measured by execution, but the effort it describes **was tried and abandoned**. The code was
+> written, run on 5 curated chapters, and removed from `main`.
+>
+> **Before acting on anything below, read:**
+> - `04-01-SUMMARY.md` — what was built, what the run actually showed, and why it was stopped
+> - `docs/stage2_agent_curation_trial_2026-08.md` — the 52 verified quotes the run produced
+> - Branch `parked/stage2-inference` — the removed implementation
+>
+> **The short version:** quote finding worked (52/52 located at verifier Tier 1, zero hallucinated);
+> roll structure did not (ch 81 proposed five `hit / Personal Reality` rolls where the corpus curates
+> misses). The unsolved problem is structural inference — outcome and constellation assignment — not
+> the transport, retrieval, or verification this document spends most of its length on.
+>
+> Do not re-plan this phase without an explicit instruction from Dre. It consumed three planning
+> passes before producing code.
+
 **Researched:** 2026-08-02
 **Domain:** Subscribed-harness LLM inference over a propose-only MCP server; deterministic evidence retrieval; composite confidence gating; fingerprint-keyed idempotency
 **Confidence:** HIGH for the transport, package selection, and the D-05a offset trap (all verified first-hand in this session by running the real `claude` CLI, the real MCP SDK, and the real epub). MEDIUM for wall-clock projections at Phase 5 scale.

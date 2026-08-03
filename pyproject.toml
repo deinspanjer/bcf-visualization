@@ -18,13 +18,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff", "pytest", "pytest-asyncio", "playwright"]
-# Stage 2 agent-curation pipeline only (propose-only MCP server + harness
-# transport). Deliberately NOT a core dependency: `scripts/verify.py`, the
-# Forge Curator TUI, and the derived-data pipeline must all keep running on
-# a base install, so no module reachable from those paths may import `mcp`.
-# Pinned below 2.0.0, which is a days-old breaking major (httpx -> httpx2,
-# mcp-types split); 1.29 is the mature 1.x head.
-curation = ["mcp>=1.29,<2"]
 
 [build-system]
 requires = ["setuptools>=69"]

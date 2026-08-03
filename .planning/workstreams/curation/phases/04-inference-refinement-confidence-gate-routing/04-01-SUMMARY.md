@@ -78,14 +78,22 @@ Exact position matches were 12/52, almost entirely boundary width — it starts 
 - `data/derived/agent_proposals.json` holds the run's output for those 5 chapters. They are already
   hand-curated, so it has no curation value — it is evidence of what the run did, nothing more.
 
-## If this is ever picked up again
+## Where everything lives now (updated 2026-08-03)
 
-The parked code is harmless where it sits. To remove it entirely:
+Dre asked for the code parked off `main` so future agents can't mistake it for a foundation, and for
+the quotes preserved as a durable reference. Both done:
 
-```
-git rm scripts/stage2_*.py scripts/run_stage2_chapter.py data/derived/_schemas/agent_proposals.schema.json tests/test_stage2_*.py tests/fixtures/stage2_submission_sample.json
-```
-then drop the `curation` extra from `pyproject.toml`.
+| What | Where |
+|---|---|
+| The implementation (8 modules, 3 test files, schema, `mcp` dependency) | Branch **`parked/stage2-inference`**, pushed to `origin`. Removed from `main`. |
+| The 52 verified quotes, per chapter and per roll | **`docs/stage2_agent_curation_trial_2026-08.md`** on `main` |
+| Measured transport findings, the D-05a/D-33 adapter, the pitfalls | `04-RESEARCH.md` (carries a ⛔ STOPPED banner) |
+
+`data/derived/agent_proposals.json` was gitignored and has been deleted — its substance is in the
+`docs/` file. The `curation` optional extra is gone from `pyproject.toml`, so `mcp` is no longer a
+dependency of this repo on any branch but the parked one.
+
+To restore the code: `git checkout parked/stage2-inference -- scripts/stage2_*.py scripts/run_stage2_chapter.py tests/test_stage2_*.py tests/fixtures/stage2_submission_sample.json data/derived/_schemas/agent_proposals.schema.json`, then re-add `curation = ["mcp>=1.29,<2"]` to `pyproject.toml`.
 
 The honest read on what was learned: **the retrieval-plus-verify half is sound and the structural-
 inference half is not.** Anyone resuming should not re-plan the transport — it works, it is measured,
