@@ -156,6 +156,50 @@ Raised at Plan 04-01's Task 1 checkpoint, before `anthropic` was installed or an
 
   Throughput warning for planning: an agentic per-chapter loop is materially slower than a Batches API submission. Phase 5's ~80-chapter run must be sized against wall-clock and usage window, not against the Batches API's 24h SLA.
 
+### Tool surface & transport, settled by research (Dre asked at plan time, 2026-08-02)
+
+Raised by Dre when re-planning Phase 4: *"the previous discuss / plan mentioned the MCP being 'submit only', but I'm not sure if that is just imprecise phrasing or if it actually denies the possibility of the agent making read calls to the TUI via the MCP where appropriate."* Settled in `04-RESEARCH.md` §Q3 with a measured basis.
+
+- **D-30 (read tools are permitted — "propose-only" binds write authority, not information flow; clarifies D-26):** Every one of D-26's three prohibitions names a *write* or a *destination choice*, and its rationale names *"the writer."* The read surface is not mentioned. A read tool cannot make the model the writer, cannot mutate the corpus, and cannot choose a destination. **Dre's reading is correct; "submit-only" was imprecise shorthand.** D-26 is amended by appending: *"'Propose-only' governs write authority. Read-only tools that serve information the pipeline already owns are permitted and do not weaken the guarantee, provided (a) no read tool returns a destination or a routing decision, (b) no read tool records anything the gate later consults, and (c) every read tool's underlying source artifact is covered by the D-20 fingerprint."*
+
+  **The Phase 4 tool surface is exactly three tools. Nothing else:**
+
+  | Tool | Kind | Purpose | Cap |
+  |---|---|---|---|
+  | `submit_stage2_rolls(chapter_num, rolls[])` | submit | The only delivery channel. Handler runs derive → `verify_roll()` → `grade_roll()` → `route_and_write()` and decides the destination. | — |
+  | `get_prose_span(chapter_num, start_word, end_word)` | read | Bounded prose around a stated offset via `cp_word_index`, to reach D-04's residual quotes that live outside the retrieved union. | ≤400 CP words/span, ≤5 calls/chapter |
+  | `check_quote(chapter_num, quote_text)` | read | Non-authoritative dry-run of the Tier-1/Tier-2 quote search; returns `{found, tier, word_position, occurrence_count}` and **records nothing**. | ≤20 calls/chapter |
+
+  No `write_*`, no `route_*`, no `set_confidence`, no tool that names or returns a destination, no tool that reads `chapter_roll_overrides.json`.
+
+  Binding qualifications:
+  - **`check_quote` does not constitute tuning to the verifier.** The verifier is exact-or-reject over real prose, so iterating toward an exact prose substring is the desired behavior — literally what a human curator does with the TUI's search. It cannot loosen the gate, because the gate re-runs `verify_roll()` on submission regardless. It raises pre-fill richness (D-17) without touching routing.
+  - **`get_prose_span` is bounded opportunism, not a recall-maximization loop.** Per D-04, do not tune its caps upward to chase the residual. It is the one LOW-confidence element of the design and **must be instrumented so its contribution is measurable on the calibration split, with an explicit keep-or-drop decision recorded there.**
+  - **Anything reading TUI or curation state is OUT OF SCOPE for Phase 4** — chapters-needing-curation, current overrides, session journal. Those serve D-26's noted secondary motivation (Codex/Claude driving Forge Curator interactively) and belong on the same server in Phase 5+. In Phase 4 they would let the model see the corpus it is proposing against, which is a **calibration contamination risk** — calibration runs against hand-curated chapters, so their answers would be readable.
+  - **D-20's fingerprint gains a fourth term.** Read tools mean the run's inputs are no longer a static set, so the fingerprint must be taken over the *closed set of source artifacts the read tools could possibly serve* — a superset, never a subset. It adds `tool_surface_version` alongside `prompt_version` and `model`: changing what `get_prose_span` returns changes achievable output exactly as much as a prompt edit does. **Never fingerprint the tool-call transcript** — the transcript is an output, and keying on it makes idempotency vacuous. Do record the read-set (`[{tool, args, response_sha256}]`) in the ledger entry as an audit/diagnostic record that is never an input to the key. Since `temperature` is not controllable through this transport, D-20's "no diff" is satisfied by **skipping** at an unchanged fingerprint, not by re-running and hoping for byte equality.
+
+- **D-31 (the MCP server is a pre-started warm loopback HTTP server, not stdio — corrects D-26's implied shape):** Measured, not assumed. An official-SDK **stdio** server failed 3/3 against `claude -p`: `--debug` printed *"Connecting MCP server (tools not available yet)"* and the model reported the tool did not exist. The server process started fine — it lost a startup race to the ~380–490 ms `import mcp` cost. A pure-stdlib stdio server won the race; adding an artificial 1.5 s delay to *that* one reproduced the failure, isolating latency as the cause. The same SDK server on a pre-started loopback HTTP endpoint connected reliably.
+
+  **Therefore: bind `127.0.0.1` only (never `0.0.0.0`), on an ephemeral port the pipeline chooses and writes into a generated per-run `--mcp-config` JSON. Shut it down in a `finally` block — a leaked server is a real hazard, because its handler is what routes and writes.** Secondary benefit, independently worth it for D-29: one warm process across the whole batch builds the prose-loader cache, `DirectoryMatchIndex`, `obtained_perks_index`, and exemplar index **once** instead of 80 times, and makes concurrency trivial (N invocations, one server).
+
+  Two measured facts that must shape the code:
+  - **Subprocess exit 0 does not mean success.** Refusals, permission denials, and MCP-connection failures all report `is_error: false, subtype: "success"`. **The success criterion is handler-side state — "did a valid submission arrive?" — checked by the Python caller after the subprocess returns.** Log `permission_denials`, `num_turns`, and `usage` as corroborating signals; never gate on them. The CLI's `result` string is not the channel and must be discarded.
+  - **`--permission-mode bypassPermissions` ignores `--allowed-tools`** — a tool absent from the allowlist was called successfully. This is empirical proof of D-26's thesis: **the propose-only guarantee must be enforced by what the server exposes, never by CLI flags.** Use `dontAsk` (which does enforce) as defense in depth only.
+
+  `claude` is the harness; `codex` stays behind the same seam as a documented fallback (it has no `--mcp-config`/`--strict-mcp-config` equivalent, so per-run hermetic config is clumsier). **Do not use `--bare`** — it forces `ANTHROPIC_API_KEY` auth and would silently defeat D-25.
+
+- **D-32 (`mcp>=1.29,<2` is the selected SDK; the legitimacy gate stands):** The official Linux-Foundation-stewarded SDK (MIT, `github.com/modelcontextprotocol/python-sdk`), added as a `curation` optional extra, using `mcp.server.lowlevel.Server` with **explicit JSON Schemas** — not `FastMCP`'s signature-derived schema, which was measured silently coercing `104` → `"104"`, and not the standalone `fastmcp` package (a strict superset pulling ~25 more packages, whose ergonomic API is already bundled inside `mcp`). The upper pin exists because `mcp` 2.0.0 is a days-old breaking major bump.
+
+  **The D-27 `blocking-human` package-legitimacy checkpoint (threat T-04-05) transfers to `mcp` and is NOT waived.** Note for whoever runs it: the automated seam returned **SUS** for both `mcp` and `fastmcp` with reasons `too-new` + `unknown-downloads`, and research judged both to be artifacts of the seam's method against PyPI (it reads *latest* release date, and PyPI publishes no download counts). That assessment is input to the human check, not a substitute for it.
+
+  Also load-bearing and easy to get wrong: **the JSON-Schema guarantee is real only because `Server.call_tool(validate_input=True)` runs `jsonschema.validate` and returns an `isError` correction signal.** The MCP spec places the MUST on *servers* validating tool inputs; there is no client-side MUST. Do not describe the guarantee as coming from "the protocol" without that flag being set.
+
+- **D-33 (D-05a's trap is worse than D-05a states — correction, measured):** D-05a claimed `evidence_scorer.evidence_candidates()` "composes without modification" because it takes `word_offsets` as a parameter. **That is half true and the wrong half is dangerous.** `word_offsets` composes; `text` does not. The epub HTML has 13 newlines in 68 KB, so the canonical `_prose_search_text` collapses a 262-paragraph chapter into **3** regex paragraphs — feeding it straight to `evidence_candidates` silently destroys retrieval. Separately, the two word-index spaces diverge by **571–18,760 words** (ch 121.1: 23,922 CP words vs 42,682 TUI words), so mixing them is a live position-error generator exactly as D-05a warned.
+
+  The fix is a **length-preserving, reuse-only adapter** specified in `04-RESEARCH.md` §"The D-05a Trap", verified byte-identical against `_chapter_word_index` on four real chapters. D-05a's core ruling stands unchanged: **`cp_word_index` is the single source of prose text and word offsets for Stage 2**; do not add a third pipeline and do not refactor the TUI's.
+
+  **Consequence for measurement:** the D-01 union's measured 85.5% recall / ~363k tokens predates this adapter's paragraph segmentation. **Re-measure it inside the tracer before treating those numbers as the baseline.** The threshold-3 knee is likewise a starting point to re-tune, per D-02.
+
 </decisions>
 
 <canonical_refs>
