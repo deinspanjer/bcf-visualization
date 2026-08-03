@@ -144,7 +144,7 @@ Plans:
   2. Word positions and roll ordinals stay mechanically derived; Stage 2 may adjust structure and confidence but never invents a position
   3. High-confidence curations write into `chapter_roll_overrides.json` with provenance; low-confidence curations write to a proposals sidecar in the same roll-object schema
   4. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
-  5. The confidence gate uses Phase 2's mechanical verification as the hard signal with model self-report only as a tiebreaker, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
+  5. The confidence gate uses Phase 2's mechanical verification as the hard signal, with model self-report recorded as explanatory metadata only and never used as a routing input, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
 
 **Plans**: 5 plans
 
@@ -172,6 +172,8 @@ Plans:
 **Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically from a pilot batch against known chapters, with a checkpoint before running on uncurated ones. This is the phase that first spends real API budget; Phase 3's measured baseline should inform how much. Two real spend checkpoints exist (Plan 04-04 before calibration, Plan 04-05 before held-out); Phase 4 itself never runs against an uncurated chapter — the `--allow-uncurated` guard built in Plan 04-03 is Phase 5's gate, not this phase's.
 
 ### Phase 5: Proposal Review & Full Batch Run
+
+> **Carried obligation from Phase 4 (plan-checker, 2026-08-02):** Phase 4 realizes D-24's "human sees calibration numbers before the first uncurated run" as a code-level `--allow-uncurated` guard in `run_stage2_batch.py`. A CLI flag is necessary but NOT sufficient — a script author could pass it without showing Dre anything. **Phase 5 MUST add an actual `checkpoint:decision` gating the first use of that flag**, and Phase 5's plan-checker must verify the checkpoint exists rather than treating the flag's existence as the control.
 
 **Goal**: The remaining chapters are curated, and everything the agent was unsure about is sitting in the TUI waiting for Dre
 **Mode:** mvp
