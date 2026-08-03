@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile gesture contract — BCF Visualization</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      color-scheme: dark;
+      --void: #03080d;
+      --void-deep: #02060a;
+      --ink: #e8fdff;
+      --muted: #9ad7df;
+      --dim: #5f9ba4;
+      --cyan: #5cf4ff;
+      --green: #7bffbd;
+      --amber: #f5d27b;
+      --rose: #ff8aa8;
+      --edge: rgba(92,244,255,0.45);
+      --edge-soft: rgba(92,244,255,0.18);
+      --panel: rgba(5,29,38,0.55);
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at 50% 86%, rgba(92,244,255,0.18), transparent 24%),
+        radial-gradient(circle at 22% 16%, rgba(123,255,189,0.10), transparent 28%),
+        linear-gradient(180deg, #07121a 0%, var(--void) 60%, #020406 100%);
+    }
+    body::after {
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:30;
+      background: radial-gradient(ellipse at center, transparent 0 60%, rgba(0,0,0,0.45) 100%);
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 36px clamp(20px, 4vw, 48px) 80px;
+      position: relative;
+    }
+
+    header.doc-head { margin-bottom: 36px; }
+    .kicker {
+      font-family: var(--mono); font-size: 11px;
+      color: var(--cyan); letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: var(--serif); font-weight: 400; font-size: clamp(28px, 4.4vw, 44px);
+      margin: 0 0 12px; letter-spacing: 0.3px;
+      text-shadow: 0 0 20px rgba(92,244,255,0.20);
+    }
+    .lede {
+      max-width: 720px;
+      font-family: var(--serif); font-size: 16px; line-height: 1.6;
+      color: rgba(232,253,255,0.84);
+    }
+
+    section {
+      margin-top: 40px;
+      padding: 24px clamp(18px, 3vw, 28px);
+      background: var(--panel);
+      border: 1px solid var(--edge);
+      border-radius: 14px;
+      backdrop-filter: blur(2px);
+      position: relative;
+    }
+    section::before {
+      content:""; position: absolute; inset: 8px;
+      border: 1px solid var(--edge-soft); border-radius: 10px;
+      pointer-events: none;
+      clip-path: polygon(0 0,100% 0,100% 12%,96% 12%,96% 5%,4% 5%,4% 95%,96% 95%,96% 88%,100% 88%,100% 100%,0 100%);
+    }
+    .section-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 16px; margin-bottom: 16px;
+    }
+    .section-head .label {
+      font-family: var(--mono); font-size: 10px;
+      color: var(--cyan); letter-spacing: 1.6px; text-transform: uppercase;
+    }
+    .section-head h2 {
+      font-family: var(--serif); font-weight: 400; font-size: 24px;
+      margin: 2px 0 0;
+    }
+    .section-head .summary {
+      font-family: var(--serif); font-size: 13px; color: var(--muted);
+      max-width: 380px; line-height: 1.5; text-align: right;
+    }
+
+    /* Gesture cards */
+    .gesture-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      position: relative;
+    }
+    .gesture {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 14px;
+      padding: 16px;
+      background: rgba(3,8,13,0.55);
+      border: 1px solid rgba(92,244,255,0.16);
+      border-radius: 10px;
+    }
+    .gesture.priority::after {
+      content: "load-bearing";
+      position: absolute;
+    }
+    .gesture .glyph {
+      font-size: 24px; line-height: 1; margin-top: 2px;
+      display: flex; justify-content: center;
+    }
+    .gesture .label {
+      font-family: var(--mono); font-size: 10px;
+      color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .gesture .action {
+      font-family: var(--serif); font-style: italic; font-size: 13px;
+      color: var(--cyan); margin-top: 2px;
+    }
+    .gesture .note {
+      font-size: 12px; line-height: 1.5; color: var(--ink);
+      margin-top: 6px;
+    }
+    .gesture .specs {
+      display: flex; flex-wrap: wrap; gap: 4px 8px;
+      margin-top: 8px;
+    }
+    .spec-chip {
+      font-family: var(--mono); font-size: 9px;
+      padding: 3px 7px; border-radius: 4px;
+      background: rgba(92,244,255,0.10);
+      border: 1px solid rgba(92,244,255,0.25);
+      color: var(--cyan); letter-spacing: 0.4px;
+    }
+    .spec-chip.warn {
+      background: rgba(245,210,123,0.08); border-color: rgba(245,210,123,0.35); color: var(--amber);
+    }
+    .priority-tag {
+      display: inline-block;
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.6px;
+      padding: 2px 8px; border-radius: 999px; margin-left: 8px;
+      background: rgba(123,255,189,0.12); border: 1px solid rgba(123,255,189,0.45);
+      color: var(--green); text-transform: uppercase;
+    }
+    .priority-tag.v2 {
+      background: rgba(154,215,223,0.05); border-color: rgba(154,215,223,0.30);
+      color: var(--dim);
+    }
+
+    /* Tables for constants */
+    table.constants {
+      width: 100%;
+      border-collapse: collapse;
+      position: relative; z-index: 1;
+    }
+    table.constants th, table.constants td {
+      text-align: left;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(92,244,255,0.12);
+      font-size: 12px;
+    }
+    table.constants th {
+      font-family: var(--mono); font-size: 9.5px; color: var(--dim);
+      letter-spacing: 0.8px; text-transform: uppercase;
+      border-bottom-color: rgba(92,244,255,0.30);
+    }
+    table.constants td.k {
+      font-family: var(--mono); color: var(--cyan); white-space: nowrap;
+    }
+    table.constants td.v {
+      font-family: var(--mono); color: var(--ink); white-space: nowrap;
+    }
+    table.constants td.note {
+      color: var(--muted); font-family: var(--serif);
+    }
+    table.constants tr:last-child td { border-bottom: none; }
+
+    /* Decision-table style for ambiguity resolution */
+    .ambiguity {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      position: relative; z-index: 1;
+    }
+    .ambig-card {
+      padding: 14px 16px;
+      background: rgba(3,8,13,0.5);
+      border: 1px solid rgba(92,244,255,0.18);
+      border-radius: 10px;
+    }
+    .ambig-card h4 {
+      margin: 0 0 6px;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.6px;
+      color: var(--amber); text-transform: uppercase;
+    }
+    .ambig-card p {
+      margin: 0; font-size: 12px; line-height: 1.55; color: var(--ink);
+    }
+    .ambig-card .resolution {
+      margin-top: 8px;
+      padding: 7px 10px;
+      border-left: 2px solid var(--cyan);
+      background: rgba(92,244,255,0.06);
+      font-family: var(--serif); font-size: 12px; color: var(--ink);
+    }
+
+    /* Spec list */
+    .check-list {
+      list-style: none; padding: 0; margin: 0;
+      position: relative; z-index: 1;
+    }
+    .check-list li {
+      padding: 8px 0 8px 28px;
+      border-bottom: 1px dashed rgba(92,244,255,0.12);
+      position: relative;
+      font-size: 13px; line-height: 1.5;
+    }
+    .check-list li:last-child { border-bottom: none; }
+    .check-list li::before {
+      content:"▸"; position:absolute; left: 8px; top: 8px;
+      color: var(--cyan); font-family: var(--mono); font-size: 12px;
+    }
+    .check-list li b { color: var(--cyan); font-family: var(--mono); font-weight: 600; font-size: 12px; letter-spacing: 0.3px; }
+
+    /* Layout cheatsheet table — what gestures apply to which region */
+    .region-table {
+      display: grid;
+      grid-template-columns: 180px repeat(2, 1fr);
+      gap: 1px;
+      background: rgba(92,244,255,0.18);
+      border: 1px solid rgba(92,244,255,0.30);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative; z-index: 1;
+    }
+    .region-table > div {
+      background: rgba(3,8,13,0.7);
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .region-table .h {
+      background: rgba(5,29,38,0.95);
+      font-family: var(--mono); font-size: 10px;
+      color: var(--cyan); letter-spacing: 0.8px; text-transform: uppercase;
+    }
+    .region-table .r {
+      font-family: var(--mono); font-size: 10px;
+      color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .yes { color: var(--green); font-family: var(--mono); font-size: 11px; }
+    .no { color: var(--dim); font-family: var(--mono); font-size: 11px; }
+
+    @media (max-width: 640px) {
+      .section-head { flex-direction: column; align-items: flex-start; }
+      .section-head .summary { text-align: left; max-width: none; }
+      .ambiguity { grid-template-columns: 1fr; }
+      .region-table { grid-template-columns: 130px repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="doc-head">
+      <div class="kicker">BCF Mobile UX · spec v1</div>
+      <h1>Mobile gesture contract</h1>
+      <p class="lede">
+        The mobile reading mode of the Celestial Forge visualization
+        assumes a shared touch vocabulary. This document fixes the exact
+        gestures, thresholds, hit-target sizes, and persistence rules so
+        every screen implements them identically. Anything below tagged
+        <span class="priority-tag">v1</span> ships in the first prototype;
+        items tagged <span class="priority-tag v2">v2</span> are deferred
+        but reserved.
+      </p>
+    </header>
+
+    <!-- ── PRIMARY GESTURES ─────────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">01 · primary gestures</div>
+          <h2>What touches do, region by region</h2>
+        </div>
+        <div class="summary">
+          Reading-mode requirement: the user can always pause without
+          finding the play button. Tap-on-sky is load-bearing.
+        </div>
+      </div>
+
+      <div class="gesture-grid">
+
+        <div class="gesture">
+          <div class="glyph">👆</div>
+          <div>
+            <div class="label">Single tap · sky / viewport <span class="priority-tag">v1 · core</span></div>
+            <div class="action">Toggle play ↔ pause</div>
+            <div class="note">
+              Works anywhere on the constellation viewport. The play
+              button only confirms the state — it never has to be reached.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">pointerup ≤ 250ms</span>
+              <span class="spec-chip">total move ≤ 8px</span>
+              <span class="spec-chip">debounce 100ms</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">👆👆</div>
+          <div>
+            <div class="label">Double tap · sky <span class="priority-tag">v1</span></div>
+            <div class="action">Snap playhead to live edge</div>
+            <div class="note">
+              Recovers from accidental scrubbing — returns to wherever
+              the cinematic was last firing. Suppresses the single-tap
+              pause that would otherwise trigger on the first tap.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">2 taps ≤ 300ms apart</span>
+              <span class="spec-chip">centroid ≤ 24px</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">👈 👉</div>
+          <div>
+            <div class="label">Horizontal swipe · sky <span class="priority-tag">v1</span></div>
+            <div class="action">Scrub by roll</div>
+            <div class="note">
+              Each 56-px-wide swipe step = ±1 roll. A long swipe is a
+              "throw" — keeps scrubbing with decay for up to 600ms after
+              release based on release velocity.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">|dx| ≥ 24px to engage</span>
+              <span class="spec-chip">|dx|/|dy| ≥ 1.5</span>
+              <span class="spec-chip">step = 56px/roll</span>
+              <span class="spec-chip">throw decay 600ms</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">👆 👇</div>
+          <div>
+            <div class="label">Horizontal drag · scrubber rail <span class="priority-tag">v1</span></div>
+            <div class="action">Direct scrub by word position</div>
+            <div class="note">
+              Inside the mini-rail (portrait) and the cinema scrub pill
+              (landscape), drag moves the playhead 1:1 with finger.
+              Releases without snapping — current word position is
+              preserved.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">capture on rail only</span>
+              <span class="spec-chip">no momentum</span>
+              <span class="spec-chip">haptic on roll cross</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">🤏</div>
+          <div>
+            <div class="label">Long press · roll dot <span class="priority-tag v2">v2</span></div>
+            <div class="action">Preview tooltip</div>
+            <div class="note">
+              Hold a roll diamond on the scrubber to see "who fired / what
+              perk / cp" without committing to a jump. Release to dismiss.
+              Behaves like a hover on desktop.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">≥ 450ms stationary</span>
+              <span class="spec-chip">move ≤ 6px during</span>
+              <span class="spec-chip">vibrate 8ms on lock</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">✋</div>
+          <div>
+            <div class="label">Two-finger pinch · scrubber <span class="priority-tag v2">v2</span></div>
+            <div class="action">Zoom time axis</div>
+            <div class="note">
+              Pinch on the scrubber rail to zoom in/out. Anchors the
+              midpoint of the two touches to the timeline so the axis
+              doesn't drift while pinching.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">|Δ scale| ≥ 0.05</span>
+              <span class="spec-chip">midpoint anchor</span>
+              <span class="spec-chip">clamp 1× – 8×</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">↓</div>
+          <div>
+            <div class="label">Edge swipe from top · portrait <span class="priority-tag v2">v2</span></div>
+            <div class="action">Reveal field log</div>
+            <div class="note">
+              Start within the top 36px and drag down to peel the
+              field-log sheet over the sky. Drag-to-dismiss with the
+              reverse gesture.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">start &lt; 36px from top</span>
+              <span class="spec-chip">|dy| ≥ 60px</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture">
+          <div class="glyph">🔄</div>
+          <div>
+            <div class="label">Rotate device <span class="priority-tag">v1</span></div>
+            <div class="action">Hand-off to landscape / portrait</div>
+            <div class="note">
+              Layout switches between Direction C (portrait) and
+              Direction F (landscape). State persists — word position,
+              play/pause, speed, on-roll behavior, mode all survive.
+            </div>
+            <div class="specs">
+              <span class="spec-chip">@media orientation</span>
+              <span class="spec-chip">no remount</span>
+              <span class="spec-chip">animate 220ms</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── HIT TARGETS ─────────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">02 · hit targets &amp; touch ergonomics</div>
+          <h2>Minimum reachable sizes</h2>
+        </div>
+        <div class="summary">
+          Apple HIG floor is 44×44 CSS px; Material is 48dp. We use 44 as
+          the floor and bias toward 48–56 for repeatable controls (play,
+          settings, scrub rail).
+        </div>
+      </div>
+
+      <table class="constants">
+        <thead>
+          <tr><th>Surface</th><th>Min size</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="k">play / pause FAB</td><td class="v">56 × 56 px</td><td class="note">Persistent button. Glow ring extends visual to ~72px without changing hit target.</td></tr>
+          <tr><td class="k">settings ⚙ / about ⓘ</td><td class="v">48 × 48 px</td><td class="note">Right-rail dock buttons in landscape; corner buttons in portrait.</td></tr>
+          <tr><td class="k">help ?</td><td class="v">44 × 44 px</td><td class="note">Always top-right. Visible on landing &amp; in-app.</td></tr>
+          <tr><td class="k">speed segments</td><td class="v">44 × 36 px each</td><td class="note">Segmented control. Width may shrink but height never below 36.</td></tr>
+          <tr><td class="k">scrub rail (whole)</td><td class="v">≥ 44 px tall</td><td class="note">Generous strike-zone. Roll dots inside are 6-10px visual; tap zone is the row.</td></tr>
+          <tr><td class="k">roll dot tap</td><td class="v">28 × 28 px tap zone</td><td class="note">Visual diamond stays small (~7px); invisible tap zone is centered.</td></tr>
+          <tr><td class="k">sky viewport tap</td><td class="v">≥ 240 × 240 px</td><td class="note">Always larger than this on any phone; tap zone is the full sky region.</td></tr>
+          <tr><td class="k">thumb-reach safe area</td><td class="v">bottom-right ~140px</td><td class="note">Primary controls live here in portrait. Landscape uses right rail.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── TIMING CONSTANTS ─────────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">03 · timing constants</div>
+          <h2>Thresholds in one place</h2>
+        </div>
+        <div class="summary">
+          Single source of truth for every "how long" or "how far" used in
+          gesture detection. Pulled into the prototype as named constants.
+        </div>
+      </div>
+
+      <table class="constants">
+        <thead><tr><th>Constant</th><th>Value</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="k">TAP_MAX_DURATION</td><td class="v">250 ms</td><td class="note">pointerdown → pointerup window for a tap.</td></tr>
+          <tr><td class="k">TAP_MAX_MOVE</td><td class="v">8 px</td><td class="note">Total movement allowed before it stops being a tap.</td></tr>
+          <tr><td class="k">DOUBLE_TAP_INTERVAL</td><td class="v">300 ms</td><td class="note">Window between two taps to count as double.</td></tr>
+          <tr><td class="k">DOUBLE_TAP_RADIUS</td><td class="v">24 px</td><td class="note">Max distance between the two tap centroids.</td></tr>
+          <tr><td class="k">SWIPE_ENGAGE</td><td class="v">24 px</td><td class="note">|dx| (or |dy|) before "I'm swiping" commits.</td></tr>
+          <tr><td class="k">SWIPE_AXIS_LOCK</td><td class="v">1.5×</td><td class="note">Dominant axis must be this much larger than the other.</td></tr>
+          <tr><td class="k">SCRUB_STEP_PX</td><td class="v">56 px / roll</td><td class="note">How much horizontal travel = ±1 roll in sky scrub.</td></tr>
+          <tr><td class="k">THROW_DECAY</td><td class="v">600 ms</td><td class="note">After release, scrub momentum continues with ease-out for this long.</td></tr>
+          <tr><td class="k">LONG_PRESS</td><td class="v">450 ms</td><td class="note">Hold duration before tooltip locks.</td></tr>
+          <tr><td class="k">CHROME_AUTOHIDE</td><td class="v">4000 ms</td><td class="note">Landscape cinema-mode scrubber fades after this idle.</td></tr>
+          <tr><td class="k">ROTATION_ANIM</td><td class="v">220 ms</td><td class="note">Cross-fade duration on orientation change.</td></tr>
+          <tr><td class="k">HAPTIC_TICK</td><td class="v">8 ms</td><td class="note">Vibrate pulse on roll-cross + long-press lock.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── REGION × GESTURE MATRIX ─────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">04 · region × gesture matrix</div>
+          <h2>What's listening where</h2>
+        </div>
+        <div class="summary">
+          Each region of the layout listens for a specific subset.
+          Anything not in this table is explicitly <em>not</em> listened
+          for — keeps unintended interactions predictable.
+        </div>
+      </div>
+
+      <div class="region-table">
+        <div class="h">Region</div>
+        <div class="h">Portrait (C · mini-rail)</div>
+        <div class="h">Landscape (F · side rail)</div>
+
+        <div class="r">Sky viewport</div>
+        <div>
+          <span class="yes">✓</span> tap (pause)<br>
+          <span class="yes">✓</span> dbl-tap (live edge)<br>
+          <span class="yes">✓</span> swipe ←→ (scrub roll)<br>
+          <span class="no">— v2:</span> swipe ↓ from top
+        </div>
+        <div>
+          <span class="yes">✓</span> tap (pause)<br>
+          <span class="yes">✓</span> dbl-tap (live edge)<br>
+          <span class="yes">✓</span> swipe ←→ (scrub roll)<br>
+          <span class="yes">✓</span> tap reveals auto-hidden chrome
+        </div>
+
+        <div class="r">Scrubber rail</div>
+        <div>
+          <span class="yes">✓</span> drag (scrub words)<br>
+          <span class="yes">✓</span> tap roll (jump)<br>
+          <span class="no">— v2:</span> long-press preview<br>
+          <span class="no">— v2:</span> pinch zoom
+        </div>
+        <div>
+          <span class="yes">✓</span> drag (scrub words)<br>
+          <span class="yes">✓</span> tap roll (jump)
+        </div>
+
+        <div class="r">Field-log panel</div>
+        <div>
+          <span class="no">N/A in C</span><br>
+          <span class="dim">(C has no persistent log)</span>
+        </div>
+        <div>
+          <span class="yes">✓</span> vertical scroll<br>
+          <span class="yes">✓</span> tap entry (jump to roll)
+        </div>
+
+        <div class="r">Control dock</div>
+        <div>
+          <span class="yes">✓</span> tap button only<br>
+          <span class="dim">(no drag, no edge-swipe)</span>
+        </div>
+        <div>
+          <span class="yes">✓</span> tap settings ⚙ → flyout<br>
+          <span class="yes">✓</span> tap about ⓘ → flyout<br>
+          <span class="yes">✓</span> tap outside flyout dismisses
+        </div>
+
+        <div class="r">Flyouts</div>
+        <div>
+          <span class="dim">— inherited from dock —</span>
+        </div>
+        <div>
+          <span class="yes">✓</span> tap segment (set value)<br>
+          <span class="yes">✓</span> tap link (external)<br>
+          <span class="yes">✓</span> swipe right to dismiss<br>
+          <span class="yes">✓</span> backdrop tap dismisses
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AMBIGUITY RESOLUTION ─────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">05 · ambiguity resolution</div>
+          <h2>When two gestures could both fire</h2>
+        </div>
+        <div class="summary">
+          Predictable behaviour matters more than reactive cleverness.
+          When in doubt, defer to the destructive-less gesture and
+          require the user to be explicit about the destructive one.
+        </div>
+      </div>
+
+      <div class="ambiguity">
+        <div class="ambig-card">
+          <h4>Tap vs swipe</h4>
+          <p>Finger moves &lt; 8px during a quick contact — was that a tap or a tiny accidental swipe?</p>
+          <div class="resolution">→ Treat as <b>tap</b>. Pause toggles; on accidental pause, the user re-taps. Far better than a 1-roll jitter scrub.</div>
+        </div>
+
+        <div class="ambig-card">
+          <h4>Tap vs double-tap</h4>
+          <p>First tap pauses; second tap would jump to live. Do we wait 300ms before pausing?</p>
+          <div class="resolution">→ <b>Pause immediately</b> on first tap. Double-tap snaps to live edge AND resumes playing; user perceives a single coherent action.</div>
+        </div>
+
+        <div class="ambig-card">
+          <h4>Sky swipe vs rail drag</h4>
+          <p>Touch starts inside the scrub rail but moves up into the sky.</p>
+          <div class="resolution">→ <b>Capture wins.</b> Whichever region got <code>pointerdown</code> owns the gesture until <code>pointerup</code>. The rail uses <code>pointer-events: auto</code> + capture; the sky listens only on its own bounds.</div>
+        </div>
+
+        <div class="ambig-card">
+          <h4>Long-press vs scroll</h4>
+          <p>Holding still on the field-log panel for 450ms — is that a long-press or just slow reading?</p>
+          <div class="resolution">→ Long-press is <b>scoped to roll dots</b>, not the log surface. A roll-card tap in the log is just a tap; long-press there is undefined.</div>
+        </div>
+
+        <div class="ambig-card">
+          <h4>Edge swipe vs system gestures</h4>
+          <p>iOS reserves the bottom edge for the home indicator and the left edge for back-gesture.</p>
+          <div class="resolution">→ All edge-swipes start <b>≥ 16px inside</b> the safe area. The peek-sheet handle is centered and tall enough to be the affordance, not the OS edge.</div>
+        </div>
+
+        <div class="ambig-card">
+          <h4>Auto-hide chrome vs tap-to-pause</h4>
+          <p>In landscape cinema with chrome hidden, a tap could either reveal chrome <em>or</em> pause.</p>
+          <div class="resolution">→ <b>Reveal first, tap-again pauses.</b> If chrome is hidden, the first tap restores it (and resets the 4s timer). A second tap in that window pauses.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PERSISTENCE ─────────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">06 · state persistence</div>
+          <h2>What survives rotation, reload, return</h2>
+        </div>
+        <div class="summary">
+          Keys reuse the <code>bcf:</code> namespace already in
+          <code>web/app.js</code>. Same versioning hook so a future
+          migration sweeps everything in lockstep.
+        </div>
+      </div>
+
+      <table class="constants">
+        <thead><tr><th>Key</th><th>Type</th><th>Survives</th></tr></thead>
+        <tbody>
+          <tr><td class="k">bcf:bookmark</td><td class="v">number (word pos)</td><td class="note">Reload, rotate, return.</td></tr>
+          <tr><td class="k">bcf:speed</td><td class="v">0.5 | 1 | 2 | 4</td><td class="note">Reload, rotate.</td></tr>
+          <tr><td class="k">bcf:mode</td><td class="v">playthrough | details</td><td class="note">Reload, rotate.</td></tr>
+          <tr><td class="k">bcf:on-roll</td><td class="v">cinematic | skip | pause</td><td class="note">Reload, rotate.</td></tr>
+          <tr><td class="k">bcf:reduced-motion</td><td class="v">auto | on | off</td><td class="note">Reload, rotate.</td></tr>
+          <tr><td class="k">bcf:tap-to-pause</td><td class="v">on | off</td><td class="note">A11y opt-out. Reload, rotate.</td></tr>
+          <tr><td class="k">bcf:haptics</td><td class="v">on | off</td><td class="note">Reload, rotate.</td></tr>
+          <tr><td class="k">bcf:help-seen</td><td class="v">boolean</td><td class="note">Suppresses the first-run hint chips after first dismissal.</td></tr>
+          <tr><td class="k">bcf:playing</td><td class="v">boolean (session)</td><td class="note">In-memory only — rotation preserves, hard reload resumes paused.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── ACCESSIBILITY ─────────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">07 · accessibility &amp; opt-outs</div>
+          <h2>Quiet defaults, graceful overrides</h2>
+        </div>
+        <div class="summary">
+          The gesture contract must not become a usability trap. Every
+          load-bearing gesture has a button equivalent. Every motion has
+          a reduced-motion fallback.
+        </div>
+      </div>
+
+      <ul class="check-list">
+        <li><b>Tap-to-pause opt-out.</b> Settings → Comfort → "Tap to pause" toggle. When off, only the explicit FAB pauses. (Useful when a child is interacting and triggering pauses.)</li>
+        <li><b>Reduced-motion respect.</b> If <code>prefers-reduced-motion: reduce</code>, throw-decay scrubbing is disabled; layout rotation skips the 220ms crossfade; the chrome auto-hide timer extends to 8000ms.</li>
+        <li><b>Haptics opt-out.</b> Settings → Comfort → "Haptics". On by default if the device supports the Vibration API.</li>
+        <li><b>Keyboard equivalents.</b> Space = pause/play, ←/→ = step roll, Home = live edge, ? = help. (Desktop primarily, but external keyboards on iPad use these too.)</li>
+        <li><b>Aria live region.</b> Roll changes announce as "Roll 47 of 137. Atomic Reassembly, 800 CP." Screen-reader users get parity with the sighted "field log" feed.</li>
+        <li><b>Tap target floor.</b> Nothing tappable smaller than 44×44 CSS px, ever. Visual diamonds may be smaller; tap zones extend.</li>
+        <li><b>Visible focus rings.</b> Cyan 2px outline on keyboard focus; never <code>outline: none</code> without a replacement.</li>
+        <li><b>Help is one tap away.</b> The "?" icon, the About flyout's "Gestures &amp; help" link, and the landing-page help overlay all open the same help surface.</li>
+      </ul>
+    </section>
+
+    <!-- ── HAPTIC POLICY ─────────────────────────────── -->
+    <section>
+      <div class="section-head">
+        <div>
+          <div class="label">08 · haptic policy</div>
+          <h2>Where the device buzzes</h2>
+        </div>
+        <div class="summary">
+          Sparse — haptics should accent meaningful state changes, not
+          every touch. Three triggers total.
+        </div>
+      </div>
+
+      <table class="constants">
+        <thead><tr><th>Trigger</th><th>Pattern</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="k">scrub crosses a roll</td><td class="v">8 ms tick</td><td class="note">Tactile feedback so the user can count rolls under the thumb without watching.</td></tr>
+          <tr><td class="k">long-press preview locks</td><td class="v">12 ms tick</td><td class="note">"You may release now"; the tooltip is committed.</td></tr>
+          <tr><td class="k">rotation hand-off</td><td class="v">6 + 30 + 6 ms</td><td class="note">Confirms the layout reflow happened; tiny "ding".</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── OPEN QUESTIONS ─────────────────────────────── -->
+    <section style="background: rgba(245,210,123,0.05); border-color: rgba(245,210,123,0.30)">
+      <div class="section-head">
+        <div>
+          <div class="label" style="color: var(--amber)">09 · open questions</div>
+          <h2>Pinned for discussion</h2>
+        </div>
+        <div class="summary">
+          Things this spec doesn't settle yet — flagged here so the
+          prototype defaults are obviously provisional.
+        </div>
+      </div>
+
+      <ul class="check-list">
+        <li><b>Tap-to-pause off by default?</b> Reads better but new users may not realize the sky is tappable. Prototype ships <em>on</em>; we can flip after testing.</li>
+        <li><b>Long-press preview vs jump.</b> Currently long-press = preview, tap = jump. Should preview also commit on release-after-long, or only show?</li>
+        <li><b>Scrub direction.</b> Swipe right = forward in time, swipe left = backward. Some users expect the opposite (pulling content). Pick one and stick.</li>
+        <li><b>Chrome auto-hide in portrait?</b> Direction C keeps the mini-rail always visible. Should portrait also support a hide-chrome cinema mode, or is that landscape-only?</li>
+        <li><b>Throw-to-scrub.</b> Inertia feels great but can overshoot dozens of rolls. Cap at +5 / -5 rolls per throw? Or trust velocity?</li>
+      </ul>
+    </section>
+
+  </main>
+</body>
+</html>
