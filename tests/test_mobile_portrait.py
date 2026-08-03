@@ -1934,3 +1934,93 @@ def test_mobile_keyboard_respects_editable_guard(tmp_path):
 
             assert console_messages == []
             browser.close()
+
+
+def test_mobile_hidden_page_pauses_playback_in_portrait(tmp_path):
+    # 04-04-PLAN.md Task 2 / MOBX-05 (D-51): VERIFIES the pre-existing
+    # visibilitychange handler (web/app.js's `document.addEventListener(
+    # "visibilitychange", ...)`) in the portrait layout — this plan writes
+    # no new implementation. Hiding the page while playing stops playback
+    # and does not auto-resume on return to visible; the bookmark write
+    # that also fires on hide is unaffected and still persists.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_PORTRAIT,
+                storage={**DEFAULT_STORAGE, "bcf:bookmark:word_position": "2000"},
+            )
+            page.locator('button[aria-label="Play"]').click()
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(200)
+
+            page.evaluate(
+                "() => { Object.defineProperty(document, 'visibilityState', "
+                "{ configurable: true, get: () => 'hidden' }); "
+                "document.dispatchEvent(new Event('visibilitychange')); }"
+            )
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            word_pos_at_hide = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert word_pos_at_hide is not None
+
+            page.evaluate(
+                "() => { Object.defineProperty(document, 'visibilityState', "
+                "{ configurable: true, get: () => 'visible' }); "
+                "document.dispatchEvent(new Event('visibilitychange')); }"
+            )
+            page.wait_for_timeout(200)
+            expect(page.locator('button[aria-label="Play"]')).to_be_visible()
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == word_pos_at_hide
+
+            assert console_messages == []
+            browser.close()
+
+
+def test_desktop_hidden_page_does_not_pause_playback(tmp_path):
+    # 04-04-PLAN.md Task 2 / MOBX-05: the desktop path is unaffected by the
+    # hidden-page pause — the existing guard keys on layoutMode !==
+    # "desktop", so a hidden desktop page keeps playing exactly as it did
+    # before any mobile work started. Driven at a desktop viewport,
+    # following the existing precedent of the desktop-shell regression
+    # guard already living in this file (test_desktop_keyboard_stepping_
+    # unaffected_by_mobile_branch).
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport={"width": 1400, "height": 900},
+                storage={
+                    "bcf:preview-port-storage-version": "3",
+                    "bcf:bookmark:word_position": "2000",
+                },
+            )
+            page.locator('button[aria-label="Play"]').click()
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(200)
+
+            page.evaluate(
+                "() => { Object.defineProperty(document, 'visibilityState', "
+                "{ configurable: true, get: () => 'hidden' }); "
+                "document.dispatchEvent(new Event('visibilitychange')); }"
+            )
+            page.wait_for_timeout(200)
+            # Desktop is unaffected: playback keeps running through the
+            # hidden state, unlike the mobile-only pause verified above.
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+
+            page.evaluate(
+                "() => { Object.defineProperty(document, 'visibilityState', "
+                "{ configurable: true, get: () => 'visible' }); "
+                "document.dispatchEvent(new Event('visibilitychange')); }"
+            )
+            page.wait_for_timeout(50)
+            expect(page.locator('button[aria-label="Pause"]')).to_be_visible()
+
+            assert console_messages == []
+            browser.close()

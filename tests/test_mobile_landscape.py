@@ -41,8 +41,14 @@ def _page_with_console_capture(
     viewport=None,
     storage: dict[str, str] | None = None,
     init_script: str | None = None,
+    reduced_motion: str | None = None,
 ):
-    page = browser.new_page(viewport=viewport or PHONE_LANDSCAPE)
+    # reduced_motion is applied at browser.new_page()'s CONTEXT-creation
+    # option (Playwright 1.59.0 supports it there), never via a page-level
+    # call after navigation — PREFERS_REDUCED_MOTION (web/app.js:236) is
+    # snapshotted once at module load, so the preference must be in place
+    # before the app module first evaluates (04-04-PLAN.md Task 2).
+    page = browser.new_page(viewport=viewport or PHONE_LANDSCAPE, reduced_motion=reduced_motion)
     if init_script:
         page.add_init_script(init_script)
     if storage:
@@ -789,6 +795,138 @@ def test_landscape_chrome_autohide_boundary(tmp_path):
             assert console_messages3 == []
             page3.close()
 
+            browser.close()
+
+
+def test_landscape_chrome_autohide_doubles_under_reduced_motion(tmp_path):
+    # 04-04-PLAN.md Task 2 / MOBX-04: under prefers-reduced-motion: reduce,
+    # resetMobileChromeHideTimer() doubles the auto-hide window from 4000ms
+    # to 8000ms, reusing the SAME PREFERS_REDUCED_MOTION snapshot the
+    # desktop cinematic already computes (web/app.js:236) — never a second
+    # matchMedia query (grep-gated in the plan's <verify> block). Both
+    # boundaries are asserted, not just the doubled one: a normal-motion
+    # control page is hidden by the ORIGINAL window, proving the later hide
+    # under reduced motion is caused by the preference and not by a slow
+    # test.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+
+            def is_hidden(page):
+                return page.evaluate(
+                    "document.querySelector('.mobile-cinema-scrub').classList.contains('is-hidden')"
+                )
+
+            # --- Control: normal motion, hidden by the original ~4000ms
+            #     window. ---
+            page_control, console_control = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+                reduced_motion="no-preference",
+            )
+            page_control.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+            page_control.wait_for_timeout(4600)
+            assert is_hidden(page_control) is True
+            assert console_control == []
+            page_control.close()
+
+            # --- Reduced motion: the CONTEXT-level option, set before the
+            #     app module first evaluates PREFERS_REDUCED_MOTION (a
+            #     page-level call made after navigation would silently not
+            #     affect the already-read constant). Still visible past the
+            #     normal ~4000ms window; hidden only after the doubled
+            #     ~8000ms window. ---
+            page_reduced, console_reduced = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE},
+                reduced_motion="reduce",
+            )
+            page_reduced.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+            page_reduced.wait_for_timeout(4600)
+            assert is_hidden(page_reduced) is False
+            page_reduced.wait_for_timeout(4200)  # ~8800ms total elapsed
+            assert is_hidden(page_reduced) is True
+            assert console_reduced == []
+            page_reduced.close()
+
+            browser.close()
+
+
+def test_landscape_transitions_already_silenced_under_reduced_motion(tmp_path):
+    # 04-04-PLAN.md Task 2: VERIFIES rather than duplicates the pre-existing
+    # unscoped global rule at frozen web/style.css:62
+    # (`*, *::before, *::after { animation: none !important;
+    # transition: none !important; }`), which already silences every
+    # mobile.css transition under prefers-reduced-motion: reduce — no
+    # mobile-scoped reduced-motion block is added (grep-gated at 0 hits in
+    # web/mobile.css by the plan's <verify> block). The cinema-scrub pill's
+    # own opacity/transform transition (web/mobile.css's
+    # `.mobile-cinema-scrub` rule) is the legible target.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE, storage=DEFAULT_STORAGE,
+                reduced_motion="reduce",
+            )
+            duration = page.evaluate(
+                "getComputedStyle(document.querySelector('.mobile-cinema-scrub')).transitionDuration"
+            )
+            assert duration == "0s"
+            assert console_messages == []
+            browser.close()
+
+
+def test_mobile_hidden_page_pauses_playback_in_landscape(tmp_path):
+    # 04-04-PLAN.md Task 2 / MOBX-05 (D-51): VERIFIES the pre-existing
+    # visibilitychange handler (web/app.js's `document.addEventListener(
+    # "visibilitychange", ...)`) — this plan writes no new implementation.
+    # The guard keys on layoutMode !== "desktop" rather than naming
+    # portrait, so the landscape arm added in Phase 3 is covered without
+    # any edit; this test confirms that rather than assuming it. Hiding the
+    # page while playing stops playback, preserves word position, and does
+    # not auto-resume on return to visible.
+    playwright_api = pytest.importorskip("playwright.sync_api")
+    expect = playwright_api.expect
+
+    with staged_web_runtime_site(tmp_path) as site:
+        with playwright_api.sync_playwright() as p:
+            browser = _chromium_browser_or_skip(p, playwright_api)
+            page, console_messages = _page_with_console_capture(
+                browser, site, viewport=PHONE_LANDSCAPE,
+                storage={**DEFAULT_STORAGE, **SLOW_PLAYBACK_STORAGE, "bcf:bookmark:word_position": "2000"},
+            )
+            page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]').click()
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Pause"]')).to_be_visible()
+            page.wait_for_timeout(300)
+
+            # The visibilitychange handler's own persistBookmarkNow() call
+            # writes app.wordPos to localStorage unconditionally on hide —
+            # read it back rather than reaching for an app-internal global,
+            # since it's the same value the handler itself just persisted.
+            page.evaluate(
+                "() => { Object.defineProperty(document, 'visibilityState', "
+                "{ configurable: true, get: () => 'hidden' }); "
+                "document.dispatchEvent(new Event('visibilitychange')); }"
+            )
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')).to_be_visible()
+            word_pos_at_hide = page.evaluate("localStorage.getItem('bcf:bookmark:word_position')")
+            assert word_pos_at_hide is not None
+
+            page.evaluate(
+                "() => { Object.defineProperty(document, 'visibilityState', "
+                "{ configurable: true, get: () => 'visible' }); "
+                "document.dispatchEvent(new Event('visibilitychange')); }"
+            )
+            page.wait_for_timeout(300)
+            expect(page.locator('.mobile-cinema-scrub-fab[aria-label="Play"]')).to_be_visible()
+            assert page.evaluate("localStorage.getItem('bcf:bookmark:word_position')") == word_pos_at_hide
+
+            assert console_messages == []
             browser.close()
 
 

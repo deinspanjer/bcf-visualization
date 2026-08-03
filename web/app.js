@@ -4342,12 +4342,19 @@ function resetMobileChromeHideTimer() {
   clearTimeout(app.mobileChromeHideTimer);
   app.mobileChromeHideTimer = null;
   if (app.layoutMode === "landscape" && app.playing && !app.mobileSurface) {
+    const base = window.GestureConstants?.CHROME_AUTOHIDE ?? 4000;
+    // MOBX-04: double the auto-hide window under reduced motion, reusing
+    // the single PREFERS_REDUCED_MOTION snapshot taken at module load
+    // (app.js:236) — never a second matchMedia query. A timer already
+    // armed before this branch ran keeps its original window; the
+    // doubling applies to timers armed from here on.
+    const delay = PREFERS_REDUCED_MOTION ? base * 2 : base;
     app.mobileChromeHideTimer = setTimeout(() => {
       app.chromeHidden = true;
       // Optional chain: T-03-06 mitigation — a timer that outlives its
       // owning layout/DOM must be a silent no-op, never a throw.
       app.dom.mobileCinemaScrub?.classList.add("is-hidden");
-    }, window.GestureConstants?.CHROME_AUTOHIDE ?? 4000);
+    }, delay);
   }
 }
 
