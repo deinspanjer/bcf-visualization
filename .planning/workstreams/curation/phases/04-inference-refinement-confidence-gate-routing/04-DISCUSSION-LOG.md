@@ -34,6 +34,20 @@ Composite and code-computed: quotes pass verifier tiers + structure agrees with 
 
 108 genuinely curated chapters (10 stubs excluded) split into calibration and held-out; tune on calibration, report on held-out. Report per evidence class against Phase 3's recorded Stage 1 baseline using the same position ladder — success criterion 1 is comparative. Dry-run token estimate + explicit ceiling before any batch; pilot first. `checkpoint:decision` before the first uncurated run, since uncurated output has no ground truth.
 
+## Inference transport reversed mid-execution (2026-08-02, Dre)
+
+Raised at Plan 04-01's Task 1 checkpoint — before `anthropic` was installed, before any code was written, nothing committed. Dre declined to pay per-token API costs and named three alternatives: orchestrator subagent, `claude` CLI, `codex` CLI.
+
+Assessed: the orchestrator-subagent option was rejected as the wrong seam — Stage 2 must be callable from a batch runner, resumable via the ledger, and testable against a mock, and inference living in a conversation is none of those. A CLI subprocess fits the existing `call_stage2_sync(..., client=None)` seam almost unchanged, but gives up server-enforced structured output and would have meant free-text-then-parse, which CLAUDE.md forbids.
+
+Dre then recalled an MCP server built to let Codex drive the Forge Curator TUI. Searched `scripts/`, `docs/`, `plans/`, `TODO.md`, git history, and a repo-wide scan for `model context protocol`/`fastmcp`/`mcp.server` — **it does not exist in this repo.** New construction, not configuration.
+
+Selected anyway, because tool-call inputs are schema-validated by the protocol, which restores the D-08 guarantee at a different layer, adds a retry signal, and amortizes against the interactive-TUI use case the server was originally wanted for. Recorded as D-25 through D-29, with the propose-only tool surface (D-26) as the load-bearing constraint: the handler decides corpus vs proposals, never the model.
+
+Struck: Batches API (D-06), prompt caching (D-07), the `anthropic` dependency, the dollar-cost estimator and `--ceiling-usd` cap (D-23). Survived with revision: structured-output intent (D-08→D-26), model tiering (D-09→D-28), spend checkpoints re-framed as run-size approvals (D-29). Unaffected: D-24.
+
+Phase 4 is re-planned in full against these decisions rather than deviated in place — the spend-shaped design ran through four of the five plans.
+
 ## Deferred
 
 TUI review + 80-chapter batch → Phase 5. Per-roll provenance → only if provenance ever mixes. TUI validation-error crash → tracked follow-up. Stub curation → Dre.

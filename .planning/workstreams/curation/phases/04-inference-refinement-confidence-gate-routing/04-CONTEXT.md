@@ -124,6 +124,38 @@ An earlier draft of this context flagged that `/gsd-ai-integration-phase` should
 
 **Skip the `ai-integration` hook, consistent with Phases 1–3.** The evaluation this phase actually needs is already specified concretely and quantitatively below (D-21/D-22: calibration/held-out split, per-evidence-class comparison against Phase 3's recorded baseline) — that is the real eval plan, and it is better grounded than a generated one because it is measured against this corpus.
 
+### Inference transport — no metered API spend (Dre, 2026-08-02, mid-execution)
+
+Raised at Plan 04-01's Task 1 checkpoint, before `anthropic` was installed or any code was written. Nothing had been committed; this reverses the transport half of the API-mechanics decisions above rather than amending shipped work.
+
+- **D-25 (no metered API spend — supersedes D-06 and D-07, and the transport half of D-08):** Dre will not pay per-token API costs for this phase. Stage 2 inference runs on an **already-subscribed agent harness** — the `claude` CLI, the `codex` CLI, or a Claude Code subagent — never `client.messages.create()`. Consequences, all binding:
+  - The `anthropic` Python SDK is **not** added to `pyproject.toml`. Plan 04-01's Task 1 package-legitimacy checkpoint for `anthropic` is void (see D-27 for its successor).
+  - **D-06 (Message Batches API) is struck.** Not reachable through a CLI/subagent transport. Multi-chapter runs become bounded-concurrency invocations, resumable via the D-19/D-20 ledger.
+  - **D-07 (`cache_control` prompt caching) is struck.** Not controllable through this transport. The shared conventions/schema/exemplar prefix is still built once and reused, but any caching is the harness's business, not ours to declare.
+  - **D-08's mechanism is replaced by D-26.** Its *intent* — never free-text-then-parse — survives intact and is non-negotiable.
+
+- **D-26 (a propose-only MCP server is the structured-output mechanism):** Server-enforced `output_config.format` is unavailable through this transport, and free-text-then-parse is forbidden by `.claude/CLAUDE.md`. The resolution is an MCP server: **tool inputs are JSON-Schema-validated by the protocol**, which restores the D-08 guarantee at a different layer and additionally gives the model an immediate correction signal on a malformed submission rather than a silent post-hoc rejection.
+
+  **The tool surface is propose-only. This is the load-bearing constraint of the whole design.**
+  - The server exposes a **submission** tool (`submit_stage2_rolls(chapter_num, rolls[])` or equivalent). It MUST NOT expose any tool that writes a curation edit, mutates `chapter_roll_overrides.json`, or otherwise lets the model choose a destination.
+  - The tool handler runs the pipeline this phase already owns: mechanical position derivation → mechanical constellation derivation (D-03) → `verify_roll()` (D-11) → `grade_roll()` (D-13) → `route_and_write()`. **The handler decides corpus vs proposals and enforces CINF-04 never-overwrite. The model never does.**
+  - Rationale: a write-through tool would make the model the writer, voiding this phase's core guarantee and PROJECT.md's curation-authority constraint. Schema validation at the tool boundary is a bonus *on top of* the confidence gate, never a substitute for it.
+  - The handler is `process_stage2_response()` — the shared function already specified for extraction — so the MCP server is a **thin transport over existing code, not a second implementation** (D-03).
+  - Note that this server is independently useful beyond this pipeline: it is the mechanism by which Codex or Claude could drive Forge Curator curation edits interactively, which was Dre's original reason for wanting one. No such server exists in this repo today — searched `scripts/`, `docs/`, `plans/`, and git history on 2026-08-02, nothing found. This is new construction.
+
+- **D-27 (the dependency moves, it is not avoided):** an MCP Python server SDK enters `pyproject.toml` in place of `anthropic`. **Plan 04-01's `blocking-human` package-legitimacy checkpoint (threat T-04-05) transfers to whichever package is selected — it is not waived.** Choice of SDK is Claude's discretion; the legitimacy gate is not.
+
+- **D-28 (model tiering survives; only the invocation changes — revises D-09):** the Opus-vs-Sonnet comparison still runs and is still data-driven against the held-out split. It is selected via the harness's model flag rather than an API `model` parameter. D-09's substance — calibrate on Opus, step down only on evidence, never Haiku — is unchanged.
+
+- **D-29 (spend discipline becomes usage-window discipline — supersedes D-23):** with no per-token dollar cost, a cost estimator and a `--ceiling-usd` cap measure nothing. Both are struck. The scarce resources are now Dre's subscription usage window and wall-clock time. Replace with:
+  - a bounded chapter count per run (the run-size cap, not a dollar cap),
+  - resumability via the D-19/D-20 ledger so an interrupted run costs nothing to restart,
+  - bounded concurrency across chapter invocations.
+
+  D-23's pilot-then-scale posture stands unchanged. The two approval checkpoints (Plans 04-04 and 04-05) survive but are re-framed: they approve **run size**, not dollars. **D-24 is unaffected** — the uncurated-boundary checkpoint is about absence of ground truth, not about money, and money was never its justification.
+
+  Throughput warning for planning: an agentic per-chapter loop is materially slower than a Batches API submission. Phase 5's ~80-chapter run must be sized against wall-clock and usage window, not against the Batches API's 24h SLA.
+
 </decisions>
 
 <canonical_refs>
