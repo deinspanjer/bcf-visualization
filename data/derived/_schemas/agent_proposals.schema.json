@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bcf-visualization/derived/agent_proposals.schema.json",
+  "title": "Agent Curation Proposals",
+  "description": "Stage 2 agent-proposed roll structure and evidence, awaiting human review. This file is NOT the trusted corpus and must never be loaded as one: it lives in data/derived/ (machine-produced, regenerable by re-run) precisely so the separation from data/manual/chapter_roll_overrides.json is physical rather than conventional. Its roll objects deliberately mirror chapter_roll_overrides.schema.json's shape so the Forge Curator review flow needs no translation layer.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "agent_proposals"],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "agent_proposals": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/chapter_entry" }
+    }
+  },
+  "$defs": {
+    "chapter_entry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["curated_by", "rolls"],
+      "properties": {
+        "curated_by": {
+          "const": "agent",
+          "description": "Always \"agent\" here. A human-curated entry never appears in this file."
+        },
+        "rolls": {
+          "type": "array",
+          "description": "Same loose array as the corpus schema, carrying the same roll-object shape."
+        },
+        "_stage2": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Per-run provenance and the per-roll evidenced/not-found record that makes review confirm-or-correct rather than start-from-blank.",
+          "properties": {
+            "run_id": { "type": "string" },
+            "model": { "type": "string" },
+            "tool_surface_version": { "type": "string" },
+            "generated_at": { "type": "string" },
+            "per_roll": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/per_roll_entry" }
+            }
+          }
+        }
+      }
+    },
+    "per_roll_entry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["slot_index"],
+      "properties": {
+        "slot_index": { "type": "integer", "minimum": 0 },
+        "verify_status": { "enum": ["pass", "fail", "no_evidence", null] },
+        "verify_issues": { "type": "array" },
+        "quote_tiers": {
+          "type": "array",
+          "description": "Verification tier reached per located quote (1, 2, or null)."
+        },
+        "unlocated_quotes": {
+          "type": "array",
+          "description": "Model-proposed quote text that could not be found in real prose. Preserved verbatim for human judgment and never given an invented position.",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": { "text": { "type": "string" } }
+          }
+        },
+        "unfilled_fields": { "type": "array", "items": { "type": "string" } },
+        "answered_by_model": { "type": "boolean" },
+        "constellation_check": { "type": ["string", "null"] },
+        "self_reported_confidence": { "enum": ["high", "low", null] },
+        "reasoning": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

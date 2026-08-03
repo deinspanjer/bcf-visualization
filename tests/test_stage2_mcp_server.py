@@ -13,7 +13,7 @@ Handlers are async; the tests drive them with ``asyncio.run`` rather than
 from __future__ import annotations
 
 import asyncio
-import re
+import json
 import socket
 import sys
 from pathlib import Path
@@ -324,6 +324,56 @@ def test_exactly_max_span_words_is_served_in_full() -> None:
         },
     )
     assert oversized.isError is True
+
+
+def test_read_tools_are_side_effect_free() -> None:
+    """Read tools serve information and return no destination.
+
+    A read tool cannot make the model the writer, cannot mutate the
+    corpus, and cannot choose a destination -- which is why "propose-only"
+    binds write authority rather than information flow.
+    """
+    ctx = RecordingStage2Context()
+    server = build_stage2_server(ctx, budget=ReadToolBudget())
+
+    _call_tool(
+        server, "get_prose_span", {"chapter_num": "92", "start_word": 0, "end_word": 50}
+    )
+    result = _call_tool(
+        server, "check_quote", {"chapter_num": "92", "quote_text": "a quote"}
+    )
+
+    # Nothing was submitted by a read call.
+    assert ctx.submissions == []
+
+    payload = json.loads(_text_of(result))
+    assert set(payload) == {"found", "tier", "word_position", "occurrence_count"}
+    for banned in ("destination", "route", "confidence", "corpus", "proposals"):
+        assert banned not in payload
+
+
+def test_duplicate_slot_index_returns_is_error_to_the_model() -> None:
+    """The correction signal for a duplicate slot reaches the model."""
+
+    class _Rejecting(RecordingStage2Context):
+        def submit_rolls(self, chapter_num, rolls):
+            from scripts.stage2_response import _index_submitted_rolls
+
+            _index_submitted_rolls(rolls)
+            return "ok"
+
+    server = build_stage2_server(_Rejecting())
+    result = _call_tool(
+        server,
+        "submit_stage2_rolls",
+        {
+            "chapter_num": "92",
+            "rolls": [{"slot_index": 1}, {"slot_index": 1}],
+        },
+    )
+
+    assert result.isError is True
+    assert "slot_index" in _text_of(result)
 
 
 # ---------------------------------------------------------------------------

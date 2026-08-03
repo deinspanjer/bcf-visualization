@@ -1,0 +1,48 @@
+{
+  "_note": "One realistic Stage 2 submission payload, recorded so every downstream test can drive process_stage2_response with zero inference. Deliberately NOT a multi-turn transcript: with read tools in the tool surface a transcript replay is brittle and proves nothing this payload does not. Chapter 92 is hand-curated, so its real curation is available as an informal check. Slot 1 carries two locatable quotes, slot 2 carries one locatable quote plus one deliberately unlocatable quote so the evidence-not-found path is exercised.",
+  "chapter_num": "92",
+  "rolls": [
+    {
+      "slot_index": 1,
+      "outcome": "hit",
+      "constellation": "Size",
+      "grouping": "bundle",
+      "perks": [
+        "Cybertronian Forge",
+        "Altmode",
+        "Decepticon Terrorize!",
+        "Energon",
+        "Energon Battle Pistol",
+        "Energon Melee Weapon",
+        "ROBOTS IN DISGUISE! - Medium Chassis"
+      ],
+      "evidence_quotes": [
+        {
+          "text": "I felt the Forge move again. The slowed rotation had allowed even more reach to amass, leading to the largest amount I had ever assembled. As the Size constellation drifted towards me one of the remaining large motes was easily secured and pulled towards me."
+        },
+        {
+          "text": "The relative ease of the task belied the magnitude of what was approaching me."
+        }
+      ],
+      "self_reported_confidence": "high",
+      "reasoning": "Connection passage names the Size constellation and the paid perk follows shortly after."
+    },
+    {
+      "slot_index": 2,
+      "outcome": "miss",
+      "constellation": "Knowledge",
+      "perks": [],
+      "evidence_quotes": [
+        {
+          "text": "I felt the Forge fail to connect to a massive mote from the Knowledge constellation"
+        },
+        {
+          "text": "The Forge granted me a wondrous device that never existed in this chapter at all."
+        }
+      ],
+      "unfilled_fields": [],
+      "self_reported_confidence": "high",
+      "reasoning": "Miss language plus an explicit constellation name. Second quote is a deliberate fabrication used to exercise the evidence-not-found path."
+    }
+  ]
+}
