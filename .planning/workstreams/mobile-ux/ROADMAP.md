@@ -150,7 +150,7 @@ Plans:
   4. Lighthouse Accessibility scores ≥ 90 on the mobile preset
   5. With `prefers-reduced-motion: reduce`, transitions and throw decay are disabled and auto-hide doubles to 8000ms; playback pauses when the page is hidden
 
-**Plans**: 1/6 plans executed
+**Plans**: 2/6 plans executed
 
 Plans:
 **Wave 1**
@@ -159,7 +159,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 04-02-PLAN.md — Visually-hidden aria-live region with outcome-aware announcements + mobile keyboard equivalents inside the one existing keydown handler (MOBX-03)
+- [x] 04-02-PLAN.md — Visually-hidden aria-live region with outcome-aware announcements + mobile keyboard equivalents inside the one existing keydown handler (MOBX-03)
 - [ ] 04-03-PLAN.md — Landing-page title chip, author credit and `?` help dialog, with the Survey letter verbatim (MOBX-02)
 
 **Wave 3** *(blocked on Wave 2)*
@@ -186,7 +186,7 @@ Plans:
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | 5/5 | Complete    | 2026-08-01 |
 | 3. Landscape Layout | 4/4 | Complete    | 2026-08-02 |
-| 4. Mobile Cutover & Accessibility | 1/6 | In Progress|  |
+| 4. Mobile Cutover & Accessibility | 2/6 | In Progress|  |
 
 ## Requirement Coverage
 

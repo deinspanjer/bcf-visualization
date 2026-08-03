@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Mobile Cutover & Accessibility
 status: executing
-stopped_at: Completed 04-01-PLAN.md — rotate-to-landscape banner deleted, whole-milestone freeze proof committed
-last_updated: "2026-08-03T00:03:36.124Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-08-03T01:01:47.134Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 4 (Mobile Cutover & Accessibility) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-08-02 — Phase 4 execution started
 
-Progress: [███████░░░] 74%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [███████░░░] 74%
 | Phase 03 P02 | 65min | 2 tasks | 2 files |
 | Phase 3 P03 | 55min | 2 tasks | 3 files |
 | Phase 04 P01 | 25min | 2 tasks | 5 files |
+| Phase 4 P2 | 50min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 03-03: onLayoutMaybeChanged() resets app.mobileRailWidthLayout before render() and reveals chrome + starts the idle timer after render() on landscape arrival (D-31/Pitfall 6)
 - [Phase ?]: 04-01: Used two base commits in tests/test_freeze_proof.py (57d2768 for web/style.css, 1351450 for web/mobile-gestures.js and web/index.html mobile tags) since the latter artifacts postdate 57d2768, having been created in Phase 1 itself
 - [Phase ?]: 04-01: STORAGE_VERSION left at "3" — bcf:portrait-dismissed orphaned and left un-purged by design (RESEARCH Pitfall 5)
+- [Phase ?]: 04-02: window.history.state (not history.length) is the correct proof the ? key's toggle consumes its history sentinel — history.length never shrinks via history.back()
+- [Phase ?]: 04-02: split the plan's two file-overlapping tasks into two independently-green commits (temporarily removed Task 2's keyboard branch/tests, committed Task 1, then re-applied and committed Task 2)
 
 ### Pending Todos
 
@@ -134,6 +137,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-03T00:03:36.114Z
-Stopped at: Completed 04-01-PLAN.md — rotate-to-landscape banner deleted, whole-milestone freeze proof committed
+Last session: 2026-08-03T01:01:47.117Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
