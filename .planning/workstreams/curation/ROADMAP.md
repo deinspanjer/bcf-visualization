@@ -146,8 +146,30 @@ Plans:
   4. Re-running a chapter with unchanged inputs produces no diff (fingerprint-keyed idempotency via the agent-run ledger), and an existing hand-curated entry is never overwritten
   5. The confidence gate uses Phase 2's mechanical verification as the hard signal with model self-report only as a tiebreaker, and demonstrably routes regime-boundary-adjacent chapters to low confidence more often
 
-**Plans**: TBD
-**Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically from a pilot batch against known chapters, with a checkpoint before running on uncurated ones. This is the phase that first spends real API budget; Phase 3's measured baseline should inform how much.
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Tracer: retrieval + prompt/schema + one real API call + verify + confidence gate + routing, wired end-to-end on one curated chapter (ACUR-01, ACUR-02, ACUR-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-02-PLAN.md — Agent-run ledger + idempotency (CINF-04)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 04-03-PLAN.md — Dry-run cost estimator + Batches-API multi-chapter runner + uncurated-chapter hard guard (CINF-04, ACUR-01)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 04-04-PLAN.md — Deterministic calibration/held-out split + calibration run (Opus + Sonnet) + data-driven model-tiering decision (ACUR-02)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 04-05-PLAN.md — Held-out run + per-evidence-class report vs Stage 1 baseline + regime-boundary check + D-18 richness metrics (ACUR-01, ACUR-02)
+
+**Notes**: Research flags this phase as needing calibration, not just implementation — the confidence rubric is derived empirically from a pilot batch against known chapters, with a checkpoint before running on uncurated ones. This is the phase that first spends real API budget; Phase 3's measured baseline should inform how much. Two real spend checkpoints exist (Plan 04-04 before calibration, Plan 04-05 before held-out); Phase 4 itself never runs against an uncurated chapter — the `--allow-uncurated` guard built in Plan 04-03 is Phase 5's gate, not this phase's.
 
 ### Phase 5: Proposal Review & Full Batch Run
 
@@ -174,7 +196,7 @@ Plans:
 | 1. Epub Refresh & Exemplar Mining | 4/4 | Complete    | 2026-07-26 |
 | 2. Mechanical Verifier | 2/2 | Complete    | 2026-08-01 |
 | 3. Provenance Schema & Deterministic Candidate Assembly | 3/3 | Complete    | 2026-08-02 |
-| 4. Inference Refinement, Confidence Gate & Routing | 0/TBD | Not started | - |
+| 4. Inference Refinement, Confidence Gate & Routing | 0/5 | Planned | - |
 | 5. Proposal Review & Full Batch Run | 0/TBD | Not started | - |
 
 ## Requirement Coverage
