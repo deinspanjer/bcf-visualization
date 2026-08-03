@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Mobile Cutover & Accessibility
 status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-08-03T01:01:47.134Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-08-03T01:16:43.809Z"
 last_activity: 2026-08-02
 last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 4 (Mobile Cutover & Accessibility) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-08-02 — Phase 4 execution started
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Progress: [████████░░] 79%
 | Phase 3 P03 | 55min | 2 tasks | 3 files |
 | Phase 04 P01 | 25min | 2 tasks | 5 files |
 | Phase 4 P2 | 50min | 2 tasks | 4 files |
+| Phase 04-mobile-cutover-accessibility P03 | 45min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -111,6 +112,9 @@ Recent decisions affecting current work:
 - [Phase ?]: 04-01: STORAGE_VERSION left at "3" — bcf:portrait-dismissed orphaned and left un-purged by design (RESEARCH Pitfall 5)
 - [Phase ?]: 04-02: window.history.state (not history.length) is the correct proof the ? key's toggle consumes its history sentinel — history.length never shrinks via history.back()
 - [Phase ?]: 04-02: split the plan's two file-overlapping tasks into two independently-green commits (temporarily removed Task 2's keyboard branch/tests, committed Task 1, then re-applied and committed Task 2)
+- [Phase ?]: 04-03: form method=dialog CTA closes the native <dialog> natively (fires 'close') with zero script; the file's only inline <script> is the focus-return listener
+- [Phase ?]: 04-03: backdrop click on #landing-help-dialog verified NOT to close it (no light-dismiss handler added, by design) — recorded as the actual FA-MOBX-02 backdrop-route behavior
+- [Phase ?]: 04-03: Tasks 1 and 2 landed in a single commit (c563a60) instead of two atomic per-task commits — process deviation, no functional impact, all acceptance criteria independently verified
 
 ### Pending Todos
 
@@ -137,6 +141,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-03T01:01:47.117Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-08-03T01:16:43.797Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
