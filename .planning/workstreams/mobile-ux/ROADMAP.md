@@ -150,7 +150,7 @@ Plans:
   4. Lighthouse Accessibility scores ≥ 90 on the mobile preset
   5. With `prefers-reduced-motion: reduce`, transitions and throw decay are disabled and auto-hide doubles to 8000ms; playback pauses when the page is hidden
 
-**Plans**: 5/6 plans executed
+**Plans**: 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -172,7 +172,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 04-06-PLAN.md — Full-suite sweep, whole-milestone freeze proof, §6 acceptance evidence + the §5 Phase D+E gate review with Dre (iOS device pass, D-49 measurement, VoiceOver check)
+- [x] 04-06-PLAN.md — Full-suite sweep, whole-milestone freeze proof, §6 acceptance evidence + the §5 Phase D+E gate review with Dre (iOS device pass, D-49 measurement, VoiceOver check)
 
 **UI hint**: yes
 **Notes**: Merges `INTEGRATION_PLAN.md` §5 phases D and E. Only safe once Phases 2 and 3 have both passed their gates — the portrait banner is the safety net until then. The `user-scalable=no` decision made at the Phase 1 interview is re-verified here against the real Lighthouse run. Phase ends with the §5 Phase D+E gate review plus a desktop smoke test pass.
@@ -186,7 +186,7 @@ Plans:
 | 1. Mobile State & Gesture Plumbing | 4/4 | Complete    | 2026-07-26 |
 | 2. Portrait Layout | 5/5 | Complete    | 2026-08-01 |
 | 3. Landscape Layout | 4/4 | Complete    | 2026-08-02 |
-| 4. Mobile Cutover & Accessibility | 5/6 | In Progress|  |
+| 4. Mobile Cutover & Accessibility | 6/6 | In Progress|  |
 
 ## Requirement Coverage
 

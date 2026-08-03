@@ -317,7 +317,26 @@ Confirm the condensed credit-and-help block (title, byline, source links, a poin
 
 ## Next Phase Readiness
 
-**Not ready. Task 2 (the blocking Phase D+E gate review with Dre, including the real-device iOS Safari pass) is outstanding — no agent may approve it.**
+## ✅ PHASE D+E GATE APPROVED — 2026-08-03
+
+Dre signed off, closing the Phase D+E gate and the mobile-ux milestone.
+
+**Approved on automated evidence. The real-device iOS pass was NOT run.** This is recorded precisely because the distinction matters to anyone reading later: 100/100 automated tests pass and the whole-milestone freeze is proven, but four items that were on the agenda remain **device-unverified**, not device-verified:
+
+| Item | Status | What automated evidence does and does not cover |
+|---|---|---|
+| Banner absent on device, both orientations (MOBX-01, FA-MOBX-01) | Automated only | Playwright asserts `.portrait-banner` is null at both viewports and the CSS is provably deleted (0 added / 38 removed vs `57d2768`). Residual risk: negligible — the element cannot render if neither its markup nor its CSS exists. |
+| Landing page `?` dialog on real hardware (MOBX-02, FA-MOBX-02) | Automated only | 14 Playwright tests cover the dialog, its degraded states and the verbatim letter. Residual risk: low — `<dialog>` behavior on iOS Safari differs from headless Chromium, so a rendering quirk is possible. |
+| D-49 Safari "Request Desktop Website" measurement | **Unverified inference** | Never measured. The ~980px layout-viewport figure is from documentation, not this device. D-50 (no in-app desktop toggle) therefore rests on an unconfirmed premise — it stays a v2 item and the measurement stays outstanding. |
+| VoiceOver announcement (MOBX-03) | **Automated cannot cover this** | The live region's presence, its locked visually-hidden CSS, its trigger set and its silence during playback are all asserted. What is NOT asserted — and cannot be, since no headless browser runs a screen reader — is whether a screen reader actually **speaks** it. A region that is present but never announced would pass all 100 tests. This is the one item where the automated suite gives no signal at all. |
+
+Everything else on the 14-item agenda was a documentation or deferral ruling rather than a device action, and is settled by this sign-off: the flagged assumptions FA-MOBX-01..07, MOBX-04's vacuous throw-decay clause (a requirements-accuracy note, not a defect — throw-to-scrub inertia was never implemented and is v2 backlog §8), the deliberately-orphaned `bcf:portrait-dismissed` key, the two hardcoded `STORY_LINKS` copies, and the v2 deferral list.
+
+**If the VoiceOver behavior is ever checked and found wanting**, that is a gap-closure item (`/gsd-plan-phase 4 --gaps`), not a defect in what shipped — the contract was implemented to the locked spec and verified as far as automation reaches.
+
+### Original readiness note (superseded)
+
+~~**Not ready. Task 2 (the blocking Phase D+E gate review with Dre, including the real-device iOS Safari pass) is outstanding — no agent may approve it.**~~ Held correctly until Dre ruled; approved above.
 
 This is the final phase of the mobile-ux workstream. Once Task 2 is run and Dre approves the gate, the milestone closes: MOBX-01 through MOBX-05 all show as complete in `REQUIREMENTS.md` already (checked off during their originating plans), and this plan's own deliverable is the evidence record and the gate, not new requirement functionality — matching the Phase 2 (`02-05-SUMMARY.md`) and Phase 3 (`03-04-SUMMARY.md`) precedents of leaving `requirements-completed` empty on the closing plan's own frontmatter.
 
