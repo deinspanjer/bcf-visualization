@@ -33,7 +33,7 @@ Requirements for this workstream (MOB*). Curation requirements (EPUB/CINF/ACUR) 
 
 ### Mobile Cutover & Accessibility
 
-- [ ] **MOBX-01**: `renderPortraitBanner` and its CSS are deleted; no "rotate to landscape" banner anywhere; desktop UI byte-identical above the breakpoint
+- [x] **MOBX-01**: `renderPortraitBanner` and its CSS are deleted; no "rotate to landscape" banner anywhere; desktop UI byte-identical above the breakpoint
 - [ ] **MOBX-02**: Landing page shows story-title chip with author credit and a `?` help button opening the same help overlay; Survey letter stays verbatim
 - [ ] **MOBX-03**: Roll changes announce via `aria-live="polite"`; keyboard equivalents work (Space, ←/→, Home, `?`); all tappable targets ≥ 44×44 CSS px; Lighthouse Accessibility ≥ 90 on mobile preset
 - [ ] **MOBX-04**: `prefers-reduced-motion: reduce` disables transitions and throw decay and doubles auto-hide to 8000ms
@@ -84,7 +84,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOBL-02 | Phase 3 | Complete |
 | MOBL-03 | Phase 3 | Complete |
 | MOBL-04 | Phase 3 | Complete |
-| MOBX-01 | Phase 4 | Pending |
+| MOBX-01 | Phase 4 | Complete |
 | MOBX-02 | Phase 4 | Pending |
 | MOBX-03 | Phase 4 | Pending |
 | MOBX-04 | Phase 4 | Pending |
