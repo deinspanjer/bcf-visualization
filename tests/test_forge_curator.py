@@ -148,6 +148,29 @@ class _FakeMouseEvent:
         pass
 
 
+def _visible_roll_line(stats: StatsPanel, ordinal: int = 2) -> tuple[int, str]:
+    """Find the rendered roll line for a within-chapter ordinal.
+
+    Anchors on the stable within-chapter ordinal and tolerates any R/P
+    numbers: curator roll numbers renumber whenever an earlier chapter gains
+    or loses curated rolls, so matching a literal ``R520`` goes stale on Dre's
+    next hand-curation pass. The trailing space in ``# {ordinal} `` is what
+    separates the roll line from evidence lines, which render as
+    ``S against ch N #{ordinal} (...)`` with no space after ``#``.
+
+    Returns ``(line_index, roll_label)`` where ``roll_label`` is the actual
+    ``R<n>`` captured from the matched line, so callers can assert against the
+    rendered value rather than a hard-coded number.
+    """
+    rendered = getattr(stats, "_renderable", None) or stats.render()
+    pattern = re.compile(rf"# {ordinal} \(R(\d+)/P\d+\)")
+    for index, text in enumerate(str(rendered).splitlines()):
+        match = pattern.search(text)
+        if match:
+            return index, f"R{match.group(1)}"
+    raise AssertionError(f"no visible roll line for ordinal {ordinal}")
+
+
 @pytest.mark.asyncio
 async def test_gutter_minimap_renders_priority_cells() -> None:
     app = ForgeCuratorApp(start_chapter="2")
@@ -737,19 +760,14 @@ def test_stats_click_selects_actual_visible_roll_line(tmp_path: Path) -> None:
     app = _loaded_app("79", tmp_path)
     stats = StatsPanel()
     stats.render_stats(app.state, app)
-    rendered = getattr(stats, "_renderable", None) or stats.render()
-    lines = str(rendered).splitlines()
-    visible_roll_line = next(
-        line for line, text in enumerate(lines)
-        if "# 2 (R520/P548)" in text
-    )
+    visible_roll_line, roll_label = _visible_roll_line(stats)
 
     stats.on_click(_FakeMouseEvent(0, visible_roll_line))
 
     selected = app._selected_roll_target_if_visible()
     assert selected is not None
     assert selected["target_roll_index"] == 2
-    assert selected["roll_label"] == "R520"
+    assert selected["roll_label"] == roll_label
 
 
 @pytest.mark.asyncio
@@ -758,11 +776,7 @@ async def test_stats_click_refocuses_prose_for_motion_and_space_chords() -> None
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         stats = app.query_one("#stats", StatsPanel)
-        rendered = getattr(stats, "_renderable", None) or stats.render()
-        visible_roll_line = next(
-            line for line, text in enumerate(str(rendered).splitlines())
-            if "# 2 (R520/P548)" in text
-        )
+        visible_roll_line, _ = _visible_roll_line(stats)
 
         await pilot.click(
             "#stats",
@@ -782,11 +796,7 @@ async def test_stats_click_jumps_prose_to_selected_roll_location() -> None:
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         stats = app.query_one("#stats", StatsPanel)
-        rendered = getattr(stats, "_renderable", None) or stats.render()
-        visible_roll_line = next(
-            line for line, text in enumerate(str(rendered).splitlines())
-            if "# 2 (R520/P548)" in text
-        )
+        visible_roll_line, _ = _visible_roll_line(stats)
         target = stats._roll_line_targets[visible_roll_line]
         expected_word = app._roll_marker_word_index_from_cp(
             app.state.chapter,
@@ -811,11 +821,7 @@ async def test_click_roll_then_space_p_opens_perk_picker_for_selected_roll() -> 
     async with app.run_test(size=(180, 50)) as pilot:
         await pilot.pause()
         stats = app.query_one("#stats", StatsPanel)
-        rendered = getattr(stats, "_renderable", None) or stats.render()
-        visible_roll_line = next(
-            line for line, text in enumerate(str(rendered).splitlines())
-            if "# 2 (R520/P548)" in text
-        )
+        visible_roll_line, _ = _visible_roll_line(stats)
 
         stats.on_click(_FakeMouseEvent(0, visible_roll_line + stats.content_region.y))
         await pilot.press("space", "p")
