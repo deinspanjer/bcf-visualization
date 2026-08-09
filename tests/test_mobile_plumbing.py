@@ -1,6 +1,6 @@
-"""Playwright proofs for the Phase 1 mobile plumbing tracer slice.
+"""Playwright proofs for the mobile plumbing tracer slice.
 
-Protected behaviors (see .planning/phases/01-mobile-state-gesture-plumbing/):
+Protected behaviors (see design/mobile-ux/INTEGRATION_PLAN.md and gesture-contract.html):
 - app.layoutMode / window.__bcfLayoutMode derive from the exact CSS breakpoint
   query and stay correct across rotation (D-06, MOBF-02).
 - Gesture callbacks fire exactly once per gesture through forced re-renders and

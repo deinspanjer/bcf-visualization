@@ -32,10 +32,9 @@ Parked on the long-lived branch **`parked/stage2-inference`** (on `origin`), del
 `main` so it is not mistaken for a foundation. That branch is also the full archive of the curation
 workstream's planning history, which `main` does not carry.
 
-The measured transport findings — including that a stdio MCP server loses a startup race to
-`claude -p`, and that subprocess exit 0 does not mean success — are in that branch at
-`.planning/workstreams/curation/phases/04-inference-refinement-confidence-gate-routing/04-RESEARCH.md`,
-alongside `04-01-SUMMARY.md` (what was built and why it stopped).
+The archived branch retains the measured transport findings — including that a stdio MCP server
+loses a startup race to `claude -p`, and that subprocess exit 0 does not mean success — alongside
+the implementation summary explaining what was built and why it stopped.
 
 **Also retired with it:** the Stage 1 deterministic candidate assembler
 (`build_candidate_rolls.py`), its accuracy measurement, and the exemplar mining
