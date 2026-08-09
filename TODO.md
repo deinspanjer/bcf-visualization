@@ -34,6 +34,13 @@
 
 ## Visualization
 
+- Complete the real-device Mobile UX acceptance pass before treating mobile
+  as fully validated: confirm VoiceOver speaks roll-change announcements and
+  stays silent during playback; exercise the landing-page `?` dialog on iOS
+  Safari; measure `innerWidth` and the selected layout with Safari's
+  "Request Desktop Website" enabled; and check the cinema-scrub play button's
+  edge tap for a dead zone. Use the desktop-mode result to decide whether an
+  in-app desktop-view toggle belongs in the backlog.
 - Add an in-world time/date track once chapter-level in-world dates are
   available.
 - Prominently display Survey designation codes for hit rolls in the web
